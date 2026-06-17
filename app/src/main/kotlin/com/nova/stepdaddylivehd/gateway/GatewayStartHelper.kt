@@ -41,10 +41,16 @@ object GatewayStartHelper {
         }
         if (ServerService.isServiceActive) {
             Log.i(TAG, "Server already active ($source)")
+            cancelBootFallbacks(appContext)
             return StartResult.ALREADY_RUNNING
         }
 
-        tryStartForegroundService(appContext, source)?.let { return it }
+        tryStartForegroundService(appContext, source)?.let {
+            if (it == StartResult.STARTED) {
+                cancelBootFallbacks(appContext)
+            }
+            return it
+        }
         tryStartBackgroundService(appContext, source)
 
         if (!ServerService.isServiceActive) {
@@ -229,5 +235,25 @@ object GatewayStartHelper {
 
     fun resetFallbacksScheduled() {
         fallbacksScheduled.set(false)
+    }
+
+    fun cancelBootFallbacks(context: Context) {
+        val appContext = context.applicationContext
+        WorkManager.getInstance(appContext).cancelAllWorkByTag(WORK_TAG_BOOT_START)
+        val alarmManager = appContext.getSystemService(AlarmManager::class.java) ?: return
+        ALARM_DELAYS_MS.indices.forEach { index ->
+            val intent = Intent(appContext, BootAlarmReceiver::class.java).apply {
+                action = ACTION_BOOT_ALARM
+                putExtra(EXTRA_ALARM_INDEX, index)
+            }
+            val pendingIntent = PendingIntent.getBroadcast(
+                appContext,
+                REQUEST_CODE_ALARM_BASE + index,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+            alarmManager.cancel(pendingIntent)
+        }
+        Log.i(TAG, "Cancelled pending boot fallbacks")
     }
 }

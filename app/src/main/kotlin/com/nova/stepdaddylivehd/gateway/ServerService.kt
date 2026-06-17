@@ -29,13 +29,18 @@ class ServerService : LifecycleService() {
     private var startInFlight = false
     @Volatile
     private var readyBannerShown = false
+    private var skipBannerForCrashRecovery = false
 
     override fun onCreate() {
         super.onCreate()
         isServiceActive = true
-        GatewayStartHelper.resetFallbacksScheduled()
         val app = application as GatewayApp
         environment = app.gatewayEnvironment
+        skipBannerForCrashRecovery = environment.isRecentCrashRecovery()
+        environment.recordServiceStart()
+        readyBannerShown = environment.readyBannerShownThisBoot
+        GatewayStartHelper.cancelBootFallbacks(this)
+        GatewayStartHelper.resetFallbacksScheduled()
         val epgManager = app.epgManager
         this.epgManager = epgManager
         daddyLiveClient = DaddyLiveClient(
@@ -66,7 +71,7 @@ class ServerService : LifecycleService() {
         return START_STICKY
     }
 
-    private fun startGateway() {
+    private fun startGateway(skipReadyBanner: Boolean = false) {
         if (gatewayServer?.isRunning == true) {
             environment.serverRunning = true
             updateRunningNotification()
@@ -108,7 +113,9 @@ class ServerService : LifecycleService() {
                         onPersistentFailure = { restartGatewayAfterFailure() },
                     ).also { it.start() }
                     val channelCount = daddyLiveClient.channels.size
-                    mainHandler.post { showServerReadyIfBackground(channelCount) }
+                    if (!skipReadyBanner) {
+                        mainHandler.post { showServerReadyIfBackground(channelCount) }
+                    }
                     updateRunningNotification()
                     notifyForegroundIfVisible(R.string.toast_server_running)
                     epgManager.schedulePeriodicRefresh { daddyLiveClient.channels }
@@ -118,7 +125,7 @@ class ServerService : LifecycleService() {
                         app.logoResolver.schedulePrewarm(
                             daddyLiveClient.channels.map { it.name to it.tvgId },
                         )
-                        if (!MainActivity.isInForeground) {
+                        if (!skipReadyBanner && !MainActivity.isInForeground) {
                             showReadyBanner(daddyLiveClient.channels.size)
                         }
                         if (!epgManager.epgReady()) {
@@ -209,9 +216,13 @@ class ServerService : LifecycleService() {
 
     private fun showReadyBanner(channelCount: Int) {
         synchronized(this) {
-            if (readyBannerShown) return
+            if (skipBannerForCrashRecovery || readyBannerShown || environment.readyBannerShownThisBoot) {
+                return
+            }
             readyBannerShown = true
+            environment.readyBannerShownThisBoot = true
         }
+        Log.i(TAG, "Showing ready banner (channels=$channelCount)")
         mainHandler.postDelayed({
             if (GatewayOverlay.canDraw(this)) {
                 GatewayOverlay.showServerReady(this, channelCount)
@@ -271,7 +282,7 @@ class ServerService : LifecycleService() {
                 daddyLiveClient.invalidateStaleCaches()
                 daddyLiveClient.scheduleChannelRefresh(force = true)
             }
-            startGateway()
+            startGateway(skipReadyBanner = true)
         }
     }
 

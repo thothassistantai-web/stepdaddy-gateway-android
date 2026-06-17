@@ -7,7 +7,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.util.Log
-import androidx.work.WorkManager
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
@@ -25,13 +24,14 @@ class BootReceiver : BroadcastReceiver() {
         Handler(Looper.getMainLooper()).post {
             try {
                 Log.i(TAG, "Boot received ($action); attempting gateway start")
+                (appContext as GatewayApp).gatewayEnvironment.clearReadyBannerForNewBoot()
                 val result = GatewayStartHelper.startIfNeeded(appContext, "BootReceiver", allowReschedule = false)
                 Log.i(TAG, "BootReceiver start result: $result")
                 when (result) {
                     GatewayStartHelper.StartResult.STARTED,
                     GatewayStartHelper.StartResult.ALREADY_RUNNING,
                     GatewayStartHelper.StartResult.LAUNCHED_TRAMPOLINE,
-                    -> WorkManager.getInstance(appContext).cancelAllWorkByTag("boot_start")
+                    -> GatewayStartHelper.cancelBootFallbacks(appContext)
                     else -> GatewayStartHelper.scheduleBootFallbacksAsync(appContext)
                 }
                 if (!ServerService.isServiceActive) {

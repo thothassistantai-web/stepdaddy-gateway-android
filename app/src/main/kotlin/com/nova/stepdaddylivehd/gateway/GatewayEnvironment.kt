@@ -47,6 +47,28 @@ class GatewayEnvironment(context: Context) {
             prefs.edit().putBoolean(KEY_SERVER_RUNNING, value).apply()
         }
 
+    /** Survives process death within the same boot session. Cleared on BOOT_COMPLETED. */
+    var readyBannerShownThisBoot: Boolean
+        get() = prefs.getBoolean(KEY_READY_BANNER_SHOWN, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_READY_BANNER_SHOWN, value).apply()
+        }
+
+    fun clearReadyBannerForNewBoot() {
+        prefs.edit().putBoolean(KEY_READY_BANNER_SHOWN, false).apply()
+    }
+
+    /** True when the service restarted within [CRASH_RECOVERY_BANNER_SKIP_MS] of a prior start. */
+    fun isRecentCrashRecovery(): Boolean {
+        val lastStart = prefs.getLong(KEY_LAST_SERVICE_START_MS, 0L)
+        if (lastStart <= 0L) return false
+        return System.currentTimeMillis() - lastStart < CRASH_RECOVERY_BANNER_SKIP_MS
+    }
+
+    fun recordServiceStart() {
+        prefs.edit().putLong(KEY_LAST_SERVICE_START_MS, System.currentTimeMillis()).apply()
+    }
+
     fun loopbackBase(): String = "http://127.0.0.1:$port"
 
     companion object {
@@ -57,6 +79,9 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_MIRROR_URLS = "mirror_urls"
         private const val KEY_START_ON_BOOT = "start_on_boot"
         private const val KEY_SERVER_RUNNING = "server_running"
+        private const val KEY_READY_BANNER_SHOWN = "ready_banner_shown"
+        private const val KEY_LAST_SERVICE_START_MS = "last_service_start_ms"
+        private const val CRASH_RECOVERY_BANNER_SKIP_MS = 10 * 60 * 1000L
         private const val DEFAULT_MIRRORS_CSV =
             "https://daddylive.org,https://daddylive.li,https://daddylive.eu"
     }

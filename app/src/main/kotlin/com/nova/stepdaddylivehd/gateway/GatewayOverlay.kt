@@ -19,22 +19,19 @@ import com.nova.stepdaddylivehd.gateway.databinding.OverlayServerReadyBinding
 object GatewayOverlay {
     private const val TAG = "GatewayOverlay"
     private const val DISMISS_MS = 15_000L
-    /** Optional re-show if the startup banner was missed on a busy TV launcher. */
-    private val RESHOW_DELAYS_MS = longArrayOf(40_000L)
 
     private val mainHandler = Handler(Looper.getMainLooper())
     @Volatile
     private var activeRoot: android.view.View? = null
     private var dismissRunnable: Runnable? = null
-    private val reshowRunnables = mutableListOf<Runnable>()
 
-    fun showServerReady(context: Context, channelCount: Int, allowReshow: Boolean = true) {
+    fun showServerReady(context: Context, channelCount: Int) {
         if (!canDraw(context)) {
             Log.w(TAG, "Overlay permission missing; skipping server-ready banner")
             return
         }
         mainHandler.post {
-            runCatching { showInternal(context.applicationContext, channelCount, scheduleReshows = allowReshow) }
+            runCatching { showInternal(context.applicationContext, channelCount) }
                 .onFailure { exc -> Log.w(TAG, "Overlay failed: ${exc.message}") }
         }
     }
@@ -46,8 +43,6 @@ object GatewayOverlay {
     private fun dismissActive() {
         dismissRunnable?.let { mainHandler.removeCallbacks(it) }
         dismissRunnable = null
-        reshowRunnables.forEach { mainHandler.removeCallbacks(it) }
-        reshowRunnables.clear()
         val root = activeRoot ?: return
         activeRoot = null
         runCatching {
@@ -55,7 +50,7 @@ object GatewayOverlay {
         }
     }
 
-    private fun showInternal(context: Context, channelCount: Int, scheduleReshows: Boolean) {
+    private fun showInternal(context: Context, channelCount: Int) {
         dismissActive()
         val windowManager = context.getSystemService(WindowManager::class.java)
         val binding = OverlayServerReadyBinding.inflate(LayoutInflater.from(context))
@@ -80,24 +75,13 @@ object GatewayOverlay {
         }
         activeRoot = binding.root
         windowManager.addView(binding.root, params)
-        Log.i(TAG, "Showing server-ready overlay (channels=$channelCount, reshow=$scheduleReshows)")
+        Log.i(TAG, "Showing server-ready overlay (channels=$channelCount)")
         val dismiss = Runnable {
             runCatching { windowManager.removeView(binding.root) }
             if (activeRoot === binding.root) activeRoot = null
         }
         dismissRunnable = dismiss
         mainHandler.postDelayed(dismiss, DISMISS_MS)
-        if (scheduleReshows) {
-            RESHOW_DELAYS_MS.forEach { delayMs ->
-                val reshow = Runnable {
-                    if (ServerService.isServiceActive) {
-                        showInternal(context, ServerService.lastKnownChannelCount, scheduleReshows = false)
-                    }
-                }
-                reshowRunnables.add(reshow)
-                mainHandler.postDelayed(reshow, delayMs)
-            }
-        }
     }
 
     fun canDraw(context: Context): Boolean = Settings.canDrawOverlays(context.applicationContext)

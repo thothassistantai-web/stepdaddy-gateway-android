@@ -36,7 +36,7 @@ class StreamHealthWatchdog(
     }
 
     private suspend fun runProbeCycle() {
-        var failures = 0
+        var streamFailures = 0
         for (channelId in GatewayConfig.WATCHDOG_PROBE_CHANNEL_IDS) {
             try {
                 withTimeout(GatewayConfig.WATCHDOG_PROBE_TIMEOUT_MS) {
@@ -49,29 +49,33 @@ class StreamHealthWatchdog(
                 client.noteStreamSuccess(channelId)
                 Log.d(TAG, "Probe OK channel $channelId")
             } catch (exc: Exception) {
-                failures++
+                streamFailures++
                 client.noteStreamFailure(channelId, exc)
                 Log.w(TAG, "Probe failed channel $channelId: ${exc.message}")
             }
         }
         val mirrorsOk = client.probeMirrors()
-        if (!mirrorsOk) {
-            failures++
-            Log.w(TAG, "Mirror probe failed")
-        }
-        if (failures == 0) {
+        if (streamFailures == 0) {
             consecutiveProbeFailures = 0
-            client.recordHealingAction("probe_ok")
-        } else {
-            consecutiveProbeFailures++
-            client.recordHealingAction("probe_fail count=$failures")
-            client.invalidateStaleCaches()
-            if (consecutiveProbeFailures >= GatewayConfig.WATCHDOG_RESTART_THRESHOLD) {
-                Log.e(TAG, "Persistent probe failures ($consecutiveProbeFailures); requesting gateway restart")
-                client.recordHealingAction("restart_requested")
-                consecutiveProbeFailures = 0
-                onPersistentFailure()
+            if (!mirrorsOk) {
+                Log.w(TAG, "Mirror probe failed but loopback streams OK; not counting toward restart")
+                client.recordHealingAction("probe_mirror_only_fail")
+            } else {
+                client.recordHealingAction("probe_ok")
             }
+            return
+        }
+        if (!mirrorsOk) {
+            Log.w(TAG, "Mirror probe failed alongside stream failures")
+        }
+        consecutiveProbeFailures++
+        client.recordHealingAction("probe_fail streams=$streamFailures mirrors=$mirrorsOk")
+        client.invalidateStaleCaches()
+        if (consecutiveProbeFailures >= GatewayConfig.WATCHDOG_RESTART_THRESHOLD) {
+            Log.e(TAG, "Persistent probe failures ($consecutiveProbeFailures); requesting gateway restart")
+            client.recordHealingAction("restart_requested")
+            consecutiveProbeFailures = 0
+            onPersistentFailure()
         }
     }
 
