@@ -30,6 +30,7 @@ class DaddyLiveClient(
     private val environment: GatewayEnvironment,
     private val epgChannelMapper: EpgChannelMapper? = null,
     private val logoResolver: LogoResolver? = null,
+    private val channelMetaStore: ChannelMetaStore? = null,
     private val resportzParser: ResportzParser = ResportzParser(),
     private val client: OkHttpClient = ResportzParser.defaultClient(),
     context: Context,
@@ -263,16 +264,8 @@ class DaddyLiveClient(
                 markMirrorAlive(baseUrl)
                 activeBaseUrl = baseUrl
                 return rows.map { row ->
-                    val id = row.channelId.trim()
-                    val name = row.channelName.trim().replace("#", "")
-                    val tvgId = epgChannelMapper?.tvgIdFor(id, name)
-                    Channel(
-                        id = id,
-                        name = name,
-                        tvgId = tvgId,
-                        logo = logoResolver?.resolveLogoUrl(environment.loopbackBase(), name, tvgId),
-                    )
-                }.sortedWith(compareBy({ it.name.startsWith("18") }, { it.name }))
+                    channelFromRow(row.channelId, row.channelName)
+                }.sortedWith(GroupTitleResolver.channelComparator())
             } catch (exc: Exception) {
                 lastError = exc
                 markMirrorDead(baseUrl)
@@ -446,14 +439,7 @@ class DaddyLiveClient(
                     val tvgId = row.optString("tvg_id").takeIf { it.isNotBlank() }
                         ?: epgChannelMapper?.tvgIdFor(id, name)
                     if (id.isNotBlank() && name.isNotBlank()) {
-                        add(
-                            Channel(
-                                id = id,
-                                name = name,
-                                tvgId = tvgId,
-                                logo = logoResolver?.resolveLogoUrl(environment.loopbackBase(), name, tvgId),
-                            ),
-                        )
+                        add(channelFromRow(id, name, tvgId))
                     }
                 }
             }
@@ -465,6 +451,21 @@ class DaddyLiveClient(
         } catch (_: Exception) {
             // Ignore corrupt cache.
         }
+    }
+
+    private fun channelFromRow(channelId: String, channelName: String, cachedTvgId: String? = null): Channel {
+        val id = channelId.trim()
+        val name = channelName.trim().replace("#", "")
+        val tags = channelMetaStore?.tagsFor(name).orEmpty()
+        val tvgId = cachedTvgId?.takeIf { it.isNotBlank() }
+            ?: epgChannelMapper?.tvgIdFor(id, name)
+        return Channel(
+            id = id,
+            name = name,
+            tags = tags,
+            tvgId = tvgId,
+            logo = logoResolver?.resolveLogoUrl(environment.loopbackBase(), name, tvgId),
+        )
     }
 
     private fun saveDiskCache() {

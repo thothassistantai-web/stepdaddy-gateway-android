@@ -4,6 +4,7 @@ import android.app.Application
 import com.nova.stepdaddylivehd.gateway.epg.EpgChannelMapper
 import com.nova.stepdaddylivehd.gateway.epg.EpgManager
 import com.nova.stepdaddylivehd.gateway.epg.EpgStore
+import com.nova.stepdaddylivehd.gateway.upstream.ChannelMetaStore
 import com.nova.stepdaddylivehd.gateway.upstream.LogoResolver
 
 class GatewayApp : Application() {
@@ -15,6 +16,8 @@ class GatewayApp : Application() {
         private set
     lateinit var logoResolver: LogoResolver
         private set
+    lateinit var channelMetaStore: ChannelMetaStore
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -22,6 +25,7 @@ class GatewayApp : Application() {
         gatewayEnvironment = GatewayEnvironment(this)
         val store = EpgStore(this)
         epgChannelMapper = EpgChannelMapper(this)
+        channelMetaStore = ChannelMetaStore(this)
         logoResolver = LogoResolver(this)
         epgManager = EpgManager(store, epgChannelMapper)
         if (gatewayEnvironment.startOnBoot && !ServerService.isServiceActive) {

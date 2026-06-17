@@ -38,7 +38,13 @@ class ServerService : LifecycleService() {
         environment = app.gatewayEnvironment
         val epgManager = app.epgManager
         this.epgManager = epgManager
-        daddyLiveClient = DaddyLiveClient(environment, app.epgChannelMapper, app.logoResolver, context = this)
+        daddyLiveClient = DaddyLiveClient(
+            environment,
+            app.epgChannelMapper,
+            app.logoResolver,
+            app.channelMetaStore,
+            context = this,
+        )
         daddyLiveClient.scheduleChannelRefresh(force = false)
         GatewayNotifier.createChannels(this)
         startForeground(

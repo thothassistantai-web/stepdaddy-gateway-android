@@ -19,7 +19,7 @@ object PlaylistBuilder {
         val lines = mutableListOf(
             "#EXTM3U url-tvg=\"$base/epg.xml\" x-tvg-url=\"$base/epg.xml\"",
         )
-        channels.forEach { channel ->
+        GroupTitleResolver.sortChannels(channels).forEach { channel ->
             lines += "#EXTINF:-1 ${extinfAttrs(channel, base, logoResolver)},${displayTitle(channel)}"
             lines += tivimateStreamLine(base, channel.id, dlhdOrigin)
         }
@@ -27,6 +27,7 @@ object PlaylistBuilder {
     }
 
     private fun extinfAttrs(channel: Channel, base: String, logoResolver: LogoResolver?): String {
+        val resolution = GroupTitleResolver.resolve(channel.name, channel.tags)
         val attrs = mutableListOf<String>()
         channel.tvgId?.let {
             attrs += """tvg-id="${escape(it)}""""
@@ -36,13 +37,18 @@ object PlaylistBuilder {
             ?: channel.logo
             ?: "$base/ui/default-channel.svg"
         attrs += """tvg-logo="${escape(logo)}""""
-        attrs += """group-title="${escape("Live TV")}""""
+        attrs += """group-title="${escape(resolution.groupTitle)}""""
         attrs += """tvg-chno="${escape(channel.id)}""""
         return attrs.joinToString(" ")
     }
 
     private fun displayTitle(channel: Channel): String {
-        return channel.name.replace("\"", "'")
+        val resolution = GroupTitleResolver.resolve(channel.name, channel.tags)
+        val title = channel.name.replace("\"", "'")
+        if (resolution.categoryLabel != "General") {
+            return "$title [${resolution.categoryLabel}]"
+        }
+        return title
     }
 
     private fun tivimateStreamLine(base: String, channelId: String, dlhdOrigin: String): String {
