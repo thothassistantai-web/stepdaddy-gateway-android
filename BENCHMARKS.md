@@ -66,8 +66,11 @@ All paths funnel through **`GatewayStartHelper.startIfNeeded(source)`**. One-sho
 | **Cycle 2** | 2026-06-17 | **30s** | 3/3 | **PASS (screencap)** | `GatewayApp` boot kick, tighter alarms (8/20/40/80s), 2s launcher settle |
 | **Cycle 4** | 2026-06-17 | **58s** | stream 51 OK | **PASS** | Boot redundancy: ScreenWake, periodic WM 20m, HTTP self-check 90s, TiviMateWatch; FGS startForeground-first fix |
 | **Release** | 2026-06-17 | **20s** | 2/3 | PASS (logcat) | `com.nova.stepdaddylivehd.gateway` (debug-signed); `/epg.xml` 503 at t+20s |
+| **Boot speedup** | 2026-06-17 | **26s** (after wlan0 IP) | 3/3 | PASS | Fix main-thread ANR on channel disk parse; HTTP from `onCreate`; defer upstream refresh 45s; `/health` adds `starting` when channels=0 |
 
-**Timing trend:** 81s → 48s → 30s → **4s** (debug) time-to-health after reboot (poll from host, from wlan0 IP available). Release build: **~20–80s** on cold boot depending on channel/EPG preload (no debug suffix; EPG may still be building at first health).
+**Timing trend:** 81s → 48s → 30s → **4s** (debug) time-to-health after reboot (poll from host, from wlan0 IP available). Release build: **~20–80s** on cold boot depending on channel/EPG preload (no debug suffix; EPG may still be building at first health). **Boot speedup cycle:** **~74s → 26s** after wlan0 IP (eliminated +63s ANR restart penalty on FUSA).
+
+**`/health` warm-up:** When disk cache is still loading, HTTP 200 returns `"starting": true` and `"channels": 0`. Full playlist count appears within seconds once `loadDiskCache()` completes on IO.
 
 **Overlay policy:** One startup banner when the server is listening (may show “loading channels…” before the count is ready). Optional **single** re-show at **+40s** if the first banner was missed — no re-show at +20s.
 

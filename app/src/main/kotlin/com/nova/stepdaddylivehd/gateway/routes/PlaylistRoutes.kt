@@ -28,7 +28,6 @@ class PlaylistRoutes(
         try {
             val cached = client.channels
             client.scheduleChannelRefresh()
-            logoResolver.awaitLoaded()
             val body = if (cached.isNotEmpty()) {
                 PlaylistBuilder.tivimatePlaylist(
                     channels = cached,

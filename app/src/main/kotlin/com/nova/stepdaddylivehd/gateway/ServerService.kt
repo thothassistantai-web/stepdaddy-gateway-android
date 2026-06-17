@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import com.nova.stepdaddylivehd.gateway.ui.MainActivity
 import com.nova.stepdaddylivehd.gateway.upstream.DaddyLiveClient
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -54,16 +55,9 @@ class ServerService : LifecycleService() {
         GatewayStartHelper.cancelBootFallbacks(this)
         GatewayStartHelper.resetFallbacksScheduled()
         scheduleHttpHealthCheck()
-        val epgManager = app.epgManager
-        this.epgManager = epgManager
-        daddyLiveClient = DaddyLiveClient(
-            environment,
-            app.epgChannelMapper,
-            app.logoResolver,
-            app.channelMetaStore,
-            context = this,
-        )
-        daddyLiveClient.scheduleChannelRefresh(force = false)
+        this.epgManager = app.epgManager
+        // Kick HTTP on IO — DaddyLiveClient disk parse must not block main (boot ANR).
+        startGateway()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -112,10 +106,11 @@ class ServerService : LifecycleService() {
                 }
                 try {
                     val app = application as GatewayApp
+                    val client = ensureDaddyLiveClient(app)
                     gatewayServer = GatewayServer(
                         this@ServerService,
                         environment,
-                        daddyLiveClient,
+                        client,
                         epgManager,
                         app.logoResolver,
                         app.channelMetaStore,
@@ -123,12 +118,12 @@ class ServerService : LifecycleService() {
                     environment.serverRunning = true
                     streamHealthWatchdog?.stop()
                     streamHealthWatchdog = StreamHealthWatchdog(
-                        client = daddyLiveClient,
+                        client = client,
                         environment = environment,
                         onPersistentFailure = { restartGatewayAfterFailure() },
                     ).also { it.start() }
-                    daddyLiveClient.reportHealthyStart()
-                    val channelCount = daddyLiveClient.channels.size
+                    client.reportHealthyStart()
+                    val channelCount = client.channels.size
                     if (!skipReadyBanner) {
                         mainHandler.post { showServerReadyIfBackground(channelCount) }
                     }
@@ -136,19 +131,7 @@ class ServerService : LifecycleService() {
                     GatewayStartHelper.schedulePeriodicEnsureAlive(this@ServerService)
                     notifyForegroundIfVisible(R.string.toast_server_running)
                     epgManager.schedulePeriodicRefresh { daddyLiveClient.channels }
-                    daddyLiveClient.scheduleChannelRefresh(force = true) {
-                        updateRunningNotification()
-                        daddyLiveClient.schedulePrewarmDelayed()
-                        app.logoResolver.schedulePrewarm(
-                            daddyLiveClient.channels.map { it.name to it.tvgId },
-                        )
-                        if (!skipReadyBanner && !MainActivity.isInForeground) {
-                            showReadyBanner(daddyLiveClient.channels.size)
-                        }
-                        if (!epgManager.epgReady()) {
-                            epgManager.scheduleRefresh(daddyLiveClient.channels, force = true)
-                        }
-                    }
+                    scheduleDeferredBootChannelRefresh(skipReadyBanner)
                 } catch (exc: Exception) {
                     Log.e(TAG, "Failed to start gateway on port ${environment.port}", exc)
                     gatewayServer = null
@@ -172,8 +155,48 @@ class ServerService : LifecycleService() {
         }
     }
 
+    private suspend fun ensureDaddyLiveClient(app: GatewayApp): DaddyLiveClient {
+        if (::daddyLiveClient.isInitialized) {
+            return daddyLiveClient
+        }
+        daddyLiveClient = DaddyLiveClient(
+            environment,
+            app.epgChannelMapper,
+            app.logoResolver,
+            app.channelMetaStore,
+            context = this,
+        )
+        return daddyLiveClient
+    }
+
+    /**
+     * Serve disk-cached channels first; defer upstream refresh so boot-time CPU/network
+     * stays available for HTTP listen + first playlist/stream requests.
+     */
+    private fun scheduleDeferredBootChannelRefresh(skipReadyBanner: Boolean) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            delay(BOOT_CHANNEL_REFRESH_DEFER_MS)
+            if (!isServiceActive || !::daddyLiveClient.isInitialized) return@launch
+            val app = application as GatewayApp
+            daddyLiveClient.scheduleChannelRefresh(force = true) {
+                updateRunningNotification()
+                daddyLiveClient.schedulePrewarmDelayed()
+                app.logoResolver.schedulePrewarm(
+                    daddyLiveClient.channels.map { it.name to it.tvgId },
+                )
+                if (!skipReadyBanner && !MainActivity.isInForeground) {
+                    showReadyBanner(daddyLiveClient.channels.size)
+                }
+                if (!epgManager.epgReady()) {
+                    epgManager.scheduleRefresh(daddyLiveClient.channels, force = true)
+                }
+            }
+        }
+    }
+
     private fun updateRunningNotification() {
-        val channelCount = daddyLiveClient.channels.size
+        val channelCount =
+            if (::daddyLiveClient.isInitialized) daddyLiveClient.channels.size else lastKnownChannelCount
         lastKnownChannelCount = channelCount
         startForeground(
             GatewayNotifier.NOTIFICATION_ID_ONGOING,
@@ -309,7 +332,7 @@ class ServerService : LifecycleService() {
     }
 
     private fun restartGatewayAfterFailure() {
-        if (daddyLiveClient.shouldSuppressRestartForOutage()) {
+        if (::daddyLiveClient.isInitialized && daddyLiveClient.shouldSuppressRestartForOutage()) {
             Log.w(TAG, "Suppressing gateway restart during upstream outage/cache-serve mode")
             return
         }
@@ -320,8 +343,10 @@ class ServerService : LifecycleService() {
                 streamHealthWatchdog = null
                 gatewayServer?.stop()
                 gatewayServer = null
-                daddyLiveClient.invalidateStaleCaches()
-                daddyLiveClient.scheduleChannelRefresh(force = true)
+                if (::daddyLiveClient.isInitialized) {
+                    daddyLiveClient.invalidateStaleCaches()
+                    daddyLiveClient.scheduleChannelRefresh(force = true)
+                }
             }
             startGateway(skipReadyBanner = true)
         }
@@ -340,6 +365,7 @@ class ServerService : LifecycleService() {
         const val ACTION_STOP = "com.nova.stepdaddylivehd.gateway.action.STOP"
         const val ACTION_ENSURE_GATEWAY = "com.nova.stepdaddylivehd.gateway.action.ENSURE_GATEWAY"
         private const val HTTP_HEALTH_CHECK_MS = 90_000L
+        private const val BOOT_CHANNEL_REFRESH_DEFER_MS = 45_000L
         private const val REQUEST_CODE_SERVER_READY = 30_200
     }
 }

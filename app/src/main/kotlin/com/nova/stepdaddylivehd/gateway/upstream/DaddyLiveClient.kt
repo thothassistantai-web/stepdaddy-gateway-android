@@ -81,8 +81,8 @@ class DaddyLiveClient(
     private var lastChannelRefreshMs: Long = 0L
 
     init {
-        loadDiskCache()
         refreshScope.launch {
+            loadDiskCache()
             staleGoodCacheStore.purgeExpired(GatewayConfig.STALE_DISK_TTL_MS)
         }
     }

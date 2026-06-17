@@ -23,10 +23,12 @@ class HealthRoutes(
 
     suspend fun health(call: ApplicationCall) {
         val healing = client.healingSnapshot()
+        val channelCount = client.channels.size
         val payload = HealthResponse(
             ok = true,
+            starting = channelCount == 0,
             version = BuildConfig.VERSION_NAME,
-            channels = client.channels.size,
+            channels = channelCount,
             port = environment.port,
             baseUrl = environment.loopbackBase(),
             upstreamBaseUrl = client.activeBaseUrl,

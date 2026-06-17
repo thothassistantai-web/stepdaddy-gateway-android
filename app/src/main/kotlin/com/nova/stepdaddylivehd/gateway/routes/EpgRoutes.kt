@@ -19,7 +19,9 @@ class EpgRoutes(
 ) {
     suspend fun epgXml(call: ApplicationCall) {
         try {
-            client.ensureChannels()
+            if (client.channels.isEmpty()) {
+                client.ensureChannels()
+            }
             val channels = client.channels
             epgManager.maybeTriggerStaleRefresh(channels)
 

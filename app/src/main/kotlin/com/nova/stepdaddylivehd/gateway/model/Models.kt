@@ -53,6 +53,8 @@ data class HealingStatus(
 @Serializable
 data class HealthResponse(
     val ok: Boolean,
+    /** True while HTTP is up but the channel list is still empty (disk cache / upstream pending). */
+    val starting: Boolean = false,
     val version: String,
     val channels: Int,
     val port: Int,
