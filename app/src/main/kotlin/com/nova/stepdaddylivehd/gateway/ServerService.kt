@@ -22,6 +22,7 @@ class ServerService : LifecycleService() {
     private lateinit var daddyLiveClient: DaddyLiveClient
     private lateinit var epgManager: com.nova.stepdaddylivehd.gateway.epg.EpgManager
     private var gatewayServer: GatewayServer? = null
+    private var streamHealthWatchdog: StreamHealthWatchdog? = null
     private val startMutex = Mutex()
     private val mainHandler = Handler(Looper.getMainLooper())
     @Volatile
@@ -88,6 +89,12 @@ class ServerService : LifecycleService() {
                     gatewayServer = GatewayServer(this@ServerService, environment, daddyLiveClient, epgManager, app.logoResolver)
                         .also { it.start() }
                     environment.serverRunning = true
+                    streamHealthWatchdog?.stop()
+                    streamHealthWatchdog = StreamHealthWatchdog(
+                        client = daddyLiveClient,
+                        environment = environment,
+                        onPersistentFailure = { restartGatewayAfterFailure() },
+                    ).also { it.start() }
                     val channelCount = daddyLiveClient.channels.size
                     mainHandler.post { showServerReadyIfBackground(channelCount) }
                     updateRunningNotification()
@@ -141,6 +148,8 @@ class ServerService : LifecycleService() {
     }
 
     private fun stopGateway() {
+        streamHealthWatchdog?.stop()
+        streamHealthWatchdog = null
         gatewayServer?.stop()
         gatewayServer = null
         environment.serverRunning = false
@@ -159,6 +168,8 @@ class ServerService : LifecycleService() {
     }
 
     override fun onDestroy() {
+        streamHealthWatchdog?.stop()
+        streamHealthWatchdog = null
         gatewayServer?.stop()
         gatewayServer = null
         environment.serverRunning = false
@@ -231,6 +242,21 @@ class ServerService : LifecycleService() {
             Log.i(TAG, "Launched server-ready activity (channels=$channelCount)")
         }.onFailure { exc ->
             Log.w(TAG, "Server-ready activity launch failed: ${exc.message}")
+        }
+    }
+
+    private fun restartGatewayAfterFailure() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            startMutex.withLock {
+                Log.w(TAG, "Restarting gateway after persistent upstream failures")
+                streamHealthWatchdog?.stop()
+                streamHealthWatchdog = null
+                gatewayServer?.stop()
+                gatewayServer = null
+                daddyLiveClient.invalidateStaleCaches()
+                daddyLiveClient.scheduleChannelRefresh(force = true)
+            }
+            startGateway()
         }
     }
 

@@ -24,6 +24,16 @@ data class UpstreamManifest(
 )
 
 @Serializable
+data class HealingStatus(
+    val lastAction: String = "none",
+    val streamFailures: Int = 0,
+    val deadMirrors: Int = 0,
+    val streamCacheEntries: Int = 0,
+    val upstreamCacheEntries: Int = 0,
+    val recentActions: List<String> = emptyList(),
+)
+
+@Serializable
 data class HealthResponse(
     val ok: Boolean,
     val version: String,
@@ -34,6 +44,7 @@ data class HealthResponse(
     val epgReady: Boolean = false,
     val epgProgrammeCount: Int = 0,
     val epgAgeSeconds: Long? = null,
+    val healing: HealingStatus? = null,
 )
 
 @Serializable

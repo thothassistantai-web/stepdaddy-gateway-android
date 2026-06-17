@@ -70,6 +70,18 @@ Proof image: `/home/nova/livehd/current/fusa-boot-banner-proof.png` — shows *"
 | **TiviMate HLS** | Manifests use **`/content/` proxy** (encrypted URLs) matching Linux gateway — required for segment referer headers. |
 | **Channel logos** | Resolved from bundled `logos_db_cache.csv` via `tvg-id`; served at `/logo/{token}` with disk cache. |
 
+### Self-healing streaming (2026-06-17)
+
+| Mechanism | Behavior |
+|-----------|----------|
+| **StreamHealthWatchdog** | Every 120s probes channels 51+857 and mirror `/api/channels`; logs to `StreamHealth` tag |
+| **Cache invalidation** | After 2 stream failures per channel, purges stream + upstream cache for that channel |
+| **Mirror failover** | CDN HTTP 403/500 no longer marks daddylive mirror dead (only resportz/API failures do) |
+| **HLS error manifest** | `/tivimate-stream/` returns `#EXTM3U` error body on upstream fail — TiviMate fails fast vs JSON spinner |
+| **Playlist cache bust** | `Cache-Control: no-cache, no-store, must-revalidate` on `tivimate-playlist.m3u8` |
+| **Gateway restart** | After 3 consecutive watchdog probe failures, `ServerService` restarts HTTP server + purges stale caches |
+| **Health telemetry** | `GET /health` includes `healing` object (`lastAction`, `recentActions`, cache sizes) |
+
 ### Run boot test
 
 ```bash

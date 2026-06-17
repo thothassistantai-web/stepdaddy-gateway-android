@@ -3,6 +3,7 @@ package com.nova.stepdaddylivehd.gateway.routes
 import com.nova.stepdaddylivehd.gateway.GatewayEnvironment
 import com.nova.stepdaddylivehd.gateway.upstream.DaddyLiveClient
 import com.nova.stepdaddylivehd.gateway.upstream.GatewayConfig
+import com.nova.stepdaddylivehd.gateway.upstream.HlsErrorManifest
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -15,8 +16,7 @@ import io.ktor.server.response.respondText
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.nio.charset.StandardCharsets
 
@@ -30,6 +30,7 @@ class StreamRoutes(
             channelId,
             attachmentName = "$channelId.m3u8",
             useProxy = true,
+            hlsErrors = true,
         )
     }
 
@@ -40,6 +41,7 @@ class StreamRoutes(
             attachmentName = "$channelId.m3u8",
             attachment = true,
             useProxy = false,
+            hlsErrors = false,
         )
     }
 
@@ -49,29 +51,23 @@ class StreamRoutes(
         attachmentName: String,
         attachment: Boolean = false,
         useProxy: Boolean = false,
+        hlsErrors: Boolean = false,
     ) {
         if (call.request.httpMethod.value == "HEAD") {
             call.respondText("", ContentType("application", "vnd.apple.mpegurl"))
             return
         }
         try {
-            val playlist = coroutineScope {
-                val resolveJob = async {
+            val playlist = withContext(Dispatchers.IO) {
+                withTimeout(GatewayConfig.STREAM_FETCH_TIMEOUT_MS) {
                     client.resolveStream(
                         channelId,
                         useProxy = useProxy,
                         apiUrl = environment.loopbackBase(),
                     )
                 }
-                try {
-                    withTimeout(GatewayConfig.STREAM_FETCH_TIMEOUT_MS) {
-                        resolveJob.await()
-                    }
-                } catch (exc: TimeoutCancellationException) {
-                    resolveJob.cancel()
-                    throw exc
-                }
             }
+            client.noteStreamSuccess(channelId)
             if (attachment) {
                 call.response.header(
                     HttpHeaders.ContentDisposition,
@@ -86,33 +82,66 @@ class StreamRoutes(
                 contentType = ContentType("application", "vnd.apple.mpegurl"),
             )
         } catch (_: TimeoutCancellationException) {
-            call.response.header(HttpHeaders.RetryAfter, "3")
-            call.respond(
-                HttpStatusCode.GatewayTimeout,
-                mapOf("error" to "upstream_timeout", "transient" to true),
+            client.noteStreamFailure(channelId, IllegalStateException("upstream_timeout"))
+            respondStreamError(
+                call,
+                hlsErrors = hlsErrors,
+                status = HttpStatusCode.GatewayTimeout,
+                message = "upstream timeout — retry shortly",
+                retryAfter = "3",
             )
         } catch (exc: CancellationException) {
             throw exc
         } catch (_: IndexOutOfBoundsException) {
-            call.respond(HttpStatusCode.NotFound, mapOf("error" to "Stream not found"))
+            client.noteStreamFailure(channelId, IllegalStateException("stream_not_found"))
+            respondStreamError(
+                call,
+                hlsErrors = hlsErrors,
+                status = HttpStatusCode.NotFound,
+                message = "channel not found",
+            )
         } catch (exc: Exception) {
+            client.noteStreamFailure(channelId, exc)
             val transient = isTransientStreamError(exc)
             val status = when {
                 exc.message == "upstream_busy" -> HttpStatusCode.ServiceUnavailable
                 transient -> HttpStatusCode.GatewayTimeout
                 else -> HttpStatusCode.BadGateway
             }
-            if (transient || exc.message == "upstream_busy") {
-                call.response.header(HttpHeaders.RetryAfter, "3")
-            }
-            call.respond(
-                status,
-                mapOf(
-                    "error" to (exc.message ?: "upstream_error"),
-                    "transient" to (transient || exc.message == "upstream_busy"),
-                ),
+            respondStreamError(
+                call,
+                hlsErrors = hlsErrors,
+                status = status,
+                message = exc.message ?: "upstream_error",
+                retryAfter = if (transient || exc.message == "upstream_busy") "3" else null,
             )
         }
+    }
+
+    private suspend fun respondStreamError(
+        call: ApplicationCall,
+        hlsErrors: Boolean,
+        status: HttpStatusCode,
+        message: String,
+        retryAfter: String? = null,
+    ) {
+        if (retryAfter != null) {
+            call.response.header(HttpHeaders.RetryAfter, retryAfter)
+        }
+        if (hlsErrors) {
+            call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+            call.response.header(HttpHeaders.CacheControl, "no-cache")
+            call.respondText(
+                HlsErrorManifest.build(message),
+                ContentType("application", "vnd.apple.mpegurl"),
+                status,
+            )
+            return
+        }
+        call.respond(
+            status,
+            mapOf("error" to message, "transient" to (retryAfter != null)),
+        )
     }
 
     private fun isTransientStreamError(exc: Exception): Boolean {

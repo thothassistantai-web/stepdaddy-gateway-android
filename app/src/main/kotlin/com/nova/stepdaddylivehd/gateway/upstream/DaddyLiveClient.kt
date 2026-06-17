@@ -39,6 +39,7 @@ class DaddyLiveClient(
     private val refreshScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val loadMutex = Mutex()
     private val cacheMutex = Mutex()
+    private val healingLock = Any()
     private val upstreamFetchSem = Semaphore(GatewayConfig.UPSTREAM_FETCH_MAX_CONCURRENT)
     @Volatile
     private var refreshInFlight = false
@@ -46,6 +47,10 @@ class DaddyLiveClient(
     private val staleStreamCache = mutableMapOf<String, CachedManifest>()
     private val upstreamCache = mutableMapOf<String, CachedUpstream>()
     private val deadMirrors = mutableMapOf<String, Long>()
+    private val streamFailures = mutableMapOf<String, Int>()
+    private val healingLog = ArrayDeque<String>(GatewayConfig.HEALING_LOG_MAX)
+    @Volatile
+    private var lastHealingAction: String = "none"
 
     @Volatile
     var channels: List<Channel> = emptyList()
@@ -232,7 +237,9 @@ class DaddyLiveClient(
                 Log.d(TAG, "Mirror timeout for $channelId on $baseUrl (${attemptBudget}ms)")
             } catch (exc: Exception) {
                 lastError = exc
-                markMirrorDead(baseUrl)
+                if (!isCdnFetchError(exc)) {
+                    markMirrorDead(baseUrl)
+                }
                 Log.d(TAG, "Mirror failed for $channelId on $baseUrl: ${exc.message}")
             }
         }
@@ -302,6 +309,110 @@ class DaddyLiveClient(
     private fun isDaddyLiveMirror(baseUrl: String): Boolean {
         val host = URL(baseUrl.trimEnd('/')).host.lowercase()
         return GatewayConfig.DADDYLIVE_HOSTS.any { host.contains(it) }
+    }
+
+    fun noteStreamSuccess(channelId: String) {
+        synchronized(healingLock) {
+            streamFailures.remove(channelId)
+        }
+    }
+
+    fun noteStreamFailure(channelId: String, exc: Exception) {
+        if (isTransientError(exc)) {
+            return
+        }
+        val count = synchronized(healingLock) {
+            val next = (streamFailures[channelId] ?: 0) + 1
+            streamFailures[channelId] = next
+            next
+        }
+        Log.d(TAG, "Stream failure channel=$channelId count=$count: ${exc.message}")
+        if (count >= GatewayConfig.STREAM_FAILURE_INVALIDATE_THRESHOLD) {
+            refreshScope.launch {
+                invalidateChannelCaches(channelId)
+                recordHealingAction("invalidate_channel $channelId failures=$count")
+            }
+        }
+    }
+
+    fun recordHealingAction(action: String) {
+        synchronized(healingLock) {
+            recordHealingActionLocked(action)
+        }
+    }
+
+    private fun recordHealingActionLocked(action: String) {
+        val entry = "${System.currentTimeMillis()}:$action"
+        lastHealingAction = action
+        healingLog.addLast(entry)
+        while (healingLog.size > GatewayConfig.HEALING_LOG_MAX) {
+            healingLog.removeFirst()
+        }
+        Log.i(TAG, "Healing: $action")
+    }
+
+    fun healingSnapshot(): HealingSnapshot = synchronized(healingLock) {
+        HealingSnapshot(
+            lastAction = lastHealingAction,
+            recentActions = healingLog.toList(),
+            streamFailureCount = streamFailures.size,
+            deadMirrorCount = deadMirrors.size,
+            streamCacheSize = streamCache.size,
+            upstreamCacheSize = upstreamCache.size,
+        )
+    }
+
+    suspend fun invalidateChannelCaches(channelId: String) {
+        cacheMutex.withLock {
+            invalidateChannelCachesLocked(channelId)
+        }
+    }
+
+    private fun invalidateChannelCachesLocked(channelId: String) {
+        streamCache.keys.filter { it.startsWith("$channelId:") }.forEach { streamCache.remove(it) }
+        staleStreamCache.keys.filter { it.startsWith("$channelId:") }.forEach { staleStreamCache.remove(it) }
+        upstreamCache.remove(channelId)
+        synchronized(healingLock) {
+            streamFailures.remove(channelId)
+        }
+    }
+
+    suspend fun invalidateStaleCaches() {
+        cacheMutex.withLock {
+            val now = System.currentTimeMillis()
+            streamCache.entries.removeIf { now - it.value.savedAtMs > GatewayConfig.STREAM_CACHE_TTL_MS }
+            upstreamCache.entries.removeIf { now - it.value.savedAtMs > GatewayConfig.UPSTREAM_CACHE_TTL_MS }
+        }
+        recordHealingAction("purge_stale_caches")
+    }
+
+    suspend fun probeMirrors(): Boolean {
+        for (baseUrl in orderedMirrorUrls()) {
+            if (isMirrorDead(baseUrl)) continue
+            try {
+                val rows = fetchChannelRows(baseUrl)
+                if (rows.isNotEmpty()) {
+                    markMirrorAlive(baseUrl)
+                    return true
+                }
+            } catch (_: Exception) {
+                // try next mirror
+            }
+        }
+        return false
+    }
+
+    private fun isTransientError(exc: Exception): Boolean {
+        val message = exc.message.orEmpty()
+        if (message == "upstream_busy") return true
+        if (message.contains("timeout", ignoreCase = true)) return true
+        if (message.contains("timed out", ignoreCase = true)) return true
+        return false
+    }
+
+    private fun isCdnFetchError(exc: Exception): Boolean {
+        val message = exc.message.orEmpty()
+        return message.startsWith("HTTP 4") || message.startsWith("HTTP 5")
     }
 
     private fun isMirrorDead(baseUrl: String): Boolean {
@@ -382,6 +493,15 @@ class DaddyLiveClient(
     private data class CachedUpstream(
         val savedAtMs: Long,
         val manifest: UpstreamManifest,
+    )
+
+    data class HealingSnapshot(
+        val lastAction: String,
+        val recentActions: List<String>,
+        val streamFailureCount: Int,
+        val deadMirrorCount: Int,
+        val streamCacheSize: Int,
+        val upstreamCacheSize: Int,
     )
 
     companion object {

@@ -23,6 +23,13 @@ object GatewayConfig {
     const val UPSTREAM_WRITE_TIMEOUT_SEC = 20L
     const val UPSTREAM_CALL_TIMEOUT_SEC = 22L
     val PREWARM_CHANNEL_IDS = listOf("857", "51", "360")
+    val WATCHDOG_PROBE_CHANNEL_IDS = listOf("51", "857")
+    const val WATCHDOG_INTERVAL_MS = 120_000L
+    const val WATCHDOG_INITIAL_DELAY_MS = 30_000L
+    const val WATCHDOG_PROBE_TIMEOUT_MS = 25_000L
+    const val WATCHDOG_RESTART_THRESHOLD = 3
+    const val STREAM_FAILURE_INVALIDATE_THRESHOLD = 2
+    const val HEALING_LOG_MAX = 20
 
     val DADDYLIVE_HOSTS = setOf("daddylive.org", "daddylive.li", "daddylive.eu")
 }

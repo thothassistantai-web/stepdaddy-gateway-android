@@ -40,6 +40,10 @@ class ContentRoutes(
                 serveBinary(call, upstreamUrl, referer = upstreamUrl)
             }
         } catch (exc: Exception) {
+            client.recordHealingAction("content_fail ${exc.message?.take(60)}")
+            if (isRetriableContentError(exc)) {
+                client.invalidateStaleCaches()
+            }
             call.respond(
                 HttpStatusCode.BadGateway,
                 mapOf("error" to (exc.message ?: "content_proxy_error")),
@@ -149,5 +153,13 @@ class ContentRoutes(
     private fun isM3u8Url(url: String): Boolean {
         val path = URL(url).path.lowercase()
         return path.endsWith(".m3u8") || path.endsWith(".m3u")
+    }
+
+    private fun isRetriableContentError(exc: Exception): Boolean {
+        val message = exc.message.orEmpty()
+        return message.contains("HTTP 403") ||
+            message.contains("HTTP 502") ||
+            message.contains("HTTP 504") ||
+            message.contains("HTTP 500")
     }
 }

@@ -3,6 +3,7 @@ package com.nova.stepdaddylivehd.gateway.routes
 import com.nova.stepdaddylivehd.gateway.BuildConfig
 import com.nova.stepdaddylivehd.gateway.GatewayEnvironment
 import com.nova.stepdaddylivehd.gateway.epg.EpgManager
+import com.nova.stepdaddylivehd.gateway.model.HealingStatus
 import com.nova.stepdaddylivehd.gateway.model.HealthResponse
 import com.nova.stepdaddylivehd.gateway.model.TivimateSetup
 import com.nova.stepdaddylivehd.gateway.upstream.DaddyLiveClient
@@ -20,6 +21,7 @@ class HealthRoutes(
     private val json = Json { prettyPrint = true; encodeDefaults = true }
 
     suspend fun health(call: ApplicationCall) {
+        val healing = client.healingSnapshot()
         val payload = HealthResponse(
             ok = true,
             version = BuildConfig.VERSION_NAME,
@@ -30,6 +32,14 @@ class HealthRoutes(
             epgReady = epgManager.epgReady(),
             epgProgrammeCount = epgManager.programmeCount(),
             epgAgeSeconds = epgManager.ageSeconds(),
+            healing = HealingStatus(
+                lastAction = healing.lastAction,
+                streamFailures = healing.streamFailureCount,
+                deadMirrors = healing.deadMirrorCount,
+                streamCacheEntries = healing.streamCacheSize,
+                upstreamCacheEntries = healing.upstreamCacheSize,
+                recentActions = healing.recentActions.takeLast(5),
+            ),
         )
         call.respondText(
             json.encodeToString(payload),

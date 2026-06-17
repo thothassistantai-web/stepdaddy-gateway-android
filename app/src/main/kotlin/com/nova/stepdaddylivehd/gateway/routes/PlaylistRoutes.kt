@@ -9,6 +9,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.httpMethod
+import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 
@@ -35,6 +36,8 @@ class PlaylistRoutes(
             } else {
                 PlaylistBuilder.minimalPlaylist(environment.loopbackBase())
             }
+            call.response.header(HttpHeaders.CacheControl, "no-cache, no-store, must-revalidate")
+            call.response.header(HttpHeaders.Pragma, "no-cache")
             call.respondText(body, ContentType("application", "vnd.apple.mpegurl"))
         } catch (exc: Exception) {
             call.respond(
