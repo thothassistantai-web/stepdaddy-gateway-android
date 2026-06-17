@@ -25,7 +25,7 @@ class ServerReadyActivity : Activity() {
         val binding = ActivityServerReadyBinding.inflate(layoutInflater)
         setContentView(binding.root)
         val channelCount = intent.getIntExtra(EXTRA_CHANNEL_COUNT, 0)
-        binding.textBody.text = getString(R.string.alert_server_running_text, channelCount)
+        binding.textBody.text = GatewayOverlay.readyBodyText(this, channelCount)
         dismissHandler.postDelayed({ finish() }, DISMISS_MS)
     }
 

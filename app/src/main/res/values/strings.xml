@@ -3,6 +3,8 @@
     <string name="action_start">Start server</string>
     <string name="action_stop">Stop</string>
     <string name="action_copy">Copy URL</string>
+    <string name="label_tivimate_setup">TiviMate setup</string>
+    <string name="hint_tivimate_setup">One-time: add the playlist and EPG URLs below in TiviMate (Settings → Playlists). TiviMate does not show gateway status — check the home-screen banner or this app.</string>
     <string name="label_playlist">TiviMate playlist</string>
     <string name="label_epg">EPG URL</string>
     <string name="label_health">Health check</string>
@@ -25,6 +27,7 @@
     <string name="notification_error_channel_desc">Alerts when the gateway fails to start</string>
     <string name="alert_server_running_title">StepDaddy Gateway running</string>
     <string name="alert_server_running_text">Ready for TiviMate — %1$d channels</string>
+    <string name="alert_server_running_loading">Ready for TiviMate — loading channels…</string>
     <string name="alert_server_failed_title">StepDaddy Gateway failed</string>
     <string name="alert_server_failed_text">Could not start server: %1$s</string>
     <string name="action_open">Open</string>

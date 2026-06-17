@@ -46,16 +46,28 @@ Automated script: `scripts/fusa-boot-test.sh`
 | Cycle | Date (UTC) | Health first 200 | Endpoints | Overlay on home | Notes |
 |-------|------------|------------------|-----------|-----------------|-------|
 | Baseline (manual) | 2026-06-16 | ~81s | 3/3 | PASS | DISMISS_MS 8s→15s (uncommitted initially) |
-| **Cycle 1** | 2026-06-17 | **48s** | 3/3 | PASS (logcat) | FGS trampoline, overlay re-show, channel preload in `onCreate`; script stdout bug |
+| **Cycle 1** | 2026-06-17 | **48s** | 3/3 | PASS (logcat) | FGS trampoline, overlay re-show @40s, channel preload in `onCreate`; script stdout bug |
 | **Cycle 2** | 2026-06-17 | **30s** | 3/3 | **PASS (screencap)** | `GatewayApp` boot kick, tighter alarms (8/20/40/80s), 2s launcher settle |
-| **Cycle 3** | 2026-06-17 | **4s** | 3/3 | **PASS (screencap)** | 3rd overlay re-show @40s, WM expedited @30s, BootReceiver+3s retry |
+| **Cycle 3** | 2026-06-17 | **4s** | 3/3 | **PASS (screencap)** | Optional overlay re-show @40s only (20s removed), WM expedited @30s, BootReceiver+3s retry |
 | **Release** | 2026-06-17 | **20s** | 2/3 | PASS (logcat) | `com.nova.stepdaddylivehd.gateway` (debug-signed); `/epg.xml` 503 at t+20s |
 
-**Timing trend:** 81s → 48s → 30s → **4s** (debug) time-to-health after reboot (poll from host, from wlan0 IP available). Release build: **20s** (no debug suffix; EPG still building at first health).
+**Timing trend:** 81s → 48s → 30s → **4s** (debug) time-to-health after reboot (poll from host, from wlan0 IP available). Release build: **~20–80s** on cold boot depending on channel/EPG preload (no debug suffix; EPG may still be building at first health).
+
+**Overlay policy:** One startup banner when the server is listening (may show “loading channels…” before the count is ready). Optional **single** re-show at **+40s** if the first banner was missed — no re-show at +20s.
 
 **Release signing:** No release keystore in repo — `assembleRelease` produces `app-release-unsigned.apk`; installed on FUSA after zipalign + debug `apksigner` for boot comparison only.
 
 Proof image: `/home/nova/livehd/current/fusa-boot-banner-proof.png` — shows *"StepDaddy Gateway running — Ready for TiviMate — 1140 channels"* overlay on Google TV home.
+
+### UX expectations (ONN / FUSA stick)
+
+| Expectation | Notes |
+|-------------|-------|
+| **Cold boot to gateway ready** | Plan for **~60–80s** after reboot before `/health` is 200 and channels are loaded (release builds; debug can be faster). |
+| **Startup banner** | One overlay when the HTTP server is listening; optional **+40s** re-show only if the first was missed. |
+| **TiviMate setup** | **One-time** — add playlist + EPG URLs in TiviMate; TiviMate does not show gateway status (use home banner or StepDaddy Gateway app). |
+| **Stream start latency** | First play per channel is **upstream-bound** (often 3–15+ s cold); warm repeats are much faster. Not a gateway bug. |
+| **Channel logos** | Default SVG served at `/ui/default-channel.svg` when upstream has no logo. |
 
 ### Run boot test
 

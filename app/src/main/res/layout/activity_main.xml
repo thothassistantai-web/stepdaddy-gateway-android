@@ -85,17 +85,42 @@
         app:layout_constraintTop_toBottomOf="@id/switchBoot" />
 
     <TextView
-        android:id="@+id/labelPlaylist"
+        android:id="@+id/labelTivimateSetup"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:text="@string/label_playlist"
+        android:text="@string/label_tivimate_setup"
         android:textColor="@color/on_background"
         android:textSize="16sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textBootHint" />
+
+    <TextView
+        android:id="@+id/textTivimateHint"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/hint_tivimate_setup"
+        android:textColor="@color/on_background_muted"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/labelTivimateSetup" />
+
+    <TextView
+        android:id="@+id/labelPlaylist"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/label_playlist"
+        android:textColor="@color/on_background"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/textTivimateHint" />
 
     <TextView
         android:id="@+id/textPlaylistUrl"

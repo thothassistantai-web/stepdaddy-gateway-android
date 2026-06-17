@@ -42,6 +42,15 @@ adb -s fusa install -r app/build/outputs/apk/debug/app-debug.apk
 
 Open **StepDaddy Gateway** on the stick → **Start server** → add playlist URL in TiviMate.
 
+### UX expectations
+
+| Topic | What to expect |
+|-------|----------------|
+| **Cold boot** | After reboot, allow **~60–80s** before the gateway is fully ready on the ONN stick (channel preload + EPG build). |
+| **Startup banner** | A brief home-screen overlay when the server starts; one optional re-show at +40s if missed. |
+| **TiviMate** | **One-time setup** — paste playlist + EPG URLs from the app. TiviMate has no gateway status UI; use the banner or open StepDaddy Gateway. |
+| **Streams** | First channel load can take several seconds (upstream resportz chain); repeat plays are faster. |
+
 ## Start on boot
 
 The gateway can start automatically after the ONN stick reboots — no need to open the app.
@@ -144,9 +153,11 @@ Served from `files/epg/epg.xml` on device. First build downloads ~55MB US_LOCALS
 
 ## TiviMate setup
 
-1. Playlist: `http://127.0.0.1:3000/tivimate-playlist.m3u8`
-2. EPG: `http://127.0.0.1:3000/epg.xml`
-3. No `adb reverse` needed when TiviMate runs on the same device.
+1. Open **StepDaddy Gateway** on the stick and copy the URLs (or type them in TiviMate).
+2. Playlist: `http://127.0.0.1:3000/tivimate-playlist.m3u8`
+3. EPG: `http://127.0.0.1:3000/epg.xml`
+4. No `adb reverse` needed when TiviMate runs on the same device.
+5. **TiviMate does not show gateway status** — check the home-screen banner or this app to confirm the gateway is running.
 
 ## Architecture
 
@@ -168,7 +179,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for Python → Kotlin route mapping.
 - `/content/` and `/key/` segment proxy routes
 - Auto proxy/direct probing (`TIVIMATE_PROXY_MODE=auto`)
 - Non-DaddyLive mirror HTML scrape (`24-7-channels.php`)
-- Channel logos (`meta.json` + logo resolver)
+- Channel logos (default SVG at `/ui/default-channel.svg`; upstream `meta.json` resolver TODO)
 - Watchdog / health-driven restart
 - SOCKS5 proxy support
 - Release signing + Play sideload updates

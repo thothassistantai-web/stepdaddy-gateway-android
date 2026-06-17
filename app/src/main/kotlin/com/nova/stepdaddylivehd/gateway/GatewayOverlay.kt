@@ -19,8 +19,8 @@ import com.nova.stepdaddylivehd.gateway.databinding.OverlayServerReadyBinding
 object GatewayOverlay {
     private const val TAG = "GatewayOverlay"
     private const val DISMISS_MS = 15_000L
-    /** Extra chances if the banner was missed on a busy TV launcher or slow screencap. */
-    private val RESHOW_DELAYS_MS = longArrayOf(20_000L, 40_000L)
+    /** Optional re-show if the startup banner was missed on a busy TV launcher. */
+    private val RESHOW_DELAYS_MS = longArrayOf(40_000L)
 
     private val mainHandler = Handler(Looper.getMainLooper())
     @Volatile
@@ -59,7 +59,7 @@ object GatewayOverlay {
         dismissActive()
         val windowManager = context.getSystemService(WindowManager::class.java)
         val binding = OverlayServerReadyBinding.inflate(LayoutInflater.from(context))
-        binding.textBody.text = context.getString(R.string.alert_server_running_text, channelCount)
+        binding.textBody.text = readyBodyText(context, channelCount)
         val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
         } else {
@@ -91,7 +91,7 @@ object GatewayOverlay {
             RESHOW_DELAYS_MS.forEach { delayMs ->
                 val reshow = Runnable {
                     if (ServerService.isServiceActive) {
-                        showInternal(context, channelCount, scheduleReshows = false)
+                        showInternal(context, ServerService.lastKnownChannelCount, scheduleReshows = false)
                     }
                 }
                 reshowRunnables.add(reshow)
@@ -101,4 +101,11 @@ object GatewayOverlay {
     }
 
     fun canDraw(context: Context): Boolean = Settings.canDrawOverlays(context.applicationContext)
+
+    internal fun readyBodyText(context: Context, channelCount: Int): String =
+        if (channelCount > 0) {
+            context.getString(R.string.alert_server_running_text, channelCount)
+        } else {
+            context.getString(R.string.alert_server_running_loading)
+        }
 }

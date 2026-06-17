@@ -126,6 +126,7 @@ class ServerService : LifecycleService() {
 
     private fun updateRunningNotification() {
         val channelCount = daddyLiveClient.channels.size
+        lastKnownChannelCount = channelCount
         startForeground(
             GatewayNotifier.NOTIFICATION_ID_ONGOING,
             GatewayNotifier.buildOngoingNotification(
@@ -237,6 +238,9 @@ class ServerService : LifecycleService() {
         @Volatile
         var isServiceActive: Boolean = false
             private set
+
+        @Volatile
+        var lastKnownChannelCount: Int = 0
 
         const val ACTION_STOP = "com.nova.stepdaddylivehd.gateway.action.STOP"
         private const val REQUEST_CODE_SERVER_READY = 30_200

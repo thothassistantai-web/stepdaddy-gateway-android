@@ -118,7 +118,7 @@ object GatewayNotifier {
             return
         }
         val appContext = context.applicationContext
-        val body = appContext.getString(R.string.alert_server_running_text, channelCount)
+        val body = GatewayOverlay.readyBodyText(appContext, channelCount)
         val builder = NotificationCompat.Builder(appContext, CHANNEL_ALERTS)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(appContext.getString(R.string.alert_server_running_title))
