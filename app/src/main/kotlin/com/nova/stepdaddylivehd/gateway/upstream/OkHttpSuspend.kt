@@ -10,7 +10,7 @@ import java.io.IOException
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-internal suspend fun OkHttpClient.executeAsync(request: Request): Response =
+suspend fun OkHttpClient.executeAsync(request: Request): Response =
     suspendCancellableCoroutine { cont ->
         val call = newCall(request)
         cont.invokeOnCancellation { call.cancel() }
@@ -33,7 +33,7 @@ internal suspend fun OkHttpClient.executeAsync(request: Request): Response =
         )
     }
 
-internal suspend fun OkHttpClient.getText(request: Request): String {
+suspend fun OkHttpClient.getText(request: Request): String {
     executeAsync(request).use { response ->
         if (!response.isSuccessful) {
             error("HTTP ${response.code} for ${request.url}")

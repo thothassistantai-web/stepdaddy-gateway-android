@@ -31,7 +31,12 @@ class EpgRoutes(
 
             epgManager.scheduleRefresh(channels, force = cached == null)
 
-            val body = cached ?: LightEpgBuilder.emptyXml()
+            if (cached != null) {
+                respondXml(call, cached, stale = true)
+                return
+            }
+
+            val body = LightEpgBuilder.emptyXml()
             if (!hasProgrammeData(body)) {
                 if (call.request.httpMethod.value == "HEAD") {
                     call.respondText("", ContentType.Application.Xml, HttpStatusCode.ServiceUnavailable)

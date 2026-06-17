@@ -37,7 +37,7 @@ class ServerService : LifecycleService() {
         environment = app.gatewayEnvironment
         val epgManager = app.epgManager
         this.epgManager = epgManager
-        daddyLiveClient = DaddyLiveClient(environment, app.epgChannelMapper, context = this)
+        daddyLiveClient = DaddyLiveClient(environment, app.epgChannelMapper, app.logoResolver, context = this)
         daddyLiveClient.scheduleChannelRefresh(force = false)
         GatewayNotifier.createChannels(this)
         startForeground(
@@ -84,7 +84,8 @@ class ServerService : LifecycleService() {
                     return@withLock
                 }
                 try {
-                    gatewayServer = GatewayServer(this@ServerService, environment, daddyLiveClient, epgManager)
+                    val app = application as GatewayApp
+                    gatewayServer = GatewayServer(this@ServerService, environment, daddyLiveClient, epgManager, app.logoResolver)
                         .also { it.start() }
                     environment.serverRunning = true
                     val channelCount = daddyLiveClient.channels.size
@@ -94,6 +95,7 @@ class ServerService : LifecycleService() {
                     epgManager.schedulePeriodicRefresh { daddyLiveClient.channels }
                     daddyLiveClient.scheduleChannelRefresh(force = true) {
                         updateRunningNotification()
+                        daddyLiveClient.schedulePrewarmDelayed()
                         if (!MainActivity.isInForeground) {
                             showReadyBanner(daddyLiveClient.channels.size)
                         }

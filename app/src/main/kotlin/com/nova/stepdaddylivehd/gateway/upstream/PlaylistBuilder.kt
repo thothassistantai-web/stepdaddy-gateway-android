@@ -13,25 +13,28 @@ object PlaylistBuilder {
         channels: List<Channel>,
         baseUrl: String,
         dlhdOrigin: String,
+        logoResolver: LogoResolver? = null,
     ): String {
         val base = baseUrl.trimEnd('/')
         val lines = mutableListOf(
             "#EXTM3U url-tvg=\"$base/epg.xml\" x-tvg-url=\"$base/epg.xml\"",
         )
         channels.forEach { channel ->
-            lines += "#EXTINF:-1 ${extinfAttrs(channel, base)},${displayTitle(channel)}"
+            lines += "#EXTINF:-1 ${extinfAttrs(channel, base, logoResolver)},${displayTitle(channel)}"
             lines += tivimateStreamLine(base, channel.id, dlhdOrigin)
         }
         return lines.joinToString("\n") + "\n"
     }
 
-    private fun extinfAttrs(channel: Channel, base: String): String {
+    private fun extinfAttrs(channel: Channel, base: String, logoResolver: LogoResolver?): String {
         val attrs = mutableListOf<String>()
         channel.tvgId?.let {
             attrs += """tvg-id="${escape(it)}""""
             attrs += """tvg-name="${escape(channel.name)}""""
         }
-        val logo = channel.logo ?: "$base/ui/default-channel.svg"
+        val logo = logoResolver?.resolveLogoUrl(base, channel.name, channel.tvgId)
+            ?: channel.logo
+            ?: "$base/ui/default-channel.svg"
         attrs += """tvg-logo="${escape(logo)}""""
         attrs += """group-title="${escape("Live TV")}""""
         attrs += """tvg-chno="${escape(channel.id)}""""

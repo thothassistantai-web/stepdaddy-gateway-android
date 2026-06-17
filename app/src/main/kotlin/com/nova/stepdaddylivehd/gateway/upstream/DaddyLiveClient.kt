@@ -11,10 +11,14 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -25,6 +29,7 @@ import java.util.concurrent.TimeUnit
 class DaddyLiveClient(
     private val environment: GatewayEnvironment,
     private val epgChannelMapper: EpgChannelMapper? = null,
+    private val logoResolver: LogoResolver? = null,
     private val resportzParser: ResportzParser = ResportzParser(),
     private val client: OkHttpClient = ResportzParser.defaultClient(),
     context: Context,
@@ -33,10 +38,13 @@ class DaddyLiveClient(
     private val json = Json { ignoreUnknownKeys = true }
     private val refreshScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val loadMutex = Mutex()
-    private val streamMutex = Mutex()
+    private val cacheMutex = Mutex()
+    private val upstreamFetchSem = Semaphore(GatewayConfig.UPSTREAM_FETCH_MAX_CONCURRENT)
     @Volatile
     private var refreshInFlight = false
     private val streamCache = mutableMapOf<String, CachedManifest>()
+    private val staleStreamCache = mutableMapOf<String, CachedManifest>()
+    private val upstreamCache = mutableMapOf<String, CachedUpstream>()
     private val deadMirrors = mutableMapOf<String, Long>()
 
     @Volatile
@@ -61,10 +69,37 @@ class DaddyLiveClient(
             refreshInFlight = true
             try {
                 runCatching { ensureChannels(force = force) }
-                    .onSuccess { onComplete?.invoke() }
+                    .onSuccess {
+                        onComplete?.invoke()
+                        schedulePrewarmDelayed()
+                    }
                     .onFailure { exc -> Log.w(TAG, "Channel refresh failed", exc) }
             } finally {
                 refreshInFlight = false
+            }
+        }
+    }
+
+    fun schedulePrewarmDelayed() {
+        refreshScope.launch {
+            delay(5_000L)
+            schedulePrewarm()
+        }
+    }
+
+    fun schedulePrewarm() {
+        refreshScope.launch {
+            for (channelId in GatewayConfig.PREWARM_CHANNEL_IDS) {
+                runCatching {
+                    resolveStream(
+                        channelId,
+                        useProxy = true,
+                        apiUrl = environment.loopbackBase(),
+                    )
+                }
+                    .onFailure { exc ->
+                        Log.d(TAG, "Prewarm skipped for $channelId: ${exc.message}")
+                    }
             }
         }
     }
@@ -87,45 +122,125 @@ class DaddyLiveClient(
         }
     }
 
-    suspend fun resolveStream(channelId: String): String =
-        withContext(Dispatchers.IO) {
-            val now = System.currentTimeMillis()
-            streamMutex.withLock {
-                val cached = streamCache[channelId]
-                if (cached != null && now - cached.savedAtMs < GatewayConfig.STREAM_CACHE_TTL_MS) {
-                    return@withContext cached.rewrittenPlaylist
-                }
+    suspend fun resolveStream(
+        channelId: String,
+        useProxy: Boolean = false,
+        apiUrl: String = "",
+    ): String {
+        val now = System.currentTimeMillis()
+        val cacheKey = "$channelId:${if (useProxy) 1 else 0}:$apiUrl"
+        cacheMutex.withLock {
+            val cached = streamCache[cacheKey]
+            if (cached != null && now - cached.savedAtMs < GatewayConfig.STREAM_CACHE_TTL_MS) {
+                return cached.rewrittenPlaylist
             }
+        }
+        try {
             val manifest = fetchManifestWithMirrors(channelId)
             val rewritten = M3u8Rewriter.rewrite(
                 manifest.playlistText,
                 manifest.masterUrl,
-                useProxy = false,
+                refererHost = manifest.refererHost,
+                useProxy = useProxy,
+                apiUrl = apiUrl,
             )
-            streamMutex.withLock {
-                streamCache[channelId] = CachedManifest(System.currentTimeMillis(), rewritten)
+            cacheMutex.withLock {
+                val entry = CachedManifest(System.currentTimeMillis(), rewritten)
+                streamCache[cacheKey] = entry
+                staleStreamCache[cacheKey] = entry
             }
-            rewritten
+            return rewritten
+        } catch (exc: Exception) {
+            if (exc is CancellationException) {
+                throw exc
+            }
+            cacheMutex.withLock {
+                val stale = staleStreamCache[cacheKey]
+                if (stale != null && now - stale.savedAtMs < GatewayConfig.STALE_STREAM_TTL_MS) {
+                    Log.w(TAG, "Serving stale stream for $channelId after ${exc.message}")
+                    return stale.rewrittenPlaylist
+                }
+            }
+            throw exc
         }
+    }
 
     private suspend fun fetchManifestWithMirrors(channelId: String): UpstreamManifest {
+        val now = System.currentTimeMillis()
+        cacheMutex.withLock {
+            val cached = upstreamCache[channelId]
+            if (cached != null && now - cached.savedAtMs < GatewayConfig.UPSTREAM_CACHE_TTL_MS) {
+                return cached.manifest
+            }
+        }
+        if (!upstreamFetchSem.tryAcquire()) {
+            cacheMutex.withLock {
+                val stale = upstreamCache[channelId]
+                if (stale != null && now - stale.savedAtMs < GatewayConfig.UPSTREAM_STALE_TTL_MS) {
+                    Log.w(TAG, "Serving stale upstream for $channelId (fetch slots full)")
+                    return stale.manifest
+                }
+            }
+            throw IllegalStateException("upstream_busy")
+        }
+        try {
+            return fetchManifestWithMirrorsInner(channelId, now)
+        } finally {
+            upstreamFetchSem.release()
+        }
+    }
+
+    private suspend fun fetchManifestWithMirrorsInner(
+        channelId: String,
+        startedAtMs: Long,
+    ): UpstreamManifest {
         var lastError: Exception? = null
+        val resportzTimedOut = mutableSetOf<String>()
         for (baseUrl in orderedMirrorUrls()) {
             if (isMirrorDead(baseUrl)) continue
+            val mirrorKey = baseUrl.trimEnd('/')
+            if (isDaddyLiveMirror(baseUrl) && mirrorKey in resportzTimedOut) {
+                continue
+            }
+            val elapsed = System.currentTimeMillis() - startedAtMs
+            val remaining = GatewayConfig.STREAM_FETCH_TIMEOUT_MS - elapsed
+            if (remaining <= 500L) {
+                break
+            }
+            val attemptBudget = minOf(GatewayConfig.MIRROR_ATTEMPT_TIMEOUT_MS, remaining)
             try {
-                val manifest = if (isDaddyLiveMirror(baseUrl)) {
-                    resportzParser.fetchManifest(channelId, baseUrl)
-                } else {
-                    error("Non-DaddyLive mirrors not implemented in MVP: $baseUrl")
+                val manifest = withTimeout(attemptBudget) {
+                    if (isDaddyLiveMirror(baseUrl)) {
+                        resportzParser.fetchManifest(channelId, baseUrl)
+                    } else {
+                        error("Non-DaddyLive mirrors not implemented in MVP: $baseUrl")
+                    }
                 }
                 markMirrorAlive(baseUrl)
                 activeBaseUrl = baseUrl
+                cacheMutex.withLock {
+                    upstreamCache[channelId] = CachedUpstream(System.currentTimeMillis(), manifest)
+                }
                 return manifest
             } catch (exc: CancellationException) {
                 throw exc
+            } catch (exc: TimeoutCancellationException) {
+                lastError = exc
+                if (isDaddyLiveMirror(baseUrl)) {
+                    resportzTimedOut += mirrorKey
+                }
+                Log.d(TAG, "Mirror timeout for $channelId on $baseUrl (${attemptBudget}ms)")
             } catch (exc: Exception) {
                 lastError = exc
                 markMirrorDead(baseUrl)
+                Log.d(TAG, "Mirror failed for $channelId on $baseUrl: ${exc.message}")
+            }
+        }
+        cacheMutex.withLock {
+            val stale = upstreamCache[channelId]
+            if (stale != null && System.currentTimeMillis() - stale.savedAtMs < GatewayConfig.UPSTREAM_STALE_TTL_MS) {
+                Log.w(TAG, "Serving stale upstream for $channelId after mirror failures")
+                return stale.manifest
             }
         }
         throw lastError ?: IllegalStateException("No mirrors available for channel $channelId")
@@ -143,10 +258,12 @@ class DaddyLiveClient(
                 return rows.map { row ->
                     val id = row.channelId.trim()
                     val name = row.channelName.trim().replace("#", "")
+                    val tvgId = epgChannelMapper?.tvgIdFor(id, name)
                     Channel(
                         id = id,
                         name = name,
-                        tvgId = epgChannelMapper?.tvgIdFor(id, name),
+                        tvgId = tvgId,
+                        logo = logoResolver?.resolveLogoUrl(environment.loopbackBase(), name, tvgId),
                     )
                 }.sortedWith(compareBy({ it.name.startsWith("18") }, { it.name }))
             } catch (exc: Exception) {
@@ -223,6 +340,7 @@ class DaddyLiveClient(
                                 id = id,
                                 name = name,
                                 tvgId = tvgId,
+                                logo = logoResolver?.resolveLogoUrl(environment.loopbackBase(), name, tvgId),
                             ),
                         )
                     }
@@ -259,6 +377,11 @@ class DaddyLiveClient(
     private data class CachedManifest(
         val savedAtMs: Long,
         val rewrittenPlaylist: String,
+    )
+
+    private data class CachedUpstream(
+        val savedAtMs: Long,
+        val manifest: UpstreamManifest,
     )
 
     companion object {

@@ -2,8 +2,6 @@ package com.nova.stepdaddylivehd.gateway.upstream
 
 import android.util.Log
 import com.nova.stepdaddylivehd.gateway.model.UpstreamManifest
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.net.URL
@@ -14,39 +12,56 @@ import java.util.regex.Pattern
 class ResportzParser(
     private val client: OkHttpClient = defaultClient(),
 ) {
-    suspend fun fetchManifest(channelId: String, refererBase: String): UpstreamManifest =
-        withContext(Dispatchers.IO) {
-            val watchUrl = GatewayConfig.RESPORTZ_STREAM_TEMPLATE.format(channelId)
-            Log.d(TAG, "resportz watch $watchUrl")
-            val referer = "${refererBase.trimEnd('/')}/"
-            val watchHtml = getText(watchUrl, referer)
-            Log.d(TAG, "resportz watch ok (${watchHtml.length} bytes)")
-            val iframeSrc = IFRAME_PATTERN.matcher(watchHtml).let { matcher ->
-                if (!matcher.find()) {
-                    error("Failed to find iframe source for channel $channelId")
-                }
-                resolveUrl(watchUrl, matcher.group(1) ?: error("empty iframe"))
+    suspend fun fetchManifest(channelId: String, refererBase: String): UpstreamManifest {
+        val watchUrl = GatewayConfig.RESPORTZ_STREAM_TEMPLATE.format(channelId)
+        Log.d(TAG, "resportz watch $watchUrl")
+        val referer = "${refererBase.trimEnd('/')}/"
+        val watchHtml = getText(watchUrl, referer)
+        Log.d(TAG, "resportz watch ok (${watchHtml.length} bytes)")
+        val iframeSrc = IFRAME_PATTERN.matcher(watchHtml).let { matcher ->
+            if (!matcher.find()) {
+                error("Failed to find iframe source for channel $channelId")
             }
-            Log.d(TAG, "resportz iframe $iframeSrc")
-            val sourcePageHtml = getText(iframeSrc, watchUrl)
-            Log.d(TAG, "resportz iframe ok (${sourcePageHtml.length} bytes)")
-            val encoded = SOURCE_B64_PATTERN.matcher(sourcePageHtml).let { matcher ->
-                if (!matcher.find()) {
-                    error("Failed to find encoded m3u8 source for channel $channelId")
-                }
-                matcher.group(1) ?: error("empty encoded source")
-            }
-            val m3u8Url = String(Base64.getDecoder().decode(encoded))
-            Log.d(TAG, "resportz m3u8 url $m3u8Url")
-            val m3u8Text = getText(m3u8Url, iframeSrc)
-            Log.d(TAG, "resportz m3u8 ok (${m3u8Text.length} bytes)")
-            val refererHost = URL(iframeSrc).host
-            UpstreamManifest(
-                playlistText = m3u8Text,
-                masterUrl = m3u8Url,
-                refererHost = refererHost,
-            )
+            resolveUrl(watchUrl, matcher.group(1) ?: error("empty iframe"))
         }
+        Log.d(TAG, "resportz iframe $iframeSrc")
+        val sourcePageHtml = getText(iframeSrc, watchUrl)
+        Log.d(TAG, "resportz iframe ok (${sourcePageHtml.length} bytes)")
+        val encoded = SOURCE_B64_PATTERN.matcher(sourcePageHtml).let { matcher ->
+            if (!matcher.find()) {
+                error("Failed to find encoded m3u8 source for channel $channelId")
+            }
+            matcher.group(1) ?: error("empty encoded source")
+        }
+        val m3u8Url = String(Base64.getDecoder().decode(encoded))
+        Log.d(TAG, "resportz m3u8 url $m3u8Url")
+        val (resolvedUrl, m3u8Text) = fetchM3u8Text(m3u8Url, iframeSrc)
+        Log.d(TAG, "resportz m3u8 ok (${m3u8Text.length} bytes)")
+        val refererHost = URL(iframeSrc).host
+        return UpstreamManifest(
+            playlistText = m3u8Text,
+            masterUrl = resolvedUrl,
+            refererHost = refererHost,
+        )
+    }
+
+    private suspend fun fetchM3u8Text(m3u8Url: String, referer: String): Pair<String, String> {
+        val candidates = linkedSetOf(m3u8Url)
+        if (m3u8Url.contains("index.m3u8")) {
+            candidates += m3u8Url.replace("index.m3u8", "tracks-v1a1/mono.m3u8")
+            candidates += m3u8Url.replace("index.m3u8", "mono.m3u8")
+        }
+        var lastError: Exception? = null
+        for (candidate in candidates) {
+            try {
+                return candidate to getText(candidate, referer)
+            } catch (exc: Exception) {
+                lastError = exc
+                Log.d(TAG, "m3u8 fetch failed for $candidate: ${exc.message}")
+            }
+        }
+        throw lastError ?: error("Failed to fetch m3u8")
+    }
 
     private suspend fun getText(url: String, referer: String): String {
         val request = Request.Builder()

@@ -67,7 +67,8 @@ Proof image: `/home/nova/livehd/current/fusa-boot-banner-proof.png` — shows *"
 | **Startup banner** | One overlay when the HTTP server is listening; optional **+40s** re-show only if the first was missed. |
 | **TiviMate setup** | **One-time** — add playlist + EPG URLs in TiviMate; TiviMate does not show gateway status (use home banner or StepDaddy Gateway app). |
 | **Stream start latency** | First play per channel is **upstream-bound** (often 3–15+ s cold); warm repeats are much faster. Not a gateway bug. |
-| **Channel logos** | Default SVG served at `/ui/default-channel.svg` when upstream has no logo. |
+| **TiviMate HLS** | Manifests use **`/content/` proxy** (encrypted URLs) matching Linux gateway — required for segment referer headers. |
+| **Channel logos** | Resolved from bundled `logos_db_cache.csv` via `tvg-id`; served at `/logo/{token}` with disk cache. |
 
 ### Run boot test
 

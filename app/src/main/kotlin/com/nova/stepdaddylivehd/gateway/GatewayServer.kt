@@ -2,13 +2,15 @@ package com.nova.stepdaddylivehd.gateway
 
 import android.content.Context
 import com.nova.stepdaddylivehd.gateway.epg.EpgManager
+import com.nova.stepdaddylivehd.gateway.routes.ContentRoutes
 import com.nova.stepdaddylivehd.gateway.routes.EpgRoutes
 import com.nova.stepdaddylivehd.gateway.routes.HealthRoutes
+import com.nova.stepdaddylivehd.gateway.routes.LogoRoutes
 import com.nova.stepdaddylivehd.gateway.routes.PlaylistRoutes
 import com.nova.stepdaddylivehd.gateway.routes.StreamRoutes
 import com.nova.stepdaddylivehd.gateway.routes.UiRoutes
 import com.nova.stepdaddylivehd.gateway.upstream.DaddyLiveClient
-import com.nova.stepdaddylivehd.gateway.upstream.GatewayConfig
+import com.nova.stepdaddylivehd.gateway.upstream.ResportzParser
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.call
 import io.ktor.server.application.install
@@ -20,6 +22,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.head
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
+import java.io.File
 import kotlinx.serialization.json.Json
 
 class GatewayServer(
@@ -27,8 +30,10 @@ class GatewayServer(
     private val environment: GatewayEnvironment,
     private val client: DaddyLiveClient,
     private val epgManager: EpgManager,
+    private val logoResolver: com.nova.stepdaddylivehd.gateway.upstream.LogoResolver,
 ) {
     private val uiRoutes = UiRoutes(context.applicationContext)
+    private val logoRoutes = LogoRoutes(File(context.filesDir, "logo-cache"))
     @Volatile
     private var engine: ApplicationEngine? = null
 
@@ -38,8 +43,9 @@ class GatewayServer(
     fun start() {
         if (engine != null) return
         val healthRoutes = HealthRoutes(environment, client, epgManager)
-        val playlistRoutes = PlaylistRoutes(environment, client)
-        val streamRoutes = StreamRoutes(client)
+        val playlistRoutes = PlaylistRoutes(environment, client, logoResolver)
+        val streamRoutes = StreamRoutes(environment, client)
+        val contentRoutes = ContentRoutes(environment, client, ResportzParser.defaultClient())
         val epgRoutes = EpgRoutes(client, epgManager)
 
         try {
@@ -75,9 +81,22 @@ class GatewayServer(
                     get { streamRoutes.genericStream(call, call.parameters["channelId"].orEmpty()) }
                     head { streamRoutes.genericStream(call, call.parameters["channelId"].orEmpty()) }
                 }
+                get("/content/{path}") {
+                    contentRoutes.content(call, call.parameters["path"].orEmpty())
+                }
+                get("/key/{url}/{host}") {
+                    contentRoutes.key(
+                        call,
+                        call.parameters["url"].orEmpty(),
+                        call.parameters["host"].orEmpty(),
+                    )
+                }
                 route("/epg.xml") {
                     get { epgRoutes.epgXml(call) }
                     head { epgRoutes.epgXml(call) }
+                }
+                get("/logo/{token}") {
+                    logoRoutes.logo(call, call.parameters["token"].orEmpty())
                 }
                 get("/ui/default-channel.svg") {
                     uiRoutes.defaultChannelLogo(call)

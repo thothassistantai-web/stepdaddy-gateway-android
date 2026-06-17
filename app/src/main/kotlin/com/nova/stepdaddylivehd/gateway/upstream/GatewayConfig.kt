@@ -10,14 +10,19 @@ object GatewayConfig {
     const val CHANNEL_REFRESH_INTERVAL_MS = 600_000L
     const val STREAM_CACHE_TTL_MS = 30_000L
     const val UPSTREAM_CACHE_TTL_MS = 120_000L
-    /** Matches Python STREAM_FETCH_TIMEOUT_SECONDS default (60). */
-    const val STREAM_FETCH_TIMEOUT_MS = 60_000L
-    const val MIRROR_ATTEMPT_TIMEOUT_MS = STREAM_FETCH_TIMEOUT_MS
+    const val UPSTREAM_STALE_TTL_MS = 600_000L
+    const val STALE_STREAM_TTL_MS = 600_000L
+    /** Total budget for one stream resolve (all mirrors). */
+    const val STREAM_FETCH_TIMEOUT_MS = 45_000L
+    /** Per-mirror attempt — matches Python STREAM_MIRROR_ATTEMPT_TIMEOUT_SECONDS (18). */
+    const val MIRROR_ATTEMPT_TIMEOUT_MS = 18_000L
+    const val UPSTREAM_FETCH_MAX_CONCURRENT = 2
     const val DEAD_MIRROR_TTL_MS = 300_000L
-    const val UPSTREAM_CONNECT_TIMEOUT_SEC = 10L
-    const val UPSTREAM_READ_TIMEOUT_SEC = 60L
-    const val UPSTREAM_WRITE_TIMEOUT_SEC = 60L
-    const val UPSTREAM_CALL_TIMEOUT_SEC = 65L
+    const val UPSTREAM_CONNECT_TIMEOUT_SEC = 8L
+    const val UPSTREAM_READ_TIMEOUT_SEC = 20L
+    const val UPSTREAM_WRITE_TIMEOUT_SEC = 20L
+    const val UPSTREAM_CALL_TIMEOUT_SEC = 22L
+    val PREWARM_CHANNEL_IDS = listOf("857", "51", "360")
 
     val DADDYLIVE_HOSTS = setOf("daddylive.org", "daddylive.li", "daddylive.eu")
 }

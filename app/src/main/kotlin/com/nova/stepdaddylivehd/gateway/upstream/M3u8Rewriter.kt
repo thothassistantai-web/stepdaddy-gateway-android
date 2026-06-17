@@ -6,6 +6,7 @@ object M3u8Rewriter {
     fun rewrite(
         m3u8Text: String,
         m3u8Url: String,
+        refererHost: String = "",
         useProxy: Boolean,
         apiUrl: String = "",
         preferLighterVariant: Boolean = true,
@@ -24,7 +25,10 @@ object M3u8Rewriter {
                     val originalUrl = uriMatch.groupValues[1]
                     val absoluteKeyUrl = resolveUrl(m3u8Url, originalUrl)
                     line = if (useProxy && apiUrl.isNotBlank()) {
-                        line.replace(originalUrl, "$apiUrl/key/$absoluteKeyUrl")
+                        line.replace(
+                            originalUrl,
+                            "${apiUrl.trimEnd('/')}/key/${ContentCrypto.encrypt(absoluteKeyUrl)}/${ContentCrypto.encrypt(refererHost)}",
+                        )
                     } else {
                         line.replace(originalUrl, absoluteKeyUrl)
                     }
@@ -33,7 +37,7 @@ object M3u8Rewriter {
                 nonCommentCount++
                 val absoluteMediaUrl = resolveUrl(m3u8Url, line)
                 line = if (useProxy && apiUrl.isNotBlank()) {
-                    "$apiUrl/content/$absoluteMediaUrl"
+                    "${apiUrl.trimEnd('/')}/content/${ContentCrypto.encrypt(absoluteMediaUrl)}"
                 } else {
                     absoluteMediaUrl
                 }
