@@ -5,44 +5,95 @@ import com.nova.stepdaddylivehd.gateway.model.UpstreamManifest
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.net.URL
-import java.util.Base64
 import java.util.concurrent.TimeUnit
-import java.util.regex.Pattern
 
 class ResportzParser(
     private val client: OkHttpClient = defaultClient(),
+    private val maxEmbedDepth: Int = 2,
 ) {
     suspend fun fetchManifest(channelId: String, refererBase: String): UpstreamManifest {
         val watchUrl = GatewayConfig.RESPORTZ_STREAM_TEMPLATE.format(channelId)
         Log.d(TAG, "resportz watch $watchUrl")
         val referer = "${refererBase.trimEnd('/')}/"
-        val watchHtml = getText(watchUrl, referer)
+        val watchHtml = try {
+            getText(watchUrl, referer)
+        } catch (exc: Exception) {
+            throw IllegalStateException("resportz watch failed: ${exc.message}", exc)
+        }
         Log.d(TAG, "resportz watch ok (${watchHtml.length} bytes)")
-        val iframeSrc = IFRAME_PATTERN.matcher(watchHtml).let { matcher ->
-            if (!matcher.find()) {
-                error("Failed to find iframe source for channel $channelId")
+        val iframeCandidates = ResportzHtmlParser.extractIframeCandidates(watchHtml, watchUrl)
+        if (iframeCandidates.isEmpty()) {
+            val rawIframe = ResportzHtmlParser.firstRawIframeSrc(watchHtml, watchUrl)
+            if (rawIframe != null && ResportzHtmlParser.isEmbedStub(rawIframe)) {
+                error("embed stub host for channel $channelId ($rawIframe)")
             }
-            resolveUrl(watchUrl, matcher.group(1) ?: error("empty iframe"))
+            error("Failed to find iframe source for channel $channelId")
         }
-        Log.d(TAG, "resportz iframe $iframeSrc")
-        val sourcePageHtml = getText(iframeSrc, watchUrl)
-        Log.d(TAG, "resportz iframe ok (${sourcePageHtml.length} bytes)")
-        val encoded = SOURCE_B64_PATTERN.matcher(sourcePageHtml).let { matcher ->
-            if (!matcher.find()) {
-                error("Failed to find encoded m3u8 source for channel $channelId")
+        var lastError: Exception? = null
+        for (candidate in iframeCandidates) {
+            Log.d(TAG, "resportz iframe pattern=${candidate.pattern} url=${candidate.value}")
+            try {
+                return resolveFromEmbedPage(
+                    channelId = channelId,
+                    embedUrl = candidate.value,
+                    referer = watchUrl,
+                    iframePattern = candidate.pattern,
+                    depth = 0,
+                )
+            } catch (exc: Exception) {
+                lastError = exc
+                Log.d(TAG, "embed failed pattern=${candidate.pattern}: ${exc.message}")
             }
-            matcher.group(1) ?: error("empty encoded source")
         }
-        val m3u8Url = String(Base64.getDecoder().decode(encoded))
-        Log.d(TAG, "resportz m3u8 url $m3u8Url")
-        val (resolvedUrl, m3u8Text) = fetchM3u8Text(m3u8Url, iframeSrc)
-        Log.d(TAG, "resportz m3u8 ok (${m3u8Text.length} bytes)")
-        val refererHost = URL(iframeSrc).host
-        return UpstreamManifest(
-            playlistText = m3u8Text,
-            masterUrl = resolvedUrl,
-            refererHost = refererHost,
-        )
+        throw lastError ?: error("Failed to resolve m3u8 for channel $channelId")
+    }
+
+    private suspend fun resolveFromEmbedPage(
+        channelId: String,
+        embedUrl: String,
+        referer: String,
+        iframePattern: String,
+        depth: Int,
+    ): UpstreamManifest {
+        if (ResportzHtmlParser.isEmbedStub(embedUrl)) {
+            error("embed stub host for channel $channelId ($embedUrl)")
+        }
+        val sourcePageHtml = getText(embedUrl, referer)
+        Log.d(TAG, "resportz embed ok pattern=$iframePattern (${sourcePageHtml.length} bytes)")
+        val m3u8Match = ResportzHtmlParser.extractM3u8Url(sourcePageHtml)
+        if (m3u8Match != null) {
+            Log.d(TAG, "resportz m3u8 pattern=${m3u8Match.pattern} url=${m3u8Match.value}")
+            val (resolvedUrl, m3u8Text) = fetchM3u8Text(m3u8Match.value, embedUrl)
+            Log.d(TAG, "resportz m3u8 ok (${m3u8Text.length} bytes)")
+            return UpstreamManifest(
+                playlistText = m3u8Text,
+                masterUrl = resolvedUrl,
+                refererHost = URL(embedUrl).host,
+            )
+        }
+        if (depth + 1 >= maxEmbedDepth) {
+            error("Failed to find encoded m3u8 source for channel $channelId")
+        }
+        val nested = ResportzHtmlParser.extractIframeCandidates(sourcePageHtml, embedUrl)
+        if (nested.isEmpty()) {
+            error("Failed to find encoded m3u8 source for channel $channelId")
+        }
+        var nestedError: Exception? = null
+        for (child in nested) {
+            Log.d(TAG, "resportz nested iframe depth=${depth + 1} pattern=${child.pattern} url=${child.value}")
+            try {
+                return resolveFromEmbedPage(
+                    channelId = channelId,
+                    embedUrl = child.value,
+                    referer = embedUrl,
+                    iframePattern = child.pattern,
+                    depth = depth + 1,
+                )
+            } catch (exc: Exception) {
+                nestedError = exc
+            }
+        }
+        throw nestedError ?: error("Failed to find encoded m3u8 source for channel $channelId")
     }
 
     private suspend fun fetchM3u8Text(m3u8Url: String, referer: String): Pair<String, String> {
@@ -73,20 +124,8 @@ class ResportzParser(
         return client.getText(request)
     }
 
-    private fun resolveUrl(base: String, relative: String): String {
-        if (relative.startsWith("http://") || relative.startsWith("https://")) {
-            return relative
-        }
-        val baseUrl = URL(base)
-        return URL(baseUrl, relative).toString()
-    }
-
     companion object {
         private const val TAG = "ResportzParser"
-        private val IFRAME_PATTERN =
-            Pattern.compile("iframe\\s+src=\"([^\"]+)\"", Pattern.CASE_INSENSITIVE)
-        private val SOURCE_B64_PATTERN =
-            Pattern.compile("source\\s*:\\s*window\\.atob\\('([^']+)'\\)")
 
         fun defaultClient(): OkHttpClient =
             OkHttpClient.Builder()

@@ -91,7 +91,8 @@ Audit: `GET /tivimate-playlist.m3u8` → classify `tvg-logo` URLs → `curl` eac
 | Mechanism | Behavior |
 |-----------|----------|
 | **StreamHealthWatchdog** | Every 120s probes channels 51+857 and mirror `/api/channels`; logs to `StreamHealth` tag |
-| **Cache invalidation** | After 2 stream failures per channel, purges stream + upstream cache for that channel |
+| **Cache invalidation** | Per-channel purge only on CDN/parse failures; mirror/global errors skip invalidate; stale upstream kept up to 600s |
+| **ResportzParser** | Multi-pattern iframe + m3u8 extraction (`thatframe`, `/?a=`, donis embeds, atob variants); logs matched pattern |
 | **Mirror failover** | CDN HTTP 403/500 no longer marks daddylive mirror dead (only resportz/API failures do) |
 | **HLS error manifest** | `/tivimate-stream/` returns `#EXTM3U` error body on upstream fail — TiviMate fails fast vs JSON spinner |
 | **Playlist cache bust** | `Cache-Control: no-cache, no-store, must-revalidate` on `tivimate-playlist.m3u8` |
