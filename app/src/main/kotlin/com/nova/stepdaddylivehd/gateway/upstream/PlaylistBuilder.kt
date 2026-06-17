@@ -18,10 +18,11 @@ object PlaylistBuilder {
     ): String {
         val base = baseUrl.trimEnd('/')
         val channelNumbers = ChannelNumberResolver.assignAll(channels)
+        val sorted = channels.sortedWith(channelNumberComparator(channelNumbers))
         val lines = mutableListOf(
             "#EXTM3U url-tvg=\"$base/epg.xml\" x-tvg-url=\"$base/epg.xml\"",
         )
-        GroupTitleResolver.sortChannels(channels).forEach { channel ->
+        sorted.forEach { channel ->
             lines += "#EXTINF:-1 ${extinfAttrs(channel, base, logoResolver, channelMetaStore, channelNumbers)},${displayTitle(channel)}"
             lines += tivimateStreamLine(base, channel.id, dlhdOrigin)
         }
@@ -63,6 +64,19 @@ object PlaylistBuilder {
         val origin = dlhdOrigin.trimEnd('/')
         return "$stream|User-Agent=$TIVIMATE_USER_AGENT|Referer=$origin/|Origin=$origin"
     }
+
+    /** TiviMate "All Channels" follows M3U file order when set to By order in playlist. */
+    private fun channelNumberComparator(channelNumbers: Map<String, Int>): Comparator<Channel> =
+        compareBy<Channel>(
+            { channelNumbers[it.id] ?: Int.MAX_VALUE },
+            {
+                ChannelTitleNormalizer.displayTitle(
+                    it.name,
+                    GroupTitleResolver.resolve(it.name, it.tags),
+                )
+            },
+            { it.id },
+        )
 
     private fun escape(value: String): String =
         value
