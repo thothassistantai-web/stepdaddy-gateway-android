@@ -150,6 +150,19 @@ class ChannelNumberResolverTest {
   }
 
   @Test
+  fun `regional NBC sports does not steal NBC local pin`() {
+    val channels = listOf(
+      ch("rsn", "NBC Sports Bay Area", listOf("🇺🇸", "#sports", "#regional")),
+      ch("nbc", "NBC USA", listOf("🇺🇸", "#entertainment"), tvgId = "NBC.East.Stream.us2"),
+    )
+
+    val numbers = ChannelNumberResolver.assignAll(channels)
+
+    assertEquals(4, numbers["nbc"])
+    assertTrue(numbers["rsn"]!! != 4)
+  }
+
+  @Test
   fun `international channels start at 1400`() {
     val channels = listOf(
       ch("1", "3 Schweiz", listOf("🌐")),

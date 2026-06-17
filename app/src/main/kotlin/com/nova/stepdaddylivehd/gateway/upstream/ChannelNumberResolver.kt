@@ -155,6 +155,7 @@ object ChannelNumberResolver {
         "wcbshd.us" to 2,
         "wnbc.us" to 4,
         "wnbchd.us" to 4,
+        "nbc.east.stream.us2" to 4,
         "wnyw.us" to 5,
         "wnywhd.us" to 5,
         "wabc.us" to 7,
@@ -309,10 +310,22 @@ object ChannelNumberResolver {
     }
 
     private fun isExcludedLocalMatch(normalizedName: String, fragment: String): Boolean {
-        if (fragment != "fox") return false
-        return normalizedName.contains("fox sports") ||
-            normalizedName.contains("fox news") ||
-            normalizedName.contains("fox deportes")
+        if (fragment == "fox") {
+            return normalizedName.contains("fox sports") ||
+                normalizedName.contains("fox news") ||
+                normalizedName.contains("fox deportes")
+        }
+        if (fragment == "nbc") {
+            return normalizedName.contains("nbc sports") ||
+                normalizedName.contains("nbc universo")
+        }
+        if (fragment == "cbs") {
+            return normalizedName.contains("cbs sports")
+        }
+        if (fragment == "abc") {
+            return normalizedName.contains("abc news")
+        }
+        return false
     }
 
     private fun matchPartialNamePin(group: String, normalizedName: String): Int? {
