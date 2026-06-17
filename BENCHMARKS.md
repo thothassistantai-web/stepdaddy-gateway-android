@@ -48,8 +48,12 @@ Automated script: `scripts/fusa-boot-test.sh`
 | Baseline (manual) | 2026-06-16 | ~81s | 3/3 | PASS | DISMISS_MS 8s→15s (uncommitted initially) |
 | **Cycle 1** | 2026-06-17 | **48s** | 3/3 | PASS (logcat) | FGS trampoline, overlay re-show, channel preload in `onCreate`; script stdout bug |
 | **Cycle 2** | 2026-06-17 | **30s** | 3/3 | **PASS (screencap)** | `GatewayApp` boot kick, tighter alarms (8/20/40/80s), 2s launcher settle |
+| **Cycle 3** | 2026-06-17 | **4s** | 3/3 | **PASS (screencap)** | 3rd overlay re-show @40s, WM expedited @30s, BootReceiver+3s retry |
+| **Release** | 2026-06-17 | **20s** | 2/3 | PASS (logcat) | `com.nova.stepdaddylivehd.gateway` (debug-signed); `/epg.xml` 503 at t+20s |
 
-**Timing trend:** 81s → 48s → **30s** time-to-health after reboot (poll from host, from wlan0 IP available).
+**Timing trend:** 81s → 48s → 30s → **4s** (debug) time-to-health after reboot (poll from host, from wlan0 IP available). Release build: **20s** (no debug suffix; EPG still building at first health).
+
+**Release signing:** No release keystore in repo — `assembleRelease` produces `app-release-unsigned.apk`; installed on FUSA after zipalign + debug `apksigner` for boot comparison only.
 
 Proof image: `/home/nova/livehd/current/fusa-boot-banner-proof.png` — shows *"StepDaddy Gateway running — Ready for TiviMate — 1140 channels"* overlay on Google TV home.
 
@@ -58,6 +62,8 @@ Proof image: `/home/nova/livehd/current/fusa-boot-banner-proof.png` — shows *"
 ```bash
 cd stepdaddy-android
 ADB_SERIAL=FUSA2541006925 CYCLE_TAG=cycleN ./scripts/fusa-boot-test.sh
+# Release package (no .debug suffix):
+PKG=com.nova.stepdaddylivehd.gateway CYCLE_TAG=release-cycle1 ./scripts/fusa-boot-test.sh
 ```
 
 Artifacts: `/tmp/fusa-boot-test/cycleN_*.{log,report.txt,png}`

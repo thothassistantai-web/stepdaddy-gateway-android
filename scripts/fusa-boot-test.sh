@@ -5,7 +5,7 @@
 set -euo pipefail
 
 SERIAL="${ADB_SERIAL:-FUSA2541006925}"
-PKG="com.nova.stepdaddylivehd.gateway.debug"
+PKG="${PKG:-com.nova.stepdaddylivehd.gateway.debug}"
 COMPONENT="${PKG}/com.nova.stepdaddylivehd.gateway.ServerService"
 MAIN="${PKG}/com.nova.stepdaddylivehd.gateway.ui.MainActivity"
 PORT=3000
