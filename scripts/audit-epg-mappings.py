@@ -19,6 +19,30 @@ OVERRIDES_PATH = APP_ROOT / "app" / "epg_overrides.json"
 CACHE_PATH = APP_ROOT / "app" / "dlhd_channels_cache.json"
 CHANNELS_DB = ASSETS / "channels_db_cache.csv"
 
+# High-confidence manual corrections (channel display name -> tvg_id).
+MANUAL: dict[str, str] = {
+    "5 USA": "5USA.uk",
+    "Channel 5 UK": "Channel5.uk",
+    "ABC USA": "ABC.us",
+    "CBS USA": "CBS.us",
+    "NBC USA": "NBC.us",
+    "FOX USA": "Fox.us",
+    "CW USA": "CW.us",
+    "ESPN2 USA": "ESPN2.us",
+    "FX USA": "FX.us",
+    "PBS USA": "PBS.us",
+    "ION USA": "IonTV.us",
+    "VH1 USA": "VH1.us",
+    "Dave": "Dave.uk",
+    "DAZN 1 UK": "DAZN1.uk",
+    "ITV 2 UK": "ITV2.uk",
+    "ITV 3 UK": "ITV3.uk",
+    "ITV 4 UK": "ITV4.uk",
+    "Telemundo": "Telemundo.us",
+    "Univision": "Univision.us",
+    "Unimas": "UniMas.us",
+}
+
 COUNTRY_SUFFIX = {
     "uk": "UK",
     "us": "US",
@@ -191,6 +215,10 @@ def expected_countries(name: str, tags: list[str]) -> set[str]:
         for emoji, cc in TAG_COUNTRY.items():
             if emoji in tag:
                 out.add(cc)
+    # 5 USA is a UK channel despite the US tag in DaddyLive metadata.
+    if name.strip() == "5 USA":
+        out.add("UK")
+        out.discard("US")
     return out
 
 
@@ -268,6 +296,8 @@ def best_match(
     db: dict[str, ChannelMeta],
     name_index: dict[str, list[str]],
 ) -> tuple[str | None, float]:
+    if channel_name in MANUAL and MANUAL[channel_name] in db:
+        return MANUAL[channel_name], 0.99
     key = normalize_name(channel_name)
     if key in name_index:
         cands = name_index[key]
@@ -361,18 +391,52 @@ def audit_chunk(
     return rows
 
 
-def apply_fixes(rows: list[AuditRow]) -> int:
+SAFE_CROSS_REGION_REASONS = (
+    "country mismatch",
+    "arabic tvg on non-arabic channel name",
+    "tvg_id not in channels_db",
+)
+
+
+def is_risky_cross_region(
+    row: AuditRow,
+    db: dict[str, ChannelMeta],
+) -> bool:
+    old_meta = db.get(row.old_tvg)
+    new_meta = db.get(row.new_tvg or "")
+    old_cc = (old_meta.country if old_meta else None) or tvg_country(row.old_tvg)
+    new_cc = (new_meta.country if new_meta else None) or tvg_country(row.new_tvg or "")
+    if not old_cc or not new_cc or old_cc == new_cc:
+        return False
+    if any(marker in row.reason for marker in SAFE_CROSS_REGION_REASONS):
+        return False
+    return True
+
+
+def apply_fixes(
+    rows: list[AuditRow],
+    db: dict[str, ChannelMeta],
+    *,
+    min_confidence: float,
+) -> tuple[int, list[AuditRow]]:
     overrides = json.loads(OVERRIDES_PATH.read_text(encoding="utf-8"))
     changed = 0
+    deferred: list[AuditRow] = []
     for row in rows:
         if not row.new_tvg:
+            continue
+        if row.confidence < min_confidence:
+            deferred.append(row)
+            continue
+        if is_risky_cross_region(row, db):
+            deferred.append(row)
             continue
         if overrides.get(row.channel_name) == row.new_tvg:
             continue
         overrides[row.channel_name] = row.new_tvg
         changed += 1
     OVERRIDES_PATH.write_text(json.dumps(overrides, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    return changed
+    return changed, deferred
 
 
 def export_mapping() -> None:
@@ -381,10 +445,17 @@ def export_mapping() -> None:
     subprocess.run([str(ROOT / "scripts" / "export-epg-mapping.sh")], check=True)
 
 
+def sync_android_shell_overrides() -> None:
+    shell_path = APP_ROOT / "android-shell" / "app" / "src" / "main" / "assets" / "stepdaddy" / "app" / "epg_overrides.json"
+    if shell_path.parent.exists():
+        shell_path.write_text(OVERRIDES_PATH.read_text(encoding="utf-8"), encoding="utf-8")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--chunk", type=int, default=None, help="1-9 chunk index")
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--min-confidence", type=float, default=0.6)
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
@@ -407,20 +478,53 @@ def main() -> int:
         id_min = lo + idx * size
         id_max = lo + (idx + 1) * size - 1 if idx < 8 else hi
 
+    scanned = len(mapping)
+    if id_min is not None or id_max is not None:
+        scanned = sum(
+            1
+            for cid in mapping
+            if cid.isdigit() and (id_min is None or int(cid) >= id_min) and (id_max is None or int(cid) <= id_max)
+        )
+
     rows = audit_chunk(mapping, dlhd, db, name_index, id_min=id_min, id_max=id_max)
+    fixable = [r for r in rows if r.new_tvg and r.confidence >= args.min_confidence]
+    would_defer = [
+        r
+        for r in rows
+        if r.new_tvg and (r.confidence < args.min_confidence or is_risky_cross_region(r, db))
+    ]
 
     if args.json:
-        print(json.dumps([r.__dict__ for r in rows], indent=2, ensure_ascii=False))
+        print(
+            json.dumps(
+                {
+                    "scanned": scanned,
+                    "suspect": len(rows),
+                    "fixable": len(fixable),
+                    "deferred": len(would_defer),
+                    "rows": [r.__dict__ for r in rows],
+                },
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
     else:
-        print(f"scanned chunk={args.chunk} range={id_min}-{id_max} suspects={len(rows)}")
+        print(
+            f"scanned={scanned} suspect={len(rows)} "
+            f"fixable(>={args.min_confidence:.2f})={len(fixable)} deferred={len(would_defer)} "
+            f"chunk={args.chunk} range={id_min}-{id_max}"
+        )
         for r in rows:
             fix = f" -> {r.new_tvg} ({r.confidence:.2f})" if r.new_tvg else ""
-            print(f"  [{r.channel_id}] {r.channel_name}: {r.old_tvg}{fix} | {r.reason}")
+            defer = ""
+            if r.new_tvg and (r.confidence < args.min_confidence or is_risky_cross_region(r, db)):
+                defer = " [DEFERRED]"
+            print(f"  [{r.channel_id}] {r.channel_name}: {r.old_tvg}{fix}{defer} | {r.reason}")
 
     if args.apply:
-        fixable = [r for r in rows if r.new_tvg]
-        n = apply_fixes(fixable)
-        print(f"applied {n} override fixes")
+        n, deferred = apply_fixes(fixable, db, min_confidence=args.min_confidence)
+        print(f"applied {n} override fixes; deferred {len(deferred)}")
+        sync_android_shell_overrides()
         export_mapping()
 
     return 0

@@ -1,0 +1,20 @@
+EPG mapping audit — deferred fixes (confidence < 0.6 or risky cross-region)
+Generated: 2026-06-17
+
+These mappings were flagged as suspect but not auto-applied:
+
+[116] beIN SPORTS 1 France: beIN.SPORTS.1.fr -> RTFrance.fr (0.55) | tvg_id not in channels_db
+[354] Channel 4 UK: Channel.4.HD.uk -> Channel4.uk (0.55) | tvg_id not in channels_db
+[426] DAZN 1 Bar DE: DAZN.1.de -> RTDE.de (0.55) | tvg_id not in channels_db
+[427] DAZN 2 Bar DE: DAZN.2.de -> RTDE.de (0.55) | tvg_id not in channels_db
+[455] Eleven Sports 1 Portugal: Eleven.Sports.1.HD.pl -> CNNPortugal.pt (0.55) | tvg_id not in channels_db
+[456] Eleven Sports 2 Portugal: Eleven.Sports.2.HD.pl -> CNNPortugal.pt (0.55) | tvg_id not in channels_db
+[457] Eleven Sports 3 Portugal: Eleven.Sports.3.HD.pl -> CNNPortugal.pt (0.55) | tvg_id not in channels_db
+[458] Eleven Sports 4 Portugal: Eleven.Sports.4.HD.pl -> CNNPortugal.pt (0.55) | tvg_id not in channels_db
+[634] Nova Sports 4 Greece: Novasports4.gr -> RISETV.gr (0.55) | weak digit-only overlap
+[635] Nova Sports 5 Greece: Novasports5.gr -> RISETV.gr (0.55) | weak digit-only overlap
+[636] Nova Sports 6 Greece: Novasports6.gr -> RISETV.gr (0.55) | weak digit-only overlap
+[638] Nova Sports Prime Greece: Novasports.Prime.HD.gr -> RISETV.gr (0.55) | tvg_id not in channels_db
+
+Also skipped: risky cross-region remaps where suspect reason was weak name overlap
+(not country mismatch / not Arabic-on-Latin / not missing from channels_db).
