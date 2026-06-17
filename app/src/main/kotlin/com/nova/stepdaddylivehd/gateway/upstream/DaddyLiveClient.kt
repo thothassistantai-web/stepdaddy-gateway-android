@@ -459,12 +459,18 @@ class DaddyLiveClient(
         val tags = channelMetaStore?.tagsFor(name).orEmpty()
         val tvgId = cachedTvgId?.takeIf { it.isNotBlank() }
             ?: epgChannelMapper?.tvgIdFor(id, name)
+        val metaLogo = channelMetaStore?.logoFor(name)
         return Channel(
             id = id,
             name = name,
             tags = tags,
             tvgId = tvgId,
-            logo = logoResolver?.resolveLogoUrl(environment.loopbackBase(), name, tvgId),
+            logo = logoResolver?.resolveLogoUrlBlocking(
+                environment.loopbackBase(),
+                name,
+                tvgId,
+                metaLogo,
+            ),
         )
     }
 

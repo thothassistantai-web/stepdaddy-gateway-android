@@ -31,9 +31,12 @@ class GatewayServer(
     private val client: DaddyLiveClient,
     private val epgManager: EpgManager,
     private val logoResolver: com.nova.stepdaddylivehd.gateway.upstream.LogoResolver,
+    private val channelMetaStore: com.nova.stepdaddylivehd.gateway.upstream.ChannelMetaStore,
 ) {
-    private val uiRoutes = UiRoutes(context.applicationContext)
-    private val logoRoutes = LogoRoutes(File(context.filesDir, "logo-cache"))
+    private val uiRoutes = UiRoutes(context.applicationContext, logoResolver)
+    private val fallbackSvg: ByteArray =
+        context.assets.open("ui/default-channel.svg").use { it.readBytes() }
+    private val logoRoutes = LogoRoutes(File(context.filesDir, "logo-cache"), fallbackSvg)
     @Volatile
     private var engine: ApplicationEngine? = null
 
@@ -43,7 +46,7 @@ class GatewayServer(
     fun start() {
         if (engine != null) return
         val healthRoutes = HealthRoutes(environment, client, epgManager)
-        val playlistRoutes = PlaylistRoutes(environment, client, logoResolver)
+        val playlistRoutes = PlaylistRoutes(environment, client, logoResolver, channelMetaStore)
         val streamRoutes = StreamRoutes(environment, client)
         val contentRoutes = ContentRoutes(environment, client, ResportzParser.defaultClient())
         val epgRoutes = EpgRoutes(client, epgManager)
@@ -100,6 +103,9 @@ class GatewayServer(
                 }
                 get("/ui/default-channel.svg") {
                     uiRoutes.defaultChannelLogo(call)
+                }
+                get("/ui/channel/{token}.svg") {
+                    uiRoutes.channelPlaceholder(call, call.parameters["token"].orEmpty())
                 }
             }
         }.start(wait = false)

@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit
 
 class LogoRoutes(
     private val cacheDir: File,
+    private val fallbackSvg: ByteArray,
     private val httpClient: OkHttpClient = defaultClient(),
 ) {
     suspend fun logo(call: ApplicationCall, token: String) {
@@ -54,7 +55,7 @@ class LogoRoutes(
                 }
             }
             if (bytes.isEmpty()) {
-                call.respond(HttpStatusCode.NotFound, mapOf("error" to "logo_not_found"))
+                respondFallback(call)
                 return
             }
             cacheFile.writeBytes(bytes)
@@ -66,11 +67,14 @@ class LogoRoutes(
                 respondCached(call, cacheFile)
                 return
             }
-            call.respond(
-                HttpStatusCode.BadGateway,
-                mapOf("error" to (exc.message ?: "logo_fetch_failed")),
-            )
+            respondFallback(call)
         }
+    }
+
+    private suspend fun respondFallback(call: ApplicationCall) {
+        call.response.header(HttpHeaders.CacheControl, "public, max-age=3600")
+        call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+        call.respondBytes(fallbackSvg, ContentType.Image.SVG)
     }
 
     private suspend fun respondCached(call: ApplicationCall, cacheFile: File) {

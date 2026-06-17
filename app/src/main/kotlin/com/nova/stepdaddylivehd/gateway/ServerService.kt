@@ -92,8 +92,14 @@ class ServerService : LifecycleService() {
                 }
                 try {
                     val app = application as GatewayApp
-                    gatewayServer = GatewayServer(this@ServerService, environment, daddyLiveClient, epgManager, app.logoResolver)
-                        .also { it.start() }
+                    gatewayServer = GatewayServer(
+                        this@ServerService,
+                        environment,
+                        daddyLiveClient,
+                        epgManager,
+                        app.logoResolver,
+                        app.channelMetaStore,
+                    ).also { it.start() }
                     environment.serverRunning = true
                     streamHealthWatchdog?.stop()
                     streamHealthWatchdog = StreamHealthWatchdog(
@@ -109,6 +115,9 @@ class ServerService : LifecycleService() {
                     daddyLiveClient.scheduleChannelRefresh(force = true) {
                         updateRunningNotification()
                         daddyLiveClient.schedulePrewarmDelayed()
+                        app.logoResolver.schedulePrewarm(
+                            daddyLiveClient.channels.map { it.name to it.tvgId },
+                        )
                         if (!MainActivity.isInForeground) {
                             showReadyBanner(daddyLiveClient.channels.size)
                         }

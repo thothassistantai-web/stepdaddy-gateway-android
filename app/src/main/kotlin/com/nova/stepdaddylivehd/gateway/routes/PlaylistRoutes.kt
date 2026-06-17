@@ -2,6 +2,7 @@ package com.nova.stepdaddylivehd.gateway.routes
 
 import com.nova.stepdaddylivehd.gateway.GatewayEnvironment
 import com.nova.stepdaddylivehd.gateway.upstream.DaddyLiveClient
+import com.nova.stepdaddylivehd.gateway.upstream.ChannelMetaStore
 import com.nova.stepdaddylivehd.gateway.upstream.LogoResolver
 import com.nova.stepdaddylivehd.gateway.upstream.PlaylistBuilder
 import io.ktor.http.ContentType
@@ -17,6 +18,7 @@ class PlaylistRoutes(
     private val environment: GatewayEnvironment,
     private val client: DaddyLiveClient,
     private val logoResolver: LogoResolver,
+    private val channelMetaStore: ChannelMetaStore,
 ) {
     suspend fun tivimatePlaylist(call: ApplicationCall) {
         if (call.request.httpMethod.value == "HEAD") {
@@ -26,12 +28,14 @@ class PlaylistRoutes(
         try {
             val cached = client.channels
             client.scheduleChannelRefresh()
+            logoResolver.awaitLoaded()
             val body = if (cached.isNotEmpty()) {
                 PlaylistBuilder.tivimatePlaylist(
                     channels = cached,
                     baseUrl = environment.loopbackBase(),
                     dlhdOrigin = client.activeBaseUrl,
                     logoResolver = logoResolver,
+                    channelMetaStore = channelMetaStore,
                 )
             } else {
                 PlaylistBuilder.minimalPlaylist(environment.loopbackBase())

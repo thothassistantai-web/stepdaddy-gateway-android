@@ -68,7 +68,23 @@ Proof image: `/home/nova/livehd/current/fusa-boot-banner-proof.png` — shows *"
 | **TiviMate setup** | **One-time** — add playlist + EPG URLs in TiviMate; TiviMate does not show gateway status (use home banner or StepDaddy Gateway app). |
 | **Stream start latency** | First play per channel is **upstream-bound** (often 3–15+ s cold); warm repeats are much faster. Not a gateway bug. |
 | **TiviMate HLS** | Manifests use **`/content/` proxy** (encrypted URLs) matching Linux gateway — required for segment referer headers. |
-| **Channel logos** | Resolved from bundled `logos_db_cache.csv` via `tvg-id`; served at `/logo/{token}` with disk cache. |
+| **Channel logos** | **100%** working `tvg-logo` URLs (85% real iptv-org via `/logo/`, 15% per-channel placeholder SVG); see Logo coverage table below. |
+
+### Logo coverage (2026-06-17, FUSA2541006925)
+
+Audit: `GET /tivimate-playlist.m3u8` → classify `tvg-logo` URLs → `curl` each unique URL for HTTP 200.
+
+| Metric | Before | After |
+|--------|--------|-------|
+| **Channels** | 1140 | 1140 |
+| **Real logos** (`/logo/` proxy) | 341 (29.9%) | **969 (85.0%)** |
+| **Per-channel placeholder** (`/ui/channel/{token}.svg`) | 0 | 171 (15.0%) |
+| **Generic default** (`default-channel.svg`) | 799 (70.1%) | **0 (0%)** |
+| **Unique logo URLs** | — | 953 |
+| **HTTP 200 (all unique URLs)** | — | **953 / 953 (100%)** |
+| **Random sample (n=20)** | — | **20 / 20 OK** |
+
+**Resolver parity with Linux:** `meta.json` logos (primary), `logos_db_cache.csv` + `channels_db_cache.csv`, 148 name aliases, tvg-id variant index (compact + dotted), fuzzy name match (0.88), `channel_logo_overrides.json`, per-channel SVG placeholder as last resort. Playlist build awaits logo DB load; upstream logos pre-warmed on channel refresh; `/logo/` falls back to default SVG on upstream failure (always 200).
 
 ### Self-healing streaming (2026-06-17)
 
