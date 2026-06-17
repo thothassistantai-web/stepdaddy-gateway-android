@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Channel">
+  <rect width="128" height="128" rx="24" fill="#171b24"/>
+  <rect x="10" y="10" width="108" height="108" rx="18" fill="#243046" stroke="#3b465c" stroke-width="2"/>
+  <rect x="24" y="34" width="80" height="52" rx="8" fill="#131821" stroke="#4f617a" stroke-width="2"/>
+  <path d="M58 48 L78 58 L58 68 Z" fill="#8fa4bf"/>
+  <rect x="34" y="94" width="60" height="8" rx="4" fill="#3b465c"/>
+</svg>

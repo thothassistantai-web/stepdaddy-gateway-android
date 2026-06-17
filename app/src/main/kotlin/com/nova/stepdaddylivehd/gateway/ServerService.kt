@@ -84,7 +84,8 @@ class ServerService : LifecycleService() {
                     return@withLock
                 }
                 try {
-                    gatewayServer = GatewayServer(environment, daddyLiveClient, epgManager).also { it.start() }
+                    gatewayServer = GatewayServer(this@ServerService, environment, daddyLiveClient, epgManager)
+                        .also { it.start() }
                     environment.serverRunning = true
                     val channelCount = daddyLiveClient.channels.size
                     mainHandler.post { showServerReadyIfBackground(channelCount) }
@@ -173,10 +174,7 @@ class ServerService : LifecycleService() {
 
     private fun showServerReadyIfBackground(channelCount: Int) {
         if (MainActivity.isInForeground) return
-        if (channelCount <= 0) {
-            Log.i(TAG, "Deferring ready banner until channels load")
-            return
-        }
+        lastKnownChannelCount = channelCount
         showReadyBanner(channelCount)
     }
 

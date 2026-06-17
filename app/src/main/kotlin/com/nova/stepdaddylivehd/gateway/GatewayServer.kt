@@ -1,10 +1,12 @@
 package com.nova.stepdaddylivehd.gateway
 
+import android.content.Context
 import com.nova.stepdaddylivehd.gateway.epg.EpgManager
 import com.nova.stepdaddylivehd.gateway.routes.EpgRoutes
 import com.nova.stepdaddylivehd.gateway.routes.HealthRoutes
 import com.nova.stepdaddylivehd.gateway.routes.PlaylistRoutes
 import com.nova.stepdaddylivehd.gateway.routes.StreamRoutes
+import com.nova.stepdaddylivehd.gateway.routes.UiRoutes
 import com.nova.stepdaddylivehd.gateway.upstream.DaddyLiveClient
 import com.nova.stepdaddylivehd.gateway.upstream.GatewayConfig
 import io.ktor.serialization.kotlinx.json.json
@@ -21,10 +23,12 @@ import io.ktor.server.routing.routing
 import kotlinx.serialization.json.Json
 
 class GatewayServer(
+    context: Context,
     private val environment: GatewayEnvironment,
     private val client: DaddyLiveClient,
     private val epgManager: EpgManager,
 ) {
+    private val uiRoutes = UiRoutes(context.applicationContext)
     @Volatile
     private var engine: ApplicationEngine? = null
 
@@ -74,6 +78,9 @@ class GatewayServer(
                 route("/epg.xml") {
                     get { epgRoutes.epgXml(call) }
                     head { epgRoutes.epgXml(call) }
+                }
+                get("/ui/default-channel.svg") {
+                    uiRoutes.defaultChannelLogo(call)
                 }
             }
         }.start(wait = false)
