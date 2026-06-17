@@ -136,7 +136,7 @@ object GatewayNotifier {
             .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_ALL)
             .setOnlyAlertOnce(false)
             .addAction(0, appContext.getString(R.string.action_open), openAppPendingIntent(appContext))
-        if (!MainActivity.isInForeground && canUseFullScreenIntent(appContext)) {
+        if (shouldUseFullScreenStartedAlert(appContext)) {
             builder.setFullScreenIntent(serverReadyPendingIntent(appContext, channelCount), true)
         }
         appContext.getSystemService(NotificationManager::class.java)
@@ -197,6 +197,15 @@ object GatewayNotifier {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+    }
+
+    /** Full-screen alert when overlay cannot draw; overlay owns the visual when it can. */
+    fun shouldUseFullScreenStartedAlert(context: Context): Boolean {
+        val appContext = context.applicationContext
+        return canPost(appContext) &&
+            !MainActivity.isInForeground &&
+            canUseFullScreenIntent(appContext) &&
+            !GatewayOverlay.canDraw(appContext)
     }
 
     private fun canUseFullScreenIntent(context: Context): Boolean {

@@ -87,7 +87,6 @@ class ServerService : LifecycleService() {
                     gatewayServer = GatewayServer(environment, daddyLiveClient, epgManager).also { it.start() }
                     environment.serverRunning = true
                     val channelCount = daddyLiveClient.channels.size
-                    GatewayNotifier.showServerStartedAlert(this@ServerService, channelCount)
                     mainHandler.post { showServerReadyIfBackground(channelCount) }
                     updateRunningNotification()
                     notifyForegroundIfVisible(R.string.toast_server_running)
@@ -187,6 +186,11 @@ class ServerService : LifecycleService() {
         mainHandler.postDelayed({
             if (GatewayOverlay.canDraw(this)) {
                 GatewayOverlay.showServerReady(this, channelCount)
+                return@postDelayed
+            }
+            if (GatewayNotifier.shouldUseFullScreenStartedAlert(this)) {
+                GatewayNotifier.showServerStartedAlert(this, channelCount)
+                Log.i(TAG, "Posted started alert with full-screen intent (channels=$channelCount)")
                 return@postDelayed
             }
             launchServerReadyActivity(channelCount)
