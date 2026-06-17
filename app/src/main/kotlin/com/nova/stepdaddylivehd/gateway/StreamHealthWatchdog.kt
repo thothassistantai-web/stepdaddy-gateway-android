@@ -68,9 +68,14 @@ class StreamHealthWatchdog(
         if (!mirrorsOk) {
             Log.w(TAG, "Mirror probe failed alongside stream failures")
         }
+        if (client.shouldSuppressRestartForOutage()) {
+            client.recordHealingAction("outage_mode_restart_suppressed")
+            consecutiveProbeFailures = 0
+            Log.w(TAG, "Suppressing restart while upstream outage/cache-serve mode is active")
+            return
+        }
         consecutiveProbeFailures++
         client.recordHealingAction("probe_fail streams=$streamFailures mirrors=$mirrorsOk")
-        client.invalidateStaleCaches()
         if (consecutiveProbeFailures >= GatewayConfig.WATCHDOG_RESTART_THRESHOLD) {
             Log.e(TAG, "Persistent probe failures ($consecutiveProbeFailures); requesting gateway restart")
             client.recordHealingAction("restart_requested")

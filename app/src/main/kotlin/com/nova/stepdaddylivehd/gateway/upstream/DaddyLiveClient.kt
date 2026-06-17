@@ -24,6 +24,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import java.net.URL
+import kotlin.math.min
 import java.util.concurrent.TimeUnit
 
 class DaddyLiveClient(
@@ -48,10 +49,17 @@ class DaddyLiveClient(
     private val staleStreamCache = mutableMapOf<String, CachedManifest>()
     private val upstreamCache = mutableMapOf<String, CachedUpstream>()
     private val deadMirrors = mutableMapOf<String, Long>()
+    private val mirrorFailureCounts = mutableMapOf<String, Int>()
+    private val mirrorRetryAfterMs = mutableMapOf<String, Long>()
     private val streamFailures = mutableMapOf<String, Int>()
+    private val invalidateCooldownUntilMs = mutableMapOf<String, Long>()
     private val healingLog = ArrayDeque<String>(GatewayConfig.HEALING_LOG_MAX)
     @Volatile
     private var lastHealingAction: String = "none"
+    @Volatile
+    private var outageModeUntilMs: Long = 0L
+    @Volatile
+    private var lastServedFromStaleCache: Boolean = false
 
     @Volatile
     var channels: List<Channel> = emptyList()
@@ -155,6 +163,7 @@ class DaddyLiveClient(
                 streamCache[cacheKey] = entry
                 staleStreamCache[cacheKey] = entry
             }
+            lastServedFromStaleCache = false
             return rewritten
         } catch (exc: Exception) {
             if (exc is CancellationException) {
@@ -162,8 +171,14 @@ class DaddyLiveClient(
             }
             cacheMutex.withLock {
                 val stale = staleStreamCache[cacheKey]
-                if (stale != null && now - stale.savedAtMs < GatewayConfig.STALE_STREAM_TTL_MS) {
-                    Log.w(TAG, "Serving stale stream for $channelId after ${exc.message}")
+                val staleTtl = if (isGlobalOutageActive()) {
+                    GatewayConfig.OUTAGE_STALE_GRACE_TTL_MS
+                } else {
+                    GatewayConfig.STALE_STREAM_TTL_MS
+                }
+                if (stale != null && now - stale.savedAtMs < staleTtl) {
+                    lastServedFromStaleCache = true
+                    Log.w(TAG, "cache-serve mode channel=$channelId reason=${exc.message}")
                     return stale.rewrittenPlaylist
                 }
             }
@@ -182,7 +197,13 @@ class DaddyLiveClient(
         if (!upstreamFetchSem.tryAcquire()) {
             cacheMutex.withLock {
                 val stale = upstreamCache[channelId]
-                if (stale != null && now - stale.savedAtMs < GatewayConfig.UPSTREAM_STALE_TTL_MS) {
+                val staleTtl = if (isGlobalOutageActive()) {
+                    GatewayConfig.OUTAGE_STALE_GRACE_TTL_MS
+                } else {
+                    GatewayConfig.UPSTREAM_STALE_TTL_MS
+                }
+                if (stale != null && now - stale.savedAtMs < staleTtl) {
+                    lastServedFromStaleCache = true
                     Log.w(TAG, "Serving stale upstream for $channelId (fetch slots full)")
                     return stale.manifest
                 }
@@ -202,8 +223,11 @@ class DaddyLiveClient(
     ): UpstreamManifest {
         var lastError: Exception? = null
         val resportzTimedOut = mutableSetOf<String>()
+        var attemptedMirrors = 0
+        var connectivityFailures = 0
         for (baseUrl in orderedMirrorUrls()) {
-            if (isMirrorDead(baseUrl)) continue
+            if (isMirrorDead(baseUrl) || isMirrorCoolingDown(baseUrl)) continue
+            attemptedMirrors++
             val mirrorKey = baseUrl.trimEnd('/')
             if (isDaddyLiveMirror(baseUrl) && mirrorKey in resportzTimedOut) {
                 continue
@@ -224,6 +248,7 @@ class DaddyLiveClient(
                 }
                 markMirrorAlive(baseUrl)
                 activeBaseUrl = baseUrl
+                clearGlobalOutageIfOpen()
                 cacheMutex.withLock {
                     upstreamCache[channelId] = CachedUpstream(System.currentTimeMillis(), manifest)
                 }
@@ -235,6 +260,8 @@ class DaddyLiveClient(
                 if (isDaddyLiveMirror(baseUrl)) {
                     resportzTimedOut += mirrorKey
                 }
+                connectivityFailures++
+                markMirrorFailure(baseUrl)
                 Log.d(TAG, "Mirror timeout for $channelId on $baseUrl (${attemptBudget}ms)")
             } catch (exc: Exception) {
                 lastError = exc
@@ -242,20 +269,34 @@ class DaddyLiveClient(
                     Log.d(TAG, "Channel-specific failure for $channelId: ${exc.message}")
                     break
                 }
-                if (!isCdnFetchError(exc)) {
-                    markMirrorDead(baseUrl)
+                if (isConnectivityFailure(exc) || shouldMarkMirrorDead(exc)) {
+                    connectivityFailures++
+                    markMirrorFailure(baseUrl)
+                    Log.d(TAG, "Mirror failed for $channelId on $baseUrl: ${exc.message}")
+                    continue
                 }
-                Log.d(TAG, "Mirror failed for $channelId on $baseUrl: ${exc.message}")
+                Log.d(TAG, "Non-mirror failure for $channelId on $baseUrl: ${exc.message}")
             }
+        }
+        if (attemptedMirrors > 0 && connectivityFailures >= attemptedMirrors) {
+            openGlobalOutage("connectivity_failures=$connectivityFailures mirrors=$attemptedMirrors")
         }
         cacheMutex.withLock {
             val stale = upstreamCache[channelId]
-            if (stale != null && System.currentTimeMillis() - stale.savedAtMs < GatewayConfig.UPSTREAM_STALE_TTL_MS) {
-                Log.w(TAG, "Serving stale upstream for $channelId after mirror failures")
+            val staleTtl = if (isGlobalOutageActive()) {
+                GatewayConfig.OUTAGE_STALE_GRACE_TTL_MS
+            } else {
+                GatewayConfig.UPSTREAM_STALE_TTL_MS
+            }
+            if (stale != null && System.currentTimeMillis() - stale.savedAtMs < staleTtl) {
+                lastServedFromStaleCache = true
+                Log.w(TAG, "cache-serve upstream channel=$channelId after mirror failures")
                 return stale.manifest
             }
         }
-        throw lastError ?: IllegalStateException("No mirrors available for channel $channelId")
+        throw lastError ?: IllegalStateException(
+            if (isGlobalOutageActive()) "upstream_outage" else "No mirrors available for channel $channelId",
+        )
     }
 
     private suspend fun loadChannelsFromUpstream(): List<Channel> {
@@ -272,7 +313,7 @@ class DaddyLiveClient(
                 }.sortedWith(GroupTitleResolver.channelComparator())
             } catch (exc: Exception) {
                 lastError = exc
-                markMirrorDead(baseUrl)
+                Log.d(TAG, "Channel list failed on $baseUrl: ${exc.message}")
             }
         }
         if (channels.isNotEmpty()) {
@@ -309,13 +350,27 @@ class DaddyLiveClient(
     }
 
     fun noteStreamSuccess(channelId: String) {
+        lastServedFromStaleCache = false
         synchronized(healingLock) {
             streamFailures.remove(channelId)
+            invalidateCooldownUntilMs.remove(channelId)
         }
     }
 
     fun noteStreamFailure(channelId: String, exc: Exception) {
         if (isTransientError(exc)) {
+            return
+        }
+        if (!isChannelSpecificStreamFailure(exc)) {
+            Log.d(TAG, "Skipping cache invalidate for global/mirror failure channel=$channelId: ${exc.message}")
+            return
+        }
+        val now = System.currentTimeMillis()
+        val inCooldown = synchronized(healingLock) {
+            now < (invalidateCooldownUntilMs[channelId] ?: 0L)
+        }
+        if (inCooldown) {
+            Log.d(TAG, "Skipping invalidate during cooldown channel=$channelId")
             return
         }
         val count = synchronized(healingLock) {
@@ -326,8 +381,11 @@ class DaddyLiveClient(
         Log.d(TAG, "Stream failure channel=$channelId count=$count: ${exc.message}")
         if (count >= GatewayConfig.STREAM_FAILURE_INVALIDATE_THRESHOLD) {
             refreshScope.launch {
-                invalidateChannelCaches(channelId)
+                invalidateChannelCaches(channelId, exc)
                 recordHealingAction("invalidate_channel $channelId failures=$count")
+            }
+            synchronized(healingLock) {
+                invalidateCooldownUntilMs[channelId] = now + GatewayConfig.INVALIDATE_COOLDOWN_MS
             }
         }
     }
@@ -356,44 +414,78 @@ class DaddyLiveClient(
             deadMirrorCount = deadMirrors.size,
             streamCacheSize = streamCache.size,
             upstreamCacheSize = upstreamCache.size,
+            outageMode = isGlobalOutageActive(),
+            cacheServeMode = lastServedFromStaleCache,
+            breakerOpen = isGlobalOutageActive(),
+            breakerRemainingMs = outageRemainingMs(),
         )
     }
 
-    suspend fun invalidateChannelCaches(channelId: String) {
+    suspend fun invalidateChannelCaches(channelId: String, reason: Exception? = null) {
         cacheMutex.withLock {
-            invalidateChannelCachesLocked(channelId)
+            invalidateChannelCachesLocked(channelId, reason)
         }
     }
 
-    private fun invalidateChannelCachesLocked(channelId: String) {
+    private fun invalidateChannelCachesLocked(channelId: String, reason: Exception? = null) {
         streamCache.keys.filter { it.startsWith("$channelId:") }.forEach { streamCache.remove(it) }
-        staleStreamCache.keys.filter { it.startsWith("$channelId:") }.forEach { staleStreamCache.remove(it) }
-        upstreamCache.remove(channelId)
+        if (shouldPurgeUpstreamCache(reason)) {
+            staleStreamCache.keys.filter { it.startsWith("$channelId:") }.forEach { staleStreamCache.remove(it) }
+            upstreamCache.remove(channelId)
+        } else {
+            Log.d(TAG, "Keeping stale upstream cache for $channelId (${reason?.message})")
+        }
         synchronized(healingLock) {
             streamFailures.remove(channelId)
         }
     }
 
+    /** Drop expired fresh entries only; keep upstream entries within stale TTL for unrelated channels. */
     suspend fun invalidateStaleCaches() {
         cacheMutex.withLock {
             val now = System.currentTimeMillis()
+            val staleTtl = if (isGlobalOutageActive()) {
+                GatewayConfig.OUTAGE_STALE_GRACE_TTL_MS
+            } else {
+                GatewayConfig.STALE_STREAM_TTL_MS
+            }
+            val upstreamStaleTtl = if (isGlobalOutageActive()) {
+                GatewayConfig.OUTAGE_STALE_GRACE_TTL_MS
+            } else {
+                GatewayConfig.UPSTREAM_STALE_TTL_MS
+            }
             streamCache.entries.removeIf { now - it.value.savedAtMs > GatewayConfig.STREAM_CACHE_TTL_MS }
-            upstreamCache.entries.removeIf { now - it.value.savedAtMs > GatewayConfig.UPSTREAM_CACHE_TTL_MS }
+            staleStreamCache.entries.removeIf { now - it.value.savedAtMs > staleTtl }
+            upstreamCache.entries.removeIf { now - it.value.savedAtMs > upstreamStaleTtl }
         }
         recordHealingAction("purge_stale_caches")
     }
 
+    /** Content-proxy healing: refresh rewritten playlists without evicting upstream manifests. */
+    suspend fun invalidateFreshStreamCaches() {
+        cacheMutex.withLock {
+            val now = System.currentTimeMillis()
+            streamCache.entries.removeIf { now - it.value.savedAtMs > GatewayConfig.STREAM_CACHE_TTL_MS }
+        }
+        recordHealingAction("purge_fresh_stream_caches")
+    }
+
     suspend fun probeMirrors(): Boolean {
+        if (isGlobalOutageActive()) {
+            Log.i(TAG, "upstream-outage mode active; probe throttled")
+        }
         for (baseUrl in orderedMirrorUrls()) {
-            if (isMirrorDead(baseUrl)) continue
+            if (isMirrorDead(baseUrl) || isMirrorCoolingDown(baseUrl)) continue
             try {
                 val rows = fetchChannelRows(baseUrl)
                 if (rows.isNotEmpty()) {
                     markMirrorAlive(baseUrl)
+                    clearGlobalOutageIfOpen()
                     return true
                 }
-            } catch (_: Exception) {
-                // try next mirror
+            } catch (exc: Exception) {
+                markMirrorFailure(baseUrl)
+                Log.d(TAG, "Mirror probe failed on $baseUrl: ${exc.message}")
             }
         }
         return false
@@ -412,14 +504,63 @@ class DaddyLiveClient(
         return message.startsWith("HTTP 4") || message.startsWith("HTTP 5")
     }
 
+    private fun isConnectivityFailure(exc: Exception): Boolean {
+        val message = exc.message.orEmpty()
+        if (message.contains("failed to connect", ignoreCase = true)) return true
+        if (message.contains("unable to resolve host", ignoreCase = true)) return true
+        if (message.contains("connection reset", ignoreCase = true)) return true
+        if (message.contains("network is unreachable", ignoreCase = true)) return true
+        if (message.contains("timeout", ignoreCase = true)) return true
+        return false
+    }
+
+    /** Only resportz watch / mirror API faults should poison the shared mirror pool. */
+    private fun shouldMarkMirrorDead(exc: Exception): Boolean {
+        if (isCdnFetchError(exc)) return false
+        val message = exc.message.orEmpty()
+        if (message.contains("failed to connect", ignoreCase = true)) return false
+        if (message.contains("unable to resolve host", ignoreCase = true)) return false
+        if (message.contains("connection reset", ignoreCase = true)) return false
+        if (message.contains("resportz watch", ignoreCase = true)) return true
+        if (message.startsWith("HTTP ") && message.contains("resportz")) return true
+        return false
+    }
+
     /** Resportz scrape misses are per-channel; do not poison the shared mirror pool. */
     private fun isChannelSpecificError(exc: Exception): Boolean {
         val message = exc.message.orEmpty()
         if (message.contains("encoded m3u8", ignoreCase = true)) return true
         if (message.contains("iframe source", ignoreCase = true)) return true
+        if (message.contains("embed stub host", ignoreCase = true)) return true
         if (message.contains("empty iframe", ignoreCase = true)) return true
         if (message.contains("empty encoded source", ignoreCase = true)) return true
         return false
+    }
+
+    /** Only count failures toward per-channel cache purge when the channel's own upstream/CDN broke. */
+    private fun isChannelSpecificStreamFailure(exc: Exception): Boolean {
+        val message = exc.message.orEmpty()
+        if (message.contains("No mirrors available", ignoreCase = true)) return false
+        if (message.contains("upstream_busy")) return false
+        if (message.contains("upstream_outage", ignoreCase = true)) return false
+        if (message.contains("upstream_timeout", ignoreCase = true)) return false
+        if (message.contains("failed to connect", ignoreCase = true)) return false
+        if (message.contains("unable to resolve host", ignoreCase = true)) return false
+        if (message.contains("timeout", ignoreCase = true)) return false
+        if (message.contains("timed out", ignoreCase = true)) return false
+        if (message.contains("stream_not_found", ignoreCase = true)) return false
+        if (isChannelSpecificError(exc)) return true
+        if (message.contains("HTTP 403") || message.contains("HTTP 502") ||
+            message.contains("HTTP 504") || message.contains("HTTP 500")
+        ) {
+            return true
+        }
+        return true
+    }
+
+    private fun shouldPurgeUpstreamCache(reason: Exception?): Boolean {
+        if (reason == null) return true
+        return isChannelSpecificStreamFailure(reason)
     }
 
     private fun isMirrorDead(baseUrl: String): Boolean {
@@ -433,11 +574,61 @@ class DaddyLiveClient(
     }
 
     private fun markMirrorDead(baseUrl: String) {
-        deadMirrors[baseUrl.trimEnd('/')] = System.currentTimeMillis()
+        val key = baseUrl.trimEnd('/')
+        deadMirrors[key] = System.currentTimeMillis()
+        mirrorFailureCounts[key] = GatewayConfig.WATCHDOG_RESTART_THRESHOLD
+        mirrorRetryAfterMs[key] = System.currentTimeMillis() + GatewayConfig.MIRROR_FAILURE_BACKOFF_MAX_MS
     }
 
     private fun markMirrorAlive(baseUrl: String) {
-        deadMirrors.remove(baseUrl.trimEnd('/'))
+        val key = baseUrl.trimEnd('/')
+        deadMirrors.remove(key)
+        mirrorFailureCounts.remove(key)
+        mirrorRetryAfterMs.remove(key)
+    }
+
+    private fun markMirrorFailure(baseUrl: String) {
+        val key = baseUrl.trimEnd('/')
+        val now = System.currentTimeMillis()
+        val nextCount = (mirrorFailureCounts[key] ?: 0) + 1
+        mirrorFailureCounts[key] = nextCount
+        val backoff = min(
+            GatewayConfig.MIRROR_FAILURE_BACKOFF_BASE_MS * (1L shl min(nextCount - 1, 4)),
+            GatewayConfig.MIRROR_FAILURE_BACKOFF_MAX_MS,
+        )
+        mirrorRetryAfterMs[key] = now + backoff
+        if (backoff >= GatewayConfig.DEAD_MIRROR_TTL_MS) {
+            deadMirrors[key] = now
+        }
+        Log.i(TAG, "breaker-open mirror=$key backoffMs=$backoff failures=$nextCount")
+    }
+
+    private fun isMirrorCoolingDown(baseUrl: String): Boolean {
+        val key = baseUrl.trimEnd('/')
+        val retryAt = mirrorRetryAfterMs[key] ?: return false
+        return System.currentTimeMillis() < retryAt
+    }
+
+    private fun openGlobalOutage(reason: String) {
+        outageModeUntilMs = System.currentTimeMillis() + GatewayConfig.GLOBAL_OUTAGE_BREAKER_MS
+        recordHealingAction("upstream_outage_open $reason")
+    }
+
+    private fun clearGlobalOutageIfOpen() {
+        if (outageModeUntilMs == 0L) return
+        outageModeUntilMs = 0L
+        recordHealingAction("upstream_outage_closed")
+    }
+
+    fun isGlobalOutageActive(): Boolean = System.currentTimeMillis() < outageModeUntilMs
+
+    fun outageRemainingMs(): Long = (outageModeUntilMs - System.currentTimeMillis()).coerceAtLeast(0L)
+
+    fun shouldSuppressRestartForOutage(): Boolean = isGlobalOutageActive() || lastServedFromStaleCache
+
+    fun reportHealthyStart() {
+        lastServedFromStaleCache = false
+        clearGlobalOutageIfOpen()
     }
 
     private fun loadDiskCache() {
@@ -523,6 +714,10 @@ class DaddyLiveClient(
         val deadMirrorCount: Int,
         val streamCacheSize: Int,
         val upstreamCacheSize: Int,
+        val outageMode: Boolean,
+        val cacheServeMode: Boolean,
+        val breakerOpen: Boolean,
+        val breakerRemainingMs: Long,
     )
 
     companion object {

@@ -42,7 +42,7 @@ class ContentRoutes(
         } catch (exc: Exception) {
             client.recordHealingAction("content_fail ${exc.message?.take(60)}")
             if (isRetriableContentError(exc)) {
-                client.invalidateStaleCaches()
+                client.invalidateFreshStreamCaches()
             }
             call.respond(
                 HttpStatusCode.BadGateway,
