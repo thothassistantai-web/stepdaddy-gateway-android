@@ -3,10 +3,9 @@ package com.nova.stepdaddylivehd.gateway
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Handler
-import android.os.Looper
 import android.os.PowerManager
 import android.util.Log
+import java.util.concurrent.Executors
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
@@ -21,7 +20,7 @@ class BootReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         val wakeLock = acquireBootWakeLock(context)
         val appContext = context.applicationContext
-        Handler(Looper.getMainLooper()).post {
+        bootExecutor.execute {
             try {
                 Log.i(TAG, "Boot received ($action); attempting gateway start")
                 (appContext as GatewayApp).gatewayEnvironment.clearReadyBannerForNewBoot()
@@ -35,16 +34,15 @@ class BootReceiver : BroadcastReceiver() {
                     else -> GatewayStartHelper.scheduleBootFallbacksAsync(appContext)
                 }
                 if (!ServerService.isServiceActive) {
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        if (!ServerService.isServiceActive) {
-                            val retry = GatewayStartHelper.startIfNeeded(
-                                appContext,
-                                "BootReceiver+3s",
-                                allowReschedule = false,
-                            )
-                            Log.i(TAG, "BootReceiver+3s retry result: $retry")
-                        }
-                    }, BOOT_RETRY_DELAY_MS)
+                    Thread.sleep(BOOT_RETRY_DELAY_MS)
+                    if (!ServerService.isServiceActive) {
+                        val retry = GatewayStartHelper.startIfNeeded(
+                            appContext,
+                            "BootReceiver+3s",
+                            allowReschedule = false,
+                        )
+                        Log.i(TAG, "BootReceiver+3s retry result: $retry")
+                    }
                 }
             } finally {
                 releaseBootWakeLock(wakeLock)
@@ -76,5 +74,6 @@ class BootReceiver : BroadcastReceiver() {
         private const val BOOT_WAKE_LOCK_MS = 60_000L
         private const val BOOT_RETRY_DELAY_MS = 3_000L
         private const val ACTION_QUICKBOOT_POWERON = "android.intent.action.QUICKBOOT_POWERON"
+        private val bootExecutor = Executors.newSingleThreadExecutor()
     }
 }

@@ -98,5 +98,14 @@
                 <action android:name="com.nova.stepdaddylivehd.gateway.action.BOOT_ALARM" />
             </intent-filter>
         </receiver>
+
+        <receiver
+            android:name=".PackageChangeReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

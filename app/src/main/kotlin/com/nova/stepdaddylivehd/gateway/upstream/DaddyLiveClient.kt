@@ -82,7 +82,9 @@ class DaddyLiveClient(
 
     init {
         loadDiskCache()
-        staleGoodCacheStore.purgeExpired(GatewayConfig.STALE_DISK_TTL_MS)
+        refreshScope.launch {
+            staleGoodCacheStore.purgeExpired(GatewayConfig.STALE_DISK_TTL_MS)
+        }
     }
 
     fun streamFetchTimeoutMs(): Long =
@@ -207,7 +209,6 @@ class DaddyLiveClient(
         }
         if (isGlobalOutageActive()) {
             serveStaleUpstreamFromCaches(channelId, now)?.let { return it }
-            throw IllegalStateException("upstream_outage")
         }
         val acquiredSlot = withTimeoutOrNull(GatewayConfig.UPSTREAM_FETCH_WAIT_MS) {
             upstreamFetchSem.acquire()
@@ -287,9 +288,6 @@ class DaddyLiveClient(
                 }
                 Log.d(TAG, "Non-mirror failure for $channelId on $baseUrl: ${exc.message}")
             }
-        }
-        if (attemptedMirrors > 0 && connectivityFailures >= attemptedMirrors) {
-            openGlobalOutage("connectivity_failures=$connectivityFailures mirrors=$attemptedMirrors")
         }
         serveStaleUpstreamFromCaches(channelId, System.currentTimeMillis())?.let { return it }
         throw lastError ?: IllegalStateException(
@@ -606,6 +604,9 @@ class DaddyLiveClient(
                 markMirrorFailure(baseUrl)
                 Log.d(TAG, "Mirror probe failed on $baseUrl: ${exc.message}")
             }
+        }
+        if (!isGlobalOutageActive()) {
+            openGlobalOutage("mirror_probe_all_failed")
         }
         return false
     }

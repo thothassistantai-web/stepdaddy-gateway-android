@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.PowerManager
 import android.util.Log
+import java.util.concurrent.Executors
 
 class BootAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
@@ -12,12 +13,14 @@ class BootAlarmReceiver : BroadcastReceiver() {
         val alarmIndex = intent.getIntExtra(GatewayStartHelper.EXTRA_ALARM_INDEX, 0)
         val pendingResult = goAsync()
         val wakeLock = acquireWakeLock(context)
-        try {
-            val result = GatewayStartHelper.startIfNeeded(context, "Alarm#$alarmIndex")
-            Log.i(TAG, "Alarm#$alarmIndex result: $result")
-        } finally {
-            releaseWakeLock(wakeLock)
-            pendingResult.finish()
+        alarmExecutor.execute {
+            try {
+                val result = GatewayStartHelper.startIfNeeded(context, "Alarm#$alarmIndex")
+                Log.i(TAG, "Alarm#$alarmIndex result: $result")
+            } finally {
+                releaseWakeLock(wakeLock)
+                pendingResult.finish()
+            }
         }
     }
 
@@ -42,5 +45,6 @@ class BootAlarmReceiver : BroadcastReceiver() {
         private const val TAG = "BootAlarmReceiver"
         private const val WAKE_LOCK_TAG = "StepDaddy::BootAlarm"
         private const val WAKE_LOCK_MS = 60_000L
+        private val alarmExecutor = Executors.newSingleThreadExecutor()
     }
 }
