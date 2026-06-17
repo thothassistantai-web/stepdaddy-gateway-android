@@ -11,8 +11,10 @@ class LightEpgBuilder(
     private val httpClient: OkHttpClient = defaultClient(),
 ) {
   fun build(tvgIds: Set<String>): BuildResult {
+    val output = File(store.servedXml.parentFile, "epg.build.part")
     if (tvgIds.isEmpty()) {
-      return BuildResult(emptyXml(), 0, 0)
+      output.writeBytes(emptyXml())
+      return BuildResult(output, 0, 0)
     }
     val grouped = groupTvgIdsByFeed(tvgIds)
     grouped.keys.forEach { url -> ensureFeedCached(url) }
@@ -21,24 +23,37 @@ class LightEpgBuilder(
     val windowStart = Instant.now().minusSeconds(EpgConfig.PROGRAMME_PAST_MINUTES * 60L)
     val windowEnd = Instant.now().plusSeconds(EpgConfig.PROGRAMME_FUTURE_HOURS * 3600L)
 
-    val channelsXml = linkedSetOf<String>()
-    val programmesXml = mutableListOf<String>()
+    val writtenChannelIds = linkedSetOf<String>()
+    var channelCount = 0
+    var programmeCount = 0
 
-    grouped.forEach { (url, ids) ->
-      val cache = store.feedCacheFile(url)
-      if (!cache.exists()) return@forEach
-      XmltvParser.iterBlocksFromGzip(cache, "channel", "channel", "id", ids).forEach { block ->
-        channelsXml += block
-      }
-      XmltvParser.iterBlocksFromGzip(cache, "programme", "programme", "channel", ids).forEach { block ->
-        if (XmltvParser.programmeInWindow(block, windowStart, windowEnd)) {
-          programmesXml += block
+    output.bufferedWriter(Charsets.UTF_8).use { writer ->
+      writer.write("""<?xml version="1.0" encoding="UTF-8"?>""")
+      writer.write("\n<tv generator-info-name=\"StepDaddy Gateway\">")
+
+      grouped.forEach { (url, ids) ->
+        val cache = store.feedCacheFile(url)
+        if (!cache.exists()) return@forEach
+        XmltvParser.iterBlocksFromGzip(cache, "channel", "channel", "id", ids).forEach channelBlock@{ block ->
+          val channelId = XmltvParser.blockAttrValue(block, "id") ?: return@channelBlock
+          if (!writtenChannelIds.add(channelId)) return@channelBlock
+          writer.write("\n")
+          writer.write(block.trim())
+          channelCount++
+        }
+        XmltvParser.iterBlocksFromGzip(cache, "programme", "programme", "channel", ids).forEach { block ->
+          if (XmltvParser.programmeInWindow(block, windowStart, windowEnd)) {
+            writer.write("\n")
+            writer.write(block.trim())
+            programmeCount++
+          }
         }
       }
+
+      writer.write("\n</tv>\n")
     }
 
-    val body = assembleXml(channelsXml.toList(), programmesXml)
-    return BuildResult(body, channelsXml.size, programmesXml.size)
+    return BuildResult(output, channelCount, programmeCount)
   }
 
   private fun ensureFeedCached(url: String) {
@@ -75,7 +90,7 @@ class LightEpgBuilder(
   }
 
   data class BuildResult(
-      val body: ByteArray,
+      val outputFile: File,
       val channelCount: Int,
       val programmeCount: Int,
   )
@@ -84,16 +99,6 @@ class LightEpgBuilder(
     fun emptyXml(): ByteArray =
         """<?xml version="1.0" encoding="UTF-8"?><tv generator-info-name="StepDaddy Gateway"></tv>"""
             .toByteArray(Charsets.UTF_8)
-
-    fun assembleXml(channels: List<String>, programmes: List<String>): ByteArray {
-      val sb = StringBuilder()
-      sb.append("""<?xml version="1.0" encoding="UTF-8"?>""")
-      sb.append("\n<tv generator-info-name=\"StepDaddy Gateway\">")
-      channels.forEach { block -> sb.append('\n').append(block.trim()) }
-      programmes.forEach { block -> sb.append('\n').append(block.trim()) }
-      sb.append("\n</tv>\n")
-      return sb.toString().toByteArray(Charsets.UTF_8)
-    }
 
     fun groupTvgIdsByFeed(tvgIds: Set<String>): Map<String, Set<String>> {
       val grouped = linkedMapOf<String, MutableSet<String>>()

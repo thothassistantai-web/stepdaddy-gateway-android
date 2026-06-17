@@ -47,8 +47,33 @@ class EpgStore(context: Context) {
   fun writeServedXml(body: ByteArray, programmeCount: Int, channelCount: Int, mappedTvgCount: Int, buildSeconds: Double) {
     val tmp = File(root, "epg.xml.tmp")
     tmp.writeBytes(body)
+    commitServedXml(tmp, programmeCount, channelCount, mappedTvgCount, buildSeconds)
+  }
+
+  fun writeServedXmlFromFile(
+      source: File,
+      programmeCount: Int,
+      channelCount: Int,
+      mappedTvgCount: Int,
+      buildSeconds: Double,
+  ) {
+    val tmp = File(root, "epg.xml.tmp")
+    source.inputStream().use { input ->
+      tmp.outputStream().use { output -> input.copyTo(output) }
+    }
+    commitServedXml(tmp, programmeCount, channelCount, mappedTvgCount, buildSeconds)
+    runCatching { source.delete() }
+  }
+
+  private fun commitServedXml(
+      tmp: File,
+      programmeCount: Int,
+      channelCount: Int,
+      mappedTvgCount: Int,
+      buildSeconds: Double,
+  ) {
     if (!tmp.renameTo(servedXml)) {
-      servedXml.writeBytes(body)
+      tmp.copyTo(servedXml, overwrite = true)
       tmp.delete()
     }
     meta = EpgMeta(

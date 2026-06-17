@@ -99,6 +99,8 @@ object XmltvParser {
     }.getOrNull()
   }
 
+  fun blockAttrValue(block: String, name: String): String? = attrValue(block, name)
+
   private fun attrValue(block: String, name: String): String? {
     val needle = "$name=\""
     val start = block.indexOf(needle)

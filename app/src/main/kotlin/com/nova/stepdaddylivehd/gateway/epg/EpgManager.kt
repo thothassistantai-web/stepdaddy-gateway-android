@@ -68,17 +68,24 @@ class EpgManager(
           builder.build(tvgIds)
         }
         val elapsed = (System.currentTimeMillis() - started) / 1000.0
-        store.writeServedXml(
-            body = result.body,
+        store.writeServedXmlFromFile(
+            source = result.outputFile,
             programmeCount = result.programmeCount,
             channelCount = result.channelCount,
             mappedTvgCount = tvgIds.size,
             buildSeconds = elapsed,
         )
         Log.i(TAG, "EPG built: ${result.programmeCount} programmes, ${result.channelCount} channels in ${elapsed}s")
-      } catch (exc: Exception) {
-        Log.w(TAG, "EPG build failed", exc)
-        store.updateState(if (store.servedXml.exists()) "ready" else "error", exc.message?.take(200))
+      } catch (exc: Throwable) {
+        if (exc is OutOfMemoryError) {
+          Log.e(TAG, "EPG build OOM — keeping cached epg.xml", exc)
+        } else {
+          Log.w(TAG, "EPG build failed", exc)
+        }
+        store.updateState(
+            if (store.servedXml.exists()) "ready" else "error",
+            exc.message?.take(200) ?: exc.javaClass.simpleName,
+        )
       } finally {
         buildInFlight = false
       }
