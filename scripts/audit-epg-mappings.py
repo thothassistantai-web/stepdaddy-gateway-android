@@ -27,7 +27,7 @@ MANUAL: dict[str, str] = {
     "CBS USA": "CBS.us",
     "NBC USA": "NBC.us",
     "FOX USA": "Fox.us",
-    "CW USA": "CW.us",
+    "CW USA": "WUCW-DT.us_locals1",
     "ESPN2 USA": "ESPN2.us",
     "FX USA": "FX.us",
     "PBS USA": "PBS.us",
