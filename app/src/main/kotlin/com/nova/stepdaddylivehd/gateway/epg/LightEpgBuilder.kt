@@ -18,7 +18,6 @@ class LightEpgBuilder(
     }
     val grouped = groupTvgIdsByFeed(tvgIds)
     grouped.keys.forEach { url -> ensureFeedCached(url) }
-    store.trimFeedCache()
 
     val windowStart = Instant.now().minusSeconds(EpgConfig.PROGRAMME_PAST_MINUTES * 60L)
     val windowEnd = Instant.now().plusSeconds(EpgConfig.PROGRAMME_FUTURE_HOURS * 3600L)
@@ -53,6 +52,7 @@ class LightEpgBuilder(
       writer.write("\n</tv>\n")
     }
 
+    store.trimFeedCache()
     return BuildResult(output, channelCount, programmeCount)
   }
 

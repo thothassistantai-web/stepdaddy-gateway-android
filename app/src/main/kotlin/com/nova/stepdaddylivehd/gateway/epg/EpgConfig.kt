@@ -28,8 +28,8 @@ object EpgConfig {
 
   const val DOWNLOAD_TIMEOUT_MS = 60_000L
 
-  /** Cap total feed cache on disk (~3 feeds x 64MB max, trim below this). */
-  const val MAX_FEED_CACHE_BYTES = 96 * 1024 * 1024L
+  /** Cap total feed cache on disk (~US locals + US2 + sports; trim after each build). */
+  const val MAX_FEED_CACHE_BYTES = 160 * 1024 * 1024L
 
   const val MAPPING_ASSET = "channel_epg_map.json"
 }

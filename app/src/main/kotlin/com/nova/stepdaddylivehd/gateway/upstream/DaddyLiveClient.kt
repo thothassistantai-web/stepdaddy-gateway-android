@@ -38,6 +38,7 @@ class DaddyLiveClient(
 ) {
     private val prefs = context.getSharedPreferences("stepdaddy_channels", Context.MODE_PRIVATE)
     private val staleGoodCacheStore = StaleGoodCacheStore(context)
+    private val channelNameOverrides = ChannelNameOverrides(context)
     private val json = Json { ignoreUnknownKeys = true }
     private val refreshScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val loadMutex = Mutex()
@@ -781,11 +782,15 @@ class DaddyLiveClient(
 
     private fun channelFromRow(channelId: String, channelName: String, cachedTvgId: String? = null): Channel {
         val id = channelId.trim()
-        val name = channelName.trim().replace("#", "")
-        val tags = channelMetaStore?.tagsFor(name).orEmpty()
+        val upstreamName = channelName.trim().replace("#", "")
+        val name = channelNameOverrides.nameFor(id, upstreamName)
+        val tags = channelMetaStore?.tagsFor(upstreamName).orEmpty()
+            .ifEmpty { channelMetaStore?.tagsFor(name).orEmpty() }
         val tvgId = cachedTvgId?.takeIf { it.isNotBlank() }
+            ?: epgChannelMapper?.tvgIdFor(id, upstreamName)
             ?: epgChannelMapper?.tvgIdFor(id, name)
-        val metaLogo = channelMetaStore?.logoFor(name)
+        val metaLogo = channelMetaStore?.logoFor(upstreamName)
+            ?: channelMetaStore?.logoFor(name)
         return Channel(
             id = id,
             name = name,

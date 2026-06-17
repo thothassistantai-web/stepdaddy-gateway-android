@@ -785,11 +785,12 @@
         ]
     },
     "CW USA": {
-        "logo": "https://files.catbox.moe/b9x63w.png",
+        "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/The_CW_2024.svg/960px-The_CW_2024.svg.png",
         "tags": [
             "🇺🇸",
             "#entertainment",
-            "#youth"
+            "#youth",
+            "#local"
         ]
     },
     "Canal 11 Portugal": {
@@ -2427,12 +2428,12 @@
             "#movies"
         ]
     },
-    "HBO Family USA": {
-        "logo": "https://files.catbox.moe/cbzdm9.png",
+    "GetTV USA": {
+        "logo": "https://i.imgur.com/evOWORd.png",
         "tags": [
             "🇺🇸",
-            "#family",
-            "#movies"
+            "#entertainment",
+            "#classic"
         ]
     },
     "HBO Latino USA": {
