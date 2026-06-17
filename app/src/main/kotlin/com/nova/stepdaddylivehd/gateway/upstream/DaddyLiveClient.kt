@@ -18,6 +18,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
@@ -208,7 +209,11 @@ class DaddyLiveClient(
             serveStaleUpstreamFromCaches(channelId, now)?.let { return it }
             throw IllegalStateException("upstream_outage")
         }
-        if (!upstreamFetchSem.tryAcquire()) {
+        val acquiredSlot = withTimeoutOrNull(GatewayConfig.UPSTREAM_FETCH_WAIT_MS) {
+            upstreamFetchSem.acquire()
+            true
+        } ?: false
+        if (!acquiredSlot) {
             serveStaleUpstreamFromCaches(channelId, now)?.let { return it }
             throw IllegalStateException("upstream_busy")
         }

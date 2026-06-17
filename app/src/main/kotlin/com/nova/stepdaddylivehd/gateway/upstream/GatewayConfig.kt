@@ -7,6 +7,8 @@ object GatewayConfig {
         "Mozilla/5.0 (Linux; Android 14; wv) AppleWebKit/537.36 " +
             "(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36"
     const val RESPORTZ_STREAM_TEMPLATE = "https://resportz.cfd/live/stream-%s.php"
+    /** dlhd.pk relay paths used by daddylive embed when resportz.cfd is unreachable. */
+    val DLHD_PK_STREAM_PATHS = listOf("watch", "cast", "plus", "player", "casting")
     const val CHANNEL_REFRESH_INTERVAL_MS = 600_000L
     const val STREAM_CACHE_TTL_MS = 30_000L
     const val UPSTREAM_CACHE_TTL_MS = 120_000L
@@ -17,6 +19,8 @@ object GatewayConfig {
     /** Per-mirror attempt — matches Python STREAM_MIRROR_ATTEMPT_TIMEOUT_SECONDS (18). */
     const val MIRROR_ATTEMPT_TIMEOUT_MS = 18_000L
     const val UPSTREAM_FETCH_MAX_CONCURRENT = 2
+    /** Max wait for a fetch slot when TiviMate requests several channels at once. */
+    const val UPSTREAM_FETCH_WAIT_MS = 20_000L
     const val DEAD_MIRROR_TTL_MS = 300_000L
     const val MIRROR_FAILURE_BACKOFF_BASE_MS = 10_000L
     const val MIRROR_FAILURE_BACKOFF_MAX_MS = 180_000L

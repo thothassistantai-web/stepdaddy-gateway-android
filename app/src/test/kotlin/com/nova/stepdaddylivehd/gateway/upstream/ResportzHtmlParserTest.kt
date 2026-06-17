@@ -66,6 +66,15 @@ class ResportzHtmlParserTest {
     }
 
     @Test
+    fun extractIframe_dlhdPkWatchPage() {
+        val watchBase = "https://dlhd.pk/watch/stream-51.php"
+        val html = """<iframe src="https://donis.jimpenopisonline.online/premiumtv/daddy3.php?id=51" width="100%"></iframe>"""
+        val matches = ResportzHtmlParser.extractIframeCandidates(html, watchBase)
+        assertEquals(1, matches.size)
+        assertTrue(matches[0].value.contains("donis.jimpenopisonline.online"))
+    }
+
+    @Test
     fun extractM3u8_missingReturnsNull() {
         assertNull(ResportzHtmlParser.extractM3u8Url("<html><body>agenda</body></html>"))
     }

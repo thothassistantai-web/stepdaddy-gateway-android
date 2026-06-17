@@ -12,14 +12,39 @@ class ResportzParser(
     private val maxEmbedDepth: Int = 2,
 ) {
     suspend fun fetchManifest(channelId: String, refererBase: String): UpstreamManifest {
-        val watchUrl = GatewayConfig.RESPORTZ_STREAM_TEMPLATE.format(channelId)
-        Log.d(TAG, "resportz watch $watchUrl")
         val referer = "${refererBase.trimEnd('/')}/"
-        val watchHtml = try {
-            getText(watchUrl, referer)
-        } catch (exc: Exception) {
-            throw IllegalStateException("resportz watch failed: ${exc.message}", exc)
+        var lastError: Exception? = null
+        for (watchUrl in watchUrlCandidates(channelId)) {
+            try {
+                return fetchManifestFromWatchPage(channelId, watchUrl, referer)
+            } catch (exc: Exception) {
+                lastError = exc
+                Log.d(TAG, "watch failed $watchUrl: ${exc.message}")
+            }
         }
+        throw IllegalStateException(
+            "resportz watch failed: ${lastError?.message ?: "no watch URLs"}",
+            lastError,
+        )
+    }
+
+    private fun watchUrlCandidates(channelId: String): List<String> {
+        val ordered = linkedSetOf<String>()
+        // dlhd.pk relays first — resportz.cfd is often unreachable while dlhd.pk still works.
+        for (path in GatewayConfig.DLHD_PK_STREAM_PATHS) {
+            ordered += "https://dlhd.pk/$path/stream-$channelId.php"
+        }
+        ordered += GatewayConfig.RESPORTZ_STREAM_TEMPLATE.format(channelId)
+        return ordered.toList()
+    }
+
+    private suspend fun fetchManifestFromWatchPage(
+        channelId: String,
+        watchUrl: String,
+        referer: String,
+    ): UpstreamManifest {
+        Log.d(TAG, "resportz watch $watchUrl")
+        val watchHtml = getText(watchUrl, referer)
         Log.d(TAG, "resportz watch ok (${watchHtml.length} bytes)")
         val iframeCandidates = ResportzHtmlParser.extractIframeCandidates(watchHtml, watchUrl)
         if (iframeCandidates.isEmpty()) {
@@ -63,7 +88,8 @@ class ResportzParser(
         val m3u8Match = ResportzHtmlParser.extractM3u8Url(sourcePageHtml)
         if (m3u8Match != null) {
             Log.d(TAG, "resportz m3u8 pattern=${m3u8Match.pattern} url=${m3u8Match.value}")
-            val (resolvedUrl, m3u8Text) = fetchM3u8Text(m3u8Match.value, embedUrl)
+            val resolvedM3u8 = resolveM3u8Url(m3u8Match.value, embedUrl)
+            val (resolvedUrl, m3u8Text) = fetchM3u8Text(resolvedM3u8, embedUrl)
             Log.d(TAG, "resportz m3u8 ok (${m3u8Text.length} bytes)")
             return UpstreamManifest(
                 playlistText = m3u8Text,
@@ -95,6 +121,13 @@ class ResportzParser(
         }
         throw nestedError ?: error("Failed to find encoded m3u8 source for channel $channelId")
     }
+
+    private fun resolveM3u8Url(m3u8Url: String, baseUrl: String): String =
+        if (m3u8Url.startsWith("http://") || m3u8Url.startsWith("https://")) {
+            m3u8Url
+        } else {
+            ResportzHtmlParser.resolveUrl(baseUrl, m3u8Url)
+        }
 
     private suspend fun fetchM3u8Text(m3u8Url: String, referer: String): Pair<String, String> {
         val candidates = linkedSetOf(m3u8Url)
