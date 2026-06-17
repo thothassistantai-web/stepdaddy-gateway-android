@@ -238,6 +238,10 @@ class DaddyLiveClient(
                 Log.d(TAG, "Mirror timeout for $channelId on $baseUrl (${attemptBudget}ms)")
             } catch (exc: Exception) {
                 lastError = exc
+                if (isChannelSpecificError(exc)) {
+                    Log.d(TAG, "Channel-specific failure for $channelId: ${exc.message}")
+                    break
+                }
                 if (!isCdnFetchError(exc)) {
                     markMirrorDead(baseUrl)
                 }
@@ -406,6 +410,16 @@ class DaddyLiveClient(
     private fun isCdnFetchError(exc: Exception): Boolean {
         val message = exc.message.orEmpty()
         return message.startsWith("HTTP 4") || message.startsWith("HTTP 5")
+    }
+
+    /** Resportz scrape misses are per-channel; do not poison the shared mirror pool. */
+    private fun isChannelSpecificError(exc: Exception): Boolean {
+        val message = exc.message.orEmpty()
+        if (message.contains("encoded m3u8", ignoreCase = true)) return true
+        if (message.contains("iframe source", ignoreCase = true)) return true
+        if (message.contains("empty iframe", ignoreCase = true)) return true
+        if (message.contains("empty encoded source", ignoreCase = true)) return true
+        return false
     }
 
     private fun isMirrorDead(baseUrl: String): Boolean {
