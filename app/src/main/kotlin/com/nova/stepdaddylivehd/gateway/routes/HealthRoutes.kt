@@ -3,6 +3,7 @@ package com.nova.stepdaddylivehd.gateway.routes
 import com.nova.stepdaddylivehd.gateway.BuildConfig
 import com.nova.stepdaddylivehd.gateway.GatewayEnvironment
 import com.nova.stepdaddylivehd.gateway.epg.EpgManager
+import com.nova.stepdaddylivehd.gateway.model.CanaryStatus
 import com.nova.stepdaddylivehd.gateway.model.HealingStatus
 import com.nova.stepdaddylivehd.gateway.model.HealthResponse
 import com.nova.stepdaddylivehd.gateway.model.TivimateSetup
@@ -38,6 +39,20 @@ class HealthRoutes(
                 deadMirrors = healing.deadMirrorCount,
                 streamCacheEntries = healing.streamCacheSize,
                 upstreamCacheEntries = healing.upstreamCacheSize,
+                staleDiskEntries = healing.staleDiskEntries,
+                outageMode = healing.outageMode,
+                cacheServeMode = healing.cacheServeMode,
+                breakerOpen = healing.breakerOpen,
+                breakerRemainingMs = healing.breakerRemainingMs,
+                outageOpenCount = healing.outageOpenCount,
+                lastUpstreamSuccessMs = healing.lastUpstreamSuccessMs,
+                canary = CanaryStatus(
+                    goodOk = healing.canary.goodOk,
+                    goodTotal = healing.canary.goodTotal,
+                    badExpectedFail = healing.canary.badExpectedFail,
+                    badTotal = healing.canary.badTotal,
+                    lastProbeMs = healing.canary.lastProbeMs,
+                ),
                 recentActions = healing.recentActions.takeLast(5),
             ),
         )

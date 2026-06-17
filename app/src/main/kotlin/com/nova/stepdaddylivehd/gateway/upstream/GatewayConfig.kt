@@ -18,12 +18,27 @@ object GatewayConfig {
     const val MIRROR_ATTEMPT_TIMEOUT_MS = 18_000L
     const val UPSTREAM_FETCH_MAX_CONCURRENT = 2
     const val DEAD_MIRROR_TTL_MS = 300_000L
+    const val MIRROR_FAILURE_BACKOFF_BASE_MS = 10_000L
+    const val MIRROR_FAILURE_BACKOFF_MAX_MS = 180_000L
+    const val OUTAGE_BREAKER_BASE_MS = 30_000L
+    const val OUTAGE_BREAKER_MAX_MS = 300_000L
+    const val OUTAGE_STALE_GRACE_TTL_MS = 1_800_000L
+    const val STALE_DISK_MAX_ENTRIES = 64
+    const val STALE_DISK_TTL_MS = 1_800_000L
+    const val OUTAGE_MIRROR_ATTEMPT_TIMEOUT_MS = 6_000L
+    const val OUTAGE_STREAM_FETCH_TIMEOUT_MS = 12_000L
+    const val OUTAGE_PROBE_TIMEOUT_MS = 8_000L
+    const val INVALIDATE_COOLDOWN_MS = 180_000L
     const val UPSTREAM_CONNECT_TIMEOUT_SEC = 8L
     const val UPSTREAM_READ_TIMEOUT_SEC = 20L
     const val UPSTREAM_WRITE_TIMEOUT_SEC = 20L
     const val UPSTREAM_CALL_TIMEOUT_SEC = 22L
     val PREWARM_CHANNEL_IDS = listOf("857", "51", "360")
     val WATCHDOG_PROBE_CHANNEL_IDS = listOf("51", "857")
+    /** Known-good channels for outage canary probes and poison-cascade ordering tests. */
+    val CANARY_GOOD_CHANNEL_IDS = listOf("51", "857", "360")
+    /** Channel id that should fail with a channel-specific error, not mirror poisoning. */
+    val CANARY_BAD_CHANNEL_IDS = listOf("999999")
     const val WATCHDOG_INTERVAL_MS = 120_000L
     const val WATCHDOG_INITIAL_DELAY_MS = 30_000L
     const val WATCHDOG_PROBE_TIMEOUT_MS = 25_000L

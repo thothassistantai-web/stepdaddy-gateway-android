@@ -59,7 +59,7 @@ class StreamRoutes(
         }
         try {
             val playlist = withContext(Dispatchers.IO) {
-                withTimeout(GatewayConfig.STREAM_FETCH_TIMEOUT_MS) {
+                withTimeout(client.streamFetchTimeoutMs()) {
                     client.resolveStream(
                         channelId,
                         useProxy = useProxy,
@@ -67,6 +67,7 @@ class StreamRoutes(
                     )
                 }
             }
+            val servedStale = client.wasLastServeFromStaleCache()
             client.noteStreamSuccess(channelId)
             if (attachment) {
                 call.response.header(
@@ -77,6 +78,9 @@ class StreamRoutes(
             val bytes = playlist.toByteArray(StandardCharsets.UTF_8)
             call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
             call.response.header(HttpHeaders.CacheControl, "no-cache")
+            if (servedStale) {
+                call.response.header("X-StepDaddy-Cache", "stale-good")
+            }
             call.respondBytes(
                 bytes = bytes,
                 contentType = ContentType("application", "vnd.apple.mpegurl"),
@@ -105,6 +109,7 @@ class StreamRoutes(
             val transient = isTransientStreamError(exc)
             val status = when {
                 exc.message == "upstream_busy" -> HttpStatusCode.ServiceUnavailable
+                exc.message == "upstream_outage" -> HttpStatusCode.ServiceUnavailable
                 transient -> HttpStatusCode.GatewayTimeout
                 else -> HttpStatusCode.BadGateway
             }
@@ -112,8 +117,12 @@ class StreamRoutes(
                 call,
                 hlsErrors = hlsErrors,
                 status = status,
-                message = exc.message ?: "upstream_error",
-                retryAfter = if (transient || exc.message == "upstream_busy") "3" else null,
+                message = if (exc.message == "upstream_outage") {
+                    "upstream connectivity degraded; serving cached entries when available"
+                } else {
+                    exc.message ?: "upstream_error"
+                },
+                retryAfter = if (transient || exc.message == "upstream_busy" || exc.message == "upstream_outage") "3" else null,
             )
         }
     }
@@ -149,6 +158,9 @@ class StreamRoutes(
             return true
         }
         if (exc.message == "upstream_busy") {
+            return true
+        }
+        if (exc.message == "upstream_outage") {
             return true
         }
         val message = exc.message.orEmpty()

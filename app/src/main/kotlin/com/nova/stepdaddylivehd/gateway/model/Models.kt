@@ -24,12 +24,29 @@ data class UpstreamManifest(
 )
 
 @Serializable
+data class CanaryStatus(
+    val goodOk: Int = 0,
+    val goodTotal: Int = 0,
+    val badExpectedFail: Int = 0,
+    val badTotal: Int = 0,
+    val lastProbeMs: Long = 0L,
+)
+
+@Serializable
 data class HealingStatus(
     val lastAction: String = "none",
     val streamFailures: Int = 0,
     val deadMirrors: Int = 0,
     val streamCacheEntries: Int = 0,
     val upstreamCacheEntries: Int = 0,
+    val staleDiskEntries: Int = 0,
+    val outageMode: Boolean = false,
+    val cacheServeMode: Boolean = false,
+    val breakerOpen: Boolean = false,
+    val breakerRemainingMs: Long = 0L,
+    val outageOpenCount: Int = 0,
+    val lastUpstreamSuccessMs: Long? = null,
+    val canary: CanaryStatus? = null,
     val recentActions: List<String> = emptyList(),
 )
 

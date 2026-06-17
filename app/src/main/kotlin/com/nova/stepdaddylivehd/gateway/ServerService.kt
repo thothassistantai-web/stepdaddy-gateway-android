@@ -112,6 +112,7 @@ class ServerService : LifecycleService() {
                         environment = environment,
                         onPersistentFailure = { restartGatewayAfterFailure() },
                     ).also { it.start() }
+                    daddyLiveClient.reportHealthyStart()
                     val channelCount = daddyLiveClient.channels.size
                     if (!skipReadyBanner) {
                         mainHandler.post { showServerReadyIfBackground(channelCount) }
@@ -272,6 +273,10 @@ class ServerService : LifecycleService() {
     }
 
     private fun restartGatewayAfterFailure() {
+        if (daddyLiveClient.shouldSuppressRestartForOutage()) {
+            Log.w(TAG, "Suppressing gateway restart during upstream outage/cache-serve mode")
+            return
+        }
         lifecycleScope.launch(Dispatchers.IO) {
             startMutex.withLock {
                 Log.w(TAG, "Restarting gateway after persistent upstream failures")

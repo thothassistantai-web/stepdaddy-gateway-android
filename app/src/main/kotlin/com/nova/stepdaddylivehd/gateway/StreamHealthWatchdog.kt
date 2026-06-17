@@ -36,10 +36,17 @@ class StreamHealthWatchdog(
     }
 
     private suspend fun runProbeCycle() {
+        val mirrorsOk = client.probeMirrors()
+        client.runCanaryProbes(environment.loopbackBase())
         var streamFailures = 0
+        val probeTimeout = if (client.isGlobalOutageActive()) {
+            GatewayConfig.OUTAGE_PROBE_TIMEOUT_MS
+        } else {
+            GatewayConfig.WATCHDOG_PROBE_TIMEOUT_MS
+        }
         for (channelId in GatewayConfig.WATCHDOG_PROBE_CHANNEL_IDS) {
             try {
-                withTimeout(GatewayConfig.WATCHDOG_PROBE_TIMEOUT_MS) {
+                withTimeout(probeTimeout) {
                     client.resolveStream(
                         channelId,
                         useProxy = true,
@@ -54,7 +61,6 @@ class StreamHealthWatchdog(
                 Log.w(TAG, "Probe failed channel $channelId: ${exc.message}")
             }
         }
-        val mirrorsOk = client.probeMirrors()
         if (streamFailures == 0) {
             consecutiveProbeFailures = 0
             if (!mirrorsOk) {
