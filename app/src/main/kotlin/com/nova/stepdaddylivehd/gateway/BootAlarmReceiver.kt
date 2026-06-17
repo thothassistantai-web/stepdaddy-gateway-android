@@ -17,6 +17,9 @@ class BootAlarmReceiver : BroadcastReceiver() {
             try {
                 val result = GatewayStartHelper.startIfNeeded(context, "Alarm#$alarmIndex")
                 Log.i(TAG, "Alarm#$alarmIndex result: $result")
+                if (GatewayStartHelper.isGatewayHealthy(context)) {
+                    GatewayStartHelper.cancelBootFallbacks(context)
+                }
             } finally {
                 releaseWakeLock(wakeLock)
                 pendingResult.finish()

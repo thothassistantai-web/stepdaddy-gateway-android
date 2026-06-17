@@ -11,6 +11,8 @@
     <string name="label_port_value">Port %1$d (127.0.0.1)</string>
     <string name="label_start_on_boot">Start on boot</string>
     <string name="label_start_on_boot_hint">When enabled, the gateway starts automatically after device reboot (no need to open this app).</string>
+    <string name="label_tivimate_watch">Keep alive for TiviMate</string>
+    <string name="label_tivimate_watch_hint">Screen wake + periodic checks recover the gateway in the background while TiviMate is in use. No accessibility service required.</string>
     <string name="status_running">Server running at %1$s</string>
     <string name="status_starting">Server starting…</string>
     <string name="status_stopped">Server stopped</string>

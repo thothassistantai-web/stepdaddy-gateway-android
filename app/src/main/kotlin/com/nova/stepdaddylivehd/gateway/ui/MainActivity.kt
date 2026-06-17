@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.nova.stepdaddylivehd.gateway.GatewayApp
+import com.nova.stepdaddylivehd.gateway.GatewayStartHelper
 import com.nova.stepdaddylivehd.gateway.PermissionHelper
 import com.nova.stepdaddylivehd.gateway.R
 import com.nova.stepdaddylivehd.gateway.ServerService
@@ -32,6 +33,16 @@ class MainActivity : AppCompatActivity() {
         binding.switchBoot.isChecked = environment.startOnBoot
         binding.switchBoot.setOnCheckedChangeListener { _, checked ->
             environment.startOnBoot = checked
+            if (checked) {
+                GatewayStartHelper.schedulePeriodicEnsureAlive(this)
+            } else {
+                GatewayStartHelper.cancelPeriodicEnsureAlive(this)
+                GatewayStartHelper.cancelBootFallbacks(this)
+            }
+        }
+        binding.switchTivimateWatch.isChecked = environment.tivimateWatchEnabled
+        binding.switchTivimateWatch.setOnCheckedChangeListener { _, checked ->
+            environment.tivimateWatchEnabled = checked
         }
         updateStatus()
         updateEpgStatus()

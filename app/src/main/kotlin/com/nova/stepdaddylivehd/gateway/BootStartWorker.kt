@@ -10,8 +10,8 @@ class BootStartWorker(
     params: WorkerParameters,
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
-        if (ServerService.isServiceActive) {
-            Log.i(TAG, "Server already active")
+        if (GatewayStartHelper.isGatewayHealthy(applicationContext)) {
+            Log.i(TAG, "Gateway already healthy")
             return Result.success()
         }
         val result = GatewayStartHelper.startIfNeeded(applicationContext, "WorkManager", allowReschedule = false)

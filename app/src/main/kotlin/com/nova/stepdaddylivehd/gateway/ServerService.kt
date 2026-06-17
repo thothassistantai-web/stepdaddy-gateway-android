@@ -30,17 +30,30 @@ class ServerService : LifecycleService() {
     @Volatile
     private var readyBannerShown = false
     private var skipBannerForCrashRecovery = false
+    private var httpHealthCheckPosted = false
 
     override fun onCreate() {
         super.onCreate()
         isServiceActive = true
         val app = application as GatewayApp
         environment = app.gatewayEnvironment
+        // Android requires startForeground within ~5s of startForegroundService() — do this
+        // before channel preload, EPG, or HTTP engine work (boot path crashes otherwise).
+        GatewayNotifier.createChannels(this)
+        startForeground(
+            GatewayNotifier.NOTIFICATION_ID_ONGOING,
+            GatewayNotifier.buildOngoingNotification(
+                this,
+                GatewayNotifier.GatewayState.STARTING,
+                environment.loopbackBase(),
+            ),
+        )
         skipBannerForCrashRecovery = environment.isRecentCrashRecovery()
         environment.recordServiceStart()
         readyBannerShown = environment.readyBannerShownThisBoot
         GatewayStartHelper.cancelBootFallbacks(this)
         GatewayStartHelper.resetFallbacksScheduled()
+        scheduleHttpHealthCheck()
         val epgManager = app.epgManager
         this.epgManager = epgManager
         daddyLiveClient = DaddyLiveClient(
@@ -51,24 +64,26 @@ class ServerService : LifecycleService() {
             context = this,
         )
         daddyLiveClient.scheduleChannelRefresh(force = false)
-        GatewayNotifier.createChannels(this)
-        startForeground(
-            GatewayNotifier.NOTIFICATION_ID_ONGOING,
-            GatewayNotifier.buildOngoingNotification(
-                this,
-                GatewayNotifier.GatewayState.STARTING,
-                environment.loopbackBase(),
-            ),
-        )
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
         when (intent?.action) {
             ACTION_STOP -> stopGateway()
+            ACTION_ENSURE_GATEWAY -> ensureGatewayListening()
             else -> startGateway()
         }
         return START_STICKY
+    }
+
+    /** Nudge from [GatewayStartHelper] when FGS is alive but CIO engine dropped. */
+    private fun ensureGatewayListening() {
+        if (gatewayServer?.isRunning == true) {
+            environment.serverRunning = true
+            updateRunningNotification()
+            return
+        }
+        startGateway(skipReadyBanner = true)
     }
 
     private fun startGateway(skipReadyBanner: Boolean = false) {
@@ -118,6 +133,7 @@ class ServerService : LifecycleService() {
                         mainHandler.post { showServerReadyIfBackground(channelCount) }
                     }
                     updateRunningNotification()
+                    GatewayStartHelper.schedulePeriodicEnsureAlive(this@ServerService)
                     notifyForegroundIfVisible(R.string.toast_server_running)
                     epgManager.schedulePeriodicRefresh { daddyLiveClient.channels }
                     daddyLiveClient.scheduleChannelRefresh(force = true) {
@@ -191,6 +207,7 @@ class ServerService : LifecycleService() {
     }
 
     override fun onDestroy() {
+        httpHealthCheckPosted = false
         streamHealthWatchdog?.stop()
         streamHealthWatchdog = null
         gatewayServer?.stop()
@@ -272,6 +289,25 @@ class ServerService : LifecycleService() {
         }
     }
 
+    /** Local self-check: FGS can survive while CIO HTTP engine is down. */
+    private fun scheduleHttpHealthCheck() {
+        if (httpHealthCheckPosted) return
+        httpHealthCheckPosted = true
+        mainHandler.postDelayed(object : Runnable {
+            override fun run() {
+                if (!isServiceActive) {
+                    httpHealthCheckPosted = false
+                    return
+                }
+                if (gatewayServer?.isRunning != true && !startInFlight) {
+                    Log.w(TAG, "HTTP server not listening; restarting gateway block")
+                    startGateway(skipReadyBanner = true)
+                }
+                mainHandler.postDelayed(this, HTTP_HEALTH_CHECK_MS)
+            }
+        }, HTTP_HEALTH_CHECK_MS)
+    }
+
     private fun restartGatewayAfterFailure() {
         if (daddyLiveClient.shouldSuppressRestartForOutage()) {
             Log.w(TAG, "Suppressing gateway restart during upstream outage/cache-serve mode")
@@ -302,6 +338,8 @@ class ServerService : LifecycleService() {
         var lastKnownChannelCount: Int = 0
 
         const val ACTION_STOP = "com.nova.stepdaddylivehd.gateway.action.STOP"
+        const val ACTION_ENSURE_GATEWAY = "com.nova.stepdaddylivehd.gateway.action.ENSURE_GATEWAY"
+        private const val HTTP_HEALTH_CHECK_MS = 90_000L
         private const val REQUEST_CODE_SERVER_READY = 30_200
     }
 }

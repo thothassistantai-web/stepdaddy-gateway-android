@@ -29,8 +29,10 @@ class BootReceiver : BroadcastReceiver() {
                 when (result) {
                     GatewayStartHelper.StartResult.STARTED,
                     GatewayStartHelper.StartResult.ALREADY_RUNNING,
+                    -> Unit // startIfNeeded already cancelled fallbacks when healthy
                     GatewayStartHelper.StartResult.LAUNCHED_TRAMPOLINE,
-                    -> GatewayStartHelper.cancelBootFallbacks(appContext)
+                    GatewayStartHelper.StartResult.SCHEDULED_FALLBACK,
+                    -> Unit // fallbacks already scheduled inside startIfNeeded
                     else -> GatewayStartHelper.scheduleBootFallbacksAsync(appContext)
                 }
                 if (!ServerService.isServiceActive) {

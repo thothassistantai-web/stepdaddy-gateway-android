@@ -15,8 +15,8 @@ class PackageChangeReceiver : BroadcastReceiver() {
             Log.i(TAG, "Package replaced; startOnBoot disabled")
             return
         }
-        if (ServerService.isServiceActive) {
-            Log.i(TAG, "Package replaced; service already active, skipping restart churn")
+        if (GatewayStartHelper.isGatewayHealthy(appContext)) {
+            Log.i(TAG, "Package replaced; gateway already healthy, skipping restart churn")
             return
         }
         val result = GatewayStartHelper.startIfNeeded(appContext, "PackageReplaced", allowReschedule = false)

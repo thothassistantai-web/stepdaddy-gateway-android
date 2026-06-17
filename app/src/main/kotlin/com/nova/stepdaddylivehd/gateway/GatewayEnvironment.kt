@@ -41,6 +41,13 @@ class GatewayEnvironment(context: Context) {
             prefs.edit().putBoolean(KEY_START_ON_BOOT, value).apply()
         }
 
+    /** When true, periodic + wake kicks prioritize recovery while TiviMate is active. */
+    var tivimateWatchEnabled: Boolean
+        get() = prefs.getBoolean(KEY_TIVIMATE_WATCH, true)
+        set(value) {
+            prefs.edit().putBoolean(KEY_TIVIMATE_WATCH, value).apply()
+        }
+
     var serverRunning: Boolean
         get() = prefs.getBoolean(KEY_SERVER_RUNNING, false)
         set(value) {
@@ -78,6 +85,7 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_DLHD_BASE_URL = "dlhd_base_url"
         private const val KEY_MIRROR_URLS = "mirror_urls"
         private const val KEY_START_ON_BOOT = "start_on_boot"
+        private const val KEY_TIVIMATE_WATCH = "tivimate_watch"
         private const val KEY_SERVER_RUNNING = "server_running"
         private const val KEY_READY_BANNER_SHOWN = "ready_banner_shown"
         private const val KEY_LAST_SERVICE_START_MS = "last_service_start_ms"

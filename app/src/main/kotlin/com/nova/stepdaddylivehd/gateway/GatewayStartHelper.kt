@@ -7,19 +7,23 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import androidx.core.content.ContextCompat
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
+/**
+ * Single coordinated entry for every auto-start path (boot, wake, periodic, package
+ * replace, application process start). Each caller passes a [source] tag for logcat.
+ */
 object GatewayStartHelper {
     enum class StartResult {
         STARTED,
@@ -32,25 +36,45 @@ object GatewayStartHelper {
     private val fallbacksScheduled = AtomicBoolean(false)
     private val bootExecutor = Executors.newSingleThreadExecutor()
 
+    /** Service process alive AND HTTP server bound (prefs mirror [ServerService] state). */
+    fun isGatewayHealthy(context: Context): Boolean {
+        if (!ServerService.isServiceActive) return false
+        val environment = (context.applicationContext as GatewayApp).gatewayEnvironment
+        return environment.serverRunning
+    }
+
     fun startIfNeeded(context: Context, source: String, allowReschedule: Boolean = false): StartResult {
         val appContext = context.applicationContext
         val environment = (appContext as GatewayApp).gatewayEnvironment
         if (!environment.startOnBoot) {
             Log.i(TAG, "startOnBoot disabled, skipping ($source)")
+            cancelBootFallbacks(appContext)
+            cancelPeriodicEnsureAlive(appContext)
             return StartResult.SKIPPED_DISABLED
         }
-        if (ServerService.isServiceActive) {
-            Log.i(TAG, "Server already active ($source)")
-            cancelBootFallbacks(appContext)
+        if (isGatewayHealthy(appContext)) {
+            Log.i(TAG, "Gateway already healthy ($source)")
+            onGatewayHealthy(appContext)
             return StartResult.ALREADY_RUNNING
         }
-
-        tryStartForegroundService(appContext, source)?.let {
-            if (it == StartResult.STARTED) {
-                cancelBootFallbacks(appContext)
-            }
-            return it
+        if (ServerService.isServiceActive && !environment.serverRunning) {
+            Log.w(TAG, "Service active but HTTP down; nudging startGateway ($source)")
+            nudgeRunningService(appContext)
         }
+
+        val fgsResult = tryStartForegroundService(appContext, source)
+        when (fgsResult) {
+            StartResult.STARTED -> {
+                onGatewayHealthy(appContext)
+                return StartResult.STARTED
+            }
+            StartResult.LAUNCHED_TRAMPOLINE -> {
+                scheduleBootFallbacksAsync(appContext)
+                return StartResult.LAUNCHED_TRAMPOLINE
+            }
+            else -> Unit
+        }
+
         tryStartBackgroundService(appContext, source)
 
         if (!ServerService.isServiceActive) {
@@ -67,6 +91,24 @@ object GatewayStartHelper {
         return StartResult.SCHEDULED_FALLBACK
     }
 
+    /** Called when FGS is up and CIO is listening — drop one-shot boot retries. */
+    private fun onGatewayHealthy(context: Context) {
+        cancelBootFallbacks(context)
+        schedulePeriodicEnsureAlive(context)
+    }
+
+    private fun nudgeRunningService(context: Context) {
+        runCatching {
+            context.startService(
+                Intent(context, ServerService::class.java).apply {
+                    action = ServerService.ACTION_ENSURE_GATEWAY
+                },
+            )
+        }.onFailure { exc ->
+            Log.w(TAG, "Failed to nudge running service: ${exc.message}")
+        }
+    }
+
     fun scheduleBootFallbacks(context: Context) {
         scheduleBootFallbacksOnce(context.applicationContext)
     }
@@ -75,6 +117,7 @@ object GatewayStartHelper {
         bootExecutor.execute { scheduleBootFallbacksOnce(context.applicationContext) }
     }
 
+    /** One-shot alarms + WorkManager retries after BOOT_COMPLETED (OEM-delayed FGS). */
     private fun scheduleBootFallbacksOnce(context: Context) {
         if (!fallbacksScheduled.compareAndSet(false, true)) {
             Log.i(TAG, "Boot fallbacks already scheduled; skipping duplicate")
@@ -122,6 +165,10 @@ object GatewayStartHelper {
         }
     }
 
+    /**
+     * Transparent activity trampoline — Android 12+ blocks background FGS starts;
+     * a visible (even zero-UI) activity satisfies the foreground requirement.
+     */
     private fun launchBootStartActivity(context: Context, source: String) {
         val activityIntent = Intent(context, BootStartActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -157,6 +204,7 @@ object GatewayStartHelper {
         }
     }
 
+    /** Expedited + minute-scale retries while boot path is still racing OEM startup. */
     private fun scheduleWorkManager(context: Context) {
         val workManager = WorkManager.getInstance(context)
         val expedited = OneTimeWorkRequestBuilder<BootStartWorker>()
@@ -184,6 +232,7 @@ object GatewayStartHelper {
         Log.i(TAG, "Scheduled expedited WorkManager retry at 30s + ${delaysMinutes.size} minute retries")
     }
 
+    /** Exact elapsed-realtime alarms — survive Doze better than inexact WM on some TV sticks. */
     private fun scheduleAlarms(context: Context) {
         val alarmManager = context.getSystemService(AlarmManager::class.java) ?: return
         ALARM_DELAYS_MS.forEachIndexed { index, delayMs ->
@@ -224,14 +273,33 @@ object GatewayStartHelper {
         Log.i(TAG, "Scheduled ${ALARM_DELAYS_MS.size} alarm boot retries")
     }
 
-    private const val TAG = "GatewayStartHelper"
-    const val ACTION_BOOT_ALARM = "com.nova.stepdaddylivehd.gateway.action.BOOT_ALARM"
-    const val EXTRA_ALARM_INDEX = "alarm_index"
-    private const val UNIQUE_BOOT_START_WORK = "boot_start_gateway"
-    private const val WORK_TAG_BOOT_START = "boot_start"
-    private const val REQUEST_CODE_ALARM_BASE = 30_000
-    private const val REQUEST_CODE_TRAMPOLINE = 30_100
-    private val ALARM_DELAYS_MS = longArrayOf(8_000, 20_000, 40_000, 80_000)
+    /** Long-horizon keep-alive when start-on-boot is enabled (TiviMate redundancy). */
+    fun schedulePeriodicEnsureAlive(context: Context) {
+        val appContext = context.applicationContext
+        val environment = (appContext as GatewayApp).gatewayEnvironment
+        if (!environment.startOnBoot) {
+            cancelPeriodicEnsureAlive(appContext)
+            return
+        }
+        val request = PeriodicWorkRequestBuilder<GatewayEnsureAliveWorker>(
+            PERIODIC_ENSURE_ALIVE_MINUTES,
+            TimeUnit.MINUTES,
+        )
+            .addTag(WORK_TAG_ENSURE_ALIVE)
+            .build()
+        WorkManager.getInstance(appContext).enqueueUniquePeriodicWork(
+            UNIQUE_ENSURE_ALIVE_WORK,
+            ExistingPeriodicWorkPolicy.KEEP,
+            request,
+        )
+        Log.i(TAG, "Scheduled periodic ensure-alive every ${PERIODIC_ENSURE_ALIVE_MINUTES}m")
+    }
+
+    fun cancelPeriodicEnsureAlive(context: Context) {
+        WorkManager.getInstance(context.applicationContext)
+            .cancelUniqueWork(UNIQUE_ENSURE_ALIVE_WORK)
+        Log.i(TAG, "Cancelled periodic ensure-alive")
+    }
 
     fun resetFallbacksScheduled() {
         fallbacksScheduled.set(false)
@@ -254,6 +322,19 @@ object GatewayStartHelper {
             )
             alarmManager.cancel(pendingIntent)
         }
+        fallbacksScheduled.set(false)
         Log.i(TAG, "Cancelled pending boot fallbacks")
     }
+
+    private const val TAG = "GatewayStartHelper"
+    const val ACTION_BOOT_ALARM = "com.nova.stepdaddylivehd.gateway.action.BOOT_ALARM"
+    const val EXTRA_ALARM_INDEX = "alarm_index"
+    private const val UNIQUE_BOOT_START_WORK = "boot_start_gateway"
+    private const val UNIQUE_ENSURE_ALIVE_WORK = "gateway_ensure_alive"
+    private const val WORK_TAG_BOOT_START = "boot_start"
+    private const val WORK_TAG_ENSURE_ALIVE = "ensure_alive"
+    private const val REQUEST_CODE_ALARM_BASE = 30_000
+    private const val REQUEST_CODE_TRAMPOLINE = 30_100
+    private const val PERIODIC_ENSURE_ALIVE_MINUTES = 20L
+    private val ALARM_DELAYS_MS = longArrayOf(8_000, 20_000, 40_000, 80_000)
 }

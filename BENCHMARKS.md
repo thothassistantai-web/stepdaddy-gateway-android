@@ -41,6 +41,22 @@ Automated script: `scripts/fusa-boot-test.sh`
 | `adb screencap` slow (15–34s) | Expect long cap latency; don't overlap |
 | Fixed-time screencap misses overlay | Trigger on first health=200, not wall-clock guess |
 
+### Boot reliability & TiviMate redundancy (2026-06-17)
+
+| Path | Why it exists |
+|------|----------------|
+| **BootReceiver** (`BOOT_COMPLETED` only) | Primary cold-boot start after TV stick finishes boot |
+| **BootStartActivity** trampoline | Android 12+ blocks background FGS — zero-UI activity satisfies foreground requirement |
+| **BootAlarmReceiver** (8/20/40/80s) | Exact alarms survive Doze when WM is deferred on OEM TV firmware |
+| **BootStartWorker** (30s expedited + 1/2/3 min) | WorkManager retries when alarms are throttled |
+| **GatewayApp.onCreate** | Process restart without full reboot (OEM killed cached process) |
+| **ScreenWakeReceiver** (`SCREEN_ON`, `USER_PRESENT`) | TV wakes from sleep directly into TiviMate — gateway up before playlist refresh |
+| **GatewayEnsureAliveWorker** (every 20 min) | Long-horizon recovery from low-memory kill without opening StepDaddy |
+| **ServerService HTTP self-check** (90s) | FGS sticky but CIO engine can drop — restarts HTTP block in-process |
+| **TiviMateWatch** (optional pref) | Process scan + UsageStats when granted — tags periodic/wake kicks when TiviMate active |
+
+All paths funnel through **`GatewayStartHelper.startIfNeeded(source)`**. One-shot boot fallbacks cancel when `isGatewayHealthy()` (FGS + HTTP listening). `LOCKED_BOOT_COMPLETED` is intentionally ignored — credentials/network may not be ready.
+
 ### Boot test results (iterative cycles)
 
 | Cycle | Date (UTC) | Health first 200 | Endpoints | Overlay on home | Notes |
@@ -48,7 +64,7 @@ Automated script: `scripts/fusa-boot-test.sh`
 | Baseline (manual) | 2026-06-16 | ~81s | 3/3 | PASS | DISMISS_MS 8s→15s (uncommitted initially) |
 | **Cycle 1** | 2026-06-17 | **48s** | 3/3 | PASS (logcat) | FGS trampoline, overlay re-show @40s, channel preload in `onCreate`; script stdout bug |
 | **Cycle 2** | 2026-06-17 | **30s** | 3/3 | **PASS (screencap)** | `GatewayApp` boot kick, tighter alarms (8/20/40/80s), 2s launcher settle |
-| **Cycle 3** | 2026-06-17 | **4s** | 3/3 | **PASS (screencap)** | Optional overlay re-show @40s only (20s removed), WM expedited @30s, BootReceiver+3s retry |
+| **Cycle 4** | 2026-06-17 | **58s** | stream 51 OK | **PASS** | Boot redundancy: ScreenWake, periodic WM 20m, HTTP self-check 90s, TiviMateWatch; FGS startForeground-first fix |
 | **Release** | 2026-06-17 | **20s** | 2/3 | PASS (logcat) | `com.nova.stepdaddylivehd.gateway` (debug-signed); `/epg.xml` 503 at t+20s |
 
 **Timing trend:** 81s → 48s → 30s → **4s** (debug) time-to-health after reboot (poll from host, from wlan0 IP available). Release build: **~20–80s** on cold boot depending on channel/EPG preload (no debug suffix; EPG may still be building at first health).

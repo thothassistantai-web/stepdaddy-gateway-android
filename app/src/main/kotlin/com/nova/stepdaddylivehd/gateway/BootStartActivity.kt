@@ -3,8 +3,6 @@ package com.nova.stepdaddylivehd.gateway
 import android.os.Bundle
 import android.util.Log
 import android.app.Activity
-import androidx.core.content.ContextCompat
-
 /**
  * Transparent trampoline activity — starting an activity puts the app in the foreground,
  * which allows [ServerService] to be promoted on Android 12+ where background FGS starts
@@ -21,20 +19,8 @@ class BootStartActivity : Activity() {
             finish()
             return
         }
-        if (ServerService.isServiceActive) {
-            Log.i(TAG, "Server already active; finishing")
-            finish()
-            return
-        }
-        runCatching {
-            ContextCompat.startForegroundService(
-                this,
-                android.content.Intent(this, ServerService::class.java),
-            )
-            Log.i(TAG, "Foreground service started from trampoline ($source)")
-        }.onFailure { exc ->
-            Log.e(TAG, "Trampoline FGS start failed ($source)", exc)
-        }
+        val result = GatewayStartHelper.startIfNeeded(this, "Trampoline:$source", allowReschedule = false)
+        Log.i(TAG, "Trampoline start result: $result")
         finish()
     }
 

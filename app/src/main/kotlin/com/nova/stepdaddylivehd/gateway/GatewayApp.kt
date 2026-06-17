@@ -33,10 +33,11 @@ class GatewayApp : Application() {
         channelMetaStore = ChannelMetaStore(this)
         logoResolver = LogoResolver(this)
         epgManager = EpgManager(store, epgChannelMapper)
-        if (gatewayEnvironment.startOnBoot && !ServerService.isServiceActive) {
+        if (gatewayEnvironment.startOnBoot && !GatewayStartHelper.isGatewayHealthy(this@GatewayApp)) {
             appScope.launch {
                 GatewayStartHelper.startIfNeeded(this@GatewayApp, "Application", allowReschedule = false)
             }
+            GatewayStartHelper.schedulePeriodicEnsureAlive(this)
         }
     }
 }
