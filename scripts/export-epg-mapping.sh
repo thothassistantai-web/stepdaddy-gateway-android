@@ -61,7 +61,7 @@ if cache_path.exists():
     for ch in cache.get("channels") or []:
         cid = str(ch.get("id") or "").strip()
         name = (ch.get("name") or "").strip()
-        tvg = (ch.get("tvg_id") or overrides.get(name) or "").strip()
+        tvg = (overrides.get(name) or ch.get("tvg_id") or "").strip()
         if cid and tvg:
             mapping[cid] = tvg
 for name, tvg in overrides.items():
