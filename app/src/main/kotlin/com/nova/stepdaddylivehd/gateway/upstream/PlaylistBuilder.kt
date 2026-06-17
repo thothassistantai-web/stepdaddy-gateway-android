@@ -50,14 +50,8 @@ object PlaylistBuilder {
         return attrs.joinToString(" ")
     }
 
-    private fun displayTitle(channel: Channel): String {
-        val resolution = GroupTitleResolver.resolve(channel.name, channel.tags)
-        val title = channel.name.replace("\"", "'")
-        if (resolution.categoryLabel != "General") {
-            return "$title [${resolution.categoryLabel}]"
-        }
-        return title
-    }
+    private fun displayTitle(channel: Channel): String =
+        channel.name.replace("\"", "'")
 
     private fun tivimateStreamLine(base: String, channelId: String, dlhdOrigin: String): String {
         val stream = "${base.trimEnd('/')}/tivimate-stream/$channelId.m3u8"
