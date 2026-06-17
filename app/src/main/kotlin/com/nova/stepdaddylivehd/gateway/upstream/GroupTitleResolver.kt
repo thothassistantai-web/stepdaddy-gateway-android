@@ -3,14 +3,28 @@ package com.nova.stepdaddylivehd.gateway.upstream
 import com.nova.stepdaddylivehd.gateway.model.Channel
 
 object GroupTitleResolver {
+    const val LOCAL_CHANNELS = "Local Channels"
+    const val ENTERTAINMENT = "Entertainment"
+    const val MOVIES = "Movies"
+    const val MUSIC = "Music"
+    const val KIDS = "Kids"
+    const val SPORTS = "Sports"
+    const val NEWS = "News"
+    const val DOCUMENTARY = "Documentary"
+    const val INTERNATIONAL = "International"
+    const val EN_ESPANOL = "En Español"
+    const val ADULT = "XXX Adult"
+
     data class Resolution(
         val groupTitle: String,
         val categoryLabel: String,
         val countryCode: String,
+        val flagEmoji: String?,
         val isAdult: Boolean,
+        val appendCountrySuffix: Boolean,
     ) {
         val sortBucket: Int get() = if (isAdult) 2 else 0
-        val categoryOrder: Int get() = CATEGORY_ORDER[categoryLabel] ?: 50
+        val categoryOrder: Int get() = GROUP_ORDER[categoryLabel] ?: 50
     }
 
     private val FLAG_TO_CODE = mapOf(
@@ -67,64 +81,74 @@ object GroupTitleResolver {
         .groupBy({ it.value }, { it.key })
         .mapValues { (_, flags) -> flags.first() }
 
+    /** TiviMate sidebar order when playlist groups are sorted by playlist order. */
+    private val GROUP_ORDER = mapOf(
+        LOCAL_CHANNELS to 0,
+        SPORTS to 1,
+        ENTERTAINMENT to 2,
+        MOVIES to 3,
+        NEWS to 4,
+        DOCUMENTARY to 5,
+        MUSIC to 6,
+        KIDS to 7,
+        INTERNATIONAL to 8,
+        EN_ESPANOL to 9,
+        ADULT to 10,
+    )
+
     private val SPORT_TAGS = setOf(
         "sports", "football", "cricket", "tennis", "motorsport", "f1", "college",
         "golf", "basketball", "hockey", "rugby", "boxing", "mma", "baseball",
     )
 
-    private val ADULT_TAGS = setOf("nsfw", "adult")
+    private val MOVIE_TAGS = setOf(
+        "movies", "action", "thriller", "horror", "classic", "romance", "mystery",
+        "sciencefiction", "indie", "drama",
+    )
+
+    private val DOCUMENTARY_TAGS = setOf(
+        "documentary", "crime", "culture", "arts", "history",
+    )
+
+    private val SPANISH_TAGS = setOf("spanish", "latino", "espanol", "español")
 
     private val IGNORED_TAGS = setOf("hd")
 
     private val TAG_TO_CATEGORY = mapOf(
-        "entertainment" to "Entertainment",
-        "general" to "Entertainment",
-        "variety" to "Entertainment",
-        "drama" to "Entertainment",
-        "comedy" to "Entertainment",
-        "animation" to "Entertainment",
-        "reality" to "Entertainment",
-        "series" to "Entertainment",
-        "family" to "Entertainment",
-        "youth" to "Entertainment",
-        "lifestyle" to "Entertainment",
-        "arabic" to "Entertainment",
-        "spanish" to "Entertainment",
-        "movies" to "Movies",
-        "action" to "Movies",
-        "thriller" to "Movies",
-        "horror" to "Movies",
-        "classic" to "Movies",
-        "romance" to "Movies",
-        "news" to "News",
-        "local" to "News",
-        "international" to "News",
-        "politics" to "News",
-        "public" to "News",
-        "documentary" to "Documentary",
-        "crime" to "Documentary",
-        "culture" to "Culture",
-        "arts" to "Culture",
-        "music" to "Music",
-        "kids" to "Kids",
-        "regional" to "Regional",
-        "premium" to "Premium",
-        "live" to "Entertainment",
-    )
-
-    private val CATEGORY_ORDER = mapOf(
-        "Sports" to 0,
-        "Entertainment" to 1,
-        "Movies" to 2,
-        "News" to 3,
-        "Documentary" to 4,
-        "Culture" to 5,
-        "Music" to 6,
-        "Kids" to 7,
-        "Premium" to 8,
-        "Regional" to 9,
-        "General" to 100,
-        "Adult" to 200,
+        "entertainment" to ENTERTAINMENT,
+        "general" to ENTERTAINMENT,
+        "variety" to ENTERTAINMENT,
+        "drama" to ENTERTAINMENT,
+        "comedy" to ENTERTAINMENT,
+        "animation" to ENTERTAINMENT,
+        "reality" to ENTERTAINMENT,
+        "series" to ENTERTAINMENT,
+        "family" to ENTERTAINMENT,
+        "youth" to ENTERTAINMENT,
+        "lifestyle" to ENTERTAINMENT,
+        "arabic" to ENTERTAINMENT,
+        "news" to NEWS,
+        "local" to LOCAL_CHANNELS,
+        "international" to NEWS,
+        "politics" to NEWS,
+        "public" to NEWS,
+        "documentary" to DOCUMENTARY,
+        "crime" to DOCUMENTARY,
+        "culture" to DOCUMENTARY,
+        "arts" to DOCUMENTARY,
+        "history" to DOCUMENTARY,
+        "music" to MUSIC,
+        "kids" to KIDS,
+        "cartoons" to KIDS,
+        "regional" to LOCAL_CHANNELS,
+        "premium" to ENTERTAINMENT,
+        "live" to ENTERTAINMENT,
+        "movies" to ENTERTAINMENT,
+        "action" to ENTERTAINMENT,
+        "thriller" to ENTERTAINMENT,
+        "horror" to ENTERTAINMENT,
+        "classic" to ENTERTAINMENT,
+        "romance" to ENTERTAINMENT,
     )
 
     /** Longest suffixes first so "New Zealand" matches before " Zealand". */
@@ -189,35 +213,35 @@ object GroupTitleResolver {
         " NZ" to ("🇳🇿" to "NZ"),
     ).sortedByDescending { it.first.length }
 
+    fun flagForCode(code: String): String? = CODE_TO_FLAG[code] ?: if (code == "INT") "🌐" else null
+
     fun resolve(channelName: String, tags: List<String>): Resolution {
         val hashTags = tags
             .filter { it.startsWith("#") && it.length > 1 }
             .map { it.removePrefix("#").lowercase() }
             .filter { it !in IGNORED_TAGS }
 
-        if (isAdult(channelName, tags, hashTags)) {
+        if (isXxxAdult(channelName, tags, hashTags)) {
             return Resolution(
-                groupTitle = "Adult",
-                categoryLabel = "Adult",
+                groupTitle = ADULT,
+                categoryLabel = ADULT,
                 countryCode = "",
+                flagEmoji = null,
                 isAdult = true,
+                appendCountrySuffix = false,
             )
         }
 
-        val category = resolveCategory(hashTags)
         val (flag, code) = resolveCountry(tags, channelName)
-
-        val groupTitle = when {
-            code == "INT" -> "🌐 | INT | $category"
-            flag != null -> "$flag | $code | $category"
-            else -> "$code | $category"
-        }
+        val category = resolveCategory(hashTags, code)
 
         return Resolution(
-            groupTitle = groupTitle,
+            groupTitle = category,
             categoryLabel = category,
             countryCode = code,
+            flagEmoji = flag,
             isAdult = false,
+            appendCountrySuffix = code.isNotBlank(),
         )
     }
 
@@ -227,44 +251,77 @@ object GroupTitleResolver {
     fun channelComparator(): Comparator<Channel> = Comparator { left, right ->
         val a = resolve(left.name, left.tags)
         val b = resolve(right.name, right.tags)
-        compareValuesBy(a, b, { it.sortBucket }, { it.countryCode.ifBlank { "ZZZ" } }, { it.categoryOrder })
-            .takeIf { it != 0 }
+        compareValuesBy(
+            a,
+            b,
+            { it.sortBucket },
+            { it.categoryOrder },
+            { countrySortKey(it.countryCode) },
+            {
+                ChannelTitleNormalizer.displayTitle(left.name, a)
+                    .compareTo(ChannelTitleNormalizer.displayTitle(right.name, b), ignoreCase = true)
+            },
+        ).takeIf { it != 0 }
             ?: left.name.compareTo(right.name, ignoreCase = true)
     }
 
-    private fun isAdult(channelName: String, tags: List<String>, hashTags: List<String>): Boolean {
+    private fun countrySortKey(code: String): String = when (code) {
+        "US" -> "0"
+        "CA" -> "1"
+        "" -> "9"
+        else -> "2$code"
+    }
+
+    private fun isXxxAdult(channelName: String, tags: List<String>, hashTags: List<String>): Boolean {
         if (channelName.startsWith("18+")) return true
         if (tags.any { it == "🔞" }) return true
-        return hashTags.any { it in ADULT_TAGS }
+        if (hashTags.contains("nsfw")) return true
+        if (hashTags.contains("adult") && !isMatureCartoon(hashTags)) return true
+        return false
     }
 
-    private fun resolveCategory(hashTags: List<String>): String {
-        if (hashTags.isEmpty()) return "General"
+    private fun isSpanish(hashTags: List<String>): Boolean =
+        hashTags.any { it in SPANISH_TAGS }
 
-        if (hashTags.any { it in SPORT_TAGS }) return "Sports"
+    private fun isMatureCartoon(hashTags: List<String>): Boolean =
+        (hashTags.contains("animation") || hashTags.contains("cartoons")) &&
+            (hashTags.contains("adult") || hashTags.contains("comedy"))
 
-        if (hashTags.contains("premium")) return "Premium"
+    private fun isKids(hashTags: List<String>): Boolean =
+        (hashTags.contains("kids") || hashTags.contains("cartoons")) && !isMatureCartoon(hashTags)
 
-        if (hashTags.contains("live") && hashTags.any { it in SPORT_TAGS }) return "Sports"
+    private fun isPremiumMovieChannel(hashTags: List<String>): Boolean =
+        hashTags.contains("premium") && hashTags.any { it in MOVIE_TAGS }
+
+    private fun resolveCategory(hashTags: List<String>, countryCode: String): String {
+        if (isSpanish(hashTags)) return EN_ESPANOL
+
+        if (hashTags.any { it in SPORT_TAGS }) return SPORTS
+
+        if (hashTags.contains("news")) return NEWS
+
+        if (hashTags.contains("local") || hashTags.contains("regional")) return LOCAL_CHANNELS
+
+        if (isPremiumMovieChannel(hashTags)) return MOVIES
+
+        if (isKids(hashTags)) return KIDS
+
+        if (hashTags.contains("music")) return MUSIC
+
+        if (hashTags.any { it in DOCUMENTARY_TAGS }) return DOCUMENTARY
 
         for (tag in hashTags) {
-            TAG_TO_CATEGORY[tag]?.let { mapped ->
-                if (tag == "live" && hashTags.any { it in SPORT_TAGS }) return "Sports"
-                return mapped
-            }
+            TAG_TO_CATEGORY[tag]?.let { return it }
         }
 
-        val fallback = hashTags.firstOrNull { it !in IGNORED_TAGS }
-        if (fallback != null) {
-            return fallback.replace("-", " ").split(" ")
-                .joinToString(" ") { word ->
-                    word.replaceFirstChar { ch ->
-                        if (ch.isLowerCase()) ch.titlecase() else ch.toString()
-                    }
-                }
+        return when {
+            countryCode == "INT" -> INTERNATIONAL
+            countryCode.isNotBlank() && countryCode !in DOMESTIC_CODES -> ENTERTAINMENT
+            else -> ENTERTAINMENT
         }
-        return "General"
     }
+
+    private val DOMESTIC_CODES = setOf("US", "CA")
 
     private fun resolveCountry(tags: List<String>, channelName: String): Pair<String?, String> {
         val markers = tags.filter { it.isNotEmpty() && !it.startsWith("#") && it != "🔞" }
@@ -276,7 +333,8 @@ object GroupTitleResolver {
         for (marker in markers) {
             FLAG_TO_CODE[marker]?.let { code ->
                 if (code == "INT") return "🌐" to "INT"
-                return marker to code
+                val flag = if (marker == "🏴") "🇬🇧" else marker
+                return flag to code
             }
         }
 

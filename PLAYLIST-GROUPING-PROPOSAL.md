@@ -1,8 +1,8 @@
 # Playlist Grouping (Implemented)
 
-TiviMate playlist `group-title` organization by country and category. **Implemented** in `GroupTitleResolver.kt`, `ChannelMetaStore.kt`, and `PlaylistBuilder.kt`.
+TiviMate playlist `group-title` organization by **flat genre groups** (provider-style filter tabs). **Implemented** in `GroupTitleResolver.kt`, `ChannelTitleNormalizer.kt`, `ChannelMetaStore.kt`, and `PlaylistBuilder.kt`.
 
-**Source research:** subagent transcript `2e10fc83-a73e-449f-93fe-35ab5f16ac65`.
+**Source research:** `provider-channel-sort-research.md`, `epg-sort-style-samples.md`.
 
 ---
 
@@ -10,37 +10,69 @@ TiviMate playlist `group-title` organization by country and category. **Implemen
 
 ### `group-title` format
 
-**`{FLAG_EMOJI} | {COUNTRY_CODE} | {CATEGORY}`**
+**Flat category label only** — no country prefix in the group name.
 
-Example: `🇺🇸 | US | Sports`
+Examples: `Sports`, `News`, `Local Channels`, `En Español`
+
+| Group | Rules |
+|-------|-------|
+| **Local Channels** | `#local` / `#regional` affiliates — **excluding** news (`#news` → News) |
+| **Entertainment** | General entertainment; mature cartoons (`#animation` + `#adult`) |
+| **Movies** | **Only** `#premium` + movie-tier tags (`#movies`, `#action`, …) |
+| **Music** | `#music` |
+| **Kids** | `#kids` / `#cartoons` — excludes mature cartoons |
+| **Sports** | All sport tags; **overrides** `#premium` |
+| **News** | `#news` and local news affiliates |
+| **Documentary** | `#documentary`, `#crime`, `#culture`, `#arts`, `#history` |
+| **International** | Fallback for `🌐` / unknown country with no genre tags |
+| **En Español** | `#Spanish` / `#spanish` / `#latino` |
+| **XXX Adult** | `18+…`, `🔞`, `#NSFW`, `#adult` (not mature cartoons) |
+
+### Display title format (TiviMate)
+
+**`{Normalized Name} {FLAG} {CODE}`** at end of channel name.
+
+Example: `ACC Network USA 🇺🇸 US`
 
 | Part | Rule |
 |------|------|
-| **Separator** | Space-pipe-space: ` \| ` |
-| **Flag** | Country flag emoji from tags (or inferred from channel name) |
-| **Country** | 2-letter code from flag (`🇺🇸` → `US`). `🌐` / `🌍` → `INT` (International) |
-| **Category** | Title Case English label |
-| **International** | `🌐 | INT | {CATEGORY}` |
-| **Adult** | `Adult` only — no country, no `INT \|` prefix |
-| **Unknown country** | `🌐 | INT | {CATEGORY}` |
+| **Normalize** | Strip `[Category]` suffix; fix known spelling; trim redundant trailing country before re-append |
+| **Suffix** | Flag emoji + 2-letter ISO code (`🇺🇸 US`, `🇨🇦 CA`, `🇬🇧 UK`) |
+| **CA** | Sorted into **same genre groups as US** (Sports, News, …) with `🇨🇦 CA` suffix |
+| **Non-US non-CA** | Same genre groups with country flag at end |
+| **XXX Adult** | No country suffix |
 
 ### Category priority
 
-1. **Adult** — `🔞`, `#NSFW`, `#adult`, or channel name `18+…`
-2. **Sports** — any sport tag (`#sports`, `#football`, `#college`, …) **overrides** `#premium`
-3. **Premium** — `#premium` when no sport tags
-4. Category rollup table (Entertainment, Movies, News, …)
-5. **General** — no tags
-
-### Display titles (TiviMate)
-
-**Keep** `[Category]` suffix on channel names (e.g. `ACC Network USA [Sports]`). Do **not** drop the suffix.
+1. **XXX Adult**
+2. **En Español** (`#Spanish` / `#spanish`)
+3. **Sports** (overrides `#premium`)
+4. **News** (overrides `#local`)
+5. **Local Channels** (`#local`, `#regional`)
+6. **Movies** (`#premium` + movie-tier tags only)
+7. **Kids** / **Music** / **Documentary**
+8. Tag rollup → **Entertainment**
+9. **International** (INT country, no tags)
 
 ### Sort order (TiviMate sidebar)
 
-1. Country A→Z (by country code)
-2. Category priority: **Sports** first, then Entertainment → Movies → News → … → **Premium** → **General** last
-3. **Adult** group last
+Set TiviMate → Playlists → Manage Groups → **Groups sorting: By order in playlist**.
+
+Playlist emits channels in this group order:
+
+1. Local Channels
+2. Sports
+3. Entertainment
+4. Movies
+5. News
+6. Documentary
+7. Music
+8. Kids
+9. International
+10. En Español
+11. XXX Adult (last)
+
+Within each group: US → CA → other countries A→Z, then channel name.
 
 ---
 
@@ -48,10 +80,10 @@ Example: `🇺🇸 | US | Sports`
 
 | Source | Role |
 |--------|------|
-| `app/src/main/assets/meta.json` | Tags keyed by channel name (~830 entries), bundled from Linux app |
+| `app/src/main/assets/meta.json` | Tags keyed by channel name (~830 entries) |
 | Upstream `/api/channels` | Channel `id` + `name` |
-| `ChannelMetaStore` | Merges meta tags at channel load (matches Linux `_channel_from_row`) |
-| Name parser | Fallback when no flag in tags (`USA`, `France`, `Poland`, `DE`, …) |
+| `ChannelMetaStore` | Merges meta tags at channel load |
+| Name parser | Fallback when no flag in tags (`USA`, `France`, `CA`, …) |
 
 ### Tag schema
 
@@ -61,23 +93,20 @@ Example: `🇺🇸 | US | Sports`
 }
 ```
 
-| Tag type | Examples | Role |
-|----------|----------|------|
-| Flag emoji | `🇺🇸`, `🇬🇧`, `🇨🇦` | Country marker |
-| Globe | `🌐`, `🌍` | International |
-| Hashtags | `#sports`, `#movies`, `#premium` | Category |
-| Adult | `🔞`, `#NSFW`, `#adult` | `Adult` group |
-
 ---
 
 ## Verified examples
 
 | Channel | Tags | `group-title` | Display title |
-|---------|------|---------------|-----------------|
-| ACC Network USA | 🇺🇸 #sports #college | `🇺🇸 \| US \| Sports` | `ACC Network USA [Sports]` |
-| beIN Sports MAX 4 France | 🇫🇷 #sports #premium | `🇫🇷 \| FR \| Sports` | `beIN Sports MAX 4 France [Sports]` |
-| Arena Sport 1 Premium | 🌐 #sports #premium | `🌐 \| INT \| Sports` | `Arena Sport 1 Premium [Sports]` |
-| 18+ bucket | 🔞 #NSFW #adult | `Adult` | `18+ … [Adult]` |
+|---------|------|---------------|---------------|
+| ACC Network USA | 🇺🇸 #sports #college | `Sports` | `ACC Network USA 🇺🇸 US` |
+| beIN Sports MAX 4 France | 🇫🇷 #sports #premium | `Sports` | `beIN Sports MAX 4 France 🇫🇷 FR` |
+| Sportsnet 360 | 🇨🇦 #sports | `Sports` | `Sportsnet 360 🇨🇦 CA` |
+| ABC NY USA | 🇺🇸 #local #news | `News` | `ABC NY USA 🇺🇸 US` |
+| HBO Poland | 🇵🇱 #movies #premium | `Movies` | `HBO Poland 🇵🇱 PL` |
+| Telemundo | 🇺🇸 #Spanish #news | `En Español` | `Telemundo 🇺🇸 US` |
+| Adult Swim | 🇺🇸 #animation #adult | `Entertainment` | `Adult Swim 🇺🇸 US` |
+| 18+ bucket | 🔞 #NSFW #adult | `XXX Adult` | `18+ Channel` |
 
 ---
 
@@ -85,34 +114,12 @@ Example: `🇺🇸 | US | Sports`
 
 ```m3u
 #EXTM3U url-tvg="http://127.0.0.1:8787/epg.xml" x-tvg-url="http://127.0.0.1:8787/epg.xml"
-#EXTINF:-1 tvg-id="..." tvg-name="TSN 1 CA" tvg-logo="..." group-title="🇨🇦 | CA | Sports" tvg-chno="111",TSN 1 CA [Sports]
-http://127.0.0.1:8787/tivimate-stream/111.m3u8|User-Agent=...|Referer=...|Origin=...
-#EXTINF:-1 tvg-id="..." tvg-name="ACC Network USA" tvg-logo="..." group-title="🇺🇸 | US | Sports" tvg-chno="...",ACC Network USA [Sports]
-#EXTINF:-1 tvg-id="..." tvg-name="beIN Sports MAX 4 France" tvg-logo="..." group-title="🇫🇷 | FR | Sports" tvg-chno="494",beIN Sports MAX 4 France [Sports]
-#EXTINF:-1 tvg-logo="..." group-title="🌐 | INT | General" tvg-chno="155",3 Schweiz
-#EXTINF:-1 tvg-logo="..." group-title="Adult" tvg-chno="...",18+ Channel Name [Adult]
+#EXTINF:-1 tvg-id="..." tvg-name="Sportsnet 360" tvg-logo="..." group-title="Sports" tvg-chno="111",Sportsnet 360 🇨🇦 CA
+#EXTINF:-1 tvg-id="..." tvg-name="ACC Network USA" tvg-logo="..." group-title="Sports" tvg-chno="...",ACC Network USA 🇺🇸 US
+#EXTINF:-1 tvg-id="..." tvg-name="beIN Sports MAX 4 France" tvg-logo="..." group-title="Sports" tvg-chno="494",beIN Sports MAX 4 France 🇫🇷 FR
+#EXTINF:-1 tvg-logo="..." group-title="International" tvg-chno="155",3 Schweiz 🌐 INT
+#EXTINF:-1 tvg-logo="..." group-title="XXX Adult" tvg-chno="...",18+ Channel Name
 ```
-
----
-
-## Category mapping
-
-| Raw `#tag(s)` | Display category |
-|---------------|------------------|
-| `#sports`, `#football`, `#cricket`, `#tennis`, `#motorsport`, `#f1`, `#college`, `#golf`, `#basketball`, `#hockey`, `#rugby`, `#boxing`, `#mma`, `#baseball` | **Sports** |
-| `#live` | **Sports** if any sport tag; else **Entertainment** |
-| `#entertainment`, `#general`, `#variety`, `#drama`, `#comedy`, … | **Entertainment** |
-| `#movies`, `#action`, `#thriller`, `#horror`, … | **Movies** |
-| `#news`, `#local`, `#international`, `#politics`, `#public` | **News** |
-| `#documentary`, `#crime` | **Documentary** |
-| `#culture`, `#arts` | **Culture** |
-| `#music` | **Music** |
-| `#kids` | **Kids** |
-| `#regional` | **Regional** |
-| `#premium` | **Premium** (unless sport tags present) |
-| `#hd` | *(ignored)* |
-| `#NSFW`, `#adult`, `🔞` | **Adult** |
-| *(no tags)* | **General** |
 
 ---
 
@@ -120,18 +127,23 @@ http://127.0.0.1:8787/tivimate-stream/111.m3u8|User-Agent=...|Referer=...|Origin
 
 | File | Purpose |
 |------|---------|
+| `GroupTitleResolver.kt` | Flat genre groups, category priority, country resolution, sort keys |
+| `ChannelTitleNormalizer.kt` | Display title normalization + flag/country suffix |
 | `ChannelMetaStore.kt` | Load `meta.json`, tag lookup by channel name |
-| `GroupTitleResolver.kt` | Flag→ISO map, category rollup, name fallback, sort keys |
-| `PlaylistBuilder.kt` | `group-title`, `[Category]` display suffix, sorted output |
+| `PlaylistBuilder.kt` | `group-title`, normalized display titles, sorted output |
 | `DaddyLiveClient.kt` | Enrich channels with meta tags at load time |
 
 ---
 
-## Changes from original proposal
+## Changes from country×category scheme
 
-| Topic | Proposal | **Approved** |
+| Topic | Previous | **Approved** |
 |-------|----------|--------------|
-| Format | `US \| Sports` | `🇺🇸 \| US \| Sports` |
-| Category priority | Premium > Sports | **Sports > Premium** |
-| Adult | `INT \| Adult` | **`Adult` only** |
-| Display title | Drop `[Category]` suffix | **Keep suffix** |
+| `group-title` | `🇺🇸 \| US \| Sports` | **`Sports`** (flat genre) |
+| Country | In group name | **End of display title** (`🇺🇸 US`) |
+| CA | `🇨🇦 \| CA \| Sports` | **`Sports`** + `🇨🇦 CA` on title |
+| Premium | Separate Premium group | **Movies** only when `#premium` + movie tier |
+| Local | Mixed into News | **`Local Channels`** group (news → News) |
+| Spanish | Entertainment | **`En Español`** group |
+| Adult | `Adult` | **`XXX Adult`** |
+| Display `[Category]` | Kept | **Stripped**; country suffix instead |
