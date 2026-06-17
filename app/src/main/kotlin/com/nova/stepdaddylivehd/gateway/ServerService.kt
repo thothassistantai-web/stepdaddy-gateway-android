@@ -93,7 +93,7 @@ class ServerService : LifecycleService() {
                     epgManager.schedulePeriodicRefresh { daddyLiveClient.channels }
                     daddyLiveClient.scheduleChannelRefresh(force = true) {
                         updateRunningNotification()
-                        if (!readyBannerShown && !MainActivity.isInForeground) {
+                        if (!MainActivity.isInForeground) {
                             showReadyBanner(daddyLiveClient.channels.size)
                         }
                         if (!epgManager.epgReady()) {
@@ -181,8 +181,10 @@ class ServerService : LifecycleService() {
     }
 
     private fun showReadyBanner(channelCount: Int) {
-        if (readyBannerShown) return
-        readyBannerShown = true
+        synchronized(this) {
+            if (readyBannerShown) return
+            readyBannerShown = true
+        }
         mainHandler.postDelayed({
             if (GatewayOverlay.canDraw(this)) {
                 GatewayOverlay.showServerReady(this, channelCount)
@@ -190,7 +192,6 @@ class ServerService : LifecycleService() {
             }
             if (GatewayNotifier.shouldUseFullScreenStartedAlert(this)) {
                 GatewayNotifier.showServerStartedAlert(this, channelCount)
-                Log.i(TAG, "Posted started alert with full-screen intent (channels=$channelCount)")
                 return@postDelayed
             }
             launchServerReadyActivity(channelCount)
