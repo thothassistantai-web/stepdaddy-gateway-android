@@ -17,11 +17,12 @@ object PlaylistBuilder {
         channelMetaStore: ChannelMetaStore? = null,
     ): String {
         val base = baseUrl.trimEnd('/')
+        val channelNumbers = ChannelNumberResolver.assignAll(channels)
         val lines = mutableListOf(
             "#EXTM3U url-tvg=\"$base/epg.xml\" x-tvg-url=\"$base/epg.xml\"",
         )
         GroupTitleResolver.sortChannels(channels).forEach { channel ->
-            lines += "#EXTINF:-1 ${extinfAttrs(channel, base, logoResolver, channelMetaStore)},${displayTitle(channel)}"
+            lines += "#EXTINF:-1 ${extinfAttrs(channel, base, logoResolver, channelMetaStore, channelNumbers)},${displayTitle(channel)}"
             lines += tivimateStreamLine(base, channel.id, dlhdOrigin)
         }
         return lines.joinToString("\n") + "\n"
@@ -32,6 +33,7 @@ object PlaylistBuilder {
         base: String,
         logoResolver: LogoResolver?,
         channelMetaStore: ChannelMetaStore?,
+        channelNumbers: Map<String, Int>,
     ): String {
         val resolution = GroupTitleResolver.resolve(channel.name, channel.tags)
         val attrs = mutableListOf<String>()
@@ -46,7 +48,8 @@ object PlaylistBuilder {
             ?: "$base/ui/default-channel.svg"
         attrs += """tvg-logo="${escape(logo)}""""
         attrs += """group-title="${escape(resolution.groupTitle)}""""
-        attrs += """tvg-chno="${escape(channel.id)}""""
+        val chno = channelNumbers[channel.id]?.toString() ?: channel.id
+        attrs += """tvg-chno="${escape(chno)}""""
         return attrs.joinToString(" ")
     }
 
