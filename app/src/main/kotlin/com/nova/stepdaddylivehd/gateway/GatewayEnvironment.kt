@@ -149,6 +149,9 @@ class GatewayEnvironment(context: Context) {
         return System.currentTimeMillis() - lastStart < CRASH_RECOVERY_BANNER_SKIP_MS
     }
 
+    val lastServiceStartMs: Long
+        get() = prefs.getLong(KEY_LAST_SERVICE_START_MS, 0L)
+
     fun recordServiceStart() {
         prefs.edit().putLong(KEY_LAST_SERVICE_START_MS, System.currentTimeMillis()).apply()
     }

@@ -1,431 +1,151 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
-    android:clipToPadding="false"
-    android:fillViewport="true"
-    android:padding="24dp">
+    android:orientation="vertical">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:padding="16dp"
+        android:scrollbars="none">
 
-        <TextView
-            android:id="@+id/textTitle"
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/app_name"
-            android:textColor="@color/on_background"
-            android:textSize="32sp"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toStartOf="@id/panelStatus"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/textVersion"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="@color/on_background_muted"
-            android:textSize="14sp"
-            app:layout_constraintEnd_toStartOf="@id/panelStatus"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/textTitle" />
-
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/panelStatus"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:focusable="false"
-            app:cardBackgroundColor="@color/panel_background"
-            app:cardCornerRadius="12dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/guidelineSplit"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintWidth_min="280dp">
+            android:orientation="vertical">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@drawable/bg_card"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <include layout="@layout/include_main_header" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal"
+                android:weightSum="4">
+
+                <include layout="@layout/include_main_stats_row" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:baselineAligned="false"
+                android:orientation="horizontal"
+                android:weightSum="2">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1.15"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <include layout="@layout/include_main_server_controls" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="0.85"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <include layout="@layout/include_main_management" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_card"
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/label_dashboard"
-                    android:textColor="@color/on_background"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/textHealthStatus"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/status_stopped"
-                    android:textColor="@color/status_neutral"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/textActivity"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textColor="@color/on_background_muted"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/textProviders"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:fontFamily="monospace"
-                    android:lineSpacingExtra="2dp"
-                    android:textColor="@color/on_background_muted"
-                    android:textSize="13sp" />
-
-                <TextView
-                    android:id="@+id/textErrors"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textColor="@color/status_error"
-                    android:textSize="13sp"
-                    android:visibility="gone" />
-
-                <TextView
-                    android:id="@+id/textCategories"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:maxLines="8"
-                    android:textColor="@color/on_background_muted"
-                    android:textSize="12sp" />
+                <include layout="@layout/include_main_startup_toggles" />
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
 
-        <androidx.constraintlayout.widget.Guideline
-            android:id="@+id/guidelineSplit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            app:layout_constraintGuide_percent="0.58" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:baselineAligned="false"
+                android:orientation="horizontal"
+                android:weightSum="3">
 
-        <TextView
-            android:id="@+id/textStatus"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="@string/status_stopped"
-            android:textColor="@color/on_background"
-            android:textSize="18sp"
-            app:layout_constraintEnd_toStartOf="@id/guidelineSplit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/textVersion" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="2"
+                    android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/textPort"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="@color/on_background_muted"
-            android:textSize="16sp"
-            app:layout_constraintEnd_toStartOf="@id/guidelineSplit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/textStatus" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_card"
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonStart"
-            style="@style/Widget.StepDaddyGateway.TvButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:nextFocusDown="@id/buttonSettings"
-            android:nextFocusRight="@id/buttonStop"
-            android:text="@string/action_start"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/textPort" />
+                        <include layout="@layout/include_main_playlist_card" />
+                    </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonStop"
-            style="@style/Widget.StepDaddyGateway.TvButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:enabled="false"
-            android:nextFocusDown="@id/buttonInstallApps"
-            android:text="@string/action_stop"
-            app:layout_constraintBaseline_toBaselineOf="@id/buttonStart"
-            app:layout_constraintStart_toEndOf="@id/buttonStart" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_card"
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonSettings"
-            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:nextFocusRight="@id/buttonInstallApps"
-            android:nextFocusUp="@id/buttonStart"
-            android:text="@string/action_settings"
-            app:icon="@drawable/ic_notification"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/buttonStart" />
+                        <include layout="@layout/include_main_epg_card" />
+                    </LinearLayout>
+                </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonInstallApps"
-            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:nextFocusUp="@id/buttonStop"
-            android:text="@string/action_install_apps"
-            app:icon="@drawable/ic_install_apps"
-            app:layout_constraintBaseline_toBaselineOf="@id/buttonSettings"
-            app:layout_constraintStart_toEndOf="@id/buttonSettings" />
+                <LinearLayout
+                    android:id="@+id/panelStatus"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchAutoStart"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:checked="true"
-            android:focusable="true"
-            android:minHeight="48dp"
-            android:text="@string/label_auto_start_on_launch"
-            android:textColor="@color/on_background"
-            app:layout_constraintEnd_toStartOf="@id/guidelineSplit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/buttonSettings" />
+                    <include layout="@layout/include_main_sidebar" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
 
-        <TextView
-            android:id="@+id/textAutoStartHint"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="@string/label_auto_start_on_launch_hint"
-            android:textColor="@color/on_background_muted"
-            android:textSize="13sp"
-            app:layout_constraintEnd_toStartOf="@id/guidelineSplit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/switchAutoStart" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/card_elevated"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="10dp">
 
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchLaunchTivimate"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:checked="true"
-            android:focusable="true"
-            android:minHeight="48dp"
-            android:text="@string/label_launch_tivimate"
-            android:textColor="@color/on_background"
-            app:layout_constraintEnd_toStartOf="@id/guidelineSplit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/textAutoStartHint" />
-
-        <TextView
-            android:id="@+id/textLaunchTivimateHint"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="@string/label_launch_tivimate_hint"
-            android:textColor="@color/on_background_muted"
-            android:textSize="13sp"
-            app:layout_constraintEnd_toStartOf="@id/guidelineSplit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/switchLaunchTivimate" />
-
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchBoot"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:checked="true"
-            android:focusable="true"
-            android:minHeight="48dp"
-            android:text="@string/label_start_on_boot"
-            android:textColor="@color/on_background"
-            app:layout_constraintEnd_toStartOf="@id/guidelineSplit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/textLaunchTivimateHint" />
-
-        <TextView
-            android:id="@+id/textBootHint"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="@string/label_start_on_boot_hint"
-            android:textColor="@color/on_background_muted"
-            android:textSize="13sp"
-            app:layout_constraintEnd_toStartOf="@id/guidelineSplit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/switchBoot" />
-
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchTivimateWatch"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:checked="true"
-            android:focusable="true"
-            android:minHeight="48dp"
-            android:text="@string/label_tivimate_watch"
-            android:textColor="@color/on_background"
-            app:layout_constraintEnd_toStartOf="@id/guidelineSplit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/textBootHint" />
-
-        <TextView
-            android:id="@+id/textTivimateWatchHint"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="@string/label_tivimate_watch_hint"
-            android:textColor="@color/on_background_muted"
-            android:textSize="13sp"
-            app:layout_constraintEnd_toStartOf="@id/guidelineSplit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/switchTivimateWatch" />
-
-        <TextView
-            android:id="@+id/labelTivimateSetup"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="@string/label_tivimate_setup"
-            android:textColor="@color/on_background"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toStartOf="@id/guidelineSplit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/textTivimateWatchHint" />
-
-        <TextView
-            android:id="@+id/textTivimateHint"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="@string/hint_tivimate_setup"
-            android:textColor="@color/on_background_muted"
-            android:textSize="14sp"
-            app:layout_constraintEnd_toStartOf="@id/guidelineSplit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/labelTivimateSetup" />
-
-        <TextView
-            android:id="@+id/labelPlaylist"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/label_playlist"
-            android:textColor="@color/on_background"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toStartOf="@id/guidelineSplit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/textTivimateHint" />
-
-        <TextView
-            android:id="@+id/textPlaylistUrl"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="@color/on_background_muted"
-            android:textIsSelectable="true"
-            android:textSize="14sp"
-            app:layout_constraintEnd_toStartOf="@id/guidelineSplit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/labelPlaylist" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonCopyPlaylist"
-            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:nextFocusRight="@id/buttonLaunchTivimate"
-            android:text="@string/action_copy"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/textPlaylistUrl" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonLaunchTivimate"
-            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:nextFocusLeft="@id/buttonCopyPlaylist"
-            android:nextFocusRight="@id/buttonInstallTivimate"
-            android:text="@string/action_launch_tivimate"
-            app:layout_constraintBaseline_toBaselineOf="@id/buttonCopyPlaylist"
-            app:layout_constraintStart_toEndOf="@id/buttonCopyPlaylist" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonInstallTivimate"
-            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:nextFocusLeft="@id/buttonLaunchTivimate"
-            android:nextFocusDown="@id/buttonCopyEpg"
-            android:text="@string/action_install_tivimate"
-            app:layout_constraintBaseline_toBaselineOf="@id/buttonCopyPlaylist"
-            app:layout_constraintStart_toEndOf="@id/buttonLaunchTivimate" />
-
-        <TextView
-            android:id="@+id/labelEpg"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/label_epg"
-            android:textColor="@color/on_background"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toStartOf="@id/guidelineSplit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/buttonCopyPlaylist" />
-
-        <TextView
-            android:id="@+id/textEpgUrl"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="@color/on_background_muted"
-            android:textIsSelectable="true"
-            android:textSize="14sp"
-            app:layout_constraintEnd_toStartOf="@id/guidelineSplit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/labelEpg" />
-
-        <TextView
-            android:id="@+id/textEpgStatus"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="@color/on_background_muted"
-            android:textSize="14sp"
-            app:layout_constraintEnd_toStartOf="@id/guidelineSplit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/textEpgUrl" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonCopyEpg"
-            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="24dp"
-            android:nextFocusUp="@id/buttonInstallTivimate"
-            android:text="@string/action_copy"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/textEpgStatus" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-</ScrollView>
+        <include layout="@layout/include_main_footer" />
+    </LinearLayout>
+</LinearLayout>

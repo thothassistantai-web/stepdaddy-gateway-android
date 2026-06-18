@@ -6,6 +6,14 @@ plugins {
 
 val ktorVersion = "2.3.12"
 
+val gitHash: String = runCatching {
+    providers.exec {
+        commandLine("git", "rev-parse", "--short", "HEAD")
+    }.standardOutput.asText.get().trim()
+}.getOrDefault("unknown")
+
+val buildTime: Long = System.currentTimeMillis()
+
 android {
     namespace = "com.nova.stepdaddylivehd.gateway"
     compileSdk = 34
@@ -14,8 +22,8 @@ android {
         applicationId = "com.nova.stepdaddylivehd.gateway"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.2.0-gateway-mvp"
+        versionCode = 2
+        versionName = "1.0.0"
 
         buildConfigField("int", "DEFAULT_PORT", "3000")
         buildConfigField("String", "DEFAULT_API_URL", "\"http://127.0.0.1:3000\"")
@@ -24,6 +32,14 @@ android {
             "DEFAULT_DLHD_BASE_URL",
             "\"https://daddylive.org\"",
         )
+        buildConfigField("String", "DEFAULT_SUPPLEMENT_BASE_URL", "\"http://127.0.0.1:4124\"")
+        buildConfigField("boolean", "DEFAULT_EMBEDDED_SIDECAR_ENABLED", "true")
+        buildConfigField("boolean", "DEFAULT_SUPPLEMENT_SPORTS_ENABLED", "false")
+        buildConfigField("boolean", "DEFAULT_SUPPLEMENT_IPTV_ORG_ENABLED", "true")
+        buildConfigField("boolean", "DEFAULT_IPTV_ORG_EPG_ENABLED", "true")
+        buildConfigField("String", "DEFAULT_IPTV_ORG_EPG_URL", "\"\"")
+        buildConfigField("String", "GIT_HASH", "\"$gitHash\"")
+        buildConfigField("long", "BUILD_TIME", "${buildTime}L")
     }
 
     buildTypes {
@@ -74,4 +90,5 @@ dependencies {
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation("com.google.zxing:core:3.5.3")
 }
