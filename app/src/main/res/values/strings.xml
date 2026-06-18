@@ -3,6 +3,14 @@
     <string name="action_start">Start server</string>
     <string name="action_stop">Stop server</string>
     <string name="action_copy">Copy URL</string>
+    <string name="action_launch_tivimate">Launch</string>
+    <string name="action_install_tivimate">Install</string>
+    <string name="toast_tivimate_not_installed">TiviMate is not installed — starting install…</string>
+    <string name="toast_tivimate_launch_failed">Could not launch TiviMate</string>
+    <string name="toast_tivimate_installing">Downloading TiviMate…</string>
+    <string name="toast_tivimate_install_failed">TiviMate install failed: %1$s</string>
+    <string name="toast_tivimate_install_ready">Confirm TiviMate install on screen</string>
+    <string name="toast_tivimate_catalog_missing">TiviMate not found in app catalog</string>
     <string name="action_settings">Settings</string>
     <string name="action_install_apps">Install apps</string>
     <string name="install_apps_title">Install apps</string>

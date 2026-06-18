@@ -161,6 +161,26 @@ class InstallAppsCatalogRepository(
         }?.value
     }
 
+    fun findBestTiviMateEntry(catalog: InstallAppsCatalog): InstallAppEntry? {
+        val candidates = catalog.apps.filter { entry ->
+            TIVIMATE_NAME.containsMatchIn(entry.name)
+        }
+        if (candidates.isEmpty()) return null
+
+        val premium = candidates.filter { it.name.contains("premium", ignoreCase = true) }
+        val tv2024Premium = premium.filter { it.source == SOURCE_TV2024 }
+        val pool = when {
+            tv2024Premium.isNotEmpty() -> tv2024Premium
+            premium.isNotEmpty() -> premium
+            else -> {
+                val tv2024 = candidates.filter { it.source == SOURCE_TV2024 }
+                if (tv2024.isNotEmpty()) tv2024 else candidates
+            }
+        }
+
+        return pool.maxWithOrNull(tivimateEntryComparator)
+    }
+
     companion object {
         const val SOURCE_TV2024 = "tv2024"
         const val SOURCE_DOCSQUIFFY = "docsquiffy"
@@ -173,6 +193,40 @@ class InstallAppsCatalogRepository(
         private const val REMOTE_CATALOG_URL =
             "https://raw.githubusercontent.com/jk2024988/TV2024/main/install_apps_catalog.json"
         private const val USER_AGENT = "StepDaddyGateway/1.0"
+
+        private val TIVIMATE_NAME = Regex("""tivimate""", RegexOption.IGNORE_CASE)
+        private val TIVIMATE_VERSION = Regex("""(\d+(?:\.\d+)+)""")
+
+        private val tivimateEntryComparator = Comparator<InstallAppEntry> { left, right ->
+            val leftPremium = if (left.name.contains("premium", ignoreCase = true)) 1 else 0
+            val rightPremium = if (right.name.contains("premium", ignoreCase = true)) 1 else 0
+            if (leftPremium != rightPremium) return@Comparator leftPremium - rightPremium
+
+            val leftTv2024 = if (left.source == SOURCE_TV2024) 1 else 0
+            val rightTv2024 = if (right.source == SOURCE_TV2024) 1 else 0
+            if (leftTv2024 != rightTv2024) return@Comparator leftTv2024 - rightTv2024
+
+            compareVersionParts(
+                parseTiviMateVersion(left.name),
+                parseTiviMateVersion(right.name),
+            )
+        }
+
+        private fun parseTiviMateVersion(name: String): List<Int> {
+            val matches = TIVIMATE_VERSION.findAll(name).toList()
+            val last = matches.lastOrNull()?.value ?: return listOf(0)
+            return last.split('.').mapNotNull { part -> part.toIntOrNull() }
+        }
+
+        private fun compareVersionParts(left: List<Int>, right: List<Int>): Int {
+            val maxLen = maxOf(left.size, right.size)
+            for (index in 0 until maxLen) {
+                val leftPart = left.getOrElse(index) { 0 }
+                val rightPart = right.getOrElse(index) { 0 }
+                if (leftPart != rightPart) return leftPart - rightPart
+            }
+            return 0
+        }
 
         private val KNOWN_PACKAGES = mapOf(
             "tivimate" to "ar.tvplayer.tv",

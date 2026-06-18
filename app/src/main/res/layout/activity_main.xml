@@ -349,9 +349,34 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:nextFocusRight="@id/buttonLaunchTivimate"
             android:text="@string/action_copy"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/textPlaylistUrl" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonLaunchTivimate"
+            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:nextFocusLeft="@id/buttonCopyPlaylist"
+            android:nextFocusRight="@id/buttonInstallTivimate"
+            android:text="@string/action_launch_tivimate"
+            app:layout_constraintBaseline_toBaselineOf="@id/buttonCopyPlaylist"
+            app:layout_constraintStart_toEndOf="@id/buttonCopyPlaylist" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonInstallTivimate"
+            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:nextFocusLeft="@id/buttonLaunchTivimate"
+            android:nextFocusDown="@id/buttonCopyEpg"
+            android:text="@string/action_install_tivimate"
+            app:layout_constraintBaseline_toBaselineOf="@id/buttonCopyPlaylist"
+            app:layout_constraintStart_toEndOf="@id/buttonLaunchTivimate" />
 
         <TextView
             android:id="@+id/labelEpg"
@@ -396,6 +421,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="24dp"
+            android:nextFocusUp="@id/buttonInstallTivimate"
             android:text="@string/action_copy"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
