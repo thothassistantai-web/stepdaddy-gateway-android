@@ -135,6 +135,9 @@ class MainActivity : AppCompatActivity() {
         binding.buttonSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
+        binding.buttonInstallApps.setOnClickListener {
+            startActivity(Intent(this, InstallAppsActivity::class.java))
+        }
         binding.buttonCopyPlaylist.setOnClickListener { copyUrl(playlistUrl()) }
         binding.buttonCopyEpg.setOnClickListener { copyUrl(epgUrl()) }
         binding.buttonStart.requestFocus()
