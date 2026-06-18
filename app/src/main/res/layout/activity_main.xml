@@ -146,6 +146,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:nextFocusDown="@id/buttonSettings"
             android:nextFocusRight="@id/buttonStop"
             android:text="@string/action_start"
             app:layout_constraintStart_toStartOf="parent"
@@ -158,7 +159,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
             android:enabled="false"
-            android:nextFocusRight="@id/buttonInstallApps"
+            android:nextFocusDown="@id/buttonInstallApps"
             android:text="@string/action_stop"
             app:layout_constraintBaseline_toBaselineOf="@id/buttonStart"
             app:layout_constraintStart_toEndOf="@id/buttonStart" />
@@ -168,12 +169,13 @@
             style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
+            android:layout_marginTop="12dp"
             android:nextFocusRight="@id/buttonInstallApps"
+            android:nextFocusUp="@id/buttonStart"
             android:text="@string/action_settings"
             app:icon="@drawable/ic_notification"
-            app:layout_constraintBaseline_toBaselineOf="@id/buttonStart"
-            app:layout_constraintStart_toEndOf="@id/buttonStop" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/buttonStart" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonInstallApps"
@@ -181,9 +183,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
+            android:nextFocusUp="@id/buttonStop"
             android:text="@string/action_install_apps"
             app:icon="@drawable/ic_install_apps"
-            app:layout_constraintBaseline_toBaselineOf="@id/buttonStart"
+            app:layout_constraintBaseline_toBaselineOf="@id/buttonSettings"
             app:layout_constraintStart_toEndOf="@id/buttonSettings" />
 
         <androidx.appcompat.widget.SwitchCompat
@@ -198,7 +201,7 @@
             android:textColor="@color/on_background"
             app:layout_constraintEnd_toStartOf="@id/guidelineSplit"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/buttonStart" />
+            app:layout_constraintTop_toBottomOf="@id/buttonSettings" />
 
         <TextView
             android:id="@+id/textAutoStartHint"
