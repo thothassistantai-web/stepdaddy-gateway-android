@@ -23,7 +23,10 @@ class BootReceiver : BroadcastReceiver() {
         bootExecutor.execute {
             try {
                 Log.i(TAG, "Boot received ($action); attempting gateway start")
-                (appContext as GatewayApp).gatewayEnvironment.clearReadyBannerForNewBoot()
+                val environment = (appContext as GatewayApp).gatewayEnvironment
+                environment.clearReadyBannerForNewBoot()
+                environment.clearBootStaleState()
+                ScreenWakeRegistrar.register(appContext)
                 val result = GatewayStartHelper.startIfNeeded(appContext, "BootReceiver", allowReschedule = false)
                 Log.i(TAG, "BootReceiver start result: $result")
                 when (result) {

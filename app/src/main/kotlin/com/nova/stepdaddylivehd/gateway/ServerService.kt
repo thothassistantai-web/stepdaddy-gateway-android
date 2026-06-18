@@ -10,6 +10,8 @@ import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
+import com.nova.stepdaddylivehd.gateway.sidecar.EmbeddedSidecarRepository
+import com.nova.stepdaddylivehd.gateway.sidecar.EmbeddedSidecarServer
 import com.nova.stepdaddylivehd.gateway.ui.MainActivity
 import com.nova.stepdaddylivehd.gateway.upstream.DaddyLiveClient
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +25,7 @@ class ServerService : LifecycleService() {
     private lateinit var daddyLiveClient: DaddyLiveClient
     private lateinit var epgManager: com.nova.stepdaddylivehd.gateway.epg.EpgManager
     private var gatewayServer: GatewayServer? = null
+    private var embeddedSidecarServer: EmbeddedSidecarServer? = null
     private var streamHealthWatchdog: StreamHealthWatchdog? = null
     private val startMutex = Mutex()
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -30,8 +33,11 @@ class ServerService : LifecycleService() {
     private var startInFlight = false
     @Volatile
     private var readyBannerShown = false
+    @Volatile
+    private var tivimateLaunchedThisBoot = false
     private var skipBannerForCrashRecovery = false
     private var httpHealthCheckPosted = false
+    private var tiviMateWatchPosted = false
 
     override fun onCreate() {
         super.onCreate()
@@ -54,10 +60,15 @@ class ServerService : LifecycleService() {
         readyBannerShown = environment.readyBannerShownThisBoot
         GatewayStartHelper.cancelBootFallbacks(this)
         GatewayStartHelper.resetFallbacksScheduled()
+        ScreenWakeRegistrar.register(this)
         scheduleHttpHealthCheck()
-        this.epgManager = app.epgManager
-        // Kick HTTP on IO — DaddyLiveClient disk parse must not block main (boot ANR).
-        startGateway()
+        scheduleTiviMateResumeWatch()
+        lifecycleScope.launch(Dispatchers.IO) {
+            val app = application as GatewayApp
+            app.awaitComponents()
+            epgManager = app.epgManager
+            startGateway()
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -106,15 +117,27 @@ class ServerService : LifecycleService() {
                 }
                 try {
                     val app = application as GatewayApp
+                    app.awaitComponents()
+                    startEmbeddedSidecar(app)
                     val client = ensureDaddyLiveClient(app)
-                    gatewayServer = GatewayServer(
+                    client.awaitInitialLoad()
+                    val server = GatewayServer(
                         this@ServerService,
                         environment,
                         client,
                         epgManager,
                         app.logoResolver,
                         app.channelMetaStore,
-                    ).also { it.start() }
+                        app.supplementSource,
+                        app.playlistCache,
+                    )
+                    gatewayServer = server
+                    app.supplementSource.onRefreshComplete = {
+                        server.prewarmPlaylist()
+                        epgManager.scheduleRefresh(client.channels, force = true)
+                    }
+                    server.start()
+                    server.prewarmPlaylist()
                     environment.serverRunning = true
                     streamHealthWatchdog?.stop()
                     streamHealthWatchdog = StreamHealthWatchdog(
@@ -131,6 +154,7 @@ class ServerService : LifecycleService() {
                     GatewayStartHelper.schedulePeriodicEnsureAlive(this@ServerService)
                     notifyForegroundIfVisible(R.string.toast_server_running)
                     epgManager.schedulePeriodicRefresh { daddyLiveClient.channels }
+                    app.supplementSource.schedulePeriodicRefresh { daddyLiveClient.channels }
                     scheduleDeferredBootChannelRefresh(skipReadyBanner)
                 } catch (exc: Exception) {
                     Log.e(TAG, "Failed to start gateway on port ${environment.port}", exc)
@@ -153,6 +177,15 @@ class ServerService : LifecycleService() {
                 }
             }
         }
+    }
+
+    private suspend fun startEmbeddedSidecar(app: GatewayApp) {
+        if (!environment.embeddedSidecarEnabled) return
+        if (embeddedSidecarServer?.isRunning == true) return
+        environment.ensureEmbeddedSidecarUrl()
+        app.embeddedSidecarRepository.schedulePeriodicRefresh()
+        embeddedSidecarServer = EmbeddedSidecarServer(app.embeddedSidecarRepository).also { it.start() }
+        app.embeddedSidecarRepository.refresh(force = app.embeddedSidecarRepository.channelCount() == 0)
     }
 
     private suspend fun ensureDaddyLiveClient(app: GatewayApp): DaddyLiveClient {
@@ -187,6 +220,7 @@ class ServerService : LifecycleService() {
                 if (!skipReadyBanner && !MainActivity.isInForeground) {
                     showReadyBanner(daddyLiveClient.channels.size)
                 }
+                app.supplementSource.scheduleRefresh(daddyLiveClient.channels, force = true)
                 if (!epgManager.epgReady()) {
                     epgManager.scheduleRefresh(daddyLiveClient.channels, force = true)
                 }
@@ -214,6 +248,8 @@ class ServerService : LifecycleService() {
         streamHealthWatchdog = null
         gatewayServer?.stop()
         gatewayServer = null
+        embeddedSidecarServer?.stop()
+        embeddedSidecarServer = null
         environment.serverRunning = false
         isServiceActive = false
         GatewayNotifier.cancelAlerts(this)
@@ -235,6 +271,8 @@ class ServerService : LifecycleService() {
         streamHealthWatchdog = null
         gatewayServer?.stop()
         gatewayServer = null
+        embeddedSidecarServer?.stop()
+        embeddedSidecarServer = null
         environment.serverRunning = false
         isServiceActive = false
         super.onDestroy()
@@ -275,6 +313,19 @@ class ServerService : LifecycleService() {
             }
             launchServerReadyActivity(channelCount)
         }, LAUNCHER_SETTLE_MS)
+        maybeLaunchTivimate()
+    }
+
+    private fun maybeLaunchTivimate() {
+        if (!environment.launchTivimateOnReady || tivimateLaunchedThisBoot) return
+        if (!TiviMateLauncher.isInstalled(this)) {
+            Log.i(TAG, "Launch TiviMate skipped — not installed")
+            return
+        }
+        tivimateLaunchedThisBoot = true
+        mainHandler.postDelayed({
+            TiviMateLauncher.launch(this@ServerService)
+        }, LAUNCHER_SETTLE_MS)
     }
 
     private fun launchServerReadyActivity(channelCount: Int) {
@@ -310,6 +361,27 @@ class ServerService : LifecycleService() {
         }.onFailure { exc ->
             Log.w(TAG, "Server-ready activity launch failed: ${exc.message}")
         }
+    }
+
+    /** When TiviMate watch is on, nudge gateway if TiviMate becomes active while we're up. */
+    private fun scheduleTiviMateResumeWatch() {
+        if (tiviMateWatchPosted) return
+        tiviMateWatchPosted = true
+        mainHandler.postDelayed(object : Runnable {
+            override fun run() {
+                if (!isServiceActive) {
+                    tiviMateWatchPosted = false
+                    return
+                }
+                if (environment.tivimateWatchEnabled && TiviMateWatch.isTiviMateLikelyActive(this@ServerService)) {
+                    if (!GatewayStartHelper.isGatewayHealthy(this@ServerService)) {
+                        Log.i(TAG, "TiviMate active; ensuring gateway health")
+                        GatewayStartHelper.startIfNeeded(this@ServerService, "TiviMateWatch", allowReschedule = false)
+                    }
+                }
+                mainHandler.postDelayed(this, TIVIMATE_WATCH_MS)
+            }
+        }, TIVIMATE_WATCH_MS)
     }
 
     /** Local self-check: FGS can survive while CIO HTTP engine is down. */
@@ -365,6 +437,7 @@ class ServerService : LifecycleService() {
         const val ACTION_STOP = "com.nova.stepdaddylivehd.gateway.action.STOP"
         const val ACTION_ENSURE_GATEWAY = "com.nova.stepdaddylivehd.gateway.action.ENSURE_GATEWAY"
         private const val HTTP_HEALTH_CHECK_MS = 90_000L
+        private const val TIVIMATE_WATCH_MS = 60_000L
         private const val BOOT_CHANNEL_REFRESH_DEFER_MS = 45_000L
         private const val REQUEST_CODE_SERVER_READY = 30_200
     }

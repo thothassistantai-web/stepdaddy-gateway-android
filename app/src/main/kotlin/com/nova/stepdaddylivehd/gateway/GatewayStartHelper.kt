@@ -13,7 +13,6 @@ import androidx.core.content.ContextCompat
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.OutOfQuotaPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import java.util.concurrent.Executors
@@ -36,11 +35,24 @@ object GatewayStartHelper {
     private val fallbacksScheduled = AtomicBoolean(false)
     private val bootExecutor = Executors.newSingleThreadExecutor()
 
-    /** Service process alive AND HTTP server bound (prefs mirror [ServerService] state). */
+    /** FGS alive AND loopback /health responds OK (prefs alone are stale after reboot). */
     fun isGatewayHealthy(context: Context): Boolean {
-        if (!ServerService.isServiceActive) return false
-        val environment = (context.applicationContext as GatewayApp).gatewayEnvironment
-        return environment.serverRunning
+        val appContext = context.applicationContext
+        val environment = (appContext as GatewayApp).gatewayEnvironment
+        if (!ServerService.isServiceActive) {
+            if (environment.serverRunning) {
+                environment.clearBootStaleState()
+            }
+            return false
+        }
+        if (GatewayHealth.probeLoopback(appContext)) {
+            environment.serverRunning = true
+            return true
+        }
+        if (environment.serverRunning) {
+            environment.clearBootStaleState()
+        }
+        return false
     }
 
     fun startIfNeeded(context: Context, source: String, allowReschedule: Boolean = false): StartResult {
@@ -91,10 +103,26 @@ object GatewayStartHelper {
         return StartResult.SCHEDULED_FALLBACK
     }
 
-    /** Called when FGS is up and CIO is listening — drop one-shot boot retries. */
+    /** Called when FGS is up and HTTP /health is OK — drop boot retries, enable WM keep-alive. */
     private fun onGatewayHealthy(context: Context) {
         cancelBootFallbacks(context)
         schedulePeriodicEnsureAlive(context)
+        scheduleWorkManagerBootCatchup(context)
+    }
+
+    /** Deferred WM retries — safe after the boot ANR window has passed. */
+    private fun scheduleWorkManagerBootCatchup(context: Context) {
+        val workManager = WorkManager.getInstance(context)
+        val request = OneTimeWorkRequestBuilder<BootStartWorker>()
+            .setInitialDelay(2, TimeUnit.MINUTES)
+            .addTag(WORK_TAG_BOOT_START)
+            .build()
+        workManager.enqueueUniqueWork(
+            "$UNIQUE_BOOT_START_WORK-catchup-2m",
+            ExistingWorkPolicy.KEEP,
+            request,
+        )
+        Log.i(TAG, "Scheduled deferred WorkManager catchup at 2m")
     }
 
     private fun nudgeRunningService(context: Context) {
@@ -117,13 +145,15 @@ object GatewayStartHelper {
         bootExecutor.execute { scheduleBootFallbacksOnce(context.applicationContext) }
     }
 
-    /** One-shot alarms + WorkManager retries after BOOT_COMPLETED (OEM-delayed FGS). */
+    /**
+     * Alarm-only retries during boot — WorkManager binding during BOOT_COMPLETED
+     * ANRs on FUSA sticks (SystemJobService bind timeout). WM is scheduled once healthy.
+     */
     private fun scheduleBootFallbacksOnce(context: Context) {
         if (!fallbacksScheduled.compareAndSet(false, true)) {
             Log.i(TAG, "Boot fallbacks already scheduled; skipping duplicate")
             return
         }
-        scheduleWorkManager(context)
         scheduleAlarms(context)
     }
 
@@ -204,34 +234,6 @@ object GatewayStartHelper {
         }
     }
 
-    /** Expedited + minute-scale retries while boot path is still racing OEM startup. */
-    private fun scheduleWorkManager(context: Context) {
-        val workManager = WorkManager.getInstance(context)
-        val expedited = OneTimeWorkRequestBuilder<BootStartWorker>()
-            .setInitialDelay(30, TimeUnit.SECONDS)
-            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-            .addTag(WORK_TAG_BOOT_START)
-            .build()
-        workManager.enqueueUniqueWork(
-            "$UNIQUE_BOOT_START_WORK-expedited-30s",
-            ExistingWorkPolicy.KEEP,
-            expedited,
-        )
-        val delaysMinutes = listOf(1L, 2L, 3L)
-        delaysMinutes.forEach { delay ->
-            val request = OneTimeWorkRequestBuilder<BootStartWorker>()
-                .setInitialDelay(delay, TimeUnit.MINUTES)
-                .addTag(WORK_TAG_BOOT_START)
-                .build()
-            workManager.enqueueUniqueWork(
-                "$UNIQUE_BOOT_START_WORK-$delay",
-                ExistingWorkPolicy.KEEP,
-                request,
-            )
-        }
-        Log.i(TAG, "Scheduled expedited WorkManager retry at 30s + ${delaysMinutes.size} minute retries")
-    }
-
     /** Exact elapsed-realtime alarms — survive Doze better than inexact WM on some TV sticks. */
     private fun scheduleAlarms(context: Context) {
         val alarmManager = context.getSystemService(AlarmManager::class.java) ?: return
@@ -281,8 +283,13 @@ object GatewayStartHelper {
             cancelPeriodicEnsureAlive(appContext)
             return
         }
+        val periodMinutes = if (environment.tivimateWatchEnabled) {
+            PERIODIC_ENSURE_ALIVE_TIVIMATE_MINUTES
+        } else {
+            PERIODIC_ENSURE_ALIVE_MINUTES
+        }
         val request = PeriodicWorkRequestBuilder<GatewayEnsureAliveWorker>(
-            PERIODIC_ENSURE_ALIVE_MINUTES,
+            periodMinutes,
             TimeUnit.MINUTES,
         )
             .addTag(WORK_TAG_ENSURE_ALIVE)
@@ -292,7 +299,7 @@ object GatewayStartHelper {
             ExistingPeriodicWorkPolicy.KEEP,
             request,
         )
-        Log.i(TAG, "Scheduled periodic ensure-alive every ${PERIODIC_ENSURE_ALIVE_MINUTES}m")
+        Log.i(TAG, "Scheduled periodic ensure-alive every ${periodMinutes}m")
     }
 
     fun cancelPeriodicEnsureAlive(context: Context) {
@@ -336,5 +343,8 @@ object GatewayStartHelper {
     private const val REQUEST_CODE_ALARM_BASE = 30_000
     private const val REQUEST_CODE_TRAMPOLINE = 30_100
     private const val PERIODIC_ENSURE_ALIVE_MINUTES = 20L
-    private val ALARM_DELAYS_MS = longArrayOf(8_000, 20_000, 40_000, 80_000)
+    private const val PERIODIC_ENSURE_ALIVE_TIVIMATE_MINUTES = 5L
+    private val ALARM_DELAYS_MS = longArrayOf(
+        3_000, 8_000, 15_000, 30_000, 60_000, 120_000, 240_000,
+    )
 }
