@@ -63,7 +63,11 @@
                 android:layout_marginTop="8dp"
                 android:checked="true"
                 android:focusable="true"
-                android:minHeight="48dp" />
+                android:minHeight="48dp"
+                android:nextFocusLeft="@id/buttonInstallApps"
+                android:nextFocusRight="@id/switchLaunchTivimate"
+                android:nextFocusUp="@id/buttonInstallApps"
+                android:nextFocusDown="@id/buttonCopyPlaylist" />
         </LinearLayout>
 
         <LinearLayout
@@ -97,7 +101,11 @@
                 android:layout_marginTop="8dp"
                 android:checked="true"
                 android:focusable="true"
-                android:minHeight="48dp" />
+                android:minHeight="48dp"
+                android:nextFocusLeft="@id/switchAutoStart"
+                android:nextFocusRight="@id/switchBoot"
+                android:nextFocusUp="@id/buttonInstallApps"
+                android:nextFocusDown="@id/buttonOpenPlaylist" />
         </LinearLayout>
 
         <LinearLayout
@@ -131,7 +139,11 @@
                 android:layout_marginTop="8dp"
                 android:checked="true"
                 android:focusable="true"
-                android:minHeight="48dp" />
+                android:minHeight="48dp"
+                android:nextFocusLeft="@id/switchLaunchTivimate"
+                android:nextFocusRight="@id/switchTivimateWatch"
+                android:nextFocusUp="@id/buttonInstallApps"
+                android:nextFocusDown="@id/buttonQrPlaylist" />
         </LinearLayout>
 
         <LinearLayout
@@ -165,7 +177,11 @@
                 android:layout_marginTop="8dp"
                 android:checked="true"
                 android:focusable="true"
-                android:minHeight="48dp" />
+                android:minHeight="48dp"
+                android:nextFocusLeft="@id/switchBoot"
+                android:nextFocusRight="@id/buttonCopyPlaylist"
+                android:nextFocusUp="@id/buttonInstallApps"
+                android:nextFocusDown="@id/buttonCopyPlaylist" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

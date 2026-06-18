@@ -8,22 +8,33 @@
     </style>
 
     <style name="Widget.StepDaddyGateway.TvButton" parent="Widget.MaterialComponents.Button">
-        <item name="android:minHeight">48dp</item>
+        <item name="android:minHeight">44dp</item>
         <item name="android:minWidth">100dp</item>
         <item name="android:focusable">true</item>
-        <item name="android:textSize">14sp</item>
+        <item name="android:foreground">@drawable/tv_button_focused</item>
+        <item name="android:stateListAnimator">@animator/tv_button_focus_scale</item>
+        <item name="android:textSize">13sp</item>
         <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.04</item>
         <item name="cornerRadius">8dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">8dp</item>
+        <item name="iconTint">@color/on_background</item>
     </style>
 
     <style name="Widget.StepDaddyGateway.TvButton.Outlined" parent="Widget.MaterialComponents.Button.OutlinedButton">
-        <item name="android:minHeight">48dp</item>
+        <item name="android:minHeight">40dp</item>
         <item name="android:minWidth">88dp</item>
         <item name="android:focusable">true</item>
-        <item name="android:textSize">13sp</item>
+        <item name="android:foreground">@drawable/tv_button_focused</item>
+        <item name="android:stateListAnimator">@animator/tv_button_focus_scale</item>
+        <item name="android:textSize">12sp</item>
         <item name="android:textAllCaps">true</item>
         <item name="strokeColor">@color/panel_border</item>
         <item name="cornerRadius">8dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">6dp</item>
+        <item name="iconTint">@color/on_background</item>
     </style>
 
     <style name="Widget.StepDaddyGateway.TvButton.Start" parent="Widget.StepDaddyGateway.TvButton">

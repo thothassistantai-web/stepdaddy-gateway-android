@@ -18,11 +18,11 @@
             android:src="@drawable/ic_link" />
 
         <TextView
+            style="@style/Widget.StepDaddyGateway.CardTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="@string/label_epg_card"
-            style="@style/Widget.StepDaddyGateway.CardTitle" />
+            android:text="@string/label_epg_card" />
     </LinearLayout>
 
     <TextView
@@ -51,20 +51,28 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonCopyEpg"
             style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
             android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:nextFocusLeft="@id/buttonQrPlaylist"
+            android:nextFocusRight="@id/buttonOpenEpg"
+            android:nextFocusUp="@id/buttonLaunchTivimate"
+            android:nextFocusDown="@id/buttonFooterScrollTop"
             android:text="@string/action_copy"
-            app:icon="@drawable/ic_copy"
-            app:iconPadding="8dp" />
+            app:icon="@drawable/ic_copy" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonOpenEpg"
             style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:nextFocusLeft="@id/buttonCopyEpg"
+            android:nextFocusRight="@id/buttonFooterScrollTop"
+            android:nextFocusUp="@id/buttonInstallTivimate"
+            android:nextFocusDown="@id/buttonFooterScrollTop"
             android:text="@string/action_open"
-            app:icon="@drawable/ic_open"
-            app:iconPadding="8dp" />
+            app:icon="@drawable/ic_open" />
     </LinearLayout>
 </LinearLayout>

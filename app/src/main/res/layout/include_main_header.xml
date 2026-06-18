@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:gravity="center_vertical"
@@ -73,6 +74,10 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/action_settings"
             android:focusable="true"
+            android:foreground="@drawable/tv_icon_button_focused"
+            android:nextFocusDown="@id/buttonToggleServer"
+            android:nextFocusLeft="@id/buttonOpenEpg"
+            android:nextFocusRight="@id/buttonToggleServer"
             android:padding="10dp"
             android:src="@drawable/ic_settings" />
     </LinearLayout>

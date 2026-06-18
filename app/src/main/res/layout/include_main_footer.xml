@@ -7,8 +7,8 @@
 
     <View
         android:id="@+id/viewFooterStatusDot"
-        android:layout_width="10dp"
-        android:layout_height="10dp"
+        android:layout_width="8dp"
+        android:layout_height="8dp"
         android:background="@drawable/bg_stat_indicator_offline" />
 
     <TextView
@@ -24,7 +24,7 @@
         android:id="@+id/textFooterUptime"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="20dp"
         android:layout_weight="1"
         android:text="@string/footer_uptime_placeholder"
         android:textColor="@color/on_background_muted"
@@ -34,7 +34,7 @@
         android:id="@+id/textFooterClients"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
+        android:layout_marginEnd="20dp"
         android:text="@string/footer_clients_placeholder"
         android:textColor="@color/on_background_muted"
         android:textSize="12sp" />
@@ -43,16 +43,33 @@
         android:id="@+id/textFooterMemory"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
+        android:layout_marginEnd="20dp"
         android:text="@string/footer_memory_placeholder"
         android:textColor="@color/on_background_muted"
         android:textSize="12sp" />
 
     <TextView
         android:id="@+id/textFooterUpdate"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginEnd="12dp"
+        android:layout_weight="1"
+        android:gravity="center"
         android:textColor="@color/footer_update"
         android:textSize="11sp"
         android:visibility="gone" />
+
+    <ImageButton
+        android:id="@+id/buttonFooterScrollTop"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:background="@drawable/bg_footer_scroll_button"
+        android:contentDescription="@string/action_scroll_top"
+        android:focusable="true"
+        android:foreground="@drawable/tv_icon_button_focused"
+        android:nextFocusLeft="@id/buttonOpenEpg"
+        android:nextFocusUp="@id/buttonOpenEpg"
+        android:nextFocusRight="@id/buttonHeaderSettings"
+        android:padding="6dp"
+        android:src="@drawable/ic_scroll_top" />
 </LinearLayout>

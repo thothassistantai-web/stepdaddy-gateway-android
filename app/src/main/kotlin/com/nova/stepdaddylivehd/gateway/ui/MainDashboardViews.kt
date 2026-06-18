@@ -4,6 +4,7 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.widget.SwitchCompat
 import com.google.android.material.button.MaterialButton
@@ -21,9 +22,8 @@ class MainDashboardViews(root: View) {
     val statStatusIcon: ImageView = root.findViewById(R.id.statStatusIcon)
     val statSourcesValue: TextView = root.findViewById(R.id.statSourcesValue)
 
-    val buttonStart: MaterialButton = root.findViewById(R.id.buttonStart)
+    val buttonToggleServer: MaterialButton = root.findViewById(R.id.buttonToggleServer)
     val buttonRestart: MaterialButton = root.findViewById(R.id.buttonRestart)
-    val buttonStop: MaterialButton = root.findViewById(R.id.buttonStop)
     val textStatus: TextView = root.findViewById(R.id.textStatus)
     val textPort: TextView = root.findViewById(R.id.textPort)
 
@@ -62,4 +62,6 @@ class MainDashboardViews(root: View) {
     val textFooterClients: TextView = root.findViewById(R.id.textFooterClients)
     val textFooterMemory: TextView = root.findViewById(R.id.textFooterMemory)
     val textFooterUpdate: TextView = root.findViewById(R.id.textFooterUpdate)
+    val buttonFooterScrollTop: ImageButton = root.findViewById(R.id.buttonFooterScrollTop)
+    val scrollDashboard: ScrollView = root.findViewById(R.id.scrollDashboard)
 }

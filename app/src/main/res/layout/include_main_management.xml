@@ -18,30 +18,40 @@
             android:src="@drawable/ic_settings" />
 
         <TextView
+            style="@style/Widget.StepDaddyGateway.CardTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="@string/card_management"
-            style="@style/Widget.StepDaddyGateway.CardTitle" />
+            android:text="@string/card_management" />
     </LinearLayout>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonSettings"
         style="@style/Widget.StepDaddyGateway.TvButton.Management"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_height="44dp"
+        android:layout_marginTop="14dp"
+        android:nextFocusLeft="@id/buttonRestart"
+        android:nextFocusRight="@id/buttonInstallApps"
+        android:nextFocusUp="@id/buttonToggleServer"
+        android:nextFocusDown="@id/buttonInstallApps"
         android:text="@string/action_settings_upper"
-        app:icon="@drawable/ic_settings"
+        app:icon="@drawable/ic_chevron_right"
+        app:iconGravity="end"
         app:iconPadding="12dp" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonInstallApps"
         style="@style/Widget.StepDaddyGateway.TvButton.Management"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="44dp"
         android:layout_marginTop="8dp"
+        android:nextFocusLeft="@id/buttonSettings"
+        android:nextFocusRight="@id/switchAutoStart"
+        android:nextFocusUp="@id/buttonSettings"
+        android:nextFocusDown="@id/switchAutoStart"
         android:text="@string/action_install_apps_upper"
         app:icon="@drawable/ic_download"
+        app:iconGravity="end"
         app:iconPadding="12dp" />
 </LinearLayout>

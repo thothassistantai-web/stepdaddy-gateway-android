@@ -18,11 +18,11 @@
             android:src="@drawable/ic_link" />
 
         <TextView
+            style="@style/Widget.StepDaddyGateway.CardTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="@string/label_playlist_card"
-            style="@style/Widget.StepDaddyGateway.CardTitle" />
+            android:text="@string/label_playlist_card" />
     </LinearLayout>
 
     <TextView
@@ -43,31 +43,43 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonCopyPlaylist"
             style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
             android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:nextFocusLeft="@id/switchTivimateWatch"
+            android:nextFocusRight="@id/buttonOpenPlaylist"
+            android:nextFocusUp="@id/switchAutoStart"
+            android:nextFocusDown="@id/buttonLaunchTivimate"
             android:text="@string/action_copy"
-            app:icon="@drawable/ic_copy"
-            app:iconPadding="8dp" />
+            app:icon="@drawable/ic_copy" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonOpenPlaylist"
             style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
             android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:nextFocusLeft="@id/buttonCopyPlaylist"
+            android:nextFocusRight="@id/buttonQrPlaylist"
+            android:nextFocusUp="@id/switchLaunchTivimate"
+            android:nextFocusDown="@id/buttonInstallTivimate"
             android:text="@string/action_open"
-            app:icon="@drawable/ic_open"
-            app:iconPadding="8dp" />
+            app:icon="@drawable/ic_open" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonQrPlaylist"
             style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:nextFocusLeft="@id/buttonOpenPlaylist"
+            android:nextFocusRight="@id/buttonCopyEpg"
+            android:nextFocusUp="@id/switchBoot"
+            android:nextFocusDown="@id/buttonCopyEpg"
             android:text="@string/action_qr_code"
-            app:icon="@drawable/ic_qr"
-            app:iconPadding="8dp" />
+            app:icon="@drawable/ic_qr" />
     </LinearLayout>
 
     <LinearLayout
@@ -79,16 +91,26 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonLaunchTivimate"
             style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
             android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:nextFocusLeft="@id/buttonCopyPlaylist"
+            android:nextFocusRight="@id/buttonInstallTivimate"
+            android:nextFocusUp="@id/buttonCopyPlaylist"
+            android:nextFocusDown="@id/buttonCopyEpg"
             android:text="@string/action_launch_tivimate" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonInstallTivimate"
             style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:nextFocusLeft="@id/buttonLaunchTivimate"
+            android:nextFocusRight="@id/buttonCopyEpg"
+            android:nextFocusUp="@id/buttonOpenPlaylist"
+            android:nextFocusDown="@id/buttonOpenEpg"
             android:text="@string/action_install_tivimate" />
     </LinearLayout>
 </LinearLayout>

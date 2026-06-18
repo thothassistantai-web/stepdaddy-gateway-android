@@ -6,12 +6,14 @@
     android:orientation="vertical">
 
     <ScrollView
+        android:id="@+id/scrollDashboard"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:clipToPadding="false"
+        android:descendantFocusability="afterDescendants"
         android:fillViewport="true"
-        android:padding="16dp"
+        android:padding="18dp"
         android:scrollbars="none">
 
         <LinearLayout
@@ -25,7 +27,7 @@
                 android:background="@drawable/bg_card"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:padding="16dp">
+                android:padding="18dp">
 
                 <include layout="@layout/include_main_header" />
             </LinearLayout>
@@ -33,7 +35,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="14dp"
                 android:orientation="horizontal"
                 android:weightSum="4">
 
@@ -43,7 +45,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="14dp"
                 android:baselineAligned="false"
                 android:orientation="horizontal"
                 android:weightSum="2">
@@ -51,11 +53,11 @@
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
-                    android:layout_weight="1.15"
+                    android:layout_marginEnd="10dp"
+                    android:layout_weight="1.2"
                     android:background="@drawable/bg_card"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="18dp">
 
                     <include layout="@layout/include_main_server_controls" />
                 </LinearLayout>
@@ -63,11 +65,11 @@
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_weight="0.85"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="0.8"
                     android:background="@drawable/bg_card"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="18dp">
 
                     <include layout="@layout/include_main_management" />
                 </LinearLayout>
@@ -76,10 +78,10 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="14dp"
                 android:background="@drawable/bg_card"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="18dp">
 
                 <include layout="@layout/include_main_startup_toggles" />
             </LinearLayout>
@@ -87,7 +89,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="14dp"
                 android:baselineAligned="false"
                 android:orientation="horizontal"
                 android:weightSum="3">
@@ -95,7 +97,7 @@
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
+                    android:layout_marginEnd="10dp"
                     android:layout_weight="2"
                     android:orientation="vertical">
 
@@ -104,7 +106,7 @@
                         android:layout_height="wrap_content"
                         android:background="@drawable/bg_card"
                         android:orientation="vertical"
-                        android:padding="16dp">
+                        android:padding="18dp">
 
                         <include layout="@layout/include_main_playlist_card" />
                     </LinearLayout>
@@ -112,10 +114,10 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
+                        android:layout_marginTop="14dp"
                         android:background="@drawable/bg_card"
                         android:orientation="vertical"
-                        android:padding="16dp">
+                        android:padding="18dp">
 
                         <include layout="@layout/include_main_epg_card" />
                     </LinearLayout>
@@ -125,11 +127,12 @@
                     android:id="@+id/panelStatus"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="10dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_card"
+                    android:focusable="false"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="18dp">
 
                     <include layout="@layout/include_main_sidebar" />
                 </LinearLayout>
@@ -137,13 +140,18 @@
         </LinearLayout>
     </ScrollView>
 
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/panel_border" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/card_elevated"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="16dp"
+        android:paddingHorizontal="18dp"
         android:paddingVertical="10dp">
 
         <include layout="@layout/include_main_footer" />

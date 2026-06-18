@@ -171,9 +171,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun bindActions() {
-        views.buttonStart.setOnClickListener { startServer() }
+        views.buttonToggleServer.setOnClickListener {
+            if (ServerService.isServiceActive) {
+                stopServer()
+            } else {
+                startServer()
+            }
+        }
         views.buttonRestart.setOnClickListener { restartServer() }
-        views.buttonStop.setOnClickListener { stopServer() }
         views.buttonSettings.setOnClickListener { openSettings() }
         views.buttonInstallApps.setOnClickListener {
             startActivity(Intent(this, InstallAppsActivity::class.java))
@@ -186,7 +191,11 @@ class MainActivity : AppCompatActivity() {
         views.buttonOpenEpg.setOnClickListener { openUrl(epgUrl()) }
         views.buttonLaunchTivimate.setOnClickListener { launchTivimate() }
         views.buttonInstallTivimate.setOnClickListener { installTivimate() }
-        views.buttonStart.requestFocus()
+        views.buttonFooterScrollTop.setOnClickListener {
+            views.scrollDashboard.smoothScrollTo(0, 0)
+            views.buttonHeaderSettings.requestFocus()
+        }
+        views.buttonHeaderSettings.requestFocus()
     }
 
     private fun openSettings() {
@@ -309,11 +318,24 @@ class MainActivity : AppCompatActivity() {
             active -> getString(R.string.status_starting)
             else -> getString(R.string.status_stopped)
         }
-        views.buttonStart.isEnabled = !active
+        updateServerToggleButton(active)
         views.buttonRestart.isEnabled = active
-        views.buttonStop.isEnabled = active
         updateSummaryStatus(running, active, null)
         updateFooterOnline(running)
+    }
+
+    private fun updateServerToggleButton(active: Boolean) {
+        val button = views.buttonToggleServer
+        if (active) {
+            button.text = getString(R.string.action_stop)
+            button.setIconResource(R.drawable.ic_stop)
+            button.backgroundTintList = ContextCompat.getColorStateList(this, R.color.btn_stop)
+        } else {
+            button.text = getString(R.string.action_start)
+            button.setIconResource(R.drawable.ic_play)
+            button.backgroundTintList = ContextCompat.getColorStateList(this, R.color.btn_start)
+        }
+        button.isEnabled = true
     }
 
     private fun updateEpgStatus() {
@@ -342,14 +364,20 @@ class MainActivity : AppCompatActivity() {
     private fun startStatusPolling() {
         pollJob?.cancel()
         pollJob = lifecycleScope.launch {
+            var lastActive = ServerService.isServiceActive
             while (isActive) {
-                if (ServerService.isServiceActive) {
+                val active = ServerService.isServiceActive
+                if (active != lastActive) {
+                    updateStatus()
+                    lastActive = active
+                }
+                if (active) {
                     val live = statusMonitor.fetch()
                     renderDashboard(live)
                 } else {
                     renderDashboard(null)
                 }
-                updateFooterMetrics(if (ServerService.isServiceActive) environment.lastServiceStartMs else null)
+                updateFooterMetrics(if (active) environment.lastServiceStartMs else null)
                 delay(STATUS_POLL_MS)
             }
         }
