@@ -32,12 +32,14 @@ object ChannelListProvider {
         val channels = ArrayList<TuneChannel>()
         var pendingName: String? = null
         var pendingNumber: Int? = null
+        var pendingGroup: String? = null
 
         body.lineSequence().forEach { rawLine ->
             val line = rawLine.trim()
             if (line.startsWith("#EXTINF:", ignoreCase = true)) {
                 pendingName = line.substringAfterLast(',').trim().ifEmpty { null }
                 pendingNumber = extractAttr(line, "tvg-chno")?.toIntOrNull()
+                pendingGroup = extractAttr(line, "group-title")
             } else if (!line.startsWith("#") && line.isNotEmpty()) {
                 val streamLine = line.substringBefore('|')
                 val id = streamLine.substringAfterLast('/')
@@ -46,10 +48,16 @@ object ChannelListProvider {
                 if (id.isNotEmpty()) {
                     val name = pendingName ?: "Channel $id"
                     val number = pendingNumber ?: id.toIntOrNull() ?: channels.size + 1
-                    channels += TuneChannel(id = id, name = name, number = number)
+                    channels += TuneChannel(
+                        id = id,
+                        name = name,
+                        number = number,
+                        groupTitle = pendingGroup.orEmpty(),
+                    )
                 }
                 pendingName = null
                 pendingNumber = null
+                pendingGroup = null
             }
         }
         return channels.sortedBy { it.number }

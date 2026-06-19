@@ -15,28 +15,77 @@
         app:surface_type="surface_view"
         app:use_controller="false" />
 
-    <TextView
-        android:id="@+id/textFullscreenChannel"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/fullscreenInfoBar"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="top|start"
-        android:layout_margin="16dp"
-        android:background="#99000000"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="6dp"
-        android:textColor="@color/on_background"
-        android:textSize="16sp" />
+        android:layout_gravity="top"
+        android:background="#CC000000"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="10dp"
+        android:visibility="gone">
 
-    <ImageButton
-        android:id="@+id/buttonFullscreenBack"
-        android:layout_width="44dp"
-        android:layout_height="44dp"
-        android:layout_gravity="top|end"
-        android:layout_margin="16dp"
-        android:background="@drawable/bg_footer_scroll_button"
-        android:contentDescription="@string/action_back"
-        android:focusable="true"
-        android:foreground="@drawable/tv_icon_button_focused"
-        android:padding="8dp"
-        android:src="@drawable/ic_chevron_right" />
+        <TextView
+            android:id="@+id/textFullscreenChannel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/on_background"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textFullscreenGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/on_background"
+            android:alpha="0.85"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/fullscreenControlOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="#CC000000"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="8dp"
+        android:visibility="gone">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonFullscreenChDown"
+            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:foreground="@drawable/tv_icon_button_focused"
+            android:text="@string/bottom_panel_ch_down"
+            app:icon="@drawable/ic_channel_down" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonFullscreenPlayPause"
+            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:foreground="@drawable/tv_icon_button_focused"
+            android:text="@string/bottom_panel_play_pause"
+            app:icon="@drawable/ic_play" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonFullscreenChUp"
+            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:foreground="@drawable/tv_icon_button_focused"
+            android:text="@string/bottom_panel_ch_up"
+            app:icon="@drawable/ic_channel_up" />
+    </LinearLayout>
 </FrameLayout>

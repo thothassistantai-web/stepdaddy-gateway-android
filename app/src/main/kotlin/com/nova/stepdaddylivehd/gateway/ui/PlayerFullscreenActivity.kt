@@ -1,109 +1,218 @@
 package com.nova.stepdaddylivehd.gateway.ui
 
 import android.os.Bundle
+import android.view.GestureDetector
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.media3.common.MediaItem
-import androidx.media3.datasource.DefaultHttpDataSource
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.lifecycle.lifecycleScope
 import com.nova.stepdaddylivehd.gateway.GatewayApp
 import com.nova.stepdaddylivehd.gateway.databinding.ActivityPlayerFullscreenBinding
+import com.nova.stepdaddylivehd.gateway.ui.dashboard.ChannelHistoryStore
+import com.nova.stepdaddylivehd.gateway.ui.dashboard.ChannelListProvider
 import com.nova.stepdaddylivehd.gateway.ui.dashboard.TuneChannel
-import com.nova.stepdaddylivehd.gateway.upstream.GatewayConfig
+import com.nova.stepdaddylivehd.gateway.ui.player.FullscreenPlayerController
+import com.nova.stepdaddylivehd.gateway.ui.player.PlayerDeviceProfile
+import com.nova.stepdaddylivehd.gateway.ui.player.PlayerInputRouter
+import kotlinx.coroutines.launch
 
 class PlayerFullscreenActivity : AppCompatActivity() {
     private lateinit var binding: ActivityPlayerFullscreenBinding
-    private var player: ExoPlayer? = null
-    private var channelId: String = ""
-    private var channelName: String = ""
-    private var channelNumber: Int = 0
+    private lateinit var controller: FullscreenPlayerController
+    private lateinit var inputRouter: PlayerInputRouter
+    private val historyStore by lazy { ChannelHistoryStore(this) }
+    private val isTvDevice by lazy { PlayerDeviceProfile.isTvDevice(this) }
+
+    private var startChannelId: String = ""
+    private var startChannelName: String = ""
+    private var startChannelNumber: Int = 0
+    private var startChannelGroup: String = ""
+    private var channelsLoaded = false
+
+    private val overlayButtons: List<View> by lazy {
+        listOf(
+            binding.buttonFullscreenChDown,
+            binding.buttonFullscreenPlayPause,
+            binding.buttonFullscreenChUp,
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityPlayerFullscreenBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        channelId = intent.getStringExtra(EXTRA_CHANNEL_ID).orEmpty()
-        channelName = intent.getStringExtra(EXTRA_CHANNEL_NAME).orEmpty()
-        channelNumber = intent.getIntExtra(EXTRA_CHANNEL_NUMBER, 0)
+        readIntentExtras()
         enterImmersive()
-        binding.textFullscreenChannel.text = formatOverlay()
-        binding.buttonFullscreenBack.setOnClickListener { finish() }
+        setupController()
+        setupInputRouter()
+        setupTouch()
+        wireOverlayButtons()
+        loadChannelsAndTune()
         binding.playerViewFullscreen.requestFocus()
-        binding.playerViewFullscreen.setOnKeyListener { _, keyCode, event ->
-            if (event.action != KeyEvent.ACTION_DOWN) return@setOnKeyListener false
-            when (keyCode) {
-                KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_ESCAPE -> {
-                    finish()
-                    true
-                }
-                KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
-                    togglePlayPause()
-                    true
-                }
-                else -> false
-            }
-        }
-        startPlayback()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        controller.attach()
     }
 
     override fun onStop() {
-        releasePlayer()
+        controller.release()
         super.onStop()
     }
 
-    private fun startPlayback() {
-        if (channelId.isEmpty()) return
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (inputRouter.onKeyEvent(event)) return true
+        return super.dispatchKeyEvent(event)
+    }
+
+    private fun readIntentExtras() {
+        startChannelId = intent.getStringExtra(EXTRA_CHANNEL_ID).orEmpty()
+        startChannelName = intent.getStringExtra(EXTRA_CHANNEL_NAME).orEmpty()
+        startChannelNumber = intent.getIntExtra(EXTRA_CHANNEL_NUMBER, 0)
+        startChannelGroup = intent.getStringExtra(EXTRA_CHANNEL_GROUP).orEmpty()
+    }
+
+    private fun setupController() {
         val environment = (application as GatewayApp).gatewayEnvironment
-        val base = environment.loopbackBase().trimEnd('/')
-        val url = "$base/tivimate-stream/$channelId.m3u8"
-        val origin = environment.dlhdBaseUrl.trimEnd('/')
-        val factory = DefaultHttpDataSource.Factory()
-            .setUserAgent(GatewayConfig.TIVIMATE_USER_AGENT)
-            .setDefaultRequestProperties(
-                mapOf(
-                    "Referer" to "$origin/",
-                    "Origin" to origin,
-                ),
-            )
-        val exo = ExoPlayer.Builder(this).build()
-        player = exo
-        binding.playerViewFullscreen.player = exo
-        val mediaSource = HlsMediaSource.Factory(factory).createMediaSource(MediaItem.fromUri(url))
-        exo.setMediaSource(mediaSource)
-        exo.prepare()
-        exo.playWhenReady = true
+        controller = FullscreenPlayerController(
+            context = this,
+            environment = environment,
+            playerView = binding.playerViewFullscreen,
+            historyStore = historyStore,
+            onUiChanged = { state -> renderUi(state) },
+        )
     }
 
-    private fun togglePlayPause() {
-        val exo = player ?: return
-        if (exo.isPlaying) exo.pause() else exo.play()
+    private fun setupInputRouter() {
+        inputRouter = PlayerInputRouter(
+            isTvDevice = isTvDevice,
+            callbacks = object : PlayerInputRouter.Callbacks {
+                override fun onExitFullscreen() = finish()
+
+                override fun onChannelUp() = controller.channelUp()
+
+                override fun onChannelDown() = controller.channelDown()
+
+                override fun onToggleOverlay() = controller.toggleOverlay()
+
+                override fun onShowOverlay() = controller.showOverlay()
+
+                override fun onTogglePlayPause() = controller.togglePlayPause()
+
+                override fun onToggleInfoBar() = controller.toggleInfoBar()
+
+                override fun isOverlayVisible(): Boolean = controller.isOverlayVisible()
+
+                override fun isOverlayButtonFocused(): Boolean {
+                    val focused = currentFocus ?: return false
+                    return overlayButtons.any { it === focused }
+                }
+
+                override fun onActivateFocusedButton(): Boolean {
+                    val focused = currentFocus ?: return false
+                    if (focused in overlayButtons) {
+                        focused.performClick()
+                        return true
+                    }
+                    return false
+                }
+            },
+        )
     }
 
-    private fun releasePlayer() {
-        binding.playerViewFullscreen.player = null
-        player?.release()
-        player = null
-    }
-
-    private fun formatOverlay(): String =
-        if (channelNumber > 0) {
-            "$channelNumber · $channelName"
-        } else {
-            channelName.ifEmpty { channelId }
+    private fun setupTouch() {
+        val detector = GestureDetector(
+            this,
+            object : GestureDetector.SimpleOnGestureListener() {
+                override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                    controller.toggleOverlay()
+                    return true
+                }
+            },
+        )
+        binding.playerViewFullscreen.setOnTouchListener { _, event ->
+            detector.onTouchEvent(event)
+            true
         }
+    }
+
+    private fun wireOverlayButtons() {
+        binding.buttonFullscreenChDown.setOnClickListener { controller.channelDown() }
+        binding.buttonFullscreenChUp.setOnClickListener { controller.channelUp() }
+        binding.buttonFullscreenPlayPause.setOnClickListener { controller.togglePlayPause() }
+
+        binding.buttonFullscreenChDown.nextFocusRightId = binding.buttonFullscreenPlayPause.id
+        binding.buttonFullscreenPlayPause.nextFocusLeftId = binding.buttonFullscreenChDown.id
+        binding.buttonFullscreenPlayPause.nextFocusRightId = binding.buttonFullscreenChUp.id
+        binding.buttonFullscreenChUp.nextFocusLeftId = binding.buttonFullscreenPlayPause.id
+    }
+
+    private fun loadChannelsAndTune() {
+        val environment = (application as GatewayApp).gatewayEnvironment
+        val initial = TuneChannel(
+            id = startChannelId,
+            name = startChannelName,
+            number = startChannelNumber,
+            groupTitle = startChannelGroup,
+        )
+        lifecycleScope.launch {
+            if (channelsLoaded) return@launch
+            val channels = ChannelListProvider.loadSorted(environment)
+            val list = when {
+                channels.isNotEmpty() -> channels
+                initial.id.isNotEmpty() -> listOf(initial)
+                else -> emptyList()
+            }
+            if (list.isEmpty()) return@launch
+            channelsLoaded = true
+            controller.setChannels(list)
+            val target = when {
+                initial.id.isNotEmpty() -> initial
+                historyStore.lastChannel() != null -> historyStore.lastChannel()!!
+                else -> list.first()
+            }
+            controller.tuneTo(target)
+        }
+    }
+
+    private fun renderUi(state: FullscreenPlayerController.UiState) {
+        val channel = state.channel
+        binding.textFullscreenChannel.text = formatChannelLine(channel)
+        binding.textFullscreenGroup.text = channel?.groupTitle.orEmpty()
+        binding.textFullscreenGroup.visibility =
+            if (channel?.groupTitle.isNullOrBlank()) View.GONE else View.VISIBLE
+        binding.fullscreenInfoBar.visibility =
+            if (state.infoBarVisible) View.VISIBLE else View.GONE
+        binding.fullscreenControlOverlay.visibility =
+            if (state.overlayVisible) View.VISIBLE else View.GONE
+        if (state.overlayVisible) {
+            binding.buttonFullscreenChDown.requestFocus()
+        } else if (state.infoBarVisible) {
+            binding.playerViewFullscreen.requestFocus()
+        }
+    }
+
+    private fun formatChannelLine(channel: TuneChannel?): String {
+        if (channel == null) return ""
+        return if (channel.number > 0) {
+            "${channel.number} · ${channel.name}"
+        } else {
+            channel.name.ifEmpty { channel.id }
+        }
+    }
 
     private fun enterImmersive() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        WindowInsetsControllerCompat(window, binding.root).let { controller ->
-            controller.hide(WindowInsetsCompat.Type.systemBars())
-            controller.systemBarsBehavior =
+        WindowInsetsControllerCompat(window, binding.root).let { insetsController ->
+            insetsController.hide(WindowInsetsCompat.Type.systemBars())
+            insetsController.systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
     }
@@ -112,12 +221,14 @@ class PlayerFullscreenActivity : AppCompatActivity() {
         const val EXTRA_CHANNEL_ID = "channel_id"
         const val EXTRA_CHANNEL_NAME = "channel_name"
         const val EXTRA_CHANNEL_NUMBER = "channel_number"
+        const val EXTRA_CHANNEL_GROUP = "channel_group"
 
         fun intentExtras(channel: TuneChannel): Bundle =
             Bundle().apply {
                 putString(EXTRA_CHANNEL_ID, channel.id)
                 putString(EXTRA_CHANNEL_NAME, channel.name)
                 putInt(EXTRA_CHANNEL_NUMBER, channel.number)
+                putString(EXTRA_CHANNEL_GROUP, channel.groupTitle)
             }
     }
 }

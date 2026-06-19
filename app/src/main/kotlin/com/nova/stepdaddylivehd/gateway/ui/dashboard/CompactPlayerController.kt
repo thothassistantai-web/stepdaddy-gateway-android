@@ -3,13 +3,11 @@ package com.nova.stepdaddylivehd.gateway.ui.dashboard
 import android.content.Context
 import android.view.KeyEvent
 import android.view.View
-import androidx.media3.common.MediaItem
-import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.PlayerView
 import com.nova.stepdaddylivehd.gateway.GatewayEnvironment
-import com.nova.stepdaddylivehd.gateway.upstream.GatewayConfig
+import com.nova.stepdaddylivehd.gateway.ui.player.PlayerChannelList
+import com.nova.stepdaddylivehd.gateway.ui.player.PlayerStreamSource
 
 /**
  * Compact dashboard player with two focus modes (see PLAYER-UX.md):
@@ -23,9 +21,8 @@ class CompactPlayerController(
     private val onChannelChanged: (TuneChannel) -> Unit,
     private val onFullscreen: (TuneChannel) -> Unit,
 ) {
+    private val channelList = PlayerChannelList()
     private var player: ExoPlayer? = null
-    private var channels: List<TuneChannel> = emptyList()
-    private var currentIndex: Int = -1
 
     var playerControlMode: Boolean = false
         private set
@@ -33,7 +30,7 @@ class CompactPlayerController(
     var onControlModeChanged: ((Boolean) -> Unit)? = null
 
     val currentChannel: TuneChannel?
-        get() = channels.getOrNull(currentIndex)
+        get() = channelList.currentChannel
 
     fun attach() {
         if (player != null) return
@@ -52,43 +49,34 @@ class CompactPlayerController(
     }
 
     fun setChannels(list: List<TuneChannel>) {
-        channels = list
-        if (currentIndex < 0 && list.isNotEmpty()) {
+        channelList.setChannels(list)
+        if (currentChannel == null && list.isNotEmpty()) {
             tuneToIndex(0, autoplay = false)
         }
     }
 
     fun tuneTo(channel: TuneChannel, autoplay: Boolean = true) {
-        val index = channels.indexOfFirst { it.id == channel.id }
-        if (index >= 0) {
-            tuneToIndex(index, autoplay)
-        } else {
-            channels = (channels + channel).sortedBy { it.number }
-            tuneToIndex(channels.indexOfFirst { it.id == channel.id }, autoplay)
-        }
+        val tuned = channelList.tuneTo(channel) ?: return
+        playChannel(tuned, autoplay)
+        onChannelChanged(tuned)
     }
 
     fun tuneToIndex(index: Int, autoplay: Boolean = true) {
-        if (channels.isEmpty()) return
-        val safeIndex = index.coerceIn(0, channels.lastIndex)
-        currentIndex = safeIndex
-        val channel = channels[safeIndex]
-        playChannel(channel, autoplay)
-        onChannelChanged(channel)
+        val tuned = channelList.tuneToIndex(index) ?: return
+        playChannel(tuned, autoplay)
+        onChannelChanged(tuned)
     }
 
     fun channelUp() {
-        if (channels.isEmpty()) return
-        val next = if (currentIndex < 0) 0 else (currentIndex + 1) % channels.size
-        tuneToIndex(next)
+        val tuned = channelList.channelUp() ?: return
+        playChannel(tuned, autoplay = true)
+        onChannelChanged(tuned)
     }
 
     fun channelDown() {
-        if (channels.isEmpty()) return
-        val next = if (currentIndex < 0) 0 else {
-            if (currentIndex == 0) channels.lastIndex else currentIndex - 1
-        }
-        tuneToIndex(next)
+        val tuned = channelList.channelDown() ?: return
+        playChannel(tuned, autoplay = true)
+        onChannelChanged(tuned)
     }
 
     fun togglePlayPause() {
@@ -168,20 +156,6 @@ class CompactPlayerController(
 
     private fun playChannel(channel: TuneChannel, autoplay: Boolean) {
         val exo = player ?: return
-        val base = environment.loopbackBase().trimEnd('/')
-        val url = "$base/tivimate-stream/${channel.id}.m3u8"
-        val origin = environment.dlhdBaseUrl.trimEnd('/')
-        val factory = DefaultHttpDataSource.Factory()
-            .setUserAgent(GatewayConfig.TIVIMATE_USER_AGENT)
-            .setDefaultRequestProperties(
-                mapOf(
-                    "Referer" to "$origin/",
-                    "Origin" to origin,
-                ),
-            )
-        val mediaSource = HlsMediaSource.Factory(factory).createMediaSource(MediaItem.fromUri(url))
-        exo.setMediaSource(mediaSource)
-        exo.prepare()
-        exo.playWhenReady = autoplay
+        PlayerStreamSource.tune(exo, environment, channel, autoplay)
     }
 }

@@ -1,8 +1,10 @@
-# Compact Player Focus UX
+# Player Focus UX
+
+## Compact player (dashboard bottom panel)
 
 The bottom-panel **Player** tab uses a two-mode focus model so D-pad Up/Down can scroll the dashboard while video plays in the background.
 
-## Browse mode (default)
+### Browse mode (default)
 
 - Video keeps playing; the preview surface does **not** consume D-pad Up/Down.
 - Focus path: tab bar → **Ch −** → **Play** → **Ch +** → **Fullscreen** (row below the video).
@@ -10,7 +12,7 @@ The bottom-panel **Player** tab uses a two-mode focus model so D-pad Up/Down can
 - Optional: focus the video preview or **Controls** chip and press **OK** to enter control mode.
 - Hardware **CHANNEL_UP** / **CHANNEL_DOWN** always change channel while the Player tab is visible.
 
-## Player control mode
+### Player control mode
 
 - Enter: **OK** on the video preview or **Controls** chip (top-right).
 - Semi-transparent overlay on the video: Ch −, Play/Pause, Ch +, Fullscreen.
@@ -18,14 +20,65 @@ The bottom-panel **Player** tab uses a two-mode focus model so D-pad Up/Down can
 - **Back** exits control mode and restores browse behavior (page scroll works again).
 - First entry shows a one-time toast: “Press Back to exit player controls”.
 
-## Unchanged
+### Unchanged
 
 - **History** tab: **OK** on a row still tunes that channel and switches to Player.
 - **Fullscreen** button / overlay action still opens `PlayerFullscreenActivity` (Back exits fullscreen there).
 
+## Fullscreen player (`PlayerFullscreenActivity`)
+
+Separate activity with unified input routing for phones, tablets, and TV sticks (ONN / Fire TV / leanback).
+
+### Modes
+
+| Mode | Description |
+|------|-------------|
+| **Playback** (default) | Video fills the screen; overlay hidden after 4 s idle. |
+| **Overlay** | Top info bar + bottom Ch − / Play / Ch + controls; auto-hides after 4 s. |
+
+### Input matrix (priority order)
+
+| Input | Playback mode | Overlay visible |
+|-------|---------------|-----------------|
+| **Back** | Exit fullscreen | Exit fullscreen |
+| **Channel Up/Down** | Change channel (always) | Change channel |
+| **D-pad Up/Down** (TV) | Show overlay | Change channel |
+| **D-pad Up/Down** (touch) | Ignored | Change channel |
+| **D-pad Left/Right** (TV) | Show overlay | No-op (live; no seek) |
+| **OK / Enter** | Toggle overlay | Activate focused button, or toggle overlay |
+| **Tap** (mobile) | Toggle overlay | Toggle overlay |
+| **Play/Pause / Space** | Toggle play/pause | Toggle play/pause |
+| **Menu / Info** | Toggle pinned info bar | Toggle pinned info bar |
+
+Channel changes flash the top info bar for 4 s even when the bottom overlay is hidden.
+
+### Overlay UI
+
+- **Top:** channel number · name, group title (when available).
+- **Bottom:** Ch −, Play/Pause, Ch + — TV-focusable with focus ring; touch targets on mobile.
+- No vertical swipe channel change on mobile (buttons and hardware channel keys only).
+
+### Device behavior
+
+- **Leanback / TV** (`FEATURE_LEANBACK`): D-pad (except Back) reveals overlay; OK on surface shows controls.
+- **Phone / tablet:** single tap toggles overlay; `WindowInsetsController` immersive system bars.
+
+### Shared components
+
+- `PlayerChannelList` — channel list navigation (compact + fullscreen).
+- `PlayerStreamSource` — ExoPlayer HLS tune with TiviMate headers.
+- `FullscreenPlayerController` — playback, overlay timing, `ChannelHistoryStore` persistence.
+- `PlayerInputRouter` — central key dispatch with precedence.
+- `PlayerDeviceProfile` — leanback vs touch detection.
+
 ## Key files
 
 - `CompactPlayerController.kt` — browse vs control-mode key handling
+- `FullscreenPlayerController.kt` — fullscreen playback and overlay state
+- `PlayerInputRouter.kt` — fullscreen key precedence
+- `PlayerChannelList.kt` / `PlayerStreamSource.kt` — shared tune logic
 - `DashboardBottomPanel.kt` — overlay UI, focus chain, activity key dispatch
-- `include_main_bottom_panel.xml` — control row and video container
-- `include_player_control_overlay.xml` — overlay layout
+- `PlayerFullscreenActivity.kt` — fullscreen activity
+- `include_main_bottom_panel.xml` — compact control row and video container
+- `include_player_control_overlay.xml` — compact overlay layout
+- `activity_player_fullscreen.xml` — fullscreen overlay layout
