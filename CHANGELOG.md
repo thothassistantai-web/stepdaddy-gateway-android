@@ -7,6 +7,13 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-06-19
+
+### Fixed
+
+- In-app updater: GitHub releases now ship the **debug** APK (`com.thothassistant.stepdaddy.gateway.debug`) so sideload installs can upgrade in place
+- APK download integrity: reject HTML error pages, validate ZIP magic (`PK`), verify Content-Length, retry up to 3 times, discard corrupt partial files
+
 ## [1.0.3] - 2026-06-19
 
 ### Added

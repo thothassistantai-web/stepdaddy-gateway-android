@@ -1,7 +1,7 @@
 {
-  "versionCode": 6,
-  "versionName": "1.0.3",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.3/stepdaddy-gateway-1.0.3.apk",
-  "releaseNotes": "See CHANGELOG.md",
+  "versionCode": 7,
+  "versionName": "1.0.4",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.4/stepdaddy-gateway-1.0.4-debug.apk",
+  "releaseNotes": "Fix in-app updater: ship debug APK for sideload upgrades; validate download integrity.",
   "mandatory": false
 }

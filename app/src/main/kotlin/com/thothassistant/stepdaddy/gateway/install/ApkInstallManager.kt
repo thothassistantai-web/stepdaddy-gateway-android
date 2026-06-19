@@ -73,17 +73,47 @@ class ApkInstallManager(
         onProgress: (Int) -> Unit,
     ): File = withContext(Dispatchers.IO) {
         val target = apkFileFor(entry)
-        if (target.exists() && target.length() > 0) {
+        if (target.exists() && isValidApk(target)) {
             onProgress(100)
             return@withContext target
         }
+        if (target.exists()) {
+            target.delete()
+        }
+
+        var lastError: Throwable? = null
+        repeat(MAX_DOWNLOAD_ATTEMPTS) { attempt ->
+            try {
+                downloadApkOnce(entry, target, onProgress)
+                return@withContext target
+            } catch (exc: Throwable) {
+                lastError = exc
+                Log.w(TAG, "Download attempt ${attempt + 1}/$MAX_DOWNLOAD_ATTEMPTS failed: ${exc.message}")
+                if (target.exists()) {
+                    target.delete()
+                }
+            }
+        }
+        error(lastError?.message ?: "Download failed after $MAX_DOWNLOAD_ATTEMPTS attempts")
+    }
+
+    private suspend fun downloadApkOnce(
+        entry: InstallAppEntry,
+        target: File,
+        onProgress: (Int) -> Unit,
+    ) {
         val request = Request.Builder()
             .url(entry.apkUrl)
             .header("User-Agent", "StepDaddyGateway/1.0")
+            .header("Accept", "application/vnd.android.package-archive, application/octet-stream, */*")
             .build()
         httpClient.executeAsync(request).use { response ->
             if (!response.isSuccessful) {
                 error("Download failed: HTTP ${response.code}")
+            }
+            val contentType = response.header("Content-Type").orEmpty()
+            if (contentType.contains("text/html", ignoreCase = true)) {
+                error("Download failed: server returned HTML instead of APK")
             }
             val body = response.body ?: error("Empty download body")
             val total = body.contentLength()
@@ -104,9 +134,25 @@ class ApkInstallManager(
                     }
                 }
             }
+            if (total > 0 && target.length() != total) {
+                error("Incomplete download: expected $total bytes, got ${target.length()}")
+            }
+            if (!isValidApk(target)) {
+                error("Downloaded file is not a valid APK")
+            }
         }
         onProgress(100)
-        target
+    }
+
+    private fun isValidApk(file: File): Boolean {
+        if (!file.exists() || file.length() < 4) return false
+        return runCatching {
+            file.inputStream().use { input ->
+                val header = ByteArray(2)
+                if (input.read(header) != 2) return false
+                header[0] == 0x50.toByte() && header[1] == 0x4B.toByte()
+            }
+        }.getOrDefault(false)
     }
 
     fun launchInstall(apkFile: File): Boolean {
@@ -142,6 +188,7 @@ class ApkInstallManager(
 
     companion object {
         private const val TAG = "ApkInstallManager"
+        private const val MAX_DOWNLOAD_ATTEMPTS = 3
 
         private fun defaultClient(): OkHttpClient =
             OkHttpClient.Builder()
