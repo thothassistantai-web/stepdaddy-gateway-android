@@ -11,3 +11,12 @@ captures/
 *.apk
 *.ap_
 *.aab
+keystore.properties
+*.jks
+*.keystore
+release/*.apk
+release/*.aab
+.env
+.env.local
+local.properties
+docs/store-assets/*.png
