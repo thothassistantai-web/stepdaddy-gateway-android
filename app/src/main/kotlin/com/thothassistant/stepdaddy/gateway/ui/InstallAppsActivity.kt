@@ -3,6 +3,8 @@ package com.thothassistant.stepdaddy.gateway.ui
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.KeyEvent
 import android.view.View
 import android.widget.TextView
@@ -13,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.textfield.TextInputEditText
 import com.thothassistant.stepdaddy.gateway.R
 import com.thothassistant.stepdaddy.gateway.install.ApkInstallManager
 import com.thothassistant.stepdaddy.gateway.install.InstallAppEntry
@@ -34,15 +37,17 @@ class InstallAppsActivity : AppCompatActivity() {
     private lateinit var recyclerApps: RecyclerView
     private lateinit var textSummary: TextView
     private lateinit var textEmpty: TextView
+    private lateinit var textNoMatches: TextView
+    private lateinit var editSearch: TextInputEditText
     private lateinit var buttonRefresh: MaterialButton
     private lateinit var buttonSelectAll: MaterialButton
     private lateinit var buttonBatchInstall: MaterialButton
     private lateinit var buttonBack: MaterialButton
 
     private val items = mutableListOf<InstallAppUiItem>()
+    private var searchQuery = ""
     private var batchJob: Job? = null
     private val installMutex = Mutex()
-    private var allSelected = false
 
     private val installPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -62,6 +67,8 @@ class InstallAppsActivity : AppCompatActivity() {
         recyclerApps = findViewById(R.id.recyclerApps)
         textSummary = findViewById(R.id.textSummary)
         textEmpty = findViewById(R.id.textEmpty)
+        textNoMatches = findViewById(R.id.textNoMatches)
+        editSearch = findViewById(R.id.editSearch)
         buttonRefresh = findViewById(R.id.buttonRefresh)
         buttonSelectAll = findViewById(R.id.buttonSelectAll)
         buttonBatchInstall = findViewById(R.id.buttonBatchInstall)
@@ -73,9 +80,9 @@ class InstallAppsActivity : AppCompatActivity() {
             onSelectionChanged = { item, selected -> updateSelection(item.entry.id, selected) },
             onRowFocus = { position -> ensureRowVisible(position) },
             onFocusRowRequest = { position -> focusListItem(position) },
-            onFocusToolbarRequest = { buttonBack.requestFocus() },
+            onFocusToolbarRequest = { editSearch.requestFocus() },
         )
-        adapter.toolbarDownTargetId = R.id.buttonBack
+        adapter.toolbarDownTargetId = R.id.editSearch
         recyclerApps.layoutManager = LinearLayoutManager(this)
         recyclerApps.adapter = adapter
         recyclerApps.setHasFixedSize(true)
@@ -85,10 +92,30 @@ class InstallAppsActivity : AppCompatActivity() {
         buttonBatchInstall.setOnClickListener { batchInstallSelected() }
         buttonBack.setOnClickListener { finish() }
 
+        editSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                searchQuery = s?.toString().orEmpty()
+                publishItems()
+            }
+
+            override fun afterTextChanged(s: Editable?) = Unit
+        })
+        editSearch.setOnKeyListener { _, keyCode, event ->
+            if (event.action != KeyEvent.ACTION_DOWN) return@setOnKeyListener false
+            if (keyCode == KeyEvent.KEYCODE_BACK && searchQuery.isNotBlank()) {
+                clearSearch()
+                true
+            } else {
+                false
+            }
+        }
+
         buttonBack.nextFocusDownId = View.NO_ID
         buttonBack.setOnKeyListener { _, keyCode, event ->
             if (event.action != KeyEvent.ACTION_DOWN) return@setOnKeyListener false
-            if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN && items.isNotEmpty()) {
+            if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN && filteredItems().isNotEmpty()) {
                 focusFirstListItem()
                 true
             } else {
@@ -108,10 +135,49 @@ class InstallAppsActivity : AppCompatActivity() {
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_DOWN && event.keyCode == KeyEvent.KEYCODE_BACK) {
+            if (editSearch.hasFocus() && searchQuery.isNotBlank()) {
+                clearSearch()
+                return true
+            }
             finish()
             return true
         }
         return super.dispatchKeyEvent(event)
+    }
+
+    private fun clearSearch() {
+        searchQuery = ""
+        editSearch.setText("")
+        publishItems()
+    }
+
+    private fun sourceLabelFor(entry: InstallAppEntry): String {
+        return when (entry.source) {
+            InstallAppsCatalogRepository.SOURCE_TV2024 ->
+                getString(R.string.install_apps_source_tv2024)
+            InstallAppsCatalogRepository.SOURCE_DOCSQUIFFY ->
+                getString(R.string.install_apps_source_docsquiffy)
+            else -> entry.source
+        }
+    }
+
+    private fun matchesSearchQuery(item: InstallAppUiItem, query: String): Boolean {
+        val needle = query.trim().lowercase()
+        if (needle.isEmpty()) return true
+        val entry = item.entry
+        val haystack = listOf(
+            entry.name,
+            entry.description,
+            entry.source,
+            sourceLabelFor(entry),
+        ).joinToString(" ").lowercase()
+        return haystack.contains(needle)
+    }
+
+    private fun filteredItems(): List<InstallAppUiItem> {
+        val query = searchQuery.trim()
+        if (query.isEmpty()) return items.toList()
+        return items.filter { matchesSearchQuery(it, query) }
     }
 
     private fun focusFirstListItem() {
@@ -119,7 +185,8 @@ class InstallAppsActivity : AppCompatActivity() {
     }
 
     private fun focusListItem(position: Int) {
-        if (position !in items.indices) return
+        val visible = filteredItems()
+        if (position !in visible.indices) return
         recyclerApps.post {
             val holder = recyclerApps.findViewHolderForAdapterPosition(position)
             val target = holder?.itemView?.findViewById<View>(R.id.checkSelect)
@@ -225,7 +292,6 @@ class InstallAppsActivity : AppCompatActivity() {
                 )
             },
         )
-        allSelected = items.isNotEmpty() && items.all { it.selected }
         updateSelectAllLabel()
         publishItems()
     }
@@ -244,17 +310,24 @@ class InstallAppsActivity : AppCompatActivity() {
     }
 
     private fun toggleSelectAll() {
-        if (items.isEmpty()) return
-        allSelected = !allSelected
+        val visible = filteredItems()
+        if (visible.isEmpty()) return
+        val visibleIds = visible.map { it.entry.id }.toSet()
+        val allVisibleSelected = visible.all { it.selected }
+        val nextSelected = !allVisibleSelected
         items.indices.forEach { index ->
-            items[index] = items[index].copy(selected = allSelected)
+            if (items[index].entry.id in visibleIds) {
+                items[index] = items[index].copy(selected = nextSelected)
+            }
         }
         updateSelectAllLabel()
         publishItems()
     }
 
     private fun updateSelectAllLabel() {
-        buttonSelectAll.text = if (allSelected) {
+        val target = filteredItems().ifEmpty { items }
+        val allTargetSelected = target.isNotEmpty() && target.all { it.selected }
+        buttonSelectAll.text = if (allTargetSelected) {
             getString(R.string.install_apps_deselect_all)
         } else {
             getString(R.string.install_apps_select_all)
@@ -365,7 +438,6 @@ class InstallAppsActivity : AppCompatActivity() {
         val index = items.indexOfFirst { it.entry.id == id }
         if (index < 0) return
         items[index] = items[index].copy(selected = selected)
-        allSelected = items.isNotEmpty() && items.all { it.selected }
         updateSelectAllLabel()
         publishItems()
     }
@@ -378,11 +450,16 @@ class InstallAppsActivity : AppCompatActivity() {
     }
 
     private fun publishItems() {
-        adapter.submitList(items.toList())
-        textEmpty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
-        recyclerApps.visibility = if (items.isEmpty()) View.GONE else View.VISIBLE
+        val visible = filteredItems()
+        adapter.submitList(visible)
+        val catalogEmpty = items.isEmpty()
+        val noMatches = items.isNotEmpty() && visible.isEmpty() && searchQuery.isNotBlank()
+        textEmpty.visibility = if (catalogEmpty) View.VISIBLE else View.GONE
+        textNoMatches.visibility = if (noMatches) View.VISIBLE else View.GONE
+        recyclerApps.visibility = if (visible.isEmpty()) View.GONE else View.VISIBLE
         buttonBatchInstall.isEnabled = items.any { it.selected } && batchJob?.isActive != true
-        buttonSelectAll.isEnabled = items.isNotEmpty() && batchJob?.isActive != true
+        buttonSelectAll.isEnabled = visible.isNotEmpty() && batchJob?.isActive != true
+        updateSelectAllLabel()
     }
 
     private fun setLoading(loading: Boolean) {

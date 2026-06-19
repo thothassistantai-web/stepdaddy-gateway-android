@@ -33,6 +33,8 @@
     <string name="install_apps_deselect_all">Deselect all</string>
     <string name="install_apps_installed_version">Installed: v%1$s</string>
     <string name="install_apps_empty">No apps in catalog.</string>
+    <string name="install_apps_no_matches">No matches for your search.</string>
+    <string name="install_apps_search_hint">Search apps</string>
     <string name="install_apps_no_description">Streaming / utility app</string>
     <string name="install_apps_source_tv2024">TV2024</string>
     <string name="install_apps_source_docsquiffy">Doc Squiffy</string>

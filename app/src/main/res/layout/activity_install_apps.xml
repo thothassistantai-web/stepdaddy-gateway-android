@@ -24,6 +24,25 @@
         android:textColor="@color/on_background_muted"
         android:textSize="14sp" />
 
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/searchInputLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:hint="@string/install_apps_search_hint"
+        app:endIconMode="clear_text">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editSearch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:focusable="true"
+            android:imeOptions="actionDone"
+            android:inputType="text|textNoSuggestions"
+            android:minHeight="48dp"
+            android:nextFocusDown="@id/buttonRefresh" />
+    </com.google.android.material.textfield.TextInputLayout>
+
     <LinearLayout
         android:id="@+id/toolbarActions"
         android:layout_width="match_parent"
@@ -36,7 +55,9 @@
             style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:nextFocusLeft="@id/editSearch"
             android:nextFocusRight="@id/buttonSelectAll"
+            android:nextFocusUp="@id/editSearch"
             android:text="@string/install_apps_refresh" />
 
         <com.google.android.material.button.MaterialButton
@@ -75,6 +96,16 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:text="@string/install_apps_empty"
+        android:textColor="@color/on_background_muted"
+        android:textSize="16sp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/textNoMatches"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="@string/install_apps_no_matches"
         android:textColor="@color/on_background_muted"
         android:textSize="16sp"
         android:visibility="gone" />

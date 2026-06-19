@@ -7,6 +7,12 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-06-19
+
+### Added
+
+- Install Apps page search bar — filter catalog by name, description, or source (TV D-pad friendly)
+
 ## [1.0.1] - 2026-06-19
 
 ### Added
@@ -38,6 +44,7 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 - Upstream DaddyLive / resportz availability is third-party dependent
 - Full web UI / mapping editor remains in Linux `stepdaddy-web` only
 
-[Unreleased]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.2
 [1.0.1]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.1
 [1.0.0]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.0

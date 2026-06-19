@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Version** | 1.0.1 (`versionCode` 4) |
+| **Version** | 1.0.2 (`versionCode` 5) |
 | **Package** | `com.thothassistant.stepdaddy.gateway` |
 | **License** | [MIT](LICENSE) — see [LEGAL.md](LEGAL.md) / [DISCLAIMER.md](DISCLAIMER.md) |
 | **Upstream parity** | [stepdaddy-livehd](https://github.com/thothassistantai-web/stepdaddy-livehd) (Linux/web gateway) |
