@@ -8,6 +8,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
@@ -111,6 +112,13 @@ class MainActivity : AppCompatActivity() {
             bottomPanel.onDestroy()
         }
         super.onDestroy()
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (::bottomPanel.isInitialized && bottomPanel.dispatchKeyEvent(event)) {
+            return true
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     private fun maybeAutoStartServer() {

@@ -1,11 +1,13 @@
 package com.nova.stepdaddylivehd.gateway.ui.dashboard
 
+import android.content.Context
 import android.content.Intent
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.ScrollView
 import androidx.lifecycle.LifecycleCoroutineScope
@@ -41,10 +43,16 @@ class DashboardBottomPanel(
     private val textHistoryEmpty: TextView = root.findViewById(R.id.textHistoryEmpty)
     private val playerView: PlayerView = root.findViewById(R.id.playerViewCompact)
     private val textPlayerChannel: TextView = root.findViewById(R.id.textPlayerChannel)
+    private val buttonPlayerControls: MaterialButton = root.findViewById(R.id.buttonPlayerControls)
+    private val playerControlOverlay: View = root.findViewById(R.id.playerControlOverlay)
     private val buttonPlayerChDown: MaterialButton = root.findViewById(R.id.buttonPlayerChDown)
     private val buttonPlayerPlayPause: MaterialButton = root.findViewById(R.id.buttonPlayerChPlay)
     private val buttonPlayerChUp: MaterialButton = root.findViewById(R.id.buttonPlayerChUp)
     private val buttonPlayerFullscreen: MaterialButton = root.findViewById(R.id.buttonPlayerFullscreen)
+    private val buttonOverlayChDown: MaterialButton = root.findViewById(R.id.buttonOverlayChDown)
+    private val buttonOverlayChPlay: MaterialButton = root.findViewById(R.id.buttonOverlayChPlay)
+    private val buttonOverlayChUp: MaterialButton = root.findViewById(R.id.buttonOverlayChUp)
+    private val buttonOverlayFullscreen: MaterialButton = root.findViewById(R.id.buttonOverlayFullscreen)
 
     private val historyStore = ChannelHistoryStore(activity)
     private val historyAdapter = HistoryAdapter { entry ->
@@ -53,7 +61,7 @@ class DashboardBottomPanel(
             TuneChannel(entry.channelId, entry.name, entry.number),
         )
         selectTab(Tab.PLAYER)
-        playerView.requestFocus()
+        buttonPlayerChDown.requestFocus()
     }
     private lateinit var playerController: CompactPlayerController
 
@@ -81,6 +89,7 @@ class DashboardBottomPanel(
             },
             onFullscreen = { channel -> launchFullscreen(channel) },
         )
+        playerController.onControlModeChanged = { active -> updateControlModeUi(active) }
         playerController.attach()
 
         recyclerHistory.layoutManager = LinearLayoutManager(activity)
@@ -94,13 +103,31 @@ class DashboardBottomPanel(
         buttonRefreshLogs.setOnClickListener {
             GatewayLogRing.refreshFromLogcat()
         }
-        buttonPlayerChUp.setOnClickListener { playerController.channelUp() }
-        buttonPlayerChDown.setOnClickListener { playerController.channelDown() }
-        buttonPlayerPlayPause.setOnClickListener { playerController.togglePlayPause() }
-        buttonPlayerFullscreen.setOnClickListener { playerController.openFullscreen() }
+        wirePlayerButtons(
+            buttonPlayerChDown,
+            buttonPlayerPlayPause,
+            buttonPlayerChUp,
+            buttonPlayerFullscreen,
+        )
+        wirePlayerButtons(
+            buttonOverlayChDown,
+            buttonOverlayChPlay,
+            buttonOverlayChUp,
+            buttonOverlayFullscreen,
+        )
+        buttonPlayerControls.setOnClickListener { playerController.enterControlMode() }
 
-        listOf(playerView, buttonPlayerChUp, buttonPlayerChDown, buttonPlayerPlayPause, buttonPlayerFullscreen)
-            .forEach { playerController.installFocusKeyHandler(it) }
+        playerController.installPlayerSurfaceKeyHandler(playerView)
+        buttonPlayerControls.setOnKeyListener { _, keyCode, event ->
+            if (event.action == KeyEvent.ACTION_DOWN &&
+                (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)
+            ) {
+                playerController.enterControlMode()
+                true
+            } else {
+                false
+            }
+        }
 
         wireTabFocus()
         selectTab(Tab.MESSAGES)
@@ -129,7 +156,26 @@ class DashboardBottomPanel(
     fun tuneFromHistory(channel: TuneChannel) {
         selectTab(Tab.PLAYER)
         playerController.tuneTo(channel)
-        playerView.requestFocus()
+        buttonPlayerChDown.requestFocus()
+    }
+
+    /**
+     * Activity-level key dispatch: hardware channel keys on Player tab, and control-mode D-pad.
+     */
+    fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (activeTab != Tab.PLAYER || event.action != KeyEvent.ACTION_DOWN) return false
+        when (event.keyCode) {
+            KeyEvent.KEYCODE_CHANNEL_UP -> {
+                playerController.channelUp()
+                return true
+            }
+            KeyEvent.KEYCODE_CHANNEL_DOWN -> {
+                playerController.channelDown()
+                return true
+            }
+        }
+        if (!playerController.playerControlMode || !isFocusInPlayerContent()) return false
+        return playerController.handleControlModeKeyEvent(event)
     }
 
     private fun loadChannelsIfNeeded() {
@@ -153,6 +199,9 @@ class DashboardBottomPanel(
     }
 
     private fun selectTab(tab: Tab) {
+        if (activeTab == Tab.PLAYER && tab != Tab.PLAYER && playerController.playerControlMode) {
+            playerController.exitControlMode()
+        }
         activeTab = tab
         val tabs = listOf(tabMessages, tabErrorLogs, tabHistory, tabPlayer)
         val contents = listOf(contentMessages, contentErrorLogs, contentHistory, contentPlayer)
@@ -167,6 +216,50 @@ class DashboardBottomPanel(
         if (tab == Tab.PLAYER) {
             loadChannelsIfNeeded()
         }
+    }
+
+    private fun wirePlayerButtons(
+        chDown: MaterialButton,
+        playPause: MaterialButton,
+        chUp: MaterialButton,
+        fullscreen: MaterialButton,
+    ) {
+        chDown.setOnClickListener { playerController.channelDown() }
+        chUp.setOnClickListener { playerController.channelUp() }
+        playPause.setOnClickListener { playerController.togglePlayPause() }
+        fullscreen.setOnClickListener { playerController.openFullscreen() }
+    }
+
+    private fun updateControlModeUi(active: Boolean) {
+        playerControlOverlay.visibility = if (active) View.VISIBLE else View.GONE
+        if (active) {
+            maybeShowControlHint()
+            buttonOverlayChDown.requestFocus()
+        } else {
+            buttonPlayerChDown.requestFocus()
+        }
+    }
+
+    private fun maybeShowControlHint() {
+        val prefs = activity.getSharedPreferences(PREFS_PLAYER_UX, Context.MODE_PRIVATE)
+        if (prefs.getBoolean(KEY_CONTROL_HINT_SHOWN, false)) return
+        prefs.edit().putBoolean(KEY_CONTROL_HINT_SHOWN, true).apply()
+        Toast.makeText(
+            activity,
+            R.string.bottom_panel_player_control_hint,
+            Toast.LENGTH_LONG,
+        ).show()
+    }
+
+    private fun isFocusInPlayerContent(): Boolean {
+        val focused = activity.currentFocus ?: return false
+        if (focused === contentPlayer) return true
+        var current: View? = focused
+        while (current != null) {
+            if (current === contentPlayer) return true
+            current = current.parent as? View
+        }
+        return false
     }
 
     private fun renderMessages(messages: List<GatewayMessage>) {
@@ -206,7 +299,7 @@ class DashboardBottomPanel(
         tabMessages.nextFocusDownId = R.id.contentMessages
         tabErrorLogs.nextFocusDownId = R.id.buttonRefreshLogs
         tabHistory.nextFocusDownId = R.id.recyclerHistory
-        tabPlayer.nextFocusDownId = R.id.playerViewCompact
+        tabPlayer.nextFocusDownId = R.id.buttonPlayerChDown
     }
 
     private enum class Tab {
@@ -259,5 +352,10 @@ class DashboardBottomPanel(
                 }
             }
         }
+    }
+
+    companion object {
+        private const val PREFS_PLAYER_UX = "stepdaddy_player_ux"
+        private const val KEY_CONTROL_HINT_SHOWN = "control_hint_shown"
     }
 }

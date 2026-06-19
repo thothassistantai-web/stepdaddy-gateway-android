@@ -199,4 +199,6 @@
     <string name="bottom_panel_play_pause">Play</string>
     <string name="bottom_panel_fullscreen">Fullscreen</string>
     <string name="bottom_panel_player_channel">%1$d · %2$s</string>
+    <string name="bottom_panel_controls">Controls</string>
+    <string name="bottom_panel_player_control_hint">Press Back to exit player controls</string>
 </resources>

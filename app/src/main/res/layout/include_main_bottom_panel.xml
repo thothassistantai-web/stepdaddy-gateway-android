@@ -58,7 +58,7 @@
             android:layout_width="0dp"
             android:layout_height="36dp"
             android:layout_weight="1"
-            android:nextFocusDown="@id/playerViewCompact"
+            android:nextFocusDown="@id/buttonPlayerChDown"
             android:nextFocusLeft="@id/tabHistory"
             android:text="@string/bottom_panel_tab_player"
             android:textSize="12sp" />
@@ -161,6 +161,7 @@
             android:visibility="gone">
 
             <FrameLayout
+                android:id="@+id/playerVideoContainer"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
@@ -171,6 +172,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:focusable="true"
+                    android:nextFocusDown="@id/buttonPlayerChDown"
                     android:nextFocusUp="@id/tabPlayer"
                     app:resize_mode="fit"
                     app:show_buffering="when_playing"
@@ -188,6 +190,24 @@
                     android:paddingVertical="4dp"
                     android:textColor="@color/on_background"
                     android:textSize="12sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonPlayerControls"
+                    style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:layout_gravity="top|end"
+                    android:layout_margin="8dp"
+                    android:minWidth="0dp"
+                    android:nextFocusDown="@id/buttonPlayerChDown"
+                    android:nextFocusUp="@id/tabPlayer"
+                    android:paddingHorizontal="10dp"
+                    android:text="@string/bottom_panel_controls"
+                    android:textSize="11sp"
+                    app:icon="@drawable/ic_server_controls"
+                    app:iconSize="16dp" />
+
+                <include layout="@layout/include_player_control_overlay" />
             </FrameLayout>
 
             <LinearLayout
@@ -204,7 +224,8 @@
                     android:layout_height="36dp"
                     android:layout_marginEnd="6dp"
                     android:layout_weight="1"
-                    android:nextFocusUp="@id/playerViewCompact"
+                    android:nextFocusUp="@id/tabPlayer"
+                    android:nextFocusRight="@id/buttonPlayerChPlay"
                     android:text="@string/bottom_panel_ch_down"
                     app:icon="@drawable/ic_channel_down" />
 
@@ -215,7 +236,9 @@
                     android:layout_height="36dp"
                     android:layout_marginEnd="6dp"
                     android:layout_weight="1"
-                    android:nextFocusUp="@id/playerViewCompact"
+                    android:nextFocusLeft="@id/buttonPlayerChDown"
+                    android:nextFocusRight="@id/buttonPlayerChUp"
+                    android:nextFocusUp="@id/tabPlayer"
                     android:text="@string/bottom_panel_play_pause"
                     app:icon="@drawable/ic_play" />
 
@@ -226,7 +249,9 @@
                     android:layout_height="36dp"
                     android:layout_marginEnd="6dp"
                     android:layout_weight="1"
-                    android:nextFocusUp="@id/playerViewCompact"
+                    android:nextFocusLeft="@id/buttonPlayerChPlay"
+                    android:nextFocusRight="@id/buttonPlayerFullscreen"
+                    android:nextFocusUp="@id/tabPlayer"
                     android:text="@string/bottom_panel_ch_up"
                     app:icon="@drawable/ic_channel_up" />
 
@@ -236,7 +261,8 @@
                     android:layout_width="0dp"
                     android:layout_height="36dp"
                     android:layout_weight="1"
-                    android:nextFocusUp="@id/playerViewCompact"
+                    android:nextFocusLeft="@id/buttonPlayerChUp"
+                    android:nextFocusUp="@id/tabPlayer"
                     android:text="@string/bottom_panel_fullscreen"
                     app:icon="@drawable/ic_fullscreen" />
             </LinearLayout>
