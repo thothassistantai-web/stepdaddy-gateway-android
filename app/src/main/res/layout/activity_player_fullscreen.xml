@@ -88,4 +88,6 @@
             android:text="@string/bottom_panel_ch_up"
             app:icon="@drawable/ic_channel_up" />
     </LinearLayout>
+
+    <include layout="@layout/include_player_error_overlay" />
 </FrameLayout>

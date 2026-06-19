@@ -8,10 +8,12 @@ import androidx.media3.ui.PlayerView
 import com.nova.stepdaddylivehd.gateway.GatewayEnvironment
 import com.nova.stepdaddylivehd.gateway.ui.dashboard.ChannelHistoryStore
 import com.nova.stepdaddylivehd.gateway.ui.dashboard.TuneChannel
+import kotlinx.coroutines.CoroutineScope
 
 class FullscreenPlayerController(
     private val context: Context,
     private val environment: GatewayEnvironment,
+    private val scope: CoroutineScope,
     private val playerView: PlayerView,
     private val historyStore: ChannelHistoryStore,
     private val onUiChanged: (UiState) -> Unit,
@@ -21,6 +23,7 @@ class FullscreenPlayerController(
         val overlayVisible: Boolean,
         val infoBarVisible: Boolean,
         val playing: Boolean,
+        val error: PlayerErrorState?,
     )
 
     private val channelList = PlayerChannelList()
@@ -29,6 +32,8 @@ class FullscreenPlayerController(
     private var overlayVisible = false
     private var infoBarPinned = false
     private var infoBarFlashActive = false
+    private var errorState: PlayerErrorState? = null
+    private lateinit var errorHandler: PlayerErrorHandler
 
     private val hideOverlayRunnable = Runnable { hideOverlay() }
     private val hideInfoBarRunnable = Runnable {
@@ -39,20 +44,42 @@ class FullscreenPlayerController(
     val currentChannel: TuneChannel?
         get() = channelList.currentChannel
 
+    val hasPlaybackError: Boolean
+        get() = errorState != null
+
     fun attach() {
         if (player != null) return
+        errorHandler = PlayerErrorHandler(
+            environment = environment,
+            scope = scope,
+            onErrorChanged = { state ->
+                errorState = state
+                if (state != null) {
+                    showOverlay()
+                }
+                publishUi()
+            },
+        )
+        errorHandler.onRetryRequested = { channel ->
+            playChannel(channel, autoplay = true, skipPreflight = false)
+        }
         val exo = ExoPlayer.Builder(context).build()
         playerView.player = exo
         player = exo
+        errorHandler.attach(exo)
         publishUi()
     }
 
     fun release() {
         mainHandler.removeCallbacks(hideOverlayRunnable)
         mainHandler.removeCallbacks(hideInfoBarRunnable)
+        if (::errorHandler.isInitialized) {
+            player?.let { errorHandler.detach(it) }
+        }
         playerView.player = null
         player?.release()
         player = null
+        errorState = null
     }
 
     fun setChannels(list: List<TuneChannel>) {
@@ -93,6 +120,14 @@ class FullscreenPlayerController(
         publishUi()
     }
 
+    fun retryCurrentChannel() {
+        errorHandler.retryCurrent()
+    }
+
+    fun nextChannelAfterError() {
+        channelDown()
+    }
+
     fun togglePlayPause() {
         val exo = player ?: return
         if (exo.isPlaying) exo.pause() else exo.play()
@@ -102,7 +137,7 @@ class FullscreenPlayerController(
 
     fun isPlaying(): Boolean = player?.isPlaying == true
 
-    fun isOverlayVisible(): Boolean = overlayVisible
+    fun isOverlayVisible(): Boolean = overlayVisible || errorState != null
 
     fun showOverlay() {
         overlayVisible = true
@@ -111,6 +146,10 @@ class FullscreenPlayerController(
     }
 
     fun hideOverlay() {
+        if (errorState != null) {
+            publishUi()
+            return
+        }
         overlayVisible = false
         mainHandler.removeCallbacks(hideOverlayRunnable)
         if (!infoBarPinned) {
@@ -121,6 +160,10 @@ class FullscreenPlayerController(
     }
 
     fun toggleOverlay() {
+        if (errorState != null) {
+            showOverlay()
+            return
+        }
         if (overlayVisible) hideOverlay() else showOverlay()
     }
 
@@ -146,24 +189,31 @@ class FullscreenPlayerController(
 
     private fun scheduleOverlayAutoHide() {
         mainHandler.removeCallbacks(hideOverlayRunnable)
-        if (overlayVisible) {
+        if (overlayVisible && errorState == null) {
             mainHandler.postDelayed(hideOverlayRunnable, OVERLAY_AUTO_HIDE_MS)
         }
     }
 
-    private fun playChannel(channel: TuneChannel, autoplay: Boolean) {
+    private fun playChannel(
+        channel: TuneChannel,
+        autoplay: Boolean,
+        skipPreflight: Boolean = false,
+    ) {
         val exo = player ?: return
-        PlayerStreamSource.tune(exo, environment, channel, autoplay)
+        errorHandler.beginTune(channel, skipPreflight = skipPreflight) {
+            PlayerStreamSource.tune(exo, environment, channel, autoplay)
+        }
     }
 
     private fun publishUi() {
-        val infoVisible = overlayVisible || infoBarPinned || infoBarFlashActive
+        val infoVisible = overlayVisible || infoBarPinned || infoBarFlashActive || errorState != null
         onUiChanged(
             UiState(
                 channel = channelList.currentChannel,
-                overlayVisible = overlayVisible,
+                overlayVisible = overlayVisible || errorState != null,
                 infoBarVisible = infoVisible,
                 playing = isPlaying(),
+                error = errorState,
             ),
         )
     }

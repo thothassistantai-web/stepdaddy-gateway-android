@@ -15,18 +15,13 @@ object PlayerStreamSource {
         channel: TuneChannel,
         autoplay: Boolean,
     ) {
-        val base = environment.loopbackBase().trimEnd('/')
-        val url = "$base/tivimate-stream/${channel.id}.m3u8"
-        val origin = environment.dlhdBaseUrl.trimEnd('/')
+        val url = PlayerHttpHeaders.streamUrl(environment, channel.id)
         val factory = DefaultHttpDataSource.Factory()
             .setUserAgent(GatewayConfig.TIVIMATE_USER_AGENT)
-            .setDefaultRequestProperties(
-                mapOf(
-                    "Referer" to "$origin/",
-                    "Origin" to origin,
-                ),
-            )
+            .setDefaultRequestProperties(PlayerHttpHeaders.requestProperties(environment))
         val mediaSource = HlsMediaSource.Factory(factory).createMediaSource(MediaItem.fromUri(url))
+        exo.stop()
+        exo.clearMediaItems()
         exo.setMediaSource(mediaSource)
         exo.prepare()
         exo.playWhenReady = autoplay

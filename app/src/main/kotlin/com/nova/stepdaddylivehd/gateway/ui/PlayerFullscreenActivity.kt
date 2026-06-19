@@ -18,6 +18,7 @@ import com.nova.stepdaddylivehd.gateway.ui.dashboard.ChannelListProvider
 import com.nova.stepdaddylivehd.gateway.ui.dashboard.TuneChannel
 import com.nova.stepdaddylivehd.gateway.ui.player.FullscreenPlayerController
 import com.nova.stepdaddylivehd.gateway.ui.player.PlayerDeviceProfile
+import com.nova.stepdaddylivehd.gateway.ui.player.PlayerErrorOverlay
 import com.nova.stepdaddylivehd.gateway.ui.player.PlayerInputRouter
 import kotlinx.coroutines.launch
 
@@ -25,6 +26,7 @@ class PlayerFullscreenActivity : AppCompatActivity() {
     private lateinit var binding: ActivityPlayerFullscreenBinding
     private lateinit var controller: FullscreenPlayerController
     private lateinit var inputRouter: PlayerInputRouter
+    private lateinit var errorOverlay: PlayerErrorOverlay
     private val historyStore by lazy { ChannelHistoryStore(this) }
     private val isTvDevice by lazy { PlayerDeviceProfile.isTvDevice(this) }
 
@@ -48,6 +50,7 @@ class PlayerFullscreenActivity : AppCompatActivity() {
         setContentView(binding.root)
         readIntentExtras()
         enterImmersive()
+        setupErrorOverlay()
         setupController()
         setupInputRouter()
         setupTouch()
@@ -78,11 +81,20 @@ class PlayerFullscreenActivity : AppCompatActivity() {
         startChannelGroup = intent.getStringExtra(EXTRA_CHANNEL_GROUP).orEmpty()
     }
 
+    private fun setupErrorOverlay() {
+        errorOverlay = PlayerErrorOverlay(
+            root = binding.root,
+            onRetry = { controller.retryCurrentChannel() },
+            onNextChannel = { controller.nextChannelAfterError() },
+        )
+    }
+
     private fun setupController() {
         val environment = (application as GatewayApp).gatewayEnvironment
         controller = FullscreenPlayerController(
             context = this,
             environment = environment,
+            scope = lifecycleScope,
             playerView = binding.playerViewFullscreen,
             historyStore = historyStore,
             onUiChanged = { state -> renderUi(state) },
@@ -111,11 +123,16 @@ class PlayerFullscreenActivity : AppCompatActivity() {
 
                 override fun isOverlayButtonFocused(): Boolean {
                     val focused = currentFocus ?: return false
+                    if (errorOverlay.isErrorButtonFocused(focused)) return true
                     return overlayButtons.any { it === focused }
                 }
 
                 override fun onActivateFocusedButton(): Boolean {
                     val focused = currentFocus ?: return false
+                    if (errorOverlay.isErrorButtonFocused(focused)) {
+                        focused.performClick()
+                        return true
+                    }
                     if (focused in overlayButtons) {
                         focused.performClick()
                         return true
@@ -190,8 +207,11 @@ class PlayerFullscreenActivity : AppCompatActivity() {
         binding.fullscreenInfoBar.visibility =
             if (state.infoBarVisible) View.VISIBLE else View.GONE
         binding.fullscreenControlOverlay.visibility =
-            if (state.overlayVisible) View.VISIBLE else View.GONE
-        if (state.overlayVisible) {
+            if (state.overlayVisible && state.error == null) View.VISIBLE else View.GONE
+        errorOverlay.bind(state.error)
+        if (state.error != null) {
+            errorOverlay.requestInitialFocus()
+        } else if (state.overlayVisible) {
             binding.buttonFullscreenChDown.requestFocus()
         } else if (state.infoBarVisible) {
             binding.playerViewFullscreen.requestFocus()

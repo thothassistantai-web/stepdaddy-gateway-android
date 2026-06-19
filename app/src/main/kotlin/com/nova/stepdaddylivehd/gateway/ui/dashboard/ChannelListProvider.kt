@@ -1,6 +1,7 @@
 package com.nova.stepdaddylivehd.gateway.ui.dashboard
 
 import com.nova.stepdaddylivehd.gateway.GatewayEnvironment
+import com.nova.stepdaddylivehd.gateway.ui.player.PlayerHttpHeaders
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -16,8 +17,10 @@ object ChannelListProvider {
 
     suspend fun loadSorted(environment: GatewayEnvironment): List<TuneChannel> =
         withContext(Dispatchers.IO) {
-            val url = "${environment.loopbackBase()}/tivimate-playlist.m3u8"
-            val request = Request.Builder().url(url).get().build()
+            val url = PlayerHttpHeaders.playlistUrl(environment)
+            val request = PlayerHttpHeaders.applyToRequest(Request.Builder().url(url), environment)
+                .get()
+                .build()
             val body = runCatching {
                 client.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) return@withContext emptyList()

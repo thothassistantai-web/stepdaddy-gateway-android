@@ -7,7 +7,10 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.nova.stepdaddylivehd.gateway.GatewayEnvironment
 import com.nova.stepdaddylivehd.gateway.ui.player.PlayerChannelList
+import com.nova.stepdaddylivehd.gateway.ui.player.PlayerErrorHandler
+import com.nova.stepdaddylivehd.gateway.ui.player.PlayerErrorState
 import com.nova.stepdaddylivehd.gateway.ui.player.PlayerStreamSource
+import kotlinx.coroutines.CoroutineScope
 
 /**
  * Compact dashboard player with two focus modes (see PLAYER-UX.md):
@@ -17,35 +20,58 @@ import com.nova.stepdaddylivehd.gateway.ui.player.PlayerStreamSource
 class CompactPlayerController(
     private val context: Context,
     private val environment: GatewayEnvironment,
+    private val scope: CoroutineScope,
     private val playerView: PlayerView,
     private val onChannelChanged: (TuneChannel) -> Unit,
     private val onFullscreen: (TuneChannel) -> Unit,
 ) {
     private val channelList = PlayerChannelList()
     private var player: ExoPlayer? = null
+    private var errorState: PlayerErrorState? = null
+    private lateinit var errorHandler: PlayerErrorHandler
 
     var playerControlMode: Boolean = false
         private set
 
     var onControlModeChanged: ((Boolean) -> Unit)? = null
+    var onErrorStateChanged: ((PlayerErrorState?) -> Unit)? = null
 
     val currentChannel: TuneChannel?
         get() = channelList.currentChannel
 
+    val hasPlaybackError: Boolean
+        get() = errorState != null
+
     fun attach() {
         if (player != null) return
+        errorHandler = PlayerErrorHandler(
+            environment = environment,
+            scope = scope,
+            onErrorChanged = { state ->
+                errorState = state
+                onErrorStateChanged?.invoke(state)
+            },
+        )
+        errorHandler.onRetryRequested = { channel ->
+            playChannel(channel, autoplay = true, skipPreflight = false)
+        }
         val exo = ExoPlayer.Builder(context).build()
         playerView.player = exo
         player = exo
+        errorHandler.attach(exo)
     }
 
     fun release() {
         if (playerControlMode) {
             exitControlMode()
         }
+        if (::errorHandler.isInitialized) {
+            player?.let { errorHandler.detach(it) }
+        }
         playerView.player = null
         player?.release()
         player = null
+        errorState = null
     }
 
     fun setChannels(list: List<TuneChannel>) {
@@ -77,6 +103,14 @@ class CompactPlayerController(
         val tuned = channelList.channelDown() ?: return
         playChannel(tuned, autoplay = true)
         onChannelChanged(tuned)
+    }
+
+    fun retryCurrentChannel() {
+        errorHandler.retryCurrent()
+    }
+
+    fun nextChannelAfterError() {
+        channelDown()
     }
 
     fun togglePlayPause() {
@@ -154,8 +188,14 @@ class CompactPlayerController(
         target.setOnKeyListener { _, _, event -> handlePlayerSurfaceKeyEvent(event) }
     }
 
-    private fun playChannel(channel: TuneChannel, autoplay: Boolean) {
+    private fun playChannel(
+        channel: TuneChannel,
+        autoplay: Boolean,
+        skipPreflight: Boolean = false,
+    ) {
         val exo = player ?: return
-        PlayerStreamSource.tune(exo, environment, channel, autoplay)
+        errorHandler.beginTune(channel, skipPreflight = skipPreflight) {
+            PlayerStreamSource.tune(exo, environment, channel, autoplay)
+        }
     }
 }

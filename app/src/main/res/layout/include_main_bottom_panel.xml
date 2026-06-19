@@ -208,6 +208,8 @@
                     app:iconSize="16dp" />
 
                 <include layout="@layout/include_player_control_overlay" />
+
+                <include layout="@layout/include_player_error_overlay" />
             </FrameLayout>
 
             <LinearLayout

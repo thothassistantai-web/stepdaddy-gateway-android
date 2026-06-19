@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/playerErrorOverlay"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#CC000000"
+    android:clickable="false"
+    android:focusable="false"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingHorizontal="20dp"
+    android:paddingVertical="16dp"
+    android:visibility="gone">
+
+    <TextView
+        android:id="@+id/textPlayerErrorTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="@color/on_background"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/textPlayerErrorDetail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:lineSpacingExtra="2dp"
+        android:maxLines="4"
+        android:textColor="@color/on_background_muted"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/textPlayerErrorCode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:fontFamily="monospace"
+        android:textColor="@color/status_error"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonPlayerErrorRetry"
+            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:foreground="@drawable/tv_icon_button_focused"
+            android:text="@string/player_error_retry"
+            app:icon="@drawable/ic_restart" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonPlayerErrorNext"
+            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:foreground="@drawable/tv_icon_button_focused"
+            android:text="@string/player_error_next_channel"
+            app:icon="@drawable/ic_channel_up" />
+    </LinearLayout>
+</LinearLayout>

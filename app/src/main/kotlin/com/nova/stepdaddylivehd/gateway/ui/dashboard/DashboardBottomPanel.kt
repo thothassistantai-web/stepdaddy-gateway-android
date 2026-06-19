@@ -18,6 +18,8 @@ import com.google.android.material.button.MaterialButton
 import com.nova.stepdaddylivehd.gateway.GatewayEnvironment
 import com.nova.stepdaddylivehd.gateway.R
 import com.nova.stepdaddylivehd.gateway.ui.PlayerFullscreenActivity
+import com.nova.stepdaddylivehd.gateway.ui.player.PlayerErrorOverlay
+import com.nova.stepdaddylivehd.gateway.ui.player.PlayerErrorState
 import androidx.media3.ui.PlayerView
 
 class DashboardBottomPanel(
@@ -53,6 +55,7 @@ class DashboardBottomPanel(
     private val buttonOverlayChPlay: MaterialButton = root.findViewById(R.id.buttonOverlayChPlay)
     private val buttonOverlayChUp: MaterialButton = root.findViewById(R.id.buttonOverlayChUp)
     private val buttonOverlayFullscreen: MaterialButton = root.findViewById(R.id.buttonOverlayFullscreen)
+    private val playerVideoContainer: View = root.findViewById(R.id.playerVideoContainer)
 
     private val historyStore = ChannelHistoryStore(activity)
     private val historyAdapter = HistoryAdapter { entry ->
@@ -64,6 +67,7 @@ class DashboardBottomPanel(
         buttonPlayerChDown.requestFocus()
     }
     private lateinit var playerController: CompactPlayerController
+    private lateinit var playerErrorOverlay: PlayerErrorOverlay
 
     private val messageListener: (List<GatewayMessage>) -> Unit = { messages ->
         activity.runOnUiThread { renderMessages(messages) }
@@ -79,9 +83,15 @@ class DashboardBottomPanel(
     private var channelsLoaded = false
 
     fun attach() {
+        playerErrorOverlay = PlayerErrorOverlay(
+            root = playerVideoContainer,
+            onRetry = { playerController.retryCurrentChannel() },
+            onNextChannel = { playerController.nextChannelAfterError() },
+        )
         playerController = CompactPlayerController(
             context = activity,
             environment = environment,
+            scope = scope,
             playerView = playerView,
             onChannelChanged = { channel ->
                 textPlayerChannel.text = formatChannelLabel(channel)
@@ -90,6 +100,7 @@ class DashboardBottomPanel(
             onFullscreen = { channel -> launchFullscreen(channel) },
         )
         playerController.onControlModeChanged = { active -> updateControlModeUi(active) }
+        playerController.onErrorStateChanged = { state -> renderPlayerError(state) }
         playerController.attach()
 
         recyclerHistory.layoutManager = LinearLayoutManager(activity)
@@ -231,12 +242,24 @@ class DashboardBottomPanel(
     }
 
     private fun updateControlModeUi(active: Boolean) {
-        playerControlOverlay.visibility = if (active) View.VISIBLE else View.GONE
-        if (active) {
+        playerControlOverlay.visibility = if (active && !playerController.hasPlaybackError) {
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
+        if (active && !playerController.hasPlaybackError) {
             maybeShowControlHint()
             buttonOverlayChDown.requestFocus()
-        } else {
+        } else if (!playerController.hasPlaybackError) {
             buttonPlayerChDown.requestFocus()
+        }
+    }
+
+    private fun renderPlayerError(state: PlayerErrorState?) {
+        playerErrorOverlay.bind(state)
+        if (state != null) {
+            playerControlOverlay.visibility = View.GONE
+            playerErrorOverlay.requestInitialFocus()
         }
     }
 

@@ -35,6 +35,7 @@ object GatewayLogRing {
         "PlaylistBuilder",
         "DaddyLiveClient",
         "GatewayHealth",
+        "PlayerError",
     )
 
     @Synchronized
