@@ -13,6 +13,16 @@ class GatewayEnvironment(context: Context) {
             prefs.edit().putInt(KEY_PORT, value).apply()
         }
 
+    /**
+     * Public base URL for remote QR codes and external access, e.g. http://your-public-ip:3000
+     * or a DDNS hostname. Does not include a trailing path segment.
+     */
+    var remoteGatewayUrl: String
+        get() = prefs.getString(KEY_REMOTE_GATEWAY_URL, "").orEmpty()
+        set(value) {
+            prefs.edit().putString(KEY_REMOTE_GATEWAY_URL, value.trim().trimEnd('/')).apply()
+        }
+
     var apiUrl: String
         get() = prefs.getString(KEY_API_URL, BuildConfig.DEFAULT_API_URL) ?: BuildConfig.DEFAULT_API_URL
         set(value) {
@@ -178,6 +188,7 @@ class GatewayEnvironment(context: Context) {
     companion object {
         private const val PREFS_NAME = "stepdaddy_gateway"
         private const val KEY_PORT = "port"
+        private const val KEY_REMOTE_GATEWAY_URL = "remote_gateway_url"
         private const val KEY_API_URL = "api_url"
         private const val KEY_DLHD_BASE_URL = "dlhd_base_url"
         private const val KEY_MIRROR_URLS = "mirror_urls"

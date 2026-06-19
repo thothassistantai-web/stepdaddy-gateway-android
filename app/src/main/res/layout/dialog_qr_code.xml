@@ -1,26 +1,219 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_card"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="20dp">
+    android:fillViewport="true">
 
-    <ImageView
-        android:id="@+id/imageQrCode"
-        android:layout_width="240dp"
-        android:layout_height="240dp"
-        android:contentDescription="@string/action_qr_code"
-        android:scaleType="fitCenter" />
-
-    <TextView
-        android:id="@+id/textQrUrl"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:gravity="center"
-        android:textColor="@color/url_accent"
-        android:textIsSelectable="true"
-        android:textSize="12sp" />
-</LinearLayout>
+        android:background="@drawable/bg_card"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/dialog_qr_title"
+            android:textColor="@color/on_background"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/toggleAccessMode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:checkedButton="@id/buttonAccessLocal"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonAccessLocal"
+                style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:nextFocusDown="@id/toggleUrlType"
+                android:text="@string/qr_access_local" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonAccessRemote"
+                style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:nextFocusDown="@id/editRemoteBaseUrl"
+                android:text="@string/qr_access_remote" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <TextView
+            android:id="@+id/textLocalHelper"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/qr_local_helper"
+            android:textColor="@color/on_background_muted"
+            android:textSize="13sp" />
+
+        <LinearLayout
+            android:id="@+id/layoutRemoteSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/qr_remote_base_url_hint">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editRemoteBaseUrl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:focusable="true"
+                    android:inputType="textUri"
+                    android:minHeight="48dp"
+                    android:nextFocusDown="@id/cardPortForwardWarning" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <LinearLayout
+                android:id="@+id/cardPortForwardWarning"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_qr_warning_card"
+                android:focusable="true"
+                android:nextFocusDown="@id/buttonHowItWorks"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:id="@+id/textPortForwardWarning"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/status_warn"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonHowItWorks"
+                style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:focusable="true"
+                android:nextFocusDown="@id/toggleUrlType"
+                android:text="@string/qr_how_it_works"
+                app:icon="@drawable/ic_chevron_right" />
+
+            <LinearLayout
+                android:id="@+id/layoutHowItWorksSteps"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/qr_how_it_works_step_1"
+                    android:textColor="@color/on_background_muted"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/textHowItWorksStep2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/on_background_muted"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/qr_how_it_works_step_3"
+                    android:textColor="@color/on_background_muted"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/toggleUrlType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:checkedButton="@id/buttonUrlPlaylist"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonUrlPlaylist"
+                style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:nextFocusDown="@id/imageQrCode"
+                android:text="@string/qr_url_playlist" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonUrlEpg"
+                style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:nextFocusDown="@id/imageQrCode"
+                android:text="@string/qr_url_epg" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <ImageView
+            android:id="@+id/imageQrCode"
+            android:layout_width="240dp"
+            android:layout_height="240dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:contentDescription="@string/action_qr_code"
+            android:focusable="true"
+            android:nextFocusDown="@id/textQrUrl"
+            android:scaleType="fitCenter" />
+
+        <TextView
+            android:id="@+id/textQrUrl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:textColor="@color/url_accent"
+            android:textIsSelectable="true"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/textQrError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:textColor="@color/status_error"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonQrClose"
+            style="@style/Widget.StepDaddyGateway.TvButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:focusable="true"
+            android:text="@string/qr_close" />
+    </LinearLayout>
+</ScrollView>
