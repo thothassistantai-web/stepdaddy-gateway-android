@@ -1,16 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardRoot"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
+    android:clickable="true"
     android:focusable="true"
-    app:cardBackgroundColor="@color/panel_background"
-    app:cardCornerRadius="12dp">
+    android:foreground="@drawable/tv_button_focused"
+    android:stateListAnimator="@animator/tv_button_focus_scale"
+    app:cardBackgroundColor="@android:color/transparent"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/panel_border"
+    app:strokeWidth="1dp">
 
     <LinearLayout
+        android:id="@+id/rowContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@drawable/bg_install_app_row"
         android:orientation="vertical"
         android:padding="16dp">
 
@@ -26,12 +35,23 @@
                 android:layout_height="wrap_content"
                 android:focusable="true"
                 android:minHeight="48dp"
-                android:minWidth="48dp" />
+                android:minWidth="48dp"
+                android:nextFocusRight="@id/buttonInstall" />
+
+            <ImageView
+                android:id="@+id/imageIcon"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="4dp"
+                android:background="@drawable/bg_install_app_icon_placeholder"
+                android:contentDescription="@null"
+                android:focusable="false"
+                android:scaleType="centerCrop" />
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="12dp"
                 android:layout_weight="1"
                 android:orientation="vertical">
 
@@ -39,15 +59,19 @@
                     android:id="@+id/textName"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="2"
                     android:textColor="@color/on_background"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
                 <TextView
-                    android:id="@+id/textSource"
+                    android:id="@+id/textSubtitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
                     android:textColor="@color/primary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -59,6 +83,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
                 android:minWidth="140dp"
+                android:nextFocusLeft="@id/checkSelect"
                 android:text="@string/install_apps_action_install" />
         </LinearLayout>
 
@@ -67,7 +92,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:maxLines="3"
+            android:maxLines="2"
             android:textColor="@color/on_background_muted"
             android:textSize="14sp" />
 

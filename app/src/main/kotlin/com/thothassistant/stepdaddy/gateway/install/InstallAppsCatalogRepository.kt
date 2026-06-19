@@ -93,12 +93,13 @@ class InstallAppsCatalogRepository(
                 InstallAppEntry(
                     id = "tv2024-${slug.replace(" ", "_").take(60)}",
                     name = slug,
-                    description = "IPTV / streaming app from TV2024 catalog",
-                    iconUrl = null,
+                    description = describeTv2024App(slug),
+                    iconUrl = iconUrlForSlug(slug),
                     apkUrl = rawUrl,
                     source = SOURCE_TV2024,
                     packageName = guessPackageName(slug),
-                    version = null,
+                    version = parseVersionFromName(slug),
+                    fileSizeBytes = entry.size,
                 )
             }
     }
@@ -125,6 +126,7 @@ class InstallAppsCatalogRepository(
                 source = SOURCE_DOCSQUIFFY,
                 packageName = guessPackageName(item.title ?: item.fileName.orEmpty()),
                 version = item.version?.takeIf { it.isNotBlank() },
+                fileSizeBytes = item.fileSize,
             )
         }
     }
@@ -159,6 +161,49 @@ class InstallAppsCatalogRepository(
         return KNOWN_PACKAGES.entries.firstOrNull { (key, _) ->
             normalized.contains(key)
         }?.value
+    }
+
+    private fun parseVersionFromName(name: String): String? {
+        val match = VERSION_IN_NAME.find(name) ?: return null
+        return match.value.trim('.')
+    }
+
+    private fun describeTv2024App(slug: String): String {
+        val normalized = slug.lowercase()
+        return when {
+            normalized.contains("tivimate") ->
+                "Premium IPTV player with EPG, recordings, and catch-up support."
+            normalized.contains("sparkle") ->
+                "Lightweight IPTV player for live TV playlists and EPG."
+            normalized.contains("iptv pro") ->
+                "Feature-rich IPTV client for M3U playlists and multicast streams."
+            normalized.contains("ott navigator") ->
+                "Advanced IPTV navigator with provider and playlist management."
+            normalized.contains("perfect player") ->
+                "Minimal IPTV player focused on performance and UDP/multicast."
+            normalized.contains("localsend") ->
+                "Share files across devices on your local network without cloud upload."
+            normalized.contains("send files to tv") ->
+                "Send photos, videos, and APKs from phone to Android TV."
+            normalized.contains("apktool") ->
+                "Reverse-engineering utility for decoding and rebuilding APK files."
+            else -> "Streaming or utility app from the TV2024 community catalog."
+        }
+    }
+
+    private fun iconUrlForSlug(slug: String): String? {
+        val normalized = slug.lowercase()
+        val domain = when {
+            normalized.contains("tivimate") -> "tivimate.com"
+            normalized.contains("sparkle") -> "sparkle-tv.com"
+            normalized.contains("localsend") -> "localsend.org"
+            normalized.contains("stremio") -> "stremio.com"
+            normalized.contains("iptv pro") -> "play.google.com"
+            normalized.contains("perfect player") -> "play.google.com"
+            normalized.contains("ott navigator") -> "play.google.com"
+            else -> return null
+        }
+        return "https://www.google.com/s2/favicons?domain=$domain&sz=128"
     }
 
     fun findBestTiviMateEntry(catalog: InstallAppsCatalog): InstallAppEntry? {
@@ -196,6 +241,7 @@ class InstallAppsCatalogRepository(
 
         private val TIVIMATE_NAME = Regex("""tivimate""", RegexOption.IGNORE_CASE)
         private val TIVIMATE_VERSION = Regex("""(\d+(?:\.\d+)+)""")
+        private val VERSION_IN_NAME = Regex("""v?(\d+(?:\.\d+)+)""", RegexOption.IGNORE_CASE)
 
         private val tivimateEntryComparator = Comparator<InstallAppEntry> { left, right ->
             val leftPremium = if (left.name.contains("premium", ignoreCase = true)) 1 else 0
@@ -254,6 +300,7 @@ class InstallAppsCatalogRepository(
 private data class GitHubContentEntry(
     val name: String,
     @SerialName("download_url") val downloadUrl: String? = null,
+    val size: Long? = null,
 )
 
 @Serializable
@@ -267,4 +314,5 @@ private data class DocSquiffyDownload(
     val fileName: String? = null,
     val iconUrl: String? = null,
     val status: String? = null,
+    val fileSize: Long? = null,
 )

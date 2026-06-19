@@ -18,6 +18,7 @@ data class InstallAppEntry(
     val source: String,
     val packageName: String? = null,
     val version: String? = null,
+    val fileSizeBytes: Long? = null,
 )
 
 enum class InstallAppState {

@@ -1,15 +1,14 @@
 package com.thothassistant.stepdaddy.gateway.ui
 
 import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -17,6 +16,7 @@ import com.google.android.material.button.MaterialButton
 import com.thothassistant.stepdaddy.gateway.R
 import com.thothassistant.stepdaddy.gateway.install.ApkInstallManager
 import com.thothassistant.stepdaddy.gateway.install.InstallAppEntry
+import com.thothassistant.stepdaddy.gateway.install.InstallAppIconLoader
 import com.thothassistant.stepdaddy.gateway.install.InstallAppState
 import com.thothassistant.stepdaddy.gateway.install.InstallAppUiItem
 import com.thothassistant.stepdaddy.gateway.install.InstallAppsAdapter
@@ -29,17 +29,20 @@ import kotlinx.coroutines.sync.withLock
 class InstallAppsActivity : AppCompatActivity() {
     private lateinit var catalogRepository: InstallAppsCatalogRepository
     private lateinit var installManager: ApkInstallManager
+    private lateinit var iconLoader: InstallAppIconLoader
     private lateinit var adapter: InstallAppsAdapter
     private lateinit var recyclerApps: RecyclerView
     private lateinit var textSummary: TextView
     private lateinit var textEmpty: TextView
     private lateinit var buttonRefresh: MaterialButton
+    private lateinit var buttonSelectAll: MaterialButton
     private lateinit var buttonBatchInstall: MaterialButton
     private lateinit var buttonBack: MaterialButton
 
     private val items = mutableListOf<InstallAppUiItem>()
     private var batchJob: Job? = null
     private val installMutex = Mutex()
+    private var allSelected = false
 
     private val installPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -54,27 +57,46 @@ class InstallAppsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_install_apps)
         catalogRepository = InstallAppsCatalogRepository(this)
         installManager = ApkInstallManager(this)
+        iconLoader = InstallAppIconLoader(this, installManager)
 
         recyclerApps = findViewById(R.id.recyclerApps)
         textSummary = findViewById(R.id.textSummary)
         textEmpty = findViewById(R.id.textEmpty)
         buttonRefresh = findViewById(R.id.buttonRefresh)
+        buttonSelectAll = findViewById(R.id.buttonSelectAll)
         buttonBatchInstall = findViewById(R.id.buttonBatchInstall)
         buttonBack = findViewById(R.id.buttonBack)
 
         adapter = InstallAppsAdapter(
+            iconLoader = iconLoader,
             onInstallClick = { item -> installSingle(item) },
             onSelectionChanged = { item, selected -> updateSelection(item.entry.id, selected) },
+            onRowFocus = { position -> ensureRowVisible(position) },
+            onFocusRowRequest = { position -> focusListItem(position) },
+            onFocusToolbarRequest = { buttonBack.requestFocus() },
         )
+        adapter.toolbarDownTargetId = R.id.buttonBack
         recyclerApps.layoutManager = LinearLayoutManager(this)
         recyclerApps.adapter = adapter
         recyclerApps.setHasFixedSize(true)
 
         buttonRefresh.setOnClickListener { refreshCatalog() }
+        buttonSelectAll.setOnClickListener { toggleSelectAll() }
         buttonBatchInstall.setOnClickListener { batchInstallSelected() }
         buttonBack.setOnClickListener { finish() }
-        buttonRefresh.requestFocus()
 
+        buttonBack.nextFocusDownId = View.NO_ID
+        buttonBack.setOnKeyListener { _, keyCode, event ->
+            if (event.action != KeyEvent.ACTION_DOWN) return@setOnKeyListener false
+            if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN && items.isNotEmpty()) {
+                focusFirstListItem()
+                true
+            } else {
+                false
+            }
+        }
+
+        buttonRefresh.requestFocus()
         requestInstallPermissionIfNeeded()
         loadCatalog()
     }
@@ -82,6 +104,43 @@ class InstallAppsActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refreshInstalledVersions()
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN && event.keyCode == KeyEvent.KEYCODE_BACK) {
+            finish()
+            return true
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
+    private fun focusFirstListItem() {
+        focusListItem(0)
+    }
+
+    private fun focusListItem(position: Int) {
+        if (position !in items.indices) return
+        recyclerApps.post {
+            val holder = recyclerApps.findViewHolderForAdapterPosition(position)
+            val target = holder?.itemView?.findViewById<View>(R.id.checkSelect)
+                ?: holder?.itemView?.findViewById(R.id.cardRoot)
+            if (target != null) {
+                target.requestFocus()
+            } else {
+                recyclerApps.scrollToPosition(position)
+                recyclerApps.post {
+                    val retryHolder = recyclerApps.findViewHolderForAdapterPosition(position)
+                    retryHolder?.itemView?.findViewById<View>(R.id.checkSelect)?.requestFocus()
+                        ?: retryHolder?.itemView?.findViewById<View>(R.id.cardRoot)?.requestFocus()
+                }
+            }
+        }
+    }
+
+    private fun ensureRowVisible(position: Int) {
+        recyclerApps.post {
+            recyclerApps.smoothScrollToPosition(position)
+        }
     }
 
     private fun requestInstallPermissionIfNeeded() {
@@ -108,18 +167,7 @@ class InstallAppsActivity : AppCompatActivity() {
             setLoading(true)
             runCatching { catalogRepository.loadCatalog() }
                 .onSuccess { catalog ->
-                    items.clear()
-                    items.addAll(
-                        catalog.apps.map { entry ->
-                            InstallAppUiItem(
-                                entry = entry,
-                                installedVersion = entry.packageName?.let {
-                                    installManager.getInstalledVersion(it)
-                                },
-                            )
-                        },
-                    )
-                    publishItems()
+                    replaceItems(catalog.apps)
                     textSummary.text = getString(
                         R.string.install_apps_summary,
                         catalog.apps.size,
@@ -141,18 +189,7 @@ class InstallAppsActivity : AppCompatActivity() {
             setLoading(true)
             runCatching { catalogRepository.refreshCatalog() }
                 .onSuccess { catalog ->
-                    items.clear()
-                    items.addAll(
-                        catalog.apps.map { entry ->
-                            InstallAppUiItem(
-                                entry = entry,
-                                installedVersion = entry.packageName?.let {
-                                    installManager.getInstalledVersion(it)
-                                },
-                            )
-                        },
-                    )
-                    publishItems()
+                    replaceItems(catalog.apps)
                     textSummary.text = getString(
                         R.string.install_apps_summary_refreshed,
                         catalog.apps.size,
@@ -174,6 +211,25 @@ class InstallAppsActivity : AppCompatActivity() {
         }
     }
 
+    private fun replaceItems(entries: List<InstallAppEntry>) {
+        val previousSelection = items.associate { it.entry.id to it.selected }
+        items.clear()
+        items.addAll(
+            entries.map { entry ->
+                InstallAppUiItem(
+                    entry = entry,
+                    installedVersion = entry.packageName?.let {
+                        installManager.getInstalledVersion(it)
+                    },
+                    selected = previousSelection[entry.id] == true,
+                )
+            },
+        )
+        allSelected = items.isNotEmpty() && items.all { it.selected }
+        updateSelectAllLabel()
+        publishItems()
+    }
+
     private fun refreshInstalledVersions() {
         var changed = false
         items.forEachIndexed { index, item ->
@@ -185,6 +241,24 @@ class InstallAppsActivity : AppCompatActivity() {
             }
         }
         if (changed) publishItems()
+    }
+
+    private fun toggleSelectAll() {
+        if (items.isEmpty()) return
+        allSelected = !allSelected
+        items.indices.forEach { index ->
+            items[index] = items[index].copy(selected = allSelected)
+        }
+        updateSelectAllLabel()
+        publishItems()
+    }
+
+    private fun updateSelectAllLabel() {
+        buttonSelectAll.text = if (allSelected) {
+            getString(R.string.install_apps_deselect_all)
+        } else {
+            getString(R.string.install_apps_select_all)
+        }
     }
 
     private fun installSingle(item: InstallAppUiItem) {
@@ -291,6 +365,8 @@ class InstallAppsActivity : AppCompatActivity() {
         val index = items.indexOfFirst { it.entry.id == id }
         if (index < 0) return
         items[index] = items[index].copy(selected = selected)
+        allSelected = items.isNotEmpty() && items.all { it.selected }
+        updateSelectAllLabel()
         publishItems()
     }
 
@@ -306,10 +382,12 @@ class InstallAppsActivity : AppCompatActivity() {
         textEmpty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
         recyclerApps.visibility = if (items.isEmpty()) View.GONE else View.VISIBLE
         buttonBatchInstall.isEnabled = items.any { it.selected } && batchJob?.isActive != true
+        buttonSelectAll.isEnabled = items.isNotEmpty() && batchJob?.isActive != true
     }
 
     private fun setLoading(loading: Boolean) {
         buttonRefresh.isEnabled = !loading
+        buttonSelectAll.isEnabled = !loading && items.isNotEmpty()
         buttonRefresh.text = if (loading) {
             getString(R.string.install_apps_refreshing)
         } else {
@@ -319,5 +397,6 @@ class InstallAppsActivity : AppCompatActivity() {
 
     private fun setBatchEnabled(enabled: Boolean) {
         buttonBatchInstall.isEnabled = enabled && items.any { it.selected }
+        buttonSelectAll.isEnabled = enabled && items.isNotEmpty()
     }
 }

@@ -25,6 +25,7 @@
         android:textSize="14sp" />
 
     <LinearLayout
+        android:id="@+id/toolbarActions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
@@ -35,7 +36,18 @@
             style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:nextFocusRight="@id/buttonSelectAll"
             android:text="@string/install_apps_refresh" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonSelectAll"
+            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:nextFocusLeft="@id/buttonRefresh"
+            android:nextFocusRight="@id/buttonBatchInstall"
+            android:text="@string/install_apps_select_all" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonBatchInstall"
@@ -43,6 +55,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
+            android:nextFocusLeft="@id/buttonSelectAll"
+            android:nextFocusRight="@id/buttonBack"
             android:text="@string/install_apps_batch_install" />
 
         <com.google.android.material.button.MaterialButton
@@ -51,6 +65,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
+            android:nextFocusLeft="@id/buttonBatchInstall"
             android:text="@string/action_back" />
     </LinearLayout>
 
@@ -72,7 +87,7 @@
         android:layout_weight="1"
         android:clipToPadding="false"
         android:descendantFocusability="afterDescendants"
-        android:focusable="true"
+        android:focusable="false"
         android:paddingBottom="16dp" />
 
 </LinearLayout>
