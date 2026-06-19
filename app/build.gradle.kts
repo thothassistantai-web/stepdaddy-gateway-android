@@ -38,6 +38,10 @@ android {
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_IPTV_ORG_ENABLED", "true")
         buildConfigField("boolean", "DEFAULT_IPTV_ORG_EPG_ENABLED", "true")
         buildConfigField("String", "DEFAULT_IPTV_ORG_EPG_URL", "\"\"")
+        buildConfigField("boolean", "DEFAULT_AUTO_CHECK_UPDATES", "true")
+        buildConfigField("boolean", "DEFAULT_AUTO_DOWNLOAD_UPDATES", "false")
+        buildConfigField("String", "DEFAULT_UPDATE_MANIFEST_URL", "\"\"")
+        buildConfigField("String", "DEFAULT_UPDATE_DRIVE_FOLDER_URL", "\"\"")
         buildConfigField("String", "GIT_HASH", "\"$gitHash\"")
         buildConfigField("long", "BUILD_TIME", "${buildTime}L")
     }

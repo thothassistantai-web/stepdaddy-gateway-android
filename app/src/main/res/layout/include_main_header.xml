@@ -77,8 +77,23 @@
             android:foreground="@drawable/tv_icon_button_focused"
             android:nextFocusDown="@id/buttonToggleServer"
             android:nextFocusLeft="@id/buttonOpenEpg"
-            android:nextFocusRight="@id/buttonToggleServer"
+            android:nextFocusRight="@id/buttonHeaderUpdate"
             android:padding="10dp"
             android:src="@drawable/ic_settings" />
+
+        <ImageButton
+            android:id="@+id/buttonHeaderUpdate"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/action_check_update"
+            android:focusable="true"
+            android:foreground="@drawable/tv_icon_button_focused"
+            android:nextFocusDown="@id/buttonToggleServer"
+            android:nextFocusLeft="@id/buttonHeaderSettings"
+            android:nextFocusRight="@id/buttonToggleServer"
+            android:padding="10dp"
+            android:src="@drawable/ic_update" />
     </LinearLayout>
 </LinearLayout>

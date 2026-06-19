@@ -136,6 +136,56 @@ class GatewayEnvironment(context: Context) {
             prefs.edit().putString(KEY_IPTV_ORG_EPG_URL, value.trim()).apply()
         }
 
+    /** When true, check for app updates when the dashboard opens. */
+    var autoCheckUpdates: Boolean
+        get() = prefs.getBoolean(KEY_AUTO_CHECK_UPDATES, BuildConfig.DEFAULT_AUTO_CHECK_UPDATES)
+        set(value) {
+            prefs.edit().putBoolean(KEY_AUTO_CHECK_UPDATES, value).apply()
+        }
+
+    /** When true, download available updates automatically in the background. */
+    var autoDownloadUpdates: Boolean
+        get() = prefs.getBoolean(KEY_AUTO_DOWNLOAD_UPDATES, BuildConfig.DEFAULT_AUTO_DOWNLOAD_UPDATES)
+        set(value) {
+            prefs.edit().putBoolean(KEY_AUTO_DOWNLOAD_UPDATES, value).apply()
+        }
+
+    /**
+     * GitHub releases API URL or raw JSON update manifest URL.
+     * Example: https://api.github.com/repos/owner/repo/releases/latest
+     */
+    var updateManifestUrl: String
+        get() = prefs.getString(KEY_UPDATE_MANIFEST_URL, BuildConfig.DEFAULT_UPDATE_MANIFEST_URL)
+            ?: BuildConfig.DEFAULT_UPDATE_MANIFEST_URL
+        set(value) {
+            prefs.edit().putString(KEY_UPDATE_MANIFEST_URL, value.trim()).apply()
+        }
+
+    /**
+     * Google Drive folder URL placeholder for future update channel support.
+     * When set, app tries {folder}/update-manifest.json as a fallback source.
+     */
+    var updateDriveFolderUrl: String
+        get() = prefs.getString(KEY_UPDATE_DRIVE_FOLDER_URL, BuildConfig.DEFAULT_UPDATE_DRIVE_FOLDER_URL)
+            ?: BuildConfig.DEFAULT_UPDATE_DRIVE_FOLDER_URL
+        set(value) {
+            prefs.edit().putString(KEY_UPDATE_DRIVE_FOLDER_URL, value.trim()).apply()
+        }
+
+    /** Optional versionCode the user dismissed for an optional update prompt. */
+    var dismissedUpdateVersionCode: Int
+        get() = prefs.getInt(KEY_DISMISSED_UPDATE_VERSION_CODE, 0)
+        set(value) {
+            prefs.edit().putInt(KEY_DISMISSED_UPDATE_VERSION_CODE, value).apply()
+        }
+
+    /** Cached path to a downloaded self-update APK awaiting install. */
+    var pendingUpdateApkPath: String
+        get() = prefs.getString(KEY_PENDING_UPDATE_APK_PATH, "").orEmpty()
+        set(value) {
+            prefs.edit().putString(KEY_PENDING_UPDATE_APK_PATH, value).apply()
+        }
+
     /** Survives process death within the same boot session. Cleared on BOOT_COMPLETED. */
     var readyBannerShownThisBoot: Boolean
         get() = prefs.getBoolean(KEY_READY_BANNER_SHOWN, false)
@@ -205,6 +255,12 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_SUPPLEMENT_IPTV_ORG_ENABLED = "supplement_iptv_org_enabled"
         private const val KEY_IPTV_ORG_EPG_ENABLED = "iptv_org_epg_enabled"
         private const val KEY_IPTV_ORG_EPG_URL = "iptv_org_epg_url"
+        private const val KEY_AUTO_CHECK_UPDATES = "auto_check_updates"
+        private const val KEY_AUTO_DOWNLOAD_UPDATES = "auto_download_updates"
+        private const val KEY_UPDATE_MANIFEST_URL = "update_manifest_url"
+        private const val KEY_UPDATE_DRIVE_FOLDER_URL = "update_drive_folder_url"
+        private const val KEY_DISMISSED_UPDATE_VERSION_CODE = "dismissed_update_version_code"
+        private const val KEY_PENDING_UPDATE_APK_PATH = "pending_update_apk_path"
         private const val CRASH_RECOVERY_BANNER_SKIP_MS = 10 * 60 * 1000L
         private const val DEFAULT_MIRRORS_CSV =
             "https://daddylive.org,https://daddylive.li,https://daddylive.eu"

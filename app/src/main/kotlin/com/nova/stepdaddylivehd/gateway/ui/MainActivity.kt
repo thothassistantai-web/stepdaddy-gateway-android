@@ -29,6 +29,9 @@ import com.nova.stepdaddylivehd.gateway.ui.dashboard.GatewayMessageBus
 import com.nova.stepdaddylivehd.gateway.install.ApkInstallManager
 import com.nova.stepdaddylivehd.gateway.install.InstallAppsCatalogRepository
 import com.nova.stepdaddylivehd.gateway.model.HealthResponse
+import com.nova.stepdaddylivehd.gateway.update.AppUpdateDialogHelper
+import com.nova.stepdaddylivehd.gateway.update.AppUpdateInfo
+import com.nova.stepdaddylivehd.gateway.update.AppUpdateManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -49,10 +52,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusMonitor: GatewayStatusMonitor
     private lateinit var catalogRepository: InstallAppsCatalogRepository
     private lateinit var installManager: ApkInstallManager
+    private lateinit var appUpdateManager: AppUpdateManager
     private var pollJob: Job? = null
     private var clockJob: Job? = null
     private var tivimateInstallJob: Job? = null
     private var restartJob: Job? = null
+    private var updateCheckJob: Job? = null
+    private var updateDownloadJob: Job? = null
+    private var hasAutoCheckedUpdates = false
+    private var pendingUpdateInfo: AppUpdateInfo? = null
     private val tivimateInstallMutex = Mutex()
     private lateinit var bottomPanel: DashboardBottomPanel
     private val numberFormat = NumberFormat.getIntegerInstance(Locale.US)
@@ -75,6 +83,7 @@ class MainActivity : AppCompatActivity() {
         statusMonitor = GatewayStatusMonitor { healthUrl() }
         catalogRepository = InstallAppsCatalogRepository(this)
         installManager = ApkInstallManager(this)
+        appUpdateManager = AppUpdateManager(this, environment, installManager)
         requestRuntimePermissions()
         bindUrls()
         bindVersion()
@@ -87,6 +96,8 @@ class MainActivity : AppCompatActivity() {
         updateEpgStatus()
         updateFooterMetrics(null)
         maybeAutoStartServer()
+        maybeAutoCheckUpdates(force = false)
+        maybePromptPendingInstall()
     }
 
     override fun onResume() {
@@ -204,6 +215,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, InstallAppsActivity::class.java))
         }
         views.buttonHeaderSettings.setOnClickListener { openSettings() }
+        views.buttonHeaderUpdate.setOnClickListener { checkForUpdates(manual = true) }
         views.buttonCopyPlaylist.setOnClickListener { copyUrl(playlistUrl()) }
         views.buttonOpenPlaylist.setOnClickListener { openUrl(playlistUrl()) }
         views.buttonQrPlaylist.setOnClickListener { QrCodeDialogController(this, environment).show() }
@@ -220,6 +232,123 @@ class MainActivity : AppCompatActivity() {
 
     private fun openSettings() {
         startActivity(Intent(this, SettingsActivity::class.java))
+    }
+
+    private fun maybeAutoCheckUpdates(force: Boolean) {
+        if (!force) {
+            if (hasAutoCheckedUpdates || !environment.autoCheckUpdates) return
+            hasAutoCheckedUpdates = true
+        }
+        if (environment.updateManifestUrl.isBlank() && environment.updateDriveFolderUrl.isBlank()) {
+            if (force) {
+                Toast.makeText(this, R.string.update_no_url, Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
+        checkForUpdates(manual = force)
+    }
+
+    private fun checkForUpdates(manual: Boolean) {
+        if (updateCheckJob?.isActive == true) return
+        updateCheckJob = lifecycleScope.launch {
+            if (manual) {
+                Toast.makeText(this@MainActivity, R.string.update_checking, Toast.LENGTH_SHORT).show()
+            }
+            appUpdateManager.checkForUpdate()
+                .onSuccess { info ->
+                    if (info == null) {
+                        pendingUpdateInfo = null
+                        updateFooterUpdateVisibility(null)
+                        if (manual) {
+                            Toast.makeText(this@MainActivity, R.string.update_none, Toast.LENGTH_SHORT).show()
+                        }
+                        return@launch
+                    }
+                    pendingUpdateInfo = info
+                    updateFooterUpdateVisibility(info)
+                    if (environment.autoDownloadUpdates) {
+                        downloadAndInstallUpdate(info, showProgressToast = false)
+                    }
+                    if (manual || appUpdateManager.shouldPrompt(info)) {
+                        promptForUpdate(info)
+                    }
+                }
+                .onFailure { exc ->
+                    if (manual) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            getString(R.string.update_check_failed, exc.message ?: "error"),
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    }
+                }
+        }
+    }
+
+    private fun promptForUpdate(info: AppUpdateInfo) {
+        val mandatory = appUpdateManager.isMandatory(info)
+        AppUpdateDialogHelper.showUpdateDialog(
+            activity = this,
+            info = info,
+            mandatory = mandatory,
+            onUpdate = { downloadAndInstallUpdate(info, showProgressToast = true) },
+            onDismiss = {
+                if (!mandatory) {
+                    appUpdateManager.dismissUpdate(info)
+                }
+            },
+        )
+    }
+
+    private fun downloadAndInstallUpdate(info: AppUpdateInfo, showProgressToast: Boolean) {
+        if (!ensureInstallAllowed()) return
+        if (updateDownloadJob?.isActive == true) return
+        updateDownloadJob = lifecycleScope.launch {
+            if (showProgressToast) {
+                Toast.makeText(this@MainActivity, R.string.update_downloading, Toast.LENGTH_SHORT).show()
+            }
+            appUpdateManager.downloadUpdate(info) { }
+                .onSuccess { apkFile ->
+                    AppUpdateDialogHelper.showInstallReadyDialog(
+                        activity = this@MainActivity,
+                        info = info,
+                        onInstall = { launchUpdateInstall(apkFile) },
+                    )
+                }
+                .onFailure { exc ->
+                    Toast.makeText(
+                        this@MainActivity,
+                        getString(R.string.update_download_failed, exc.message ?: "error"),
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+        }
+    }
+
+    private fun launchUpdateInstall(apkFile: java.io.File) {
+        if (!ensureInstallAllowed()) return
+        if (!appUpdateManager.launchInstall(apkFile)) {
+            Toast.makeText(this, R.string.install_apps_launch_failed, Toast.LENGTH_LONG).show()
+            return
+        }
+        Toast.makeText(this, R.string.update_download_ready, Toast.LENGTH_LONG).show()
+    }
+
+    private fun maybePromptPendingInstall() {
+        if (!appUpdateManager.launchPendingInstall()) return
+        Toast.makeText(this, R.string.update_download_ready, Toast.LENGTH_LONG).show()
+    }
+
+    private fun updateFooterUpdateVisibility(info: AppUpdateInfo?) {
+        if (info == null) {
+            views.textFooterUpdate.visibility = View.GONE
+            return
+        }
+        views.textFooterUpdate.text = getString(
+            R.string.footer_update_available,
+            info.manifest.versionName,
+        )
+        views.textFooterUpdate.visibility = View.VISIBLE
     }
 
     private fun launchTivimate() {
@@ -554,7 +683,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             getString(R.string.footer_memory_placeholder)
         }
-        views.textFooterUpdate.visibility = View.GONE
+        updateFooterUpdateVisibility(pendingUpdateInfo)
     }
 
     private fun readProcessMemoryMb(): Int {
