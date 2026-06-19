@@ -242,11 +242,23 @@
             android:text="@string/settings_auto_download_updates"
             android:textColor="@color/on_background" />
 
+        <TextView
+            android:id="@+id/textUpdateChannel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:minHeight="48dp"
+            android:gravity="center_vertical"
+            android:text="@string/settings_update_channel"
+            android:textColor="@color/on_background"
+            android:textSize="14sp" />
+
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:hint="@string/settings_update_manifest_url">
+            android:hint="@string/settings_update_manifest_url"
+            android:visibility="gone">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editUpdateManifestUrl"
@@ -263,13 +275,15 @@
             android:layout_marginTop="4dp"
             android:text="@string/settings_update_manifest_url_hint"
             android:textColor="@color/on_background_muted"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+            android:visibility="gone" />
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:hint="@string/settings_update_drive_folder_url">
+            android:hint="@string/settings_update_drive_folder_url"
+            android:visibility="gone">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/editUpdateDriveFolderUrl"
@@ -286,7 +300,8 @@
             android:layout_marginTop="4dp"
             android:text="@string/settings_update_drive_folder_url_hint"
             android:textColor="@color/on_background_muted"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+            android:visibility="gone" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonCheckUpdate"

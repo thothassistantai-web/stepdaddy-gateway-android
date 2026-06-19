@@ -59,8 +59,6 @@ class SettingsActivity : AppCompatActivity() {
         binding.switchTivimateWatch.isChecked = environment.tivimateWatchEnabled
         binding.switchAutoCheckUpdates.isChecked = environment.autoCheckUpdates
         binding.switchAutoDownloadUpdates.isChecked = environment.autoDownloadUpdates
-        binding.editUpdateManifestUrl.setText(environment.updateManifestUrlOverride)
-        binding.editUpdateDriveFolderUrl.setText(environment.updateDriveFolderUrl)
         val built = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
             .format(Date(BuildConfig.BUILD_TIME))
         binding.textBuildInfo.text = getString(
@@ -99,8 +97,6 @@ class SettingsActivity : AppCompatActivity() {
         environment.tivimateWatchEnabled = binding.switchTivimateWatch.isChecked
         environment.autoCheckUpdates = binding.switchAutoCheckUpdates.isChecked
         environment.autoDownloadUpdates = binding.switchAutoDownloadUpdates.isChecked
-        environment.setUpdateManifestUrlOverride(binding.editUpdateManifestUrl.text?.toString().orEmpty())
-        environment.updateDriveFolderUrl = binding.editUpdateDriveFolderUrl.text?.toString().orEmpty()
         if (environment.startOnBoot) {
             GatewayStartHelper.schedulePeriodicEnsureAlive(this)
         } else {
@@ -217,7 +213,5 @@ class SettingsActivity : AppCompatActivity() {
     private fun syncUpdateFieldsFromBinding() {
         environment.autoCheckUpdates = binding.switchAutoCheckUpdates.isChecked
         environment.autoDownloadUpdates = binding.switchAutoDownloadUpdates.isChecked
-        environment.setUpdateManifestUrlOverride(binding.editUpdateManifestUrl.text?.toString().orEmpty())
-        environment.updateDriveFolderUrl = binding.editUpdateDriveFolderUrl.text?.toString().orEmpty()
     }
 }
