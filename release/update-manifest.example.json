@@ -1,0 +1,6 @@
+{
+  "versionCode": 2,
+  "versionName": "1.0.0",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.0/stepdaddy-gateway-1.0.0-debug.apk",
+  "releaseNotes": "Initial public release. Debug APK for sideload installs."
+}

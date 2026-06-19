@@ -10,7 +10,7 @@ You are the **FUSA TiviMate debugger** — diagnose why TiviMate shows spinner, 
 
 ```bash
 DEV=FUSA2541006925
-PKG=com.nova.stepdaddylivehd.gateway.debug
+PKG=com.thothassistant.stepdaddy.gateway.debug
 IP=$(adb -s $DEV shell ip -4 addr show wlan0 | grep -oP 'inet \K[0-9.]+' | head -1)
 BASE=http://${IP}:3000
 ```

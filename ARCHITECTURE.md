@@ -1,6 +1,6 @@
 # Architecture — StepDaddy Native Android Gateway
 
-Native rewrite of the Termux headless gateway from **StepDaddy LiveHD v0.1.0-beta** (`/home/nova/livehd/current/stepdaddy-app`).
+Native rewrite of the Termux headless gateway from **[StepDaddy Web](~/Programs/stepdaddy-web)**.
 
 ## Design goals
 

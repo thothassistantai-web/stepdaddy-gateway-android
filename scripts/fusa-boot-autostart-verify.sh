@@ -3,8 +3,8 @@
 set -euo pipefail
 
 SERIAL="${ADB_SERIAL:-FUSA2541006925}"
-PKG="${PKG:-com.nova.stepdaddylivehd.gateway.debug}"
-MAIN="${PKG}/com.nova.stepdaddylivehd.gateway.ui.MainActivity"
+PKG="${PKG:-com.thothassistant.stepdaddy.gateway.debug}"
+MAIN="${PKG}/com.thothassistant.stepdaddy.gateway.ui.MainActivity"
 TIVIMATE_PKG="ar.tvplayer.tv"
 PORT=3000
 HEALTH_TIMEOUT_S="${HEALTH_TIMEOUT_S:-180}"

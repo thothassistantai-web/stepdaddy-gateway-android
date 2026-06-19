@@ -25,7 +25,7 @@ ADB_SERIAL=FUSA2541006925 ./scripts/fusa-ux-test.sh
 
 Release package (no `.debug` suffix):
 ```bash
-PKG=com.nova.stepdaddylivehd.gateway CYCLE_TAG=release ./scripts/fusa-boot-test.sh
+PKG=com.thothassistant.stepdaddy.gateway CYCLE_TAG=release ./scripts/fusa-boot-test.sh
 ```
 
 ## Environment variables

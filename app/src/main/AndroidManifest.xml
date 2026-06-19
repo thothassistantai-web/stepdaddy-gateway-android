@@ -100,7 +100,7 @@
             android:exported="true"
             android:foregroundServiceType="dataSync">
             <intent-filter>
-                <action android:name="com.nova.stepdaddylivehd.gateway.action.START" />
+                <action android:name="com.thothassistant.stepdaddy.gateway.action.START" />
             </intent-filter>
         </service>
 
@@ -119,7 +119,7 @@
             android:enabled="true"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.nova.stepdaddylivehd.gateway.action.BOOT_ALARM" />
+                <action android:name="com.thothassistant.stepdaddy.gateway.action.BOOT_ALARM" />
             </intent-filter>
         </receiver>
 

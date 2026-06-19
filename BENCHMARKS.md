@@ -10,7 +10,7 @@
 | **APK / version** (`GET /health`) | `0.2.0-gateway-mvp-debug` |
 | **Channels in playlist** | 1140 |
 | **Upstream** | `https://daddylive.org` |
-| **Package** | `com.nova.stepdaddylivehd.gateway.debug` |
+| **Package** | `com.thothassistant.stepdaddy.gateway.debug` |
 
 ---
 
@@ -65,7 +65,7 @@ All paths funnel through **`GatewayStartHelper.startIfNeeded(source)`**. One-sho
 | **Cycle 1** | 2026-06-17 | **48s** | 3/3 | PASS (logcat) | FGS trampoline, overlay re-show @40s, channel preload in `onCreate`; script stdout bug |
 | **Cycle 2** | 2026-06-17 | **30s** | 3/3 | **PASS (screencap)** | `GatewayApp` boot kick, tighter alarms (8/20/40/80s), 2s launcher settle |
 | **Cycle 4** | 2026-06-17 | **58s** | stream 51 OK | **PASS** | Boot redundancy: ScreenWake, periodic WM 20m, HTTP self-check 90s, TiviMateWatch; FGS startForeground-first fix |
-| **Release** | 2026-06-17 | **20s** | 2/3 | PASS (logcat) | `com.nova.stepdaddylivehd.gateway` (debug-signed); `/epg.xml` 503 at t+20s |
+| **Release** | 2026-06-17 | **20s** | 2/3 | PASS (logcat) | `com.thothassistant.stepdaddy.gateway` (debug-signed); `/epg.xml` 503 at t+20s |
 | **Boot speedup** | 2026-06-17 | **26s** (after wlan0 IP) | 3/3 | PASS | Fix main-thread ANR on channel disk parse; HTTP from `onCreate`; defer upstream refresh 45s; `/health` adds `starting` when channels=0 |
 
 **Timing trend:** 81s → 48s → 30s → **4s** (debug) time-to-health after reboot (poll from host, from wlan0 IP available). Release build: **~20–80s** on cold boot depending on channel/EPG preload (no debug suffix; EPG may still be building at first health). **Boot speedup cycle:** **~74s → 26s** after wlan0 IP (eliminated +63s ANR restart penalty on FUSA).
@@ -124,7 +124,7 @@ Audit: `GET /tivimate-playlist.m3u8` → classify `tvg-logo` URLs → `curl` eac
 cd stepdaddy-android
 ADB_SERIAL=FUSA2541006925 CYCLE_TAG=cycleN ./scripts/fusa-boot-test.sh
 # Release package (no .debug suffix):
-PKG=com.nova.stepdaddylivehd.gateway CYCLE_TAG=release-cycle1 ./scripts/fusa-boot-test.sh
+PKG=com.thothassistant.stepdaddy.gateway CYCLE_TAG=release-cycle1 ./scripts/fusa-boot-test.sh
 ```
 
 Artifacts: `/tmp/fusa-boot-test/cycleN_*.{log,report.txt,png}`
@@ -249,7 +249,7 @@ Captured during parallel stream load (`dumpsys meminfo`, `top`, `/proc/pid/statu
 | **CPU (`top`)** | **~100%** on gateway process during 10-way stream burst |
 | **Swap PSS** | Low when idle (~267 KB); higher under earlier overload (~17 MB) |
 
-Package: `com.nova.stepdaddylivehd.gateway.debug`
+Package: `com.thothassistant.stepdaddy.gateway.debug`
 
 ---
 

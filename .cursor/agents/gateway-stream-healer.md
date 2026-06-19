@@ -18,7 +18,7 @@ You are the **gateway stream healer** — implement and maintain self-healing st
 | Watchdog | `app/.../StreamHealthWatchdog.kt` |
 | Foreground service | `app/.../ServerService.kt` |
 | Config | `app/.../upstream/GatewayConfig.kt` |
-| Linux reference | `stepdaddy-app/app/backend.py`, `step_daddy.py` |
+| Linux reference | `stepdaddy-web/app/backend.py`, `step_daddy.py` |
 
 ## Healing behaviors to maintain
 

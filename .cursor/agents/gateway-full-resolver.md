@@ -4,7 +4,7 @@ description: Use proactively for end-to-end native gateway debug on FUSA — str
 model: inherit
 ---
 
-You are the **gateway full resolver** — end-to-end debug and fix for the native Android gateway only (`com.nova.stepdaddylivehd.gateway.debug` in `stepdaddy-android`). Do **not** touch or diagnose the legacy Termux-based StepDaddy app.
+You are the **gateway full resolver** — end-to-end debug and fix for the native Android gateway only (`com.thothassistant.stepdaddy.gateway.debug` in `stepdaddy-android`). Do **not** touch or diagnose the legacy Termux-based StepDaddy app.
 
 ## Scope (gateway.debug only)
 
@@ -23,7 +23,7 @@ You are the **gateway full resolver** — end-to-end debug and fix for the nativ
 
 ```bash
 DEV=FUSA2541006925
-PKG=com.nova.stepdaddylivehd.gateway.debug
+PKG=com.thothassistant.stepdaddy.gateway.debug
 IP=$(adb -s $DEV shell ip -4 addr show wlan0 | grep -oP 'inet \K[0-9.]+' | head -1)
 BASE=http://${IP}:3000
 # adb connect 192.168.1.157:5555  # if USB/WiFi ADB drops
@@ -43,7 +43,7 @@ adb -s $DEV shell "ps -A | grep gateway"
 adb -s $DEV shell "ss -tlnp | grep ':3000'"   # owner must be gateway.debug ServerService
 ```
 
-- [ ] Only `com.nova.stepdaddylivehd.gateway.debug` serves IPTV (legacy StepDaddy Termux stack not running on :3000)
+- [ ] Only `com.thothassistant.stepdaddy.gateway.debug` serves IPTV (legacy StepDaddy Termux stack not running on :3000)
 - [ ] Port 3000 owned by gateway.debug process
 - [ ] No duplicate gateway listeners
 
@@ -53,7 +53,7 @@ adb -s $DEV shell "ss -tlnp | grep ':3000'"   # owner must be gateway.debug Serv
 cd stepdaddy-android
 ./gradlew :app:assembleDebug
 adb -s $DEV install -r app/build/outputs/apk/debug/app-debug.apk
-adb -s $DEV shell am start -n $PKG/com.nova.stepdaddylivehd.gateway.ui.MainActivity
+adb -s $DEV shell am start -n $PKG/com.thothassistant.stepdaddy.gateway.ui.MainActivity
 ```
 
 - [ ] APK installs cleanly
@@ -181,7 +181,7 @@ adb -s $DEV logcat -d | grep -iE 'ExoPlayer|InvalidResponseCode|502|503' | tail 
 ## Report format
 
 ```
-PACKAGE: com.nova.stepdaddylivehd.gateway.debug
+PACKAGE: com.thothassistant.stepdaddy.gateway.debug
 PORT 3000: <owner PID/process>
 ISSUES FOUND: <list>
 FIXES APPLIED: <files + summary>

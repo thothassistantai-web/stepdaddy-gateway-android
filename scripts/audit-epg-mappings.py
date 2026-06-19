@@ -6,17 +6,33 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-APP_ROOT = ROOT.parent / "stepdaddy-app"
+
+
+def _resolve_web_root() -> Path:
+    env = (os.environ.get("STEPDADDY_WEB_ROOT") or os.environ.get("STEPDADDY_APP_ROOT") or "").strip()
+    if env:
+        return Path(env)
+    programs = Path.home() / "Programs" / "stepdaddy-web"
+    if programs.is_dir():
+        return programs
+    sibling = ROOT.parent / "stepdaddy-web"
+    if sibling.is_dir():
+        return sibling.resolve()
+    return programs
+
+
+WEB_ROOT = _resolve_web_root()
 ASSETS = ROOT / "app" / "src" / "main" / "assets"
 MAPPING_PATH = ASSETS / "channel_epg_map.json"
-OVERRIDES_PATH = APP_ROOT / "app" / "epg_overrides.json"
-CACHE_PATH = APP_ROOT / "app" / "dlhd_channels_cache.json"
+OVERRIDES_PATH = WEB_ROOT / "app" / "epg_overrides.json"
+CACHE_PATH = WEB_ROOT / "app" / "dlhd_channels_cache.json"
 CHANNELS_DB = ASSETS / "channels_db_cache.csv"
 
 # High-confidence manual corrections (channel display name -> tvg_id).
@@ -446,7 +462,7 @@ def export_mapping() -> None:
 
 
 def sync_android_shell_overrides() -> None:
-    shell_path = APP_ROOT / "android-shell" / "app" / "src" / "main" / "assets" / "stepdaddy" / "app" / "epg_overrides.json"
+    shell_path = WEB_ROOT / "android-shell" / "app" / "src" / "main" / "assets" / "stepdaddy" / "app" / "epg_overrides.json"
     if shell_path.parent.exists():
         shell_path.write_text(OVERRIDES_PATH.read_text(encoding="utf-8"), encoding="utf-8")
 

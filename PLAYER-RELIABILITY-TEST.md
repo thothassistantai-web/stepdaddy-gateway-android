@@ -2,7 +2,7 @@
 
 **Device:** onn. Full HD Streaming Device (FUSA2541006925, USB)  
 **Date:** 2026-06-18  
-**APK:** `com.nova.stepdaddylivehd.gateway.debug` (debug build)  
+**APK:** `com.thothassistant.stepdaddy.gateway.debug` (debug build)  
 **ADB forward:** `adb -s FUSA2541006925 forward tcp:13000 tcp:3000`
 
 ## Error codes

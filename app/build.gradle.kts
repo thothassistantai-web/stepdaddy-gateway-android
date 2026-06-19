@@ -15,11 +15,11 @@ val gitHash: String = runCatching {
 val buildTime: Long = System.currentTimeMillis()
 
 android {
-    namespace = "com.nova.stepdaddylivehd.gateway"
+    namespace = "com.thothassistant.stepdaddy.gateway"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.nova.stepdaddylivehd.gateway"
+        applicationId = "com.thothassistant.stepdaddy.gateway"
         minSdk = 24
         targetSdk = 34
         versionCode = 2
