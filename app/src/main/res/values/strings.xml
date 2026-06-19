@@ -171,9 +171,9 @@
     <string name="settings_section_updates">Updates</string>
     <string name="settings_auto_check_updates">Auto-check for updates on app open</string>
     <string name="settings_auto_download_updates">Auto-download updates in background</string>
-    <string name="settings_update_channel">Update channel: GitHub</string>
+    <string name="settings_update_channel">Update channel: GitHub (default)</string>
     <string name="settings_update_manifest_url">Update manifest URL</string>
-    <string name="settings_update_manifest_url_hint">Optional override (uses built-in channel when empty)</string>
+    <string name="settings_update_manifest_url_hint">Optional override</string>
     <string name="settings_update_drive_folder_url">Google Drive folder URL (placeholder)</string>
     <string name="settings_update_drive_folder_url_hint">Optional fallback channel. App tries {folder}/update-manifest.json when the primary URL fails.</string>
     <string name="settings_update_checking">Checking for updates…</string>
