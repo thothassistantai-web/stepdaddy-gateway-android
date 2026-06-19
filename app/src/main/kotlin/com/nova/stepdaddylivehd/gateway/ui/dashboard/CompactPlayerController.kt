@@ -132,7 +132,14 @@ class CompactPlayerController(
         }
     }
 
-    fun isPlaying(): Boolean = player?.isPlaying == true
+    fun resumePlayback() {
+        val exo = player ?: return
+        if (exo.mediaItemCount > 0 && !exo.isPlaying) {
+            exo.play()
+        }
+    }
+
+    fun hasLoadedMedia(): Boolean = (player?.mediaItemCount ?: 0) > 0
 
     fun openFullscreen() {
         currentChannel?.let(onFullscreen)

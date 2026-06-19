@@ -70,6 +70,7 @@ class PlayerErrorHandler(
         mainHandler.removeCallbacks(autoRetryRunnable)
         if (!autoplay) {
             clearError(resetAutoRetry = false)
+            onReady()
             return
         }
         if (skipPreflight) {

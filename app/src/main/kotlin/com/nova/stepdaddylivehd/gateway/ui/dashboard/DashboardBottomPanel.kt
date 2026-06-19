@@ -16,7 +16,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.nova.stepdaddylivehd.gateway.GatewayEnvironment
-import com.nova.stepdaddylivehd.gateway.GatewayHealthGate
 import com.nova.stepdaddylivehd.gateway.R
 import com.nova.stepdaddylivehd.gateway.ui.PlayerFullscreenActivity
 import com.nova.stepdaddylivehd.gateway.ui.player.PlayerErrorOverlay
@@ -153,6 +152,18 @@ class DashboardBottomPanel(
     fun onResume() {
         playerController.attach()
         loadChannelsIfNeeded()
+        resumeCurrentChannelIfNeeded()
+    }
+
+    private fun resumeCurrentChannelIfNeeded() {
+        if (activeTab != Tab.PLAYER) return
+        if (playerController.hasLoadedMedia()) {
+            playerController.resumePlayback()
+            return
+        }
+        playerController.currentChannel?.let { channel ->
+            playerController.tuneTo(channel, autoplay = true)
+        }
     }
 
     fun onPause() {
@@ -197,7 +208,6 @@ class DashboardBottomPanel(
     private fun loadChannelsIfNeeded() {
         if (channelsLoaded) return
         scope.launch {
-            if (!GatewayHealthGate.awaitHealthy(activity)) return@launch
             val channels = ChannelListProvider.loadSorted(environment)
             if (channels.isEmpty()) return@launch
             channelsLoaded = true
@@ -232,6 +242,13 @@ class DashboardBottomPanel(
         }
         if (tab == Tab.PLAYER) {
             loadChannelsIfNeeded()
+            if (playerController.hasLoadedMedia()) {
+                playerController.resumePlayback()
+            } else {
+                playerController.currentChannel?.let { channel ->
+                    playerController.tuneTo(channel, autoplay = true)
+                }
+            }
         }
     }
 
