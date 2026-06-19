@@ -239,12 +239,6 @@ class MainActivity : AppCompatActivity() {
             if (hasAutoCheckedUpdates || !environment.autoCheckUpdates) return
             hasAutoCheckedUpdates = true
         }
-        if (environment.updateManifestUrl.isBlank() && environment.updateDriveFolderUrl.isBlank()) {
-            if (force) {
-                Toast.makeText(this, R.string.update_no_url, Toast.LENGTH_SHORT).show()
-            }
-            return
-        }
         checkForUpdates(manual = force)
     }
 

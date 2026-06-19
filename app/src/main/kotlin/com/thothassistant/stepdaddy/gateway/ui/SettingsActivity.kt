@@ -59,7 +59,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.switchTivimateWatch.isChecked = environment.tivimateWatchEnabled
         binding.switchAutoCheckUpdates.isChecked = environment.autoCheckUpdates
         binding.switchAutoDownloadUpdates.isChecked = environment.autoDownloadUpdates
-        binding.editUpdateManifestUrl.setText(environment.updateManifestUrl)
+        binding.editUpdateManifestUrl.setText(environment.updateManifestUrlOverride)
         binding.editUpdateDriveFolderUrl.setText(environment.updateDriveFolderUrl)
         val built = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
             .format(Date(BuildConfig.BUILD_TIME))
@@ -99,7 +99,7 @@ class SettingsActivity : AppCompatActivity() {
         environment.tivimateWatchEnabled = binding.switchTivimateWatch.isChecked
         environment.autoCheckUpdates = binding.switchAutoCheckUpdates.isChecked
         environment.autoDownloadUpdates = binding.switchAutoDownloadUpdates.isChecked
-        environment.updateManifestUrl = binding.editUpdateManifestUrl.text?.toString().orEmpty()
+        environment.setUpdateManifestUrlOverride(binding.editUpdateManifestUrl.text?.toString().orEmpty())
         environment.updateDriveFolderUrl = binding.editUpdateDriveFolderUrl.text?.toString().orEmpty()
         if (environment.startOnBoot) {
             GatewayStartHelper.schedulePeriodicEnsureAlive(this)
@@ -113,15 +113,6 @@ class SettingsActivity : AppCompatActivity() {
     private fun checkForUpdates(manual: Boolean) {
         if (updateCheckJob?.isActive == true) return
         syncUpdateFieldsFromBinding()
-        val manifestUrl = binding.editUpdateManifestUrl.text?.toString().orEmpty().trim()
-        val driveUrl = binding.editUpdateDriveFolderUrl.text?.toString().orEmpty().trim()
-        if (manifestUrl.isBlank() && driveUrl.isBlank()) {
-            binding.textUpdateStatus.text = getString(R.string.settings_update_no_url)
-            if (manual) {
-                Toast.makeText(this, R.string.settings_update_no_url, Toast.LENGTH_SHORT).show()
-            }
-            return
-        }
         binding.textUpdateStatus.text = getString(R.string.settings_update_checking)
         updateCheckJob = lifecycleScope.launch {
             appUpdateManager.checkForUpdate()
@@ -226,7 +217,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun syncUpdateFieldsFromBinding() {
         environment.autoCheckUpdates = binding.switchAutoCheckUpdates.isChecked
         environment.autoDownloadUpdates = binding.switchAutoDownloadUpdates.isChecked
-        environment.updateManifestUrl = binding.editUpdateManifestUrl.text?.toString().orEmpty()
+        environment.setUpdateManifestUrlOverride(binding.editUpdateManifestUrl.text?.toString().orEmpty())
         environment.updateDriveFolderUrl = binding.editUpdateDriveFolderUrl.text?.toString().orEmpty()
     }
 }

@@ -151,15 +151,21 @@ class GatewayEnvironment(context: Context) {
         }
 
     /**
-     * GitHub releases API URL or raw JSON update manifest URL.
-     * Example: https://api.github.com/repos/owner/repo/releases/latest
+     * User override for the update manifest URL. Empty when using the built-in channel.
      */
-    var updateManifestUrl: String
-        get() = prefs.getString(KEY_UPDATE_MANIFEST_URL, BuildConfig.DEFAULT_UPDATE_MANIFEST_URL)
-            ?: BuildConfig.DEFAULT_UPDATE_MANIFEST_URL
-        set(value) {
-            prefs.edit().putString(KEY_UPDATE_MANIFEST_URL, value.trim()).apply()
-        }
+    val updateManifestUrlOverride: String
+        get() = prefs.getString(KEY_UPDATE_MANIFEST_URL, "").orEmpty()
+
+    /**
+     * Effective manifest URL: user override when set, otherwise [BuildConfig.DEFAULT_UPDATE_MANIFEST_URL].
+     * Does not persist the default into prefs on read.
+     */
+    val updateManifestUrl: String
+        get() = updateManifestUrlOverride.trim().ifBlank { BuildConfig.DEFAULT_UPDATE_MANIFEST_URL }
+
+    fun setUpdateManifestUrlOverride(value: String) {
+        prefs.edit().putString(KEY_UPDATE_MANIFEST_URL, value.trim()).apply()
+    }
 
     /**
      * Google Drive folder URL placeholder for future update channel support.

@@ -13,7 +13,7 @@ class AppUpdateRepository(
     private val json: Json = Json { ignoreUnknownKeys = true },
 ) {
     suspend fun fetchUpdate(): AppUpdateInfo? {
-        val manifestUrl = environment.updateManifestUrl.trim()
+        val manifestUrl = resolveManifestUrl()
         if (manifestUrl.isNotEmpty()) {
             runCatching { fetchFromUrl(manifestUrl, "manifest") }.getOrNull()?.let { return it }
         }
@@ -80,6 +80,8 @@ class AppUpdateRepository(
         val lower = url.lowercase()
         return lower.contains("api.github.com") && lower.contains("/releases")
     }
+
+    private fun resolveManifestUrl(): String = environment.updateManifestUrl.trim()
 
     private fun resolveDriveManifestUrl(folderUrl: String): String {
         // Stub: expects a public folder with update-manifest.json at the root.
