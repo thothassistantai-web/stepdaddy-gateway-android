@@ -7,6 +7,16 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-06-19
+
+### Added
+
+- Network access modes (Default / Local / Remote) with Ktor request guard and bind enforcement
+- Settings → Network: mode selector, gateway name, remote tunnel URL, access token
+- Dashboard URLs and QR dialog respect active network mode
+- LAN peer discovery banner (Local / Remote)
+- Docs: `docs/NETWORK-MODES.md`, `docs/REMOTE-ACCESS.md`
+
 ## [1.0.2] - 2026-06-19
 
 ### Added

@@ -78,4 +78,21 @@
         android:layout_marginTop="4dp"
         android:textColor="@color/on_background_muted"
         android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/textNetworkMode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/on_background_muted"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/textPeerBanner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:textColor="@color/url_accent"
+        android:textSize="12sp"
+        android:visibility="gone" />
 </LinearLayout>

@@ -32,6 +32,10 @@ import com.thothassistant.stepdaddy.gateway.model.HealthResponse
 import com.thothassistant.stepdaddy.gateway.update.AppUpdateDialogHelper
 import com.thothassistant.stepdaddy.gateway.update.AppUpdateInfo
 import com.thothassistant.stepdaddy.gateway.update.AppUpdateManager
+import com.thothassistant.stepdaddy.gateway.network.GatewayPeerScanner
+import com.thothassistant.stepdaddy.gateway.network.GatewayUrlBuilder
+import com.thothassistant.stepdaddy.gateway.network.LanAddressResolver
+import com.thothassistant.stepdaddy.gateway.network.NetworkAccessMode
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -59,6 +63,7 @@ class MainActivity : AppCompatActivity() {
     private var restartJob: Job? = null
     private var updateCheckJob: Job? = null
     private var updateDownloadJob: Job? = null
+    private var peerScanJob: Job? = null
     private var hasAutoCheckedUpdates = false
     private var pendingUpdateInfo: AppUpdateInfo? = null
     private val tivimateInstallMutex = Mutex()
@@ -87,6 +92,7 @@ class MainActivity : AppCompatActivity() {
         requestRuntimePermissions()
         bindUrls()
         bindVersion()
+        bindNetworkMode()
         bindToggles()
         bindActions()
         bottomPanel = DashboardBottomPanel(this, binding.root, environment, lifecycleScope)
@@ -105,14 +111,18 @@ class MainActivity : AppCompatActivity() {
         isInForeground = true
         bottomPanel.onResume()
         updateStatus()
+        bindNetworkMode()
+        bindUrls()
         updateEpgStatus()
         startStatusPolling()
         startClock()
+        maybeScanLanPeers()
     }
 
     override fun onPause() {
         pollJob?.cancel()
         clockJob?.cancel()
+        peerScanJob?.cancel()
         bottomPanel.onPause()
         isInForeground = false
         super.onPause()
@@ -161,6 +171,16 @@ class MainActivity : AppCompatActivity() {
             BuildConfig.GIT_HASH,
             built,
         )
+    }
+
+    private fun bindNetworkMode() {
+        val label = when (environment.networkAccessMode) {
+            NetworkAccessMode.DEFAULT -> getString(R.string.network_mode_default)
+            NetworkAccessMode.LOCAL -> getString(R.string.network_mode_local)
+            NetworkAccessMode.REMOTE -> getString(R.string.network_mode_remote)
+        }
+        views.textNetworkMode.text = getString(R.string.label_network_mode, label)
+        views.textTitle.text = environment.displayGatewayName()
     }
 
     private fun bindUrls() {
@@ -411,11 +431,32 @@ class MainActivity : AppCompatActivity() {
         views.buttonLaunchTivimate.isEnabled = !busy
     }
 
-    private fun playlistUrl(): String = "${environment.loopbackBase()}/tivimate-playlist.m3u8"
+    private fun playlistUrl(): String = GatewayUrlBuilder.playlistUrl(environment)
 
-    private fun epgUrl(): String = "${environment.loopbackBase()}/epg.xml"
+    private fun epgUrl(): String = GatewayUrlBuilder.epgUrl(environment)
 
-    private fun healthUrl(): String = "${environment.loopbackBase()}/health"
+    private fun healthUrl(): String = GatewayUrlBuilder.healthUrl(environment)
+
+    private fun maybeScanLanPeers() {
+        if (environment.networkAccessMode == NetworkAccessMode.DEFAULT) {
+            views.textPeerBanner.visibility = View.GONE
+            return
+        }
+        peerScanJob?.cancel()
+        peerScanJob = lifecycleScope.launch {
+            val ownIp = LanAddressResolver.lanIpv4()
+            val peers = GatewayPeerScanner.scan(ownIp, environment.port)
+            if (peers.isEmpty()) {
+                views.textPeerBanner.visibility = View.GONE
+            } else {
+                views.textPeerBanner.visibility = View.VISIBLE
+                views.textPeerBanner.text = getString(
+                    R.string.dashboard_peer_banner,
+                    peers.joinToString(", ") { it.ip },
+                )
+            }
+        }
+    }
 
     private fun startServer() {
         ContextCompat.startForegroundService(

@@ -51,28 +51,142 @@
                 android:minHeight="48dp" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:hint="@string/settings_remote_gateway_url">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/editRemoteGatewayUrl"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:focusable="true"
-                android:inputType="textUri"
-                android:minHeight="48dp" />
-        </com.google.android.material.textfield.TextInputLayout>
+            android:layout_marginTop="20dp"
+            android:text="@string/settings_section_network"
+            android:textColor="@color/on_background"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="@string/settings_remote_gateway_url_hint"
+            android:layout_marginTop="8dp"
+            android:text="@string/settings_network_mode_hint"
             android:textColor="@color/on_background_muted"
             android:textSize="12sp" />
+
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/toggleNetworkMode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:checkedButton="@id/buttonNetworkDefault"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonNetworkDefault"
+                style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:text="@string/network_mode_default" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonNetworkLocal"
+                style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:text="@string/network_mode_local" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonNetworkRemote"
+                style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:text="@string/network_mode_remote" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="@string/settings_gateway_name">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editGatewayName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:focusable="true"
+                android:inputType="text"
+                android:minHeight="48dp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <LinearLayout
+            android:id="@+id/layoutRemoteNetwork"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/settings_remote_tunnel_url">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editRemoteGatewayUrl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:focusable="true"
+                    android:inputType="textUri"
+                    android:minHeight="48dp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/settings_remote_tunnel_url_hint"
+                android:textColor="@color/on_background_muted"
+                android:textSize="12sp" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="@string/settings_remote_access_token">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editRemoteAccessToken"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:focusable="true"
+                    android:inputType="text"
+                    android:minHeight="48dp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonCopyAccessToken"
+                    style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/action_copy_token" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonRegenerateAccessToken"
+                    style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:text="@string/action_regenerate_token" />
+            </LinearLayout>
+        </LinearLayout>
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"

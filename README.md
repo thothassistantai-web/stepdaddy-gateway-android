@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Version** | 1.0.2 (`versionCode` 5) |
+| **Version** | 1.0.3 (`versionCode` 6) |
 | **Package** | `com.thothassistant.stepdaddy.gateway` |
 | **License** | [MIT](LICENSE) — see [LEGAL.md](LEGAL.md) / [DISCLAIMER.md](DISCLAIMER.md) |
 | **Upstream parity** | [stepdaddy-livehd](https://github.com/thothassistantai-web/stepdaddy-livehd) (Linux/web gateway) |
@@ -31,6 +31,8 @@ StepDaddy Gateway runs a small HTTP server on your Android TV device. Point **Ti
 **Important:** This app is an **educational aggregator** — it does not host video. Third-party upstream sources may change or stop working. [DISCLAIMER.md](DISCLAIMER.md)
 
 **Problems?** → [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) · [GitHub Issues](https://github.com/thothassistantai-web/stepdaddy-gateway-android/issues)
+
+**Network modes:** Settings → Network — **Default** (loopback only), **Local** (same Wi‑Fi subnet), **Remote** (HTTPS tunnel + access token). See [docs/NETWORK-MODES.md](docs/NETWORK-MODES.md).
 
 **Privacy:** [PRIVACY.md](PRIVACY.md)
 
@@ -120,7 +122,7 @@ stepdaddy-android/
 
 ## Features
 
-- Embedded Ktor HTTP server (`0.0.0.0:3000`)
+- Embedded Ktor HTTP server with enforced network modes (Default / Local / Remote)
 - DaddyLive channel API + resportz HLS resolution (mirror failover)
 - Light EPG (epgshare + iptv-org), channel logos
 - Boot auto-start, overlay banner, TiviMate watch / keep-alive
@@ -139,7 +141,8 @@ stepdaddy-android/
 | [docs/RELEASE.md](docs/RELEASE.md) | Version bump, signing, GitHub release |
 | [docs/GITHUB-SETUP-NEEDED.md](docs/GITHUB-SETUP-NEEDED.md) | Credentials checklist for org publish |
 | [docs/MIGRATION-PLAN.md](docs/MIGRATION-PLAN.md) | Repo mapping for thothassistantai-web |
-| [docs/UPDATES.md](docs/UPDATES.md) | In-app updates (GitHub + Drive stub) |
+| [docs/NETWORK-MODES.md](docs/NETWORK-MODES.md) | Default / Local / Remote access enforcement |
+| [docs/REMOTE-ACCESS.md](docs/REMOTE-ACCESS.md) | Cloudflare Tunnel, Tailscale, access token |
 | [PRIVACY.md](PRIVACY.md) | Privacy policy |
 | [docs/SCREENSHOT-CHECKLIST.md](docs/SCREENSHOT-CHECKLIST.md) | Play Store capture list |
 | [PLAY_STORE_LISTING.md](PLAY_STORE_LISTING.md) | Store description draft |

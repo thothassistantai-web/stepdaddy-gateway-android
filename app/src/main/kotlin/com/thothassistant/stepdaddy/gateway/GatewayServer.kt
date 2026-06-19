@@ -3,6 +3,8 @@ package com.thothassistant.stepdaddy.gateway
 import android.content.Context
 import com.thothassistant.stepdaddy.gateway.epg.EpgManager
 import com.thothassistant.stepdaddy.gateway.routes.ContentRoutes
+import com.thothassistant.stepdaddy.gateway.network.createGatewayNetworkPlugin
+import com.thothassistant.stepdaddy.gateway.network.GatewayNetworkGuard
 import com.thothassistant.stepdaddy.gateway.routes.EpgRoutes
 import com.thothassistant.stepdaddy.gateway.routes.HealthRoutes
 import com.thothassistant.stepdaddy.gateway.routes.LogoRoutes
@@ -63,10 +65,12 @@ class GatewayServer(
         val contentRoutes = ContentRoutes(environment, client, ResportzParser.defaultClient())
         val epgRoutes = EpgRoutes(client, epgManager)
 
+        val bindHost = GatewayNetworkGuard.bindHost(environment.networkAccessMode)
+        val gatewayEnvironment = environment
         try {
             engine = embeddedServer(
             CIO,
-            host = "0.0.0.0",
+            host = bindHost,
             port = environment.port,
             configure = {
                 // Keep client connections open through slow resportz fetches (Python allows 60s+).
@@ -77,6 +81,7 @@ class GatewayServer(
             install(ContentNegotiation) {
                 json(Json { ignoreUnknownKeys = true })
             }
+            install(createGatewayNetworkPlugin(gatewayEnvironment))
             routing {
                 get("/health") {
                     healthRoutes.health(call)
@@ -121,7 +126,10 @@ class GatewayServer(
                 }
             }
         }.start(wait = false)
-            android.util.Log.i("GatewayServer", "Listening on 0.0.0.0:${environment.port}")
+            android.util.Log.i(
+                "GatewayServer",
+                "Listening on $bindHost:${environment.port} mode=${environment.networkAccessMode}",
+            )
         } catch (exc: Exception) {
             engine = null
             android.util.Log.e("GatewayServer", "Failed to bind port ${environment.port}", exc)

@@ -2,6 +2,9 @@ package com.thothassistant.stepdaddy.gateway
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.thothassistant.stepdaddy.gateway.network.NetworkAccessMode
+import java.security.SecureRandom
+import java.util.Base64
 
 class GatewayEnvironment(context: Context) {
     private val prefs: SharedPreferences =
@@ -13,15 +16,44 @@ class GatewayEnvironment(context: Context) {
             prefs.edit().putInt(KEY_PORT, value).apply()
         }
 
+    /** Network access enforcement mode for the embedded HTTP server. */
+    var networkAccessMode: NetworkAccessMode
+        get() = NetworkAccessMode.fromPref(prefs.getString(KEY_NETWORK_ACCESS_MODE, null))
+        set(value) {
+            prefs.edit().putString(KEY_NETWORK_ACCESS_MODE, value.name).apply()
+        }
+
+    /** Friendly label shown on the dashboard and in LAN discovery banners. */
+    var gatewayName: String
+        get() = prefs.getString(KEY_GATEWAY_NAME, "").orEmpty()
+        set(value) {
+            prefs.edit().putString(KEY_GATEWAY_NAME, value.trim()).apply()
+        }
+
     /**
-     * Public base URL for remote QR codes and external access, e.g. http://your-public-ip:3000
-     * or a DDNS hostname. Does not include a trailing path segment.
+     * HTTPS tunnel base URL for Remote mode (Cloudflare Tunnel, Tailscale funnel, etc.).
+     * Does not include a trailing path segment.
      */
     var remoteGatewayUrl: String
         get() = prefs.getString(KEY_REMOTE_GATEWAY_URL, "").orEmpty()
         set(value) {
             prefs.edit().putString(KEY_REMOTE_GATEWAY_URL, value.trim().trimEnd('/')).apply()
         }
+
+    /** Bearer token required for non-LAN clients when [networkAccessMode] is REMOTE. */
+    var remoteAccessToken: String
+        get() = prefs.getString(KEY_REMOTE_ACCESS_TOKEN, "").orEmpty()
+        set(value) {
+            prefs.edit().putString(KEY_REMOTE_ACCESS_TOKEN, value.trim()).apply()
+        }
+
+    fun ensureRemoteAccessToken(): String {
+        val current = remoteAccessToken
+        if (current.isNotBlank()) return current
+        val token = generateAccessToken()
+        remoteAccessToken = token
+        return token
+    }
 
     var apiUrl: String
         get() = prefs.getString(KEY_API_URL, BuildConfig.DEFAULT_API_URL) ?: BuildConfig.DEFAULT_API_URL
@@ -224,6 +256,15 @@ class GatewayEnvironment(context: Context) {
 
     fun loopbackBase(): String = "http://127.0.0.1:$port"
 
+    fun displayGatewayName(): String =
+        gatewayName.trim().ifBlank { "StepDaddy Gateway" }
+
+    private fun generateAccessToken(): String {
+        val bytes = ByteArray(24)
+        SecureRandom().nextBytes(bytes)
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+    }
+
     /** Point supplement fetch at the embedded loopback sidecar when enabled. */
     fun ensureEmbeddedSidecarUrl() {
         if (!embeddedSidecarEnabled) return
@@ -244,7 +285,10 @@ class GatewayEnvironment(context: Context) {
     companion object {
         private const val PREFS_NAME = "stepdaddy_gateway"
         private const val KEY_PORT = "port"
+        private const val KEY_NETWORK_ACCESS_MODE = "network_access_mode"
+        private const val KEY_GATEWAY_NAME = "gateway_name"
         private const val KEY_REMOTE_GATEWAY_URL = "remote_gateway_url"
+        private const val KEY_REMOTE_ACCESS_TOKEN = "remote_access_token"
         private const val KEY_API_URL = "api_url"
         private const val KEY_DLHD_BASE_URL = "dlhd_base_url"
         private const val KEY_MIRROR_URLS = "mirror_urls"

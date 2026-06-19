@@ -27,6 +27,8 @@ class MainDashboardViews(root: View) {
     val buttonRestart: MaterialButton = root.findViewById(R.id.buttonRestart)
     val textStatus: TextView = root.findViewById(R.id.textStatus)
     val textPort: TextView = root.findViewById(R.id.textPort)
+    val textNetworkMode: TextView = root.findViewById(R.id.textNetworkMode)
+    val textPeerBanner: TextView = root.findViewById(R.id.textPeerBanner)
 
     val buttonSettings: MaterialButton = root.findViewById(R.id.buttonSettings)
     val buttonInstallApps: MaterialButton = root.findViewById(R.id.buttonInstallApps)

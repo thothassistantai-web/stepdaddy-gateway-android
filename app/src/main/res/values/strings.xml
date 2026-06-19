@@ -99,10 +99,13 @@
     <string name="toast_server_restarting">Restarting gateway…</string>
     <string name="toast_open_url_failed">Could not open URL</string>
     <string name="dialog_qr_title">Gateway QR code</string>
+    <string name="qr_access_default">This device only</string>
     <string name="qr_access_local">Local</string>
     <string name="qr_access_remote">Remote</string>
+    <string name="qr_default_helper">Default mode — playlist URLs work on this device only (127.0.0.1). Change to Local or Remote in Settings → Network.</string>
     <string name="qr_local_helper">Scan from another device on the same Wi‑Fi network.</string>
-    <string name="qr_remote_base_url_hint">Public base URL (e.g. http://your-public-ip:3000)</string>
+    <string name="qr_remote_token_note">Remote URLs require the access token as ?access_token=… or header X-StepDaddy-Token.</string>
+    <string name="qr_remote_base_url_hint">HTTPS tunnel base URL (from Settings → Network)</string>
     <string name="qr_port_forward_warning">To access from outside your home network, configure port forwarding on your router: forward an external port to this device\'s LAN IP on port %1$d. Your ISP may block inbound connections. Use at your own risk.</string>
     <string name="qr_how_it_works">How it works</string>
     <string name="qr_how_it_works_hide">Hide how it works</string>
@@ -113,7 +116,7 @@
     <string name="qr_url_epg">EPG</string>
     <string name="qr_close">Close</string>
     <string name="qr_error_no_lan_ip">No LAN IP found — connect to Wi‑Fi and try again.</string>
-    <string name="qr_error_no_remote_url">Enter a public base URL above.</string>
+    <string name="qr_error_no_remote_url">Set a tunnel base URL in Settings → Network.</string>
     <string name="qr_error_encode_failed">Could not generate QR code.</string>
     <string name="label_version_line">v%1$s (%2$s) · built %3$s</string>
     <string name="label_auto_start_on_launch">Auto-start server when app opens</string>
@@ -158,6 +161,21 @@
     <string name="settings_title">Gateway settings</string>
     <string name="settings_subtitle">Changes apply on next server restart.</string>
     <string name="settings_port">HTTP port</string>
+    <string name="settings_section_network">Network</string>
+    <string name="settings_network_mode_hint">Default: loopback only. Local: same Wi‑Fi subnet. Remote: tunnel + access token for WAN.</string>
+    <string name="settings_gateway_name">Gateway name</string>
+    <string name="settings_remote_tunnel_url">Remote tunnel base URL (HTTPS)</string>
+    <string name="settings_remote_tunnel_url_hint">Cloudflare Tunnel or Tailscale HTTPS URL, e.g. https://gateway.example.com</string>
+    <string name="settings_remote_access_token">Remote access token</string>
+    <string name="network_mode_default">Default</string>
+    <string name="network_mode_local">Local</string>
+    <string name="network_mode_remote">Remote</string>
+    <string name="label_network_mode">Network: %1$s</string>
+    <string name="dashboard_peer_banner">Other gateways on LAN: %1$s</string>
+    <string name="action_copy_token">Copy token</string>
+    <string name="action_regenerate_token">Regenerate</string>
+    <string name="toast_token_copied">Access token copied</string>
+    <string name="toast_token_regenerated">New access token generated</string>
     <string name="settings_remote_gateway_url">Remote gateway URL (public)</string>
     <string name="settings_remote_gateway_url_hint">Used for Remote QR codes, e.g. http://your-public-ip:3000 or a DDNS hostname.</string>
     <string name="settings_dlhd_url">DaddyLive base URL</string>
