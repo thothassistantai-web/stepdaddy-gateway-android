@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?android:attr/selectableItemBackground"
+    android:focusable="true"
+    android:foreground="@drawable/tv_button_focused"
+    android:orientation="vertical"
+    android:paddingHorizontal="8dp"
+    android:paddingVertical="10dp">
+
+    <TextView
+        android:id="@+id/textHistoryLine"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/on_background"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/textHistoryTime"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="@color/on_background_muted"
+        android:textSize="11sp" />
+</LinearLayout>

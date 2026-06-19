@@ -58,7 +58,7 @@
             android:nextFocusLeft="@id/buttonQrPlaylist"
             android:nextFocusRight="@id/buttonOpenEpg"
             android:nextFocusUp="@id/buttonLaunchTivimate"
-            android:nextFocusDown="@id/buttonFooterScrollTop"
+            android:nextFocusDown="@id/tabMessages"
             android:text="@string/action_copy"
             app:icon="@drawable/ic_copy" />
 
@@ -69,9 +69,9 @@
             android:layout_height="40dp"
             android:layout_weight="1"
             android:nextFocusLeft="@id/buttonCopyEpg"
-            android:nextFocusRight="@id/buttonFooterScrollTop"
+            android:nextFocusRight="@id/tabMessages"
             android:nextFocusUp="@id/buttonInstallTivimate"
-            android:nextFocusDown="@id/buttonFooterScrollTop"
+            android:nextFocusDown="@id/tabMessages"
             android:text="@string/action_open"
             app:icon="@drawable/ic_open" />
     </LinearLayout>

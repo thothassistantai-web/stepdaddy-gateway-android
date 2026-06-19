@@ -67,8 +67,8 @@
         android:contentDescription="@string/action_scroll_top"
         android:focusable="true"
         android:foreground="@drawable/tv_icon_button_focused"
-        android:nextFocusLeft="@id/buttonOpenEpg"
-        android:nextFocusUp="@id/buttonOpenEpg"
+        android:nextFocusLeft="@id/buttonPlayerFullscreen"
+        android:nextFocusUp="@id/tabPlayer"
         android:nextFocusRight="@id/buttonHeaderSettings"
         android:padding="6dp"
         android:src="@drawable/ic_scroll_top" />

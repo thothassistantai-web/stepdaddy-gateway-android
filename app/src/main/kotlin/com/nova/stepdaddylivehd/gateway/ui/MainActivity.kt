@@ -8,12 +8,10 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
@@ -25,7 +23,8 @@ import com.nova.stepdaddylivehd.gateway.R
 import com.nova.stepdaddylivehd.gateway.ServerService
 import com.nova.stepdaddylivehd.gateway.TiviMateLauncher
 import com.nova.stepdaddylivehd.gateway.databinding.ActivityMainBinding
-import com.nova.stepdaddylivehd.gateway.databinding.DialogQrCodeBinding
+import com.nova.stepdaddylivehd.gateway.ui.dashboard.DashboardBottomPanel
+import com.nova.stepdaddylivehd.gateway.ui.dashboard.GatewayMessageBus
 import com.nova.stepdaddylivehd.gateway.install.ApkInstallManager
 import com.nova.stepdaddylivehd.gateway.install.InstallAppsCatalogRepository
 import com.nova.stepdaddylivehd.gateway.model.HealthResponse
@@ -54,6 +53,7 @@ class MainActivity : AppCompatActivity() {
     private var tivimateInstallJob: Job? = null
     private var restartJob: Job? = null
     private val tivimateInstallMutex = Mutex()
+    private lateinit var bottomPanel: DashboardBottomPanel
     private val numberFormat = NumberFormat.getIntegerInstance(Locale.US)
     private val clockFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
@@ -79,6 +79,9 @@ class MainActivity : AppCompatActivity() {
         bindVersion()
         bindToggles()
         bindActions()
+        bottomPanel = DashboardBottomPanel(this, binding.root, environment, lifecycleScope)
+        bottomPanel.attach()
+        GatewayMessageBus.post("Dashboard opened")
         updateStatus()
         updateEpgStatus()
         updateFooterMetrics(null)
@@ -88,6 +91,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         isInForeground = true
+        bottomPanel.onResume()
         updateStatus()
         updateEpgStatus()
         startStatusPolling()
@@ -97,8 +101,16 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         pollJob?.cancel()
         clockJob?.cancel()
+        bottomPanel.onPause()
         isInForeground = false
         super.onPause()
+    }
+
+    override fun onDestroy() {
+        if (::bottomPanel.isInitialized) {
+            bottomPanel.onDestroy()
+        }
+        super.onDestroy()
     }
 
     private fun maybeAutoStartServer() {
@@ -186,7 +198,7 @@ class MainActivity : AppCompatActivity() {
         views.buttonHeaderSettings.setOnClickListener { openSettings() }
         views.buttonCopyPlaylist.setOnClickListener { copyUrl(playlistUrl()) }
         views.buttonOpenPlaylist.setOnClickListener { openUrl(playlistUrl()) }
-        views.buttonQrPlaylist.setOnClickListener { showQrDialog(playlistUrl()) }
+        views.buttonQrPlaylist.setOnClickListener { QrCodeDialogController(this, environment).show() }
         views.buttonCopyEpg.setOnClickListener { copyUrl(epgUrl()) }
         views.buttonOpenEpg.setOnClickListener { openUrl(epgUrl()) }
         views.buttonLaunchTivimate.setOnClickListener { launchTivimate() }
@@ -227,6 +239,7 @@ class MainActivity : AppCompatActivity() {
                         R.string.toast_tivimate_installing,
                         Toast.LENGTH_SHORT,
                     ).show()
+                    GatewayMessageBus.postInstallProgress("TiviMate", "downloading")
                     val apkFile = installManager.downloadApk(entry) { }
                     if (!installManager.launchInstall(apkFile)) {
                         error(getString(R.string.install_apps_launch_failed))
@@ -282,6 +295,7 @@ class MainActivity : AppCompatActivity() {
         updateStatus()
         updateEpgStatus()
         Toast.makeText(this, R.string.toast_server_starting, Toast.LENGTH_SHORT).show()
+        GatewayMessageBus.post("Starting gateway server")
     }
 
     private fun stopServer() {
@@ -295,12 +309,14 @@ class MainActivity : AppCompatActivity() {
         updateEpgStatus()
         renderDashboard(null)
         Toast.makeText(this, R.string.toast_server_stopped, Toast.LENGTH_SHORT).show()
+        GatewayMessageBus.post("Gateway server stopped", "WARN")
     }
 
     private fun restartServer() {
         if (restartJob?.isActive == true) return
         restartJob = lifecycleScope.launch {
             Toast.makeText(this@MainActivity, R.string.toast_server_restarting, Toast.LENGTH_SHORT).show()
+            GatewayMessageBus.post("Restarting gateway server")
             if (ServerService.isServiceActive) {
                 stopServer()
                 delay(RESTART_DELAY_MS)
@@ -564,25 +580,10 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
-    private fun showQrDialog(url: String) {
-        val dialogBinding = DialogQrCodeBinding.inflate(LayoutInflater.from(this))
-        dialogBinding.textQrUrl.text = url
-        val bitmap = QrCodeHelper.encode(url, QR_SIZE_PX)
-        if (bitmap != null) {
-            dialogBinding.imageQrCode.setImageBitmap(bitmap)
-        }
-        AlertDialog.Builder(this)
-            .setTitle(R.string.dialog_qr_title)
-            .setView(dialogBinding.root)
-            .setPositiveButton(android.R.string.ok, null)
-            .show()
-    }
-
     companion object {
         private const val STATUS_POLL_MS = 3_000L
         private const val CLOCK_TICK_MS = 30_000L
         private const val RESTART_DELAY_MS = 1_500L
-        private const val QR_SIZE_PX = 512
 
         @Volatile
         var isInForeground: Boolean = false

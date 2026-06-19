@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/bottomPanelRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingTop="12dp">
+
+    <LinearLayout
+        android:id="@+id/tabBarBottomPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tabMessages"
+            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:nextFocusDown="@id/contentMessages"
+            android:nextFocusUp="@id/buttonCopyEpg"
+            android:nextFocusRight="@id/tabErrorLogs"
+            android:text="@string/bottom_panel_tab_messages"
+            android:textSize="12sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tabErrorLogs"
+            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:nextFocusDown="@id/buttonRefreshLogs"
+            android:nextFocusLeft="@id/tabMessages"
+            android:nextFocusRight="@id/tabHistory"
+            android:text="@string/bottom_panel_tab_logs"
+            android:textSize="12sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tabHistory"
+            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:nextFocusDown="@id/recyclerHistory"
+            android:nextFocusLeft="@id/tabErrorLogs"
+            android:nextFocusRight="@id/tabPlayer"
+            android:text="@string/bottom_panel_tab_history"
+            android:textSize="12sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tabPlayer"
+            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:nextFocusDown="@id/playerViewCompact"
+            android:nextFocusLeft="@id/tabHistory"
+            android:text="@string/bottom_panel_tab_player"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/bottomPanelContent"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        android:layout_weight="1">
+
+        <ScrollView
+            android:id="@+id/contentMessages"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:scrollbars="vertical">
+
+            <TextView
+                android:id="@+id/textMessages"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:lineSpacingExtra="2dp"
+                android:padding="4dp"
+                android:textColor="@color/on_background_muted"
+                android:textIsSelectable="true"
+                android:textSize="11sp" />
+        </ScrollView>
+
+        <LinearLayout
+            android:id="@+id/contentErrorLogs"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:scrollbars="vertical">
+
+                <TextView
+                    android:id="@+id/textErrorLogs"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:lineSpacingExtra="2dp"
+                    android:padding="4dp"
+                    android:textColor="@color/status_error"
+                    android:textIsSelectable="true"
+                    android:textSize="11sp" />
+            </ScrollView>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonRefreshLogs"
+                style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_gravity="end"
+                android:layout_marginTop="8dp"
+                android:nextFocusUp="@id/tabErrorLogs"
+                android:text="@string/bottom_panel_refresh_logs"
+                app:icon="@drawable/ic_restart" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/contentHistory"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerHistory"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:descendantFocusability="afterDescendants"
+                android:padding="4dp"
+                android:scrollbars="vertical" />
+
+            <TextView
+                android:id="@+id/textHistoryEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="@string/bottom_panel_history_empty"
+                android:textColor="@color/on_background_muted"
+                android:textSize="13sp"
+                android:visibility="gone" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/contentPlayer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:background="@color/panel_background">
+
+                <androidx.media3.ui.PlayerView
+                    android:id="@+id/playerViewCompact"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:focusable="true"
+                    android:nextFocusUp="@id/tabPlayer"
+                    app:resize_mode="fit"
+                    app:show_buffering="when_playing"
+                    app:surface_type="surface_view"
+                    app:use_controller="false" />
+
+                <TextView
+                    android:id="@+id/textPlayerChannel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|start"
+                    android:layout_margin="8dp"
+                    android:background="#99000000"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp"
+                    android:textColor="@color/on_background"
+                    android:textSize="12sp" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonPlayerChDown"
+                    style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:nextFocusUp="@id/playerViewCompact"
+                    android:text="@string/bottom_panel_ch_down"
+                    app:icon="@drawable/ic_channel_down" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonPlayerChPlay"
+                    style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:nextFocusUp="@id/playerViewCompact"
+                    android:text="@string/bottom_panel_play_pause"
+                    app:icon="@drawable/ic_play" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonPlayerChUp"
+                    style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:nextFocusUp="@id/playerViewCompact"
+                    android:text="@string/bottom_panel_ch_up"
+                    app:icon="@drawable/ic_channel_up" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonPlayerFullscreen"
+                    style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="1"
+                    android:nextFocusUp="@id/playerViewCompact"
+                    android:text="@string/bottom_panel_fullscreen"
+                    app:icon="@drawable/ic_fullscreen" />
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
+</LinearLayout>

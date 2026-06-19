@@ -13,6 +13,8 @@ import androidx.lifecycle.lifecycleScope
 import com.nova.stepdaddylivehd.gateway.sidecar.EmbeddedSidecarRepository
 import com.nova.stepdaddylivehd.gateway.sidecar.EmbeddedSidecarServer
 import com.nova.stepdaddylivehd.gateway.ui.MainActivity
+import com.nova.stepdaddylivehd.gateway.ui.dashboard.GatewayDiagnostics
+import com.nova.stepdaddylivehd.gateway.ui.dashboard.GatewayMessageBus
 import com.nova.stepdaddylivehd.gateway.upstream.DaddyLiveClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -61,6 +63,8 @@ class ServerService : LifecycleService() {
         GatewayStartHelper.cancelBootFallbacks(this)
         GatewayStartHelper.resetFallbacksScheduled()
         ScreenWakeRegistrar.register(this)
+        GatewayMessageBus.postBoot("ServerService")
+        GatewayDiagnostics.info(TAG, "Foreground service created")
         scheduleHttpHealthCheck()
         scheduleTiviMateResumeWatch()
         lifecycleScope.launch(Dispatchers.IO) {
@@ -153,11 +157,13 @@ class ServerService : LifecycleService() {
                     updateRunningNotification()
                     GatewayStartHelper.schedulePeriodicEnsureAlive(this@ServerService)
                     notifyForegroundIfVisible(R.string.toast_server_running)
+                    GatewayMessageBus.postReady(environment.loopbackBase())
+                    GatewayDiagnostics.info(TAG, "Gateway listening on ${environment.loopbackBase()} ($channelCount channels)")
                     epgManager.schedulePeriodicRefresh { daddyLiveClient.channels }
                     app.supplementSource.schedulePeriodicRefresh { daddyLiveClient.channels }
                     scheduleDeferredBootChannelRefresh(skipReadyBanner)
                 } catch (exc: Exception) {
-                    Log.e(TAG, "Failed to start gateway on port ${environment.port}", exc)
+                    GatewayDiagnostics.error(TAG, "Failed to start gateway on port ${environment.port}", exc)
                     gatewayServer = null
                     environment.serverRunning = false
                     val message = exc.message ?: getString(R.string.notification_error_unknown)
