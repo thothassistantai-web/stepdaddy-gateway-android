@@ -25,6 +25,7 @@ object GatewayLogRing {
     private const val MAX_LINES = 800
     private val buffer = ArrayDeque<GatewayLogLine>(MAX_LINES)
     private val listeners = CopyOnWriteArrayList<(List<GatewayLogLine>) -> Unit>()
+    private var lastAppendKey: String? = null
 
     val GATEWAY_TAGS = setOf(
         "ServerService",
@@ -44,6 +45,9 @@ object GatewayLogRing {
         if (normalizedLevel != "ERROR" && normalizedLevel != "WARN" && normalizedLevel != "W") {
             return
         }
+        val dedupeKey = "$normalizedLevel/$tag:$message"
+        if (dedupeKey == lastAppendKey) return
+        lastAppendKey = dedupeKey
         val line = GatewayLogLine(
             timestampMs = System.currentTimeMillis(),
             level = if (normalizedLevel == "W") "WARN" else normalizedLevel,

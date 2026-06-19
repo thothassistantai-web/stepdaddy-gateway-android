@@ -50,6 +50,7 @@ class FullscreenPlayerController(
     fun attach() {
         if (player != null) return
         errorHandler = PlayerErrorHandler(
+            context = context,
             environment = environment,
             scope = scope,
             onErrorChanged = { state ->
@@ -200,7 +201,7 @@ class FullscreenPlayerController(
         skipPreflight: Boolean = false,
     ) {
         val exo = player ?: return
-        errorHandler.beginTune(channel, skipPreflight = skipPreflight) {
+        errorHandler.beginTune(channel, autoplay = autoplay, skipPreflight = skipPreflight) {
             PlayerStreamSource.tune(exo, environment, channel, autoplay)
         }
     }

@@ -1,17 +1,21 @@
 package com.nova.stepdaddylivehd.gateway.ui.player
 
+import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
 import androidx.media3.exoplayer.ExoPlayer
 import com.nova.stepdaddylivehd.gateway.GatewayEnvironment
+import com.nova.stepdaddylivehd.gateway.GatewayHealthGate
 import com.nova.stepdaddylivehd.gateway.ui.dashboard.GatewayDiagnostics
 import com.nova.stepdaddylivehd.gateway.ui.dashboard.TuneChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.net.ConnectException
 
 class PlayerErrorHandler(
+    private val context: Context,
     private val environment: GatewayEnvironment,
     private val scope: CoroutineScope,
     private val onErrorChanged: (PlayerErrorState?) -> Unit,
@@ -21,6 +25,8 @@ class PlayerErrorHandler(
     private var autoRetryCount = 0
     private var lastChannel: TuneChannel? = null
     private var pendingManifestHint: String? = null
+    private var lastLoggedKey: String? = null
+    private var lastLoggedAtMs = 0L
 
     private val autoRetryRunnable = Runnable {
         val channel = lastChannel ?: return@Runnable
@@ -53,16 +59,36 @@ class PlayerErrorHandler(
         playerListener = null
     }
 
-    fun beginTune(channel: TuneChannel, skipPreflight: Boolean = false, onReady: () -> Unit) {
+    fun beginTune(
+        channel: TuneChannel,
+        autoplay: Boolean,
+        skipPreflight: Boolean = false,
+        onReady: () -> Unit,
+    ) {
         lastChannel = channel
         pendingManifestHint = null
         mainHandler.removeCallbacks(autoRetryRunnable)
+        if (!autoplay) {
+            clearError(resetAutoRetry = false)
+            return
+        }
         if (skipPreflight) {
             clearError(resetAutoRetry = false)
             onReady()
             return
         }
         scope.launch {
+            if (!GatewayHealthGate.awaitHealthy(context.applicationContext)) {
+                mainHandler.post {
+                    val offline = PlayerErrorMapper.fromPreflight(
+                        httpStatus = null,
+                        body = "",
+                        throwable = ConnectException("Failed to connect to /127.0.0.1:${environment.port}"),
+                    )
+                    showError(offline, channel)
+                }
+                return@launch
+            }
             val preflightError = runCatching {
                 PlayerManifestPreflight.check(environment, channel)
             }.getOrNull()
@@ -70,7 +96,6 @@ class PlayerErrorHandler(
                 if (preflightError != null) {
                     pendingManifestHint = preflightError.detail
                     showError(preflightError, channel)
-                    scheduleAutoRetryIfNeeded(preflightError)
                 } else {
                     clearError(resetAutoRetry = false)
                     onReady()
@@ -98,10 +123,14 @@ class PlayerErrorHandler(
 
     private fun showError(state: PlayerErrorState, channel: TuneChannel?) {
         val channelLabel = channel?.let { "${it.number} ${it.name}" } ?: "unknown"
-        GatewayDiagnostics.error(
-            TAG,
-            "[$channelLabel] ${state.code}: ${state.detail}",
-        )
+        val logLine = "[$channelLabel] ${state.code}: ${state.detail}"
+        val now = System.currentTimeMillis()
+        val dedupeKey = logLine
+        if (dedupeKey != lastLoggedKey || now - lastLoggedAtMs >= LOG_DEDUPE_MS) {
+            lastLoggedKey = dedupeKey
+            lastLoggedAtMs = now
+            GatewayDiagnostics.error(TAG, logLine)
+        }
         onErrorChanged(state)
         scheduleAutoRetryIfNeeded(state)
     }
@@ -117,5 +146,6 @@ class PlayerErrorHandler(
         private const val TAG = "PlayerError"
         private const val AUTO_RETRY_DELAY_MS = 3_000L
         private const val MAX_AUTO_RETRIES = 2
+        private const val LOG_DEDUPE_MS = 5_000L
     }
 }

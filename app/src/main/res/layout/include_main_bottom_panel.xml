@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/bottomPanelRoot"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
     android:paddingTop="12dp">
 
@@ -33,7 +33,7 @@
             android:layout_height="36dp"
             android:layout_marginEnd="6dp"
             android:layout_weight="1"
-            android:nextFocusDown="@id/buttonRefreshLogs"
+            android:nextFocusDown="@id/scrollErrorLogs"
             android:nextFocusLeft="@id/tabMessages"
             android:nextFocusRight="@id/tabHistory"
             android:text="@string/bottom_panel_tab_logs"
@@ -67,26 +67,28 @@
     <FrameLayout
         android:id="@+id/bottomPanelContent"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="10dp"
-        android:layout_weight="1">
+        android:layout_height="@dimen/bottom_panel_content_height"
+        android:layout_marginTop="10dp">
 
         <ScrollView
             android:id="@+id/contentMessages"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:descendantFocusability="beforeDescendants"
             android:fillViewport="true"
+            android:focusable="true"
+            android:nextFocusUp="@id/tabMessages"
             android:scrollbars="vertical">
 
             <TextView
                 android:id="@+id/textMessages"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:focusable="false"
                 android:fontFamily="monospace"
                 android:lineSpacingExtra="2dp"
                 android:padding="4dp"
                 android:textColor="@color/on_background_muted"
-                android:textIsSelectable="true"
                 android:textSize="11sp" />
         </ScrollView>
 
@@ -98,20 +100,25 @@
             android:visibility="gone">
 
             <ScrollView
+                android:id="@+id/scrollErrorLogs"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
+                android:descendantFocusability="beforeDescendants"
+                android:focusable="true"
+                android:nextFocusDown="@id/buttonRefreshLogs"
+                android:nextFocusUp="@id/tabErrorLogs"
                 android:scrollbars="vertical">
 
                 <TextView
                     android:id="@+id/textErrorLogs"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:focusable="false"
                     android:fontFamily="monospace"
                     android:lineSpacingExtra="2dp"
                     android:padding="4dp"
                     android:textColor="@color/status_error"
-                    android:textIsSelectable="true"
                     android:textSize="11sp" />
             </ScrollView>
 
@@ -122,7 +129,7 @@
                 android:layout_height="36dp"
                 android:layout_gravity="end"
                 android:layout_marginTop="8dp"
-                android:nextFocusUp="@id/tabErrorLogs"
+                android:nextFocusUp="@id/scrollErrorLogs"
                 android:text="@string/bottom_panel_refresh_logs"
                 app:icon="@drawable/ic_restart" />
         </LinearLayout>
@@ -139,6 +146,7 @@
                 android:layout_height="match_parent"
                 android:clipToPadding="false"
                 android:descendantFocusability="afterDescendants"
+                android:nextFocusUp="@id/tabHistory"
                 android:padding="4dp"
                 android:scrollbars="vertical" />
 

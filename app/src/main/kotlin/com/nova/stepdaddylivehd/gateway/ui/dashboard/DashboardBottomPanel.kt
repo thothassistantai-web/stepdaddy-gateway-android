@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.nova.stepdaddylivehd.gateway.GatewayEnvironment
+import com.nova.stepdaddylivehd.gateway.GatewayHealthGate
 import com.nova.stepdaddylivehd.gateway.R
 import com.nova.stepdaddylivehd.gateway.ui.PlayerFullscreenActivity
 import com.nova.stepdaddylivehd.gateway.ui.player.PlayerErrorOverlay
@@ -40,6 +41,7 @@ class DashboardBottomPanel(
     private val textMessages: TextView = root.findViewById(R.id.textMessages)
     private val scrollMessages: ScrollView = root.findViewById(R.id.contentMessages)
     private val textErrorLogs: TextView = root.findViewById(R.id.textErrorLogs)
+    private val scrollErrorLogs: ScrollView = root.findViewById(R.id.scrollErrorLogs)
     private val buttonRefreshLogs: MaterialButton = root.findViewById(R.id.buttonRefreshLogs)
     private val recyclerHistory: RecyclerView = root.findViewById(R.id.recyclerHistory)
     private val textHistoryEmpty: TextView = root.findViewById(R.id.textHistoryEmpty)
@@ -171,9 +173,12 @@ class DashboardBottomPanel(
     }
 
     /**
-     * Activity-level key dispatch: hardware channel keys on Player tab, and control-mode D-pad.
+     * Activity-level key dispatch: Back releases log/history focus; Player tab channel keys.
      */
     fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN && event.keyCode == KeyEvent.KEYCODE_BACK) {
+            if (releaseFocusFromBrowseContent()) return true
+        }
         if (activeTab != Tab.PLAYER || event.action != KeyEvent.ACTION_DOWN) return false
         when (event.keyCode) {
             KeyEvent.KEYCODE_CHANNEL_UP -> {
@@ -192,6 +197,7 @@ class DashboardBottomPanel(
     private fun loadChannelsIfNeeded() {
         if (channelsLoaded) return
         scope.launch {
+            if (!GatewayHealthGate.awaitHealthy(activity)) return@launch
             val channels = ChannelListProvider.loadSorted(environment)
             if (channels.isEmpty()) return@launch
             channelsLoaded = true
@@ -300,6 +306,7 @@ class DashboardBottomPanel(
         } else {
             lines.joinToString("\n") { it.formatLine() }
         }
+        scrollErrorLogs.post { scrollErrorLogs.fullScroll(View.FOCUS_DOWN) }
     }
 
     private fun renderHistory(entries: List<ChannelHistoryEntry>) {
@@ -320,9 +327,47 @@ class DashboardBottomPanel(
         tabPlayer.nextFocusLeftId = tabHistory.id
 
         tabMessages.nextFocusDownId = R.id.contentMessages
-        tabErrorLogs.nextFocusDownId = R.id.buttonRefreshLogs
+        tabErrorLogs.nextFocusDownId = R.id.scrollErrorLogs
         tabHistory.nextFocusDownId = R.id.recyclerHistory
         tabPlayer.nextFocusDownId = R.id.buttonPlayerChDown
+
+        scrollMessages.nextFocusUpId = R.id.tabMessages
+        scrollErrorLogs.nextFocusUpId = R.id.tabErrorLogs
+        recyclerHistory.nextFocusUpId = R.id.tabHistory
+    }
+
+    private fun releaseFocusFromBrowseContent(): Boolean {
+        if (!isFocusInBrowseContent()) return false
+        activity.currentFocus?.clearFocus()
+        activeTabButton().requestFocus()
+        return true
+    }
+
+    private fun isFocusInBrowseContent(): Boolean {
+        val focused = activity.currentFocus ?: return false
+        return when (activeTab) {
+            Tab.MESSAGES -> isDescendantOf(contentMessages, focused)
+            Tab.ERROR_LOGS -> isDescendantOf(contentErrorLogs, focused)
+            Tab.HISTORY -> isDescendantOf(contentHistory, focused)
+            Tab.PLAYER -> false
+        }
+    }
+
+    private fun isDescendantOf(container: View, focused: View): Boolean {
+        if (focused === container) return true
+        var current: View? = focused
+        while (current != null) {
+            if (current === container) return true
+            current = current.parent as? View
+        }
+        return false
+    }
+
+    private fun activeTabButton(): MaterialButton = when (activeTab) {
+        Tab.MESSAGES -> tabMessages
+        Tab.ERROR_LOGS -> tabErrorLogs
+        Tab.HISTORY -> tabHistory
+        Tab.PLAYER -> tabPlayer
     }
 
     private enum class Tab {

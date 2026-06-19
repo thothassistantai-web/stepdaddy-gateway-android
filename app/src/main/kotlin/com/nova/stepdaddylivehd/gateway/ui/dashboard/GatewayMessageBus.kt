@@ -24,9 +24,13 @@ object GatewayMessageBus {
     private const val MAX_MESSAGES = 500
     private val buffer = ArrayDeque<GatewayMessage>(MAX_MESSAGES)
     private val listeners = CopyOnWriteArrayList<(List<GatewayMessage>) -> Unit>()
+    private var lastPostKey: String? = null
 
     @Synchronized
     fun post(text: String, level: String = "INFO") {
+        val key = "$level:$text"
+        if (key == lastPostKey) return
+        lastPostKey = key
         append(GatewayMessage(System.currentTimeMillis(), level, text))
     }
 

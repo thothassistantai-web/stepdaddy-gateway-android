@@ -3,6 +3,7 @@ package com.nova.stepdaddylivehd.gateway.ui.dashboard
 import android.content.Context
 import android.view.KeyEvent
 import android.view.View
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.nova.stepdaddylivehd.gateway.GatewayEnvironment
@@ -45,6 +46,7 @@ class CompactPlayerController(
     fun attach() {
         if (player != null) return
         errorHandler = PlayerErrorHandler(
+            context = context,
             environment = environment,
             scope = scope,
             onErrorChanged = { state ->
@@ -115,6 +117,14 @@ class CompactPlayerController(
 
     fun togglePlayPause() {
         val exo = player ?: return
+        val channel = currentChannel
+        if (!exo.isPlaying &&
+            (exo.playbackState == Player.STATE_IDLE || exo.mediaItemCount == 0) &&
+            channel != null
+        ) {
+            playChannel(channel, autoplay = true)
+            return
+        }
         if (exo.isPlaying) {
             exo.pause()
         } else {
@@ -194,7 +204,7 @@ class CompactPlayerController(
         skipPreflight: Boolean = false,
     ) {
         val exo = player ?: return
-        errorHandler.beginTune(channel, skipPreflight = skipPreflight) {
+        errorHandler.beginTune(channel, autoplay = autoplay, skipPreflight = skipPreflight) {
             PlayerStreamSource.tune(exo, environment, channel, autoplay)
         }
     }
