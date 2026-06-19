@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Version** | 1.0.0 (`versionCode` 2) |
+| **Version** | 1.0.1 (`versionCode` 4) |
 | **Package** | `com.thothassistant.stepdaddy.gateway` |
 | **License** | [MIT](LICENSE) — see [LEGAL.md](LEGAL.md) / [DISCLAIMER.md](DISCLAIMER.md) |
 | **Upstream parity** | [stepdaddy-livehd](https://github.com/thothassistantai-web/stepdaddy-livehd) (Linux/web gateway) |
@@ -33,6 +33,18 @@ StepDaddy Gateway runs a small HTTP server on your Android TV device. Point **Ti
 **Problems?** → [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) · [GitHub Issues](https://github.com/thothassistantai-web/stepdaddy-gateway-android/issues)
 
 **Privacy:** [PRIVACY.md](PRIVACY.md)
+
+### Screenshots
+
+Captured on ONN Android TV (1080p). [More capture notes](docs/SCREENSHOT-CHECKLIST.md).
+
+| Dashboard | Install apps | Settings |
+|-----------|--------------|----------|
+| ![Dashboard](docs/screenshots/01-dashboard.png) | ![Install apps](docs/screenshots/02-install-apps.png) | ![Settings](docs/screenshots/03-settings.png) |
+
+| Player tab | QR remote setup |
+|------------|-----------------|
+| ![Player tab](docs/screenshots/04-player-tab.png) | ![QR dialog](docs/screenshots/05-qr-dialog.png) |
 
 ---
 
@@ -141,8 +153,3 @@ stepdaddy-android/
 |----------|------------|
 | Linux / web gateway | [stepdaddy-livehd](https://github.com/thothassistantai-web/stepdaddy-livehd) |
 | Android TV remote (Linux) | [android-tv-connect](https://github.com/thothassistantai-web/android-tv-connect) |
-
-## Security
-
-- Copy [`.env.example`](.env.example) for local tokens — **never commit** `GH_TOKEN`, keystores, or `.env`.
-- If a GitHub PAT is exposed, revoke and rotate it in GitHub → Developer settings immediately.

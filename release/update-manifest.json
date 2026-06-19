@@ -1,7 +1,7 @@
 {
-  "versionCode": 2,
-  "versionName": "1.0.0",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.0/stepdaddy-gateway-1.0.0.apk",
-  "releaseNotes": "See CHANGELOG.md",
+  "versionCode": 4,
+  "versionName": "1.0.1",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.1/stepdaddy-gateway-1.0.1-debug.apk",
+  "releaseNotes": "Install Apps TV navigation, player tab fixes, settings manifest override. See CHANGELOG.md.",
   "mandatory": false
 }

@@ -9,7 +9,7 @@ Assets for Google Play Console, GitHub README, and TV store listings.
 | App icon | 512×512 | PNG 32-bit | [ ] Export from `@mipmap/ic_launcher` |
 | Feature graphic | 1024×500 | PNG/JPG | [ ] Create — dashboard + logo composite |
 | Phone screenshots | 2–8, min 320px short side | PNG/JPG | [ ] Optional (phone layout) |
-| **TV screenshots** | 1920×1080 or 1280×720 | PNG/JPG | [ ] **Required for Android TV** |
+| **TV screenshots** | 1920×1080 or 1280×720 | PNG/JPG | [x] Captured in `docs/screenshots/` |
 | TV banner | 1280×720 | PNG | [ ] From `@drawable/tv_banner` |
 
 ## Recommended TV screenshots (capture order)
@@ -18,14 +18,16 @@ Capture on ONN stick or emulator at **1080p** via `adb exec-out screencap -p`.
 
 | # | Screen | What to show | File name suggestion |
 |---|--------|--------------|----------------------|
-| 1 | Main dashboard | Server running, channel count, playlist card | `01-dashboard-running.png` |
-| 2 | Startup overlay | Home-screen banner "Ready for TiviMate" | `02-boot-overlay.png` |
-| 3 | Settings | Playlist/EPG URLs with copy buttons | `03-settings-urls.png` |
-| 4 | QR dialog | Remote setup QR codes | `04-qr-codes.png` |
-| 5 | Channel browser | Sidebar + channel list | `05-channel-browser.png` |
-| 6 | Fullscreen player | Live playback (generic channel) | `06-player.png` |
-| 7 | EPG card | EPG status / programme count | `07-epg-status.png` |
-| 8 | Updates | In-app update screen (optional) | `08-updates.png` |
+| 1 | Main dashboard | Server running, channel count, playlist card | `01-dashboard.png` |
+| 2 | Install apps | TV catalog with D-pad focus | `02-install-apps.png` |
+| 3 | Settings | Updates, toggles, version info | `03-settings.png` |
+| 4 | Player tab | Embedded player on dashboard | `04-player-tab.png` |
+| 5 | QR dialog | Remote setup QR codes | `05-qr-dialog.png` |
+| 6 | Startup overlay | Home-screen banner "Ready for TiviMate" | `02-boot-overlay.png` |
+| 7 | Channel browser | Sidebar + channel list | `05-channel-browser.png` |
+| 8 | Fullscreen player | Live playback (generic channel) | `06-player.png` |
+| 9 | EPG card | EPG status / programme count | `07-epg-status.png` |
+| 10 | Updates | In-app update screen (optional) | `08-updates.png` |
 
 ## Capture commands
 
@@ -60,7 +62,7 @@ adb -s emulator-5554 exec-out screencap -p > docs/store-assets/emulator-dashboar
 
 ## GitHub README
 
-Reuse TV screenshots #1, #3, #5 at max width 800px in `README.md` after capture.
+TV screenshots #1–#5 are committed under `docs/screenshots/` and embedded in `README.md` (max width follows GitHub default).
 
 ## Pre-submission checklist
 
@@ -74,13 +76,6 @@ Reuse TV screenshots #1, #3, #5 at max width 800px in `README.md` after capture.
 ## Storage location
 
 ```
-stepdaddy-android/docs/store-assets/   ← gitignore large PNGs or use Git LFS
+stepdaddy-android/docs/screenshots/   ← README gallery (committed)
+stepdaddy-android/docs/store-assets/  ← optional Play Console extras (gitignored)
 ```
-
-Add to `.gitignore` if binaries should not be committed:
-
-```
-docs/store-assets/*.png
-```
-
-Keep this checklist and a `README.md` in `store-assets/` describing captures.

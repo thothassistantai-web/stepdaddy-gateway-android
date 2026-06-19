@@ -100,7 +100,17 @@ Start with countries where you have confirmed legal clarity for personal use.
 
 ## Screenshots
 
-See [docs/SCREENSHOT-CHECKLIST.md](docs/SCREENSHOT-CHECKLIST.md).
+Committed for README and Play Console reference:
+
+| File | Screen |
+|------|--------|
+| [docs/screenshots/01-dashboard.png](docs/screenshots/01-dashboard.png) | Main dashboard |
+| [docs/screenshots/02-install-apps.png](docs/screenshots/02-install-apps.png) | Install apps catalog |
+| [docs/screenshots/03-settings.png](docs/screenshots/03-settings.png) | Gateway settings |
+| [docs/screenshots/04-player-tab.png](docs/screenshots/04-player-tab.png) | Embedded player tab |
+| [docs/screenshots/05-qr-dialog.png](docs/screenshots/05-qr-dialog.png) | QR remote setup |
+
+See [docs/SCREENSHOT-CHECKLIST.md](docs/SCREENSHOT-CHECKLIST.md) for capture commands and remaining Play assets.
 
 ## Release track strategy
 
