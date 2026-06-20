@@ -120,6 +120,42 @@ class GatewayNetworkGuardTest {
     }
 
     @Test
+    fun `ipv4 mapped ipv6 loopback allowed in all modes`() {
+        NetworkAccessMode.entries.forEach { mode ->
+            val result = GatewayNetworkGuard.isAllowed(
+                clientIp = "::ffff:127.0.0.1",
+                mode = mode,
+                hasValidToken = false,
+                deviceLanIp = deviceLan,
+            )
+            assertTrue("::ffff:127.0.0.1 should be loopback in $mode", result.allowed)
+        }
+    }
+
+    @Test
+    fun `resolveClientIp normalizes ipv4 mapped loopback`() {
+        val resolved = GatewayNetworkGuard.resolveClientIp(
+            remoteHost = "::ffff:127.0.0.1",
+            xForwardedFor = null,
+            mode = NetworkAccessMode.DEFAULT,
+        )
+        assertEquals("127.0.0.1", resolved)
+    }
+
+    @Test
+    fun `bracketed ipv6 loopback with port is allowed in all modes`() {
+        NetworkAccessMode.entries.forEach { mode ->
+            val result = GatewayNetworkGuard.isAllowed(
+                clientIp = "[::1]:8080",
+                mode = mode,
+                hasValidToken = false,
+                deviceLanIp = deviceLan,
+            )
+            assertTrue("[::1]:8080 should be loopback in $mode", result.allowed)
+        }
+    }
+
+    @Test
     fun `bind host is loopback for default mode`() {
         assertEquals("127.0.0.1", GatewayNetworkGuard.bindHost(NetworkAccessMode.DEFAULT))
         assertEquals("0.0.0.0", GatewayNetworkGuard.bindHost(NetworkAccessMode.LOCAL))

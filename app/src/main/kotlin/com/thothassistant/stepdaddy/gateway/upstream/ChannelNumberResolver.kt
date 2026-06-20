@@ -269,6 +269,7 @@ object ChannelNumberResolver {
     fun supplementGroup(supplement: SupplementChannel): String =
         when {
             supplement.id.startsWith("sport:") -> GroupTitleResolver.SPORTS
+            supplement.id.startsWith("ntv:") -> supplement.groupTitle
             supplement.id.startsWith("iptv:") -> supplement.groupTitle
             else -> GroupTitleResolver.ENTERTAINMENT
         }

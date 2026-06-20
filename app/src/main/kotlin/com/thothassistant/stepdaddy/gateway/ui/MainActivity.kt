@@ -508,8 +508,10 @@ class MainActivity : AppCompatActivity() {
         }
         updateServerToggleButton(active)
         views.buttonRestart.isEnabled = active
-        updateSummaryStatus(running, active, null)
-        updateFooterOnline(running)
+        updateSummaryStatus(false, active, null)
+        if (!active) {
+            updateFooterOnline(false)
+        }
     }
 
     private fun updateServerToggleButton(active: Boolean) {
@@ -532,8 +534,13 @@ class MainActivity : AppCompatActivity() {
             runCatching { app.awaitComponents() }
             val epgManager = app.epgManager
             views.textEpgStatus.text = when {
-                epgManager.meta.state == "building" -> getString(R.string.status_epg_building)
+                epgManager.isBuilding() -> getString(R.string.status_epg_building)
                 epgManager.epgReady() -> getString(R.string.status_epg_ready, epgManager.programmeCount())
+                epgManager.meta.state == "error" -> getString(
+                    R.string.status_epg_error,
+                    epgManager.meta.lastError ?: "unknown",
+                )
+                epgManager.needsBuild() -> getString(R.string.status_epg_building)
                 else -> getString(R.string.status_epg_pending)
             }
         }
@@ -562,6 +569,7 @@ class MainActivity : AppCompatActivity() {
                 if (active) {
                     val live = statusMonitor.fetch()
                     renderDashboard(live)
+                    updateEpgStatus()
                 } else {
                     renderDashboard(null)
                 }
@@ -688,6 +696,7 @@ class MainActivity : AppCompatActivity() {
             if (supplement.sidecarEnabled) count++
             if (supplement.sportsEnabled) count++
             if (supplement.iptvOrgEnabled) count++
+            if (supplement.ntvCxEnabled) count++
         } else if (health.supplementEnabled) {
             count++
         }

@@ -1,38 +1,42 @@
 package com.thothassistant.stepdaddy.gateway
 
 import android.util.Log
-import java.net.HttpURLConnection
-import java.net.URL
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.util.concurrent.TimeUnit
 
 object GatewayHealth {
     private const val TAG = "GatewayHealth"
-    private const val CONNECT_TIMEOUT_MS = 2_000
-    private const val READ_TIMEOUT_MS = 2_000
+    private const val CONNECT_TIMEOUT_SEC = 5L
+    private const val READ_TIMEOUT_SEC = 8L
 
-    /** True when loopback /health returns JSON with "ok":true. */
+    private val http = OkHttpClient.Builder()
+        .connectTimeout(CONNECT_TIMEOUT_SEC, TimeUnit.SECONDS)
+        .readTimeout(READ_TIMEOUT_SEC, TimeUnit.SECONDS)
+        .build()
+
+    /** True when loopback /health returns JSON with "ok":true. Safe on any thread (OkHttp). */
     fun probeLoopback(context: android.content.Context): Boolean {
         val environment = (context.applicationContext as GatewayApp).gatewayEnvironment
         val healthUrl = "${environment.loopbackBase()}/health"
         return runCatching {
-            val connection = (URL(healthUrl).openConnection() as HttpURLConnection).apply {
-                connectTimeout = CONNECT_TIMEOUT_MS
-                readTimeout = READ_TIMEOUT_MS
-                requestMethod = "GET"
-                useCaches = false
-            }
-            try {
-                val code = connection.responseCode
-                if (code != HttpURLConnection.HTTP_OK) {
+            val request = Request.Builder().url(healthUrl).get().build()
+            http.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
                     return false
                 }
-                connection.inputStream.bufferedReader().use { reader ->
-                    reader.readText().contains("\"ok\"")
-                }
-            } finally {
-                connection.disconnect()
+                response.body?.string().orEmpty().contains("\"ok\"")
             }
         }.onFailure { exc ->
             Log.d(TAG, "Health probe failed ($healthUrl): ${exc.message}")
         }.getOrDefault(false)
     }
+
+    /** Suspend variant for coroutine callers — always probes on [Dispatchers.IO]. */
+    suspend fun probeLoopbackAsync(context: android.content.Context): Boolean =
+        withContext(Dispatchers.IO) {
+            probeLoopback(context)
+        }
 }

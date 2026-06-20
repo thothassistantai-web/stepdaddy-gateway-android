@@ -65,6 +65,10 @@ data class SupplementStatus(
     val blockedTheTvApp: Int = 0,
     val blockedTvPass: Int = 0,
     val blockedTokenProxy: Int = 0,
+    val ntvCxEnabled: Boolean = false,
+    val ntvCxChannels: Int = 0,
+    val ntvCxMergeMode: String = "ALL",
+    val ntvCxResolveProbeOk: Boolean = false,
 )
 
 @Serializable
@@ -73,6 +77,7 @@ data class ProviderStats(
     val moveOnJoy: Int = 0,
     val iptvOrg: Int = 0,
     val sports: Int = 0,
+    val ntvCx: Int = 0,
     val adult: Int = 0,
     val total: Int = 0,
 )

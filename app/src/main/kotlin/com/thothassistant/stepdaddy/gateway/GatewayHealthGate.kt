@@ -2,7 +2,9 @@ package com.thothassistant.stepdaddy.gateway
 
 import android.content.Context
 import android.os.SystemClock
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 object GatewayHealthGate {
     private const val DEFAULT_MAX_WAIT_MS = 30_000L
@@ -13,12 +15,17 @@ object GatewayHealthGate {
         maxWaitMs: Long = DEFAULT_MAX_WAIT_MS,
         pollMs: Long = DEFAULT_POLL_MS,
     ): Boolean {
-        if (GatewayStartHelper.isGatewayHealthy(context)) return true
+        if (probeHealthy(context)) return true
         val deadline = SystemClock.elapsedRealtime() + maxWaitMs
         while (SystemClock.elapsedRealtime() < deadline) {
             delay(pollMs)
-            if (GatewayStartHelper.isGatewayHealthy(context)) return true
+            if (probeHealthy(context)) return true
         }
-        return GatewayStartHelper.isGatewayHealthy(context)
+        return probeHealthy(context)
     }
+
+    private suspend fun probeHealthy(context: Context): Boolean =
+        withContext(Dispatchers.IO) {
+            GatewayStartHelper.isGatewayHealthy(context)
+        }
 }

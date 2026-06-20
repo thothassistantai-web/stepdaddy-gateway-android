@@ -99,4 +99,29 @@ class PlaylistBuilderTest {
 
         assertTrue(numbers.getValue("iptv:us1") < numbers.getValue("iptv:uk1"))
     }
+
+    @Test
+    fun `ntv supplement uses gateway stream route with referer`() {
+        val supplements = listOf(
+            SupplementChannel(
+                id = "ntv:abc123",
+                name = "ESPN",
+                groupTitle = NtvCxCdnLiveConfig.GROUP_TITLE,
+                streamUrl = "",
+                providerTag = "CDN",
+                referer = NtvCxCdnLiveConfig.REFERER,
+                origin = NtvCxCdnLiveConfig.ORIGIN,
+                ntvCdnLiveKey = "ESPN|us",
+            ),
+        )
+        val playlist = PlaylistBuilder.tivimatePlaylist(
+            channels = emptyList(),
+            baseUrl = "http://127.0.0.1:3000",
+            dlhdOrigin = "https://daddylive.org",
+            supplements = supplements,
+        )
+        assertTrue(playlist.contains("http://127.0.0.1:3000/ntv-stream/abc123.m3u8"))
+        assertTrue(playlist.contains("Referer=${NtvCxCdnLiveConfig.REFERER}"))
+        assertTrue(playlist.contains("ESPN CDN"))
+    }
 }

@@ -261,6 +261,32 @@
             android:textColor="@color/on_background" />
 
         <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchSupplementNtvCx"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:minHeight="48dp"
+            android:text="@string/settings_supplement_ntv_cx"
+            android:textColor="@color/on_background" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchNtvCxSupplementOnly"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:minHeight="48dp"
+            android:text="@string/settings_ntv_cx_supplement_only"
+            android:textColor="@color/on_background" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/settings_ntv_cx_merge_hint"
+            android:textColor="@color/on_background_muted"
+            android:textSize="12sp" />
+
+        <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switchIptvOrgEpg"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

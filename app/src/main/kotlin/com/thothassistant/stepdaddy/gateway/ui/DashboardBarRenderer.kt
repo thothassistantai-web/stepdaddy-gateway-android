@@ -48,6 +48,7 @@ object DashboardBarRenderer {
             context.getString(R.string.provider_daddylive) to providers.daddylive,
             context.getString(R.string.provider_moveonjoy) to providers.moveOnJoy,
             context.getString(R.string.provider_iptv_org) to providers.iptvOrg,
+            context.getString(R.string.provider_ntv_cx) to providers.ntvCx,
             context.getString(R.string.provider_sports) to providers.sports,
             context.getString(R.string.provider_adult) to providers.adult,
         )

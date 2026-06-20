@@ -7,6 +7,20 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-06-19
+
+### Added
+
+- **ntv.cx CDN Live supplement** — optional ~450 CDN Live channels via Settings; play-time signed HLS refresh on `/ntv-stream/{id}.m3u8`
+- **ntv.cx merge mode** — default **all channels** (labeled CDN); optional **supplement only** skips names already on the main DaddyLive list
+
+### Fixed
+
+- Player gateway preflight: use OkHttp loopback `/health` probe (matches dashboard) instead of `HttpURLConnection` that failed on the main thread (`PLY-NO_GATEWAY`)
+- Dashboard footer no longer shows stale "Online" from persisted `serverRunning` before live `/health` poll
+- EPG: retry when first build produces 0 programmes; kick build at gateway start instead of only after 45s defer
+- Network guard: recognize IPv4-mapped IPv6 loopback (`::ffff:127.0.0.1`) in all access modes
+
 ## [1.0.4] - 2026-06-19
 
 ### Fixed

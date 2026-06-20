@@ -37,7 +37,7 @@ object IptvOrgEpgConfig {
     val DEFAULT_GUIDE_URLS: Map<String, String> = emptyMap()
 
     /** Bundled asset path (see scripts/grab-iptv-org-fast-epg.sh). */
-    const val BUNDLED_MERGED_ASSET = IptvOrgEpgRepository.BUNDLED_ASSET
+    const val BUNDLED_MERGED_ASSET = IptvOrgEpgRepository.BUNDLED_ASSET_DAT
 
     /** Max bytes per guide download (merged FAST guide is typically 2–8 MB gzip). */
     const val MAX_GUIDE_BYTES = 24 * 1024 * 1024

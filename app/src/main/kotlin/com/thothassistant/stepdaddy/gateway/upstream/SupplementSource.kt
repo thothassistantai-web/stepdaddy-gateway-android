@@ -26,6 +26,9 @@ class SupplementSource(
     private val sportsResolver: TheTvAppSportsResolver = TheTvAppSportsResolver(httpClient),
     private val iptvOrgSource: IptvOrgStreamsSource = IptvOrgStreamsSource(context, httpClient),
     private val iptvOrgEpgRepository: IptvOrgEpgRepository = IptvOrgEpgRepository(context, httpClient),
+    private val ntvCxSource: NtvCxCdnLiveSource = NtvCxCdnLiveSource(
+        NtvCxCdnLiveResolver(NtvCxCdnLiveResolver.defaultClient()),
+    ),
 ) {
     data class SyncSnapshot(
         val blockedTheTvApp: Int = 0,
@@ -38,6 +41,8 @@ class SupplementSource(
         val iptvOrgPlaylistsFetched: Int = 0,
         val iptvOrgPlaylistsFailed: Int = 0,
         val iptvOrgEntriesParsed: Int = 0,
+        val ntvCxChannels: Int = 0,
+        val ntvCxResolveProbeOk: Boolean = false,
     )
 
     private val store = SupplementStore(context)
@@ -56,13 +61,18 @@ class SupplementSource(
     fun enabled(): Boolean =
         environment.supplementBaseUrl.isNotBlank() ||
             environment.supplementSportsEnabled ||
-            environment.supplementIptvOrgEnabled
+            environment.supplementIptvOrgEnabled ||
+            environment.supplementNtvCxEnabled
 
     fun sidecarEnabled(): Boolean = environment.supplementBaseUrl.isNotBlank()
 
     fun sportsEnabled(): Boolean = environment.supplementSportsEnabled
 
     fun iptvOrgEnabled(): Boolean = environment.supplementIptvOrgEnabled
+
+    fun ntvCxEnabled(): Boolean = environment.supplementNtvCxEnabled
+
+    fun ntvCxMergeMode(): NtvCxMergeMode = environment.supplementNtvCxMergeMode
 
     fun channels(): List<SupplementChannel> = cached
 
@@ -73,6 +83,11 @@ class SupplementSource(
     fun sportsCount(): Int = cached.count { it.id.startsWith("sport:") }
 
     fun iptvOrgCount(): Int = cached.count { it.id.startsWith("iptv:") }
+
+    fun ntvCxCount(): Int = cached.count { it.id.startsWith("ntv:") }
+
+    fun ntvChannel(token: String): SupplementChannel? =
+        cached.firstOrNull { it.id == "ntv:$token" }
 
     fun syncSnapshot(): SyncSnapshot = lastSync
 
@@ -139,7 +154,8 @@ class SupplementSource(
                     TAG,
                     "Supplement sync: ${supplements.size} total " +
                         "(moveonjoy=${moveOnJoyCount()}, sports=${sportsCount()}, " +
-                        "iptv-org=${iptvOrgCount()}, blocked_thetvapp=${lastSync.blockedTheTvApp})",
+                        "iptv-org=${iptvOrgCount()}, ntv.cx=${ntvCxCount()}, " +
+                        "blocked_thetvapp=${lastSync.blockedTheTvApp})",
                 )
                 onRefreshComplete?.invoke()
             } catch (exc: Exception) {
@@ -201,6 +217,21 @@ class SupplementSource(
             emptyList<SupplementChannel>() to IptvOrgStreamsSource.FetchStats()
         }
 
+        val (ntvCx, ntvStats) = if (ntvCxEnabled()) {
+            runCatching {
+                ntvCxSource.fetchChannels(
+                    daddyChannels,
+                    environment.supplementNtvCxMergeMode,
+                )
+            }
+                .getOrElse { exc ->
+                    Log.w(TAG, "ntv.cx CDN Live fetch failed", exc)
+                    emptyList<SupplementChannel>() to NtvCxCdnLiveResolver.FetchStats()
+                }
+        } else {
+            emptyList<SupplementChannel>() to NtvCxCdnLiveResolver.FetchStats()
+        }
+
         if (iptvOrgEnabled() && environment.iptvOrgEpgEnabled) {
             runCatching {
                 iptvOrgEpgRepository.refresh(
@@ -219,9 +250,11 @@ class SupplementSource(
             iptvOrgPlaylistsFetched = iptvStats.playlistsFetched,
             iptvOrgPlaylistsFailed = iptvStats.playlistsFailed,
             iptvOrgEntriesParsed = iptvStats.entriesParsed,
+            ntvCxChannels = ntvCx.size,
+            ntvCxResolveProbeOk = ntvStats.resolveProbeOk,
         )
 
-        return sidecar + sports + iptvOrg
+        return sidecar + sports + iptvOrg + ntvCx
     }
 
     private fun downloadEpg(base: String) {

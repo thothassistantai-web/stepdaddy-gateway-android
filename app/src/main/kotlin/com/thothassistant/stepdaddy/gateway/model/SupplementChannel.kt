@@ -17,4 +17,6 @@ data class SupplementChannel(
     /** TiviMate pipe Referer= when set (sports embed CDN, MoveOnJoy, etc.). */
     val referer: String? = null,
     val origin: String? = null,
+    /** Play-time resolve key for ntv.cx CDN Live (`channelName|regionCode`). */
+    val ntvCdnLiveKey: String? = null,
 )

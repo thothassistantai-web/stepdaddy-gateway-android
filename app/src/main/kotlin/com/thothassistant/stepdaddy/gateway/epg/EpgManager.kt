@@ -30,6 +30,11 @@ class EpgManager(
   fun epgReady(): Boolean =
       store.servedXml.exists() && store.meta.programmeCount > 0 && store.meta.builtAtMs > 0L
 
+  fun isBuilding(): Boolean = buildInFlight || store.meta.state == "building"
+
+  fun needsBuild(): Boolean =
+      !epgReady() && (store.meta.programmeCount <= 0 || store.meta.state != "ready" || store.isStale())
+
   fun programmeCount(): Int = store.meta.programmeCount
 
   fun ageSeconds(): Long? = store.ageSeconds()
@@ -37,7 +42,8 @@ class EpgManager(
   fun scheduleRefresh(channels: List<Channel>, force: Boolean = false) {
     if (channels.isEmpty()) return
     if (buildInFlight) return
-    if (!force && !store.isStale() && store.servedXml.exists()) return
+    if (!force && epgReady()) return
+    if (!force && !store.isStale() && store.servedXml.exists() && store.meta.programmeCount > 0) return
     scope.launch {
       refresh(channels, force = force)
     }
@@ -59,7 +65,8 @@ class EpgManager(
   suspend fun refresh(channels: List<Channel>, force: Boolean = false) {
     buildMutex.withLock {
       if (buildInFlight) return
-      if (!force && !store.isStale() && store.servedXml.exists()) return
+      if (!force && epgReady()) return
+      if (!force && !store.isStale() && store.servedXml.exists() && store.meta.programmeCount > 0) return
       buildInFlight = true
       store.updateState("building")
       val started = System.currentTimeMillis()
@@ -78,6 +85,15 @@ class EpgManager(
           )
         }
         val elapsed = (System.currentTimeMillis() - started) / 1000.0
+        if (result.programmeCount <= 0 && tvgIds.isNotEmpty()) {
+          runCatching { result.outputFile.delete() }
+          store.updateState(
+              "error",
+              "No programme data from feeds (${tvgIds.size} mapped ids)",
+          )
+          Log.w(TAG, "EPG build produced 0 programmes for ${tvgIds.size} tvg ids in ${elapsed}s — will retry")
+          return
+        }
         store.writeServedXmlFromFile(
             source = result.outputFile,
             programmeCount = result.programmeCount,

@@ -7,13 +7,13 @@
 #   ./scripts/grab-iptv-org-fast-epg.sh /path/to/output.xml.gz
 #
 # Output defaults to:
-#   app/src/main/assets/epg/iptv_org_fast_epg.xml.gz
+#   app/src/main/assets/epg/iptv_org_fast_epg.dat
 #
 # Host the same file on GitHub raw and set Gateway Settings → iptv-org EPG URL for OTA updates.
 
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-OUT="${1:-$ROOT/app/src/main/assets/epg/iptv_org_fast_epg.xml.gz}"
+OUT="${1:-$ROOT/app/src/main/assets/epg/iptv_org_fast_epg.dat}"
 WORKDIR="${TMPDIR:-/tmp}/stepdaddy-iptv-org-epg-$$"
 SITES="pluto.tv,plex.tv,xumo.tv,distro.tv"
 

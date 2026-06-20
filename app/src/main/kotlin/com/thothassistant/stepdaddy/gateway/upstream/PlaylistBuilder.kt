@@ -62,7 +62,7 @@ object PlaylistBuilder {
             rows += PlaylistRow(
                 chno = chno,
                 extinf = "#EXTINF:-1 ${supplementExtinfAttrs(supplement, base, logoResolver, chno)},${supplementDisplayTitle(supplement)}",
-                stream = supplementStreamLine(supplement),
+                stream = supplementStreamLine(supplement, base),
             )
         }
 
@@ -114,7 +114,7 @@ object PlaylistBuilder {
 
     private fun supplementDisplayTitle(supplement: SupplementChannel): String {
         val resolution = supplementResolution(supplement)
-        return if (supplement.id.startsWith("iptv:")) {
+        return         if (supplement.id.startsWith("iptv:") || supplement.id.startsWith("ntv:")) {
             ChannelTitleNormalizer.supplementDisplayTitle(
                 supplement.name,
                 resolution,
@@ -155,7 +155,16 @@ object PlaylistBuilder {
         return "$stream|User-Agent=$TIVIMATE_USER_AGENT|Referer=$origin/|Origin=$origin"
     }
 
-    private fun supplementStreamLine(supplement: SupplementChannel): String {
+    private fun supplementStreamLine(supplement: SupplementChannel, base: String): String {
+        if (supplement.id.startsWith("ntv:")) {
+            val token = supplement.id.removePrefix("ntv:")
+            val stream = "${base.trimEnd('/')}/ntv-stream/$token.m3u8"
+            val referer = supplement.referer?.trim()?.takeIf { it.isNotEmpty() }
+                ?: NtvCxCdnLiveConfig.REFERER
+            val origin = supplement.origin?.trim()?.takeIf { it.isNotEmpty() }
+                ?: NtvCxCdnLiveConfig.ORIGIN
+            return "$stream|User-Agent=$TIVIMATE_USER_AGENT|Referer=$referer|Origin=$origin"
+        }
         val referer = supplement.referer?.trim()?.takeIf { it.isNotEmpty() } ?: return supplement.streamUrl
         val origin = supplement.origin?.trim()?.takeIf { it.isNotEmpty() } ?: referer.trimEnd('/')
         return "${supplement.streamUrl}|User-Agent=$TIVIMATE_USER_AGENT|Referer=$referer|Origin=$origin"

@@ -160,6 +160,9 @@ class ServerService : LifecycleService() {
                     GatewayMessageBus.postReady(environment.loopbackBase())
                     GatewayDiagnostics.info(TAG, "Gateway listening on ${environment.loopbackBase()} ($channelCount channels)")
                     epgManager.schedulePeriodicRefresh { daddyLiveClient.channels }
+                    if (epgManager.needsBuild()) {
+                        epgManager.scheduleRefresh(client.channels, force = true)
+                    }
                     app.supplementSource.schedulePeriodicRefresh { daddyLiveClient.channels }
                     scheduleDeferredBootChannelRefresh(skipReadyBanner)
                 } catch (exc: Exception) {
@@ -228,7 +231,7 @@ class ServerService : LifecycleService() {
                 }
                 app.supplementSource.scheduleRefresh(daddyLiveClient.channels, force = true)
                 if (!epgManager.epgReady()) {
-                    epgManager.scheduleRefresh(daddyLiveClient.channels, force = true)
+                    epgManager.scheduleRefresh(daddyLiveClient.channels, force = epgManager.needsBuild())
                 }
             }
         }

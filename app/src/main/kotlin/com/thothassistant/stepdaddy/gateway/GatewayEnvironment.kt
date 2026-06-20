@@ -3,6 +3,7 @@ package com.thothassistant.stepdaddy.gateway
 import android.content.Context
 import android.content.SharedPreferences
 import com.thothassistant.stepdaddy.gateway.network.NetworkAccessMode
+import com.thothassistant.stepdaddy.gateway.upstream.NtvCxMergeMode
 import java.security.SecureRandom
 import java.util.Base64
 
@@ -148,6 +149,32 @@ class GatewayEnvironment(context: Context) {
         get() = prefs.getBoolean(KEY_SUPPLEMENT_IPTV_ORG_ENABLED, BuildConfig.DEFAULT_SUPPLEMENT_IPTV_ORG_ENABLED)
         set(value) {
             prefs.edit().putBoolean(KEY_SUPPLEMENT_IPTV_ORG_ENABLED, value).apply()
+        }
+
+    /**
+     * When true, merges CDN Live channels from ntv.cx (signed HLS resolved on each play).
+     */
+    var supplementNtvCxEnabled: Boolean
+        get() = prefs.getBoolean(KEY_SUPPLEMENT_NTV_CX_ENABLED, BuildConfig.DEFAULT_SUPPLEMENT_NTV_CX_ENABLED)
+        set(value) {
+            prefs.edit().putBoolean(KEY_SUPPLEMENT_NTV_CX_ENABLED, value).apply()
+        }
+
+    /**
+     * [NtvCxMergeMode.ALL] includes every CDN Live row (default).
+     * [NtvCxMergeMode.SUPPLEMENT_ONLY] skips names already on the main DaddyLive list.
+     */
+    var supplementNtvCxMergeMode: NtvCxMergeMode
+        get() {
+            val raw = prefs.getString(KEY_SUPPLEMENT_NTV_CX_MERGE_MODE, null)
+            return if (raw != null) {
+                NtvCxMergeMode.fromPref(raw)
+            } else {
+                NtvCxMergeMode.fromSupplementOnlyPref(BuildConfig.DEFAULT_SUPPLEMENT_NTV_CX_SUPPLEMENT_ONLY)
+            }
+        }
+        set(value) {
+            prefs.edit().putString(KEY_SUPPLEMENT_NTV_CX_MERGE_MODE, value.name).apply()
         }
 
     /** When true, merge iptv-org FAST provider EPG (Pluto, Plex, Xumo, Distro) for supplement channels. */
@@ -303,6 +330,8 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_EMBEDDED_SIDECAR_ENABLED = "embedded_sidecar_enabled"
         private const val KEY_SUPPLEMENT_SPORTS_ENABLED = "supplement_sports_enabled"
         private const val KEY_SUPPLEMENT_IPTV_ORG_ENABLED = "supplement_iptv_org_enabled"
+        private const val KEY_SUPPLEMENT_NTV_CX_ENABLED = "supplement_ntv_cx_enabled"
+        private const val KEY_SUPPLEMENT_NTV_CX_MERGE_MODE = "supplement_ntv_cx_merge_mode"
         private const val KEY_IPTV_ORG_EPG_ENABLED = "iptv_org_epg_enabled"
         private const val KEY_IPTV_ORG_EPG_URL = "iptv_org_epg_url"
         private const val KEY_AUTO_CHECK_UPDATES = "auto_check_updates"

@@ -8,10 +8,12 @@ import com.thothassistant.stepdaddy.gateway.network.GatewayNetworkGuard
 import com.thothassistant.stepdaddy.gateway.routes.EpgRoutes
 import com.thothassistant.stepdaddy.gateway.routes.HealthRoutes
 import com.thothassistant.stepdaddy.gateway.routes.LogoRoutes
+import com.thothassistant.stepdaddy.gateway.routes.NtvStreamRoutes
 import com.thothassistant.stepdaddy.gateway.routes.PlaylistRoutes
 import com.thothassistant.stepdaddy.gateway.routes.StreamRoutes
 import com.thothassistant.stepdaddy.gateway.routes.UiRoutes
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
+import com.thothassistant.stepdaddy.gateway.upstream.NtvCxCdnLiveResolver
 import com.thothassistant.stepdaddy.gateway.upstream.PlaylistCache
 import com.thothassistant.stepdaddy.gateway.upstream.ResportzParser
 import io.ktor.serialization.kotlinx.json.json
@@ -62,6 +64,11 @@ class GatewayServer(
         )
         playlistRoutes = routes
         val streamRoutes = StreamRoutes(environment, client)
+        val ntvStreamRoutes = NtvStreamRoutes(
+            environment,
+            supplementSource,
+            NtvCxCdnLiveResolver(NtvCxCdnLiveResolver.defaultClient()),
+        )
         val contentRoutes = ContentRoutes(environment, client, ResportzParser.defaultClient())
         val epgRoutes = EpgRoutes(client, epgManager)
 
@@ -96,6 +103,10 @@ class GatewayServer(
                 route("/tivimate-stream/{channelId}.m3u8") {
                     get { streamRoutes.tivimateStream(call, call.parameters["channelId"].orEmpty()) }
                     head { streamRoutes.tivimateStream(call, call.parameters["channelId"].orEmpty()) }
+                }
+                route("/ntv-stream/{token}.m3u8") {
+                    get { ntvStreamRoutes.tivimateStream(call, call.parameters["token"].orEmpty()) }
+                    head { ntvStreamRoutes.tivimateStream(call, call.parameters["token"].orEmpty()) }
                 }
                 route("/stream/{channelId}.m3u8") {
                     get { streamRoutes.genericStream(call, call.parameters["channelId"].orEmpty()) }

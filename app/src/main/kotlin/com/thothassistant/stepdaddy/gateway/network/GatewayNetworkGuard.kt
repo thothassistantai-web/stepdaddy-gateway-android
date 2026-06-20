@@ -14,7 +14,8 @@ object GatewayNetworkGuard {
         return normalized == "127.0.0.1" ||
             normalized == "::1" ||
             normalized == "0:0:0:0:0:0:0:1" ||
-            normalized.equals("localhost", ignoreCase = true)
+            normalized.equals("localhost", ignoreCase = true) ||
+            normalized.startsWith("127.")
     }
 
     fun resolveClientIp(remoteHost: String, xForwardedFor: String?, mode: NetworkAccessMode): String {
@@ -90,11 +91,22 @@ object GatewayNetworkGuard {
     private fun normalizeIp(raw: String): String {
         val trimmed = raw.trim()
         if (trimmed.startsWith("/")) {
-            return trimmed.removePrefix("/")
+            return normalizeIp(trimmed.removePrefix("/"))
         }
         if (trimmed.startsWith("[")) {
-            return trimmed.trim('[', ']')
+            val closingBracket = trimmed.indexOf(']')
+            if (closingBracket > 0) {
+                return normalizeIp(trimmed.substring(1, closingBracket))
+            }
         }
-        return trimmed.substringBefore(':').substringBefore('%')
+        val lower = trimmed.lowercase()
+        if (lower.startsWith("::ffff:")) {
+            return lower.removePrefix("::ffff:")
+        }
+        // Unbracketed IPv4 with optional port (host:port)
+        if (trimmed.count { it == ':' } == 1 && trimmed.substringBefore(':').contains('.')) {
+            return trimmed.substringBefore(':').substringBefore('%')
+        }
+        return trimmed.substringBefore('%')
     }
 }

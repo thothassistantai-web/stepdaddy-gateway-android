@@ -3,7 +3,9 @@ package com.thothassistant.stepdaddy.gateway.upstream
 import android.content.Context
 import android.util.Log
 import java.io.File
+import java.io.InputStream
 import java.util.concurrent.TimeUnit
+import java.util.zip.GZIPOutputStream
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
@@ -11,11 +13,20 @@ import okhttp3.Request
  * Downloads and caches iptv-org FAST-provider XMLTV guides for supplement EPG merge.
  */
 class IptvOrgEpgRepository(
-    context: Context,
+    private val assetOpener: (String) -> InputStream,
+    filesDir: File,
     private val httpClient: OkHttpClient = defaultClient(),
 ) {
-    private val appContext = context.applicationContext
-    private val dir = File(appContext.filesDir, "supplement/iptv-org-epg").also { it.mkdirs() }
+    constructor(
+        context: Context,
+        httpClient: OkHttpClient = defaultClient(),
+    ) : this(
+        assetOpener = { assetPath -> context.applicationContext.assets.open(assetPath) },
+        filesDir = context.applicationContext.filesDir,
+        httpClient = httpClient,
+    )
+
+    private val dir = File(filesDir, "supplement/iptv-org-epg").also { it.mkdirs() }
     private val mergedFile = File(dir, "fast-us.xml.gz")
     private val metaFile = File(dir, "meta.txt")
 
@@ -40,24 +51,50 @@ class IptvOrgEpgRepository(
         val ok = downloadToFile(url, mergedFile, IptvOrgEpgConfig.MAX_GUIDE_BYTES)
         if (ok) {
             metaFile.writeText(System.currentTimeMillis().toString())
-            Log.i(TAG, "iptv-org FAST EPG cached: ${mergedFile.length()} bytes")
+            logInfo("iptv-org FAST EPG cached: ${mergedFile.length()} bytes")
         } else {
-            Log.w(TAG, "iptv-org FAST EPG download failed — using bundled cache if any")
+            logWarn("iptv-org FAST EPG download failed — using bundled cache if any")
             copyBundledAssetIfNeeded()
         }
     }
 
     private fun copyBundledAssetIfNeeded() {
         if (mergedFile.exists() && mergedFile.length() > 0L) return
-        runCatching {
-            appContext.assets.open(BUNDLED_ASSET).use { input ->
-                mergedFile.outputStream().use { output -> input.copyTo(output) }
-            }
-            metaFile.writeText(System.currentTimeMillis().toString())
-            Log.i(TAG, "Copied bundled iptv-org FAST EPG (${mergedFile.length()} bytes)")
-        }.onFailure { exc ->
-            Log.d(TAG, "No bundled iptv-org FAST EPG: ${exc.message}")
+        for (assetPath in BUNDLED_ASSET_PATHS) {
+            val copied = runCatching { copyBundledAsset(assetPath) }
+                .onFailure { exc -> logDebug("Bundled EPG asset $assetPath unavailable: ${exc.message}") }
+                .getOrDefault(false)
+            if (copied) return
         }
+        logDebug("No bundled iptv-org FAST EPG in assets")
+    }
+
+    /**
+     * AAPT may store [.xml.gz] decompressed as [.xml] in the APK (~80 MB).
+     * Stream into the on-disk gzip cache to avoid OOM on low-memory STBs.
+     */
+    private fun copyBundledAsset(assetPath: String): Boolean {
+        assetOpener(assetPath).use { input ->
+            val header = ByteArray(2)
+            val read = input.read(header)
+            if (read <= 0) return false
+            val isGzip = read == 2 && header[0] == 0x1f.toByte() && header[1] == 0x8b.toByte()
+            if (isGzip) {
+                mergedFile.outputStream().use { output ->
+                    output.write(header)
+                    input.copyTo(output)
+                }
+            } else {
+                GZIPOutputStream(mergedFile.outputStream()).use { gzip ->
+                    gzip.write(header, 0, read)
+                    input.copyTo(gzip)
+                }
+            }
+        }
+        if (mergedFile.length() <= 0L) return false
+        metaFile.writeText(System.currentTimeMillis().toString())
+        logInfo("Copied bundled iptv-org FAST EPG from $assetPath (${mergedFile.length()} bytes)")
+        return true
     }
 
     private fun downloadToFile(url: String, target: File, maxBytes: Int): Boolean {
@@ -98,7 +135,11 @@ class IptvOrgEpgRepository(
 
     companion object {
         private const val TAG = "IptvOrgEpgRepo"
-        const val BUNDLED_ASSET = "epg/iptv_org_fast_epg.xml.gz"
+        /** Primary bundled guide; .dat avoids AAPT decompressing .xml.gz in the APK. */
+        const val BUNDLED_ASSET_DAT = "epg/iptv_org_fast_epg.dat"
+        const val BUNDLED_ASSET_GZ = "epg/iptv_org_fast_epg.xml.gz"
+        const val BUNDLED_ASSET_XML = "epg/iptv_org_fast_epg.xml"
+        val BUNDLED_ASSET_PATHS = listOf(BUNDLED_ASSET_DAT, BUNDLED_ASSET_GZ, BUNDLED_ASSET_XML)
 
         private fun defaultClient(): OkHttpClient =
             OkHttpClient.Builder()
@@ -107,5 +148,17 @@ class IptvOrgEpgRepository(
                 .writeTimeout(20, TimeUnit.SECONDS)
                 .callTimeout(IptvOrgEpgConfig.DOWNLOAD_TIMEOUT_MS + 10_000L, TimeUnit.MILLISECONDS)
                 .build()
+    }
+
+    private fun logDebug(message: String) {
+        runCatching { Log.d(TAG, message) }
+    }
+
+    private fun logInfo(message: String) {
+        runCatching { Log.i(TAG, message) }
+    }
+
+    private fun logWarn(message: String) {
+        runCatching { Log.w(TAG, message) }
     }
 }
