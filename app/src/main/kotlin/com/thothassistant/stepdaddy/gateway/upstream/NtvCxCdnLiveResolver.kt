@@ -14,6 +14,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.concurrent.TimeUnit
@@ -153,6 +154,7 @@ class NtvCxCdnLiveResolver(
         val builder = Request.Builder()
             .url(url)
             .header("User-Agent", SupplementConfig.USER_AGENT)
+            .header("Accept", "application/json")
             .get()
         referer?.let { builder.header("Referer", it) }
         return runCatching {
@@ -343,6 +345,7 @@ class NtvCxCdnLiveResolver(
 
         fun defaultClient(): OkHttpClient =
             OkHttpClient.Builder()
+                .protocols(listOf(Protocol.HTTP_1_1))
                 .connectTimeout(20, TimeUnit.SECONDS)
                 .readTimeout(NtvCxCdnLiveConfig.CATALOG_FETCH_TIMEOUT_MS, TimeUnit.MILLISECONDS)
                 .writeTimeout(20, TimeUnit.SECONDS)

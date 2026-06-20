@@ -7,6 +7,12 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.8] - 2026-06-20
+
+### Fixed
+
+- ntv.cx catalog fetch on Android TV: force **HTTP/1.1** and send `Accept: application/json` (avoids HTTP/2 *connection closed* from ntv.cx)
+
 ## [1.0.7] - 2026-06-20
 
 ### Fixed
