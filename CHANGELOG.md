@@ -7,6 +7,12 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-06-20
+
+### Fixed
+
+- **ntv.cx 0 on slow devices** — catalog fetch now runs in parallel with iptv-org, retries 3× with backoff, 120s read timeout, and disk cache fallback when `get-channels` times out
+
 ## [1.0.6] - 2026-06-20
 
 ### Added

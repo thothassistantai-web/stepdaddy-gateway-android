@@ -12,6 +12,11 @@ object NtvCxCdnLiveConfig {
 
     const val FETCH_TIMEOUT_MS = 65_000L
 
+    /** ntv.cx cold-cache API can exceed 65s on slow links; site allows ~65s + retries. */
+    const val CATALOG_FETCH_TIMEOUT_MS = 120_000L
+
+    const val CATALOG_FETCH_RETRIES = 3
+
     const val MAX_CHANNELS_JSON_BYTES = 12 * 1024 * 1024
 
     const val REFERER = "https://cdnlivetv.tv/"

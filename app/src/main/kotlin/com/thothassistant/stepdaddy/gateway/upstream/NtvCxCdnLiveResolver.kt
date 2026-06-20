@@ -5,6 +5,7 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.booleanOrNull
@@ -26,6 +27,7 @@ import java.util.concurrent.TimeUnit
  */
 class NtvCxCdnLiveResolver(
     private val httpClient: OkHttpClient,
+    private val catalogStore: NtvCxCatalogStore? = null,
 ) {
     data class CatalogChannel(
         val server: String,
@@ -51,12 +53,34 @@ class NtvCxCdnLiveResolver(
     )
 
     suspend fun fetchCatalog(): List<CatalogChannel> = withContext(Dispatchers.IO) {
-        val text = fetchText(
-            NtvCxCdnLiveConfig.CHANNELS_API,
-            referer = NtvCxCdnLiveConfig.PLAYER_REFERER,
-            maxBytes = NtvCxCdnLiveConfig.MAX_CHANNELS_JSON_BYTES,
-        ) ?: return@withContext emptyList()
-        parseCatalogJson(text)
+        val backoffsMs = longArrayOf(0L, 1_500L, 3_000L)
+        repeat(NtvCxCdnLiveConfig.CATALOG_FETCH_RETRIES) { attempt ->
+            if (attempt > 0) {
+                delay(backoffsMs[attempt.coerceAtMost(backoffsMs.lastIndex)])
+            }
+            val text = fetchText(
+                NtvCxCdnLiveConfig.CHANNELS_API,
+                referer = NtvCxCdnLiveConfig.PLAYER_REFERER,
+                maxBytes = NtvCxCdnLiveConfig.MAX_CHANNELS_JSON_BYTES,
+                readTimeoutMs = NtvCxCdnLiveConfig.CATALOG_FETCH_TIMEOUT_MS,
+            )
+            if (text != null) {
+                val rows = parseCatalogJson(text)
+                if (rows.isNotEmpty()) {
+                    catalogStore?.writeRaw(text)
+                    if (attempt > 0) {
+                        Log.i(TAG, "ntv.cx catalog fetched on retry ${attempt + 1} (${rows.size} rows)")
+                    }
+                    return@withContext rows
+                }
+            }
+            Log.w(TAG, "ntv.cx catalog attempt ${attempt + 1} failed or empty")
+        }
+        val cached = catalogStore?.loadCatalog().orEmpty()
+        if (cached.isEmpty()) {
+            Log.w(TAG, "ntv.cx catalog unavailable — no network rows and no disk cache")
+        }
+        cached
     }
 
     suspend fun resolveManifestUrl(key: String): String = withContext(Dispatchers.IO) {
@@ -116,14 +140,23 @@ class NtvCxCdnLiveResolver(
         url: String,
         referer: String? = null,
         maxBytes: Int = 2 * 1024 * 1024,
+        readTimeoutMs: Long = NtvCxCdnLiveConfig.FETCH_TIMEOUT_MS,
     ): String? {
+        val client = if (readTimeoutMs == NtvCxCdnLiveConfig.FETCH_TIMEOUT_MS) {
+            httpClient
+        } else {
+            httpClient.newBuilder()
+                .readTimeout(readTimeoutMs, TimeUnit.MILLISECONDS)
+                .callTimeout(readTimeoutMs + 10_000L, TimeUnit.MILLISECONDS)
+                .build()
+        }
         val builder = Request.Builder()
             .url(url)
             .header("User-Agent", SupplementConfig.USER_AGENT)
             .get()
         referer?.let { builder.header("Referer", it) }
         return runCatching {
-            httpClient.newCall(builder.build()).execute().use { response ->
+            client.newCall(builder.build()).execute().use { response ->
                 if (!response.isSuccessful) return null
                 val body = response.body ?: return null
                 val bytes = body.bytes()
@@ -310,10 +343,10 @@ class NtvCxCdnLiveResolver(
 
         fun defaultClient(): OkHttpClient =
             OkHttpClient.Builder()
-                .connectTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(NtvCxCdnLiveConfig.FETCH_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                .writeTimeout(15, TimeUnit.SECONDS)
-                .callTimeout(NtvCxCdnLiveConfig.FETCH_TIMEOUT_MS + 5_000L, TimeUnit.MILLISECONDS)
+                .connectTimeout(20, TimeUnit.SECONDS)
+                .readTimeout(NtvCxCdnLiveConfig.CATALOG_FETCH_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                .writeTimeout(20, TimeUnit.SECONDS)
+                .callTimeout(NtvCxCdnLiveConfig.CATALOG_FETCH_TIMEOUT_MS + 15_000L, TimeUnit.MILLISECONDS)
                 .build()
     }
 

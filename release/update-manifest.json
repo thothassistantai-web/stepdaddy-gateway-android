@@ -1,7 +1,7 @@
 {
-  "versionCode": 9,
-  "versionName": "1.0.6",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.6/stepdaddy-gateway-1.0.6-debug.apk",
-  "releaseNotes": "ntv.cx 24/7 supplement on by default: full Titan + Falcon catalog (~850 channels). Play-time HLS refresh, direct CDN segments, lowercase slugs.",
+  "versionCode": 10,
+  "versionName": "1.0.7",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.7/stepdaddy-gateway-1.0.7-debug.apk",
+  "releaseNotes": "Fix ntv.cx showing 0 on slow devices: parallel fetch, retries, 120s timeout, disk catalog cache.",
   "mandatory": false
 }

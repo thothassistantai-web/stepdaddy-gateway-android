@@ -9,6 +9,8 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -26,10 +28,15 @@ class SupplementSource(
     private val sportsResolver: TheTvAppSportsResolver = TheTvAppSportsResolver(httpClient),
     private val iptvOrgSource: IptvOrgStreamsSource = IptvOrgStreamsSource(context, httpClient),
     private val iptvOrgEpgRepository: IptvOrgEpgRepository = IptvOrgEpgRepository(context, httpClient),
-    private val ntvCxSource: NtvCxCdnLiveSource = NtvCxCdnLiveSource(
-        NtvCxCdnLiveResolver(NtvCxCdnLiveResolver.defaultClient()),
-    ),
 ) {
+    private val ntvCxCatalogStore = NtvCxCatalogStore(context)
+    private val ntvCxSource = NtvCxCdnLiveSource(
+        NtvCxCdnLiveResolver(
+            NtvCxCdnLiveResolver.defaultClient(),
+            catalogStore = ntvCxCatalogStore,
+        ),
+    )
+
     data class SyncSnapshot(
         val blockedTheTvApp: Int = 0,
         val blockedTvPass: Int = 0,
@@ -171,7 +178,8 @@ class SupplementSource(
         }
     }
 
-    private suspend fun mergeSupplements(daddyChannels: List<Channel>): List<SupplementChannel> {
+    private suspend fun mergeSupplements(daddyChannels: List<Channel>): List<SupplementChannel> =
+        coroutineScope {
         var filterResult = SupplementProviderFilter.Result(allowed = emptyList())
         val sidecar = if (sidecarEnabled()) {
             val base = environment.supplementBaseUrl.trimEnd('/')
@@ -207,29 +215,44 @@ class SupplementSource(
             emptyList()
         }
 
-        val (iptvOrg, iptvStats) = if (iptvOrgEnabled()) {
-            runCatching { iptvOrgSource.fetchChannels(daddyChannels) }
-                .getOrElse { exc ->
-                    Log.w(TAG, "iptv-org fetch failed", exc)
-                    emptyList<SupplementChannel>() to IptvOrgStreamsSource.FetchStats()
-                }
-        } else {
-            emptyList<SupplementChannel>() to IptvOrgStreamsSource.FetchStats()
+        val iptvOrgDeferred = async {
+            if (iptvOrgEnabled()) {
+                runCatching { iptvOrgSource.fetchChannels(daddyChannels) }
+                    .getOrElse { exc ->
+                        Log.w(TAG, "iptv-org fetch failed", exc)
+                        emptyList<SupplementChannel>() to IptvOrgStreamsSource.FetchStats()
+                    }
+            } else {
+                emptyList<SupplementChannel>() to IptvOrgStreamsSource.FetchStats()
+            }
         }
 
-        val (ntvCx, ntvStats) = if (ntvCxEnabled()) {
-            runCatching {
-                ntvCxSource.fetchChannels(
-                    daddyChannels,
-                    environment.supplementNtvCxMergeMode,
-                )
-            }
-                .getOrElse { exc ->
-                    Log.w(TAG, "ntv.cx CDN Live fetch failed", exc)
-                    emptyList<SupplementChannel>() to NtvCxCdnLiveResolver.FetchStats()
+        val ntvCxDeferred = async {
+            if (ntvCxEnabled()) {
+                runCatching {
+                    ntvCxSource.fetchChannels(
+                        daddyChannels,
+                        environment.supplementNtvCxMergeMode,
+                    )
                 }
-        } else {
-            emptyList<SupplementChannel>() to NtvCxCdnLiveResolver.FetchStats()
+                    .getOrElse { exc ->
+                        Log.w(TAG, "ntv.cx 24/7 fetch failed", exc)
+                        emptyList<SupplementChannel>() to NtvCxCdnLiveResolver.FetchStats()
+                    }
+            } else {
+                emptyList<SupplementChannel>() to NtvCxCdnLiveResolver.FetchStats()
+            }
+        }
+
+        val (iptvOrg, iptvStats) = iptvOrgDeferred.await()
+        var (ntvCx, ntvStats) = ntvCxDeferred.await()
+
+        if (ntvCx.isEmpty() && ntvCxEnabled()) {
+            val cachedNtv = cached.filter { it.id.startsWith("ntv:") }
+            if (cachedNtv.isNotEmpty()) {
+                Log.w(TAG, "ntv.cx fetch empty — keeping ${cachedNtv.size} cached channels")
+                ntvCx = cachedNtv
+            }
         }
 
         if (iptvOrgEnabled() && environment.iptvOrgEpgEnabled) {
@@ -254,7 +277,7 @@ class SupplementSource(
             ntvCxResolveProbeOk = ntvStats.resolveProbeOk,
         )
 
-        return sidecar + sports + iptvOrg + ntvCx
+        sidecar + sports + iptvOrg + ntvCx
     }
 
     private fun downloadEpg(base: String) {
