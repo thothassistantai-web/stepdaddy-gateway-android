@@ -7,6 +7,18 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.9] - 2026-06-20
+
+### Added
+
+- **Bundled ntv.cx catalog bootstrap** (~940 channels) when live API is unreachable on device
+
+### Fixed
+
+- **TiviMate playlist/EPG refresh** — HEAD responses now report real `Content-Length` (was 0, broke “update playlist”)
+- **ntv.cx on Android TV** — Chrome TV user-agent + `Connection: close` for `/api/get-channels`
+- **OTA invalid package** — updater prefers `*-debug.apk` and verifies package name before install
+
 ## [1.0.8] - 2026-06-20
 
 ### Fixed

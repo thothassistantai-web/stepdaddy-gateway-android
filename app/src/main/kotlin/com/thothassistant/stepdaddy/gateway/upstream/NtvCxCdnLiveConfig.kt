@@ -29,7 +29,8 @@ object NtvCxCdnLiveConfig {
 
     const val HESGOALES_ORIGIN = "https://hesgoaler.com"
 
-    const val PLAYER_USER = "ntvstream"
+    const val CATALOG_USER_AGENT =
+        "Mozilla/5.0 (Linux; Android 11; Android TV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
     const val PLAYER_PLAN = "free"
 }

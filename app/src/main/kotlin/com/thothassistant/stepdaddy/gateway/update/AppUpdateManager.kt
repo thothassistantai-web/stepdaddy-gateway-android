@@ -64,6 +64,15 @@ class AppUpdateManager(
                 version = info.manifest.versionName,
             )
             val apkFile = installManager.downloadApk(entry, onProgress)
+            val packageInfo = installManager.resolvePackageInfo(apkFile)
+            val expectedPackage = BuildConfig.APPLICATION_ID
+            if (packageInfo?.packageName != expectedPackage) {
+                apkFile.delete()
+                error(
+                    "Invalid update package (${packageInfo?.packageName ?: "unknown"}); " +
+                        "expected $expectedPackage",
+                )
+            }
             pendingApkPath = apkFile.absolutePath
             apkFile
         }

@@ -54,7 +54,9 @@ class AppUpdateRepository(
                 return json.decodeFromString(UpdateManifest.serializer(), manifestText)
             }
         }
-        val apkAsset = release.assets.firstOrNull { it.name.endsWith(".apk", ignoreCase = true) }
+        val apkAsset = release.assets.firstOrNull {
+            it.name.endsWith("-debug.apk", ignoreCase = true)
+        } ?: release.assets.firstOrNull { it.name.endsWith(".apk", ignoreCase = true) }
             ?: return null
         val versionName = release.tagName.removePrefix("v").ifBlank { release.name.orEmpty() }
         val versionCode = parseVersionCodeFromBody(release.body)

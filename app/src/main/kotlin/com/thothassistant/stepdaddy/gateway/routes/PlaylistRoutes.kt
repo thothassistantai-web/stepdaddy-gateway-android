@@ -27,36 +27,8 @@ class PlaylistRoutes(
     private val playlistCache: PlaylistCache,
 ) {
     suspend fun tivimatePlaylist(call: ApplicationCall) {
-        if (call.request.httpMethod.value == "HEAD") {
-            call.respondText("", ContentType("application", "vnd.apple.mpegurl"))
-            return
-        }
         try {
-            val channels = client.channels
-            val supplements = supplementSource.channels()
-            val cacheKey = playlistCache.computeKey(
-                channelCount = channels.size,
-                supplementCount = supplements.size,
-                supplementSyncedAtMs = supplementSource.lastSyncedAtMs(),
-                channelRevision = client.channelRevision(),
-                logoDbLoaded = logoResolver.isLoaded(),
-            )
-            val body = withContext(Dispatchers.IO) {
-                playlistCache.getOrBuild(cacheKey) {
-                    if (channels.isEmpty()) {
-                        PlaylistBuilder.minimalPlaylist(environment.loopbackBase())
-                    } else {
-                        PlaylistBuilder.tivimatePlaylist(
-                            channels = channels,
-                            baseUrl = environment.loopbackBase(),
-                            dlhdOrigin = client.activeBaseUrl,
-                            logoResolver = logoResolver,
-                            channelMetaStore = channelMetaStore,
-                            supplements = supplements,
-                        )
-                    }
-                }
-            }
+            val body = buildPlaylistBody()
             call.response.header(HttpHeaders.CacheControl, "no-cache, no-store, must-revalidate")
             call.response.header(HttpHeaders.Pragma, "no-cache")
             call.respondText(body, ContentType("application", "vnd.apple.mpegurl"))
@@ -79,18 +51,39 @@ class PlaylistRoutes(
             logoDbLoaded = logoResolver.isLoaded(),
         )
         playlistCache.schedulePrewarm(cacheKey) {
-            if (channels.isEmpty()) {
-                PlaylistBuilder.minimalPlaylist(environment.loopbackBase())
-            } else {
-                PlaylistBuilder.tivimatePlaylist(
-                    channels = channels,
-                    baseUrl = environment.loopbackBase(),
-                    dlhdOrigin = client.activeBaseUrl,
-                    logoResolver = logoResolver,
-                    channelMetaStore = channelMetaStore,
-                    supplements = supplements,
-                )
-            }
+            buildPlaylistBodySync(channels, supplements)
         }
+    }
+
+    private suspend fun buildPlaylistBody(): String = withContext(Dispatchers.IO) {
+        val channels = client.channels
+        val supplements = supplementSource.channels()
+        val cacheKey = playlistCache.computeKey(
+            channelCount = channels.size,
+            supplementCount = supplements.size,
+            supplementSyncedAtMs = supplementSource.lastSyncedAtMs(),
+            channelRevision = client.channelRevision(),
+            logoDbLoaded = logoResolver.isLoaded(),
+        )
+        playlistCache.getOrBuild(cacheKey) {
+            buildPlaylistBodySync(channels, supplements)
+        }
+    }
+
+    private fun buildPlaylistBodySync(
+        channels: List<com.thothassistant.stepdaddy.gateway.model.Channel>,
+        supplements: List<com.thothassistant.stepdaddy.gateway.model.SupplementChannel>,
+    ): String {
+        if (channels.isEmpty()) {
+            return PlaylistBuilder.minimalPlaylist(environment.loopbackBase())
+        }
+        return PlaylistBuilder.tivimatePlaylist(
+            channels = channels,
+            baseUrl = environment.loopbackBase(),
+            dlhdOrigin = client.activeBaseUrl,
+            logoResolver = logoResolver,
+            channelMetaStore = channelMetaStore,
+            supplements = supplements,
+        )
     }
 }

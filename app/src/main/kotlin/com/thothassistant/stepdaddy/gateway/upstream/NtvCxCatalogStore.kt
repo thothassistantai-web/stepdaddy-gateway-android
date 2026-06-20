@@ -9,7 +9,8 @@ import java.io.File
  * after slow-network timeouts on low-end devices.
  */
 class NtvCxCatalogStore(context: Context) {
-    private val file = File(context.filesDir, "supplement/ntv_catalog.json").also {
+    private val appContext = context.applicationContext
+    private val file = File(appContext.filesDir, "supplement/ntv_catalog.json").also {
         it.parentFile?.mkdirs()
     }
 
@@ -33,15 +34,31 @@ class NtvCxCatalogStore(context: Context) {
     }
 
     fun loadCatalog(): List<NtvCxCdnLiveResolver.CatalogChannel> {
-        val raw = readRaw() ?: return emptyList()
+        val raw = readRaw() ?: return loadBundledCatalog()
         val rows = NtvCxCdnLiveResolver.parseCatalogJson(raw)
         if (rows.isNotEmpty()) {
             Log.i(TAG, "loaded ${rows.size} ntv.cx catalog rows from disk cache")
+            return rows
         }
-        return rows
+        return loadBundledCatalog()
     }
+
+    fun loadBundledCatalog(): List<NtvCxCdnLiveResolver.CatalogChannel> =
+        runCatching {
+            appContext.assets.open(BUNDLED_ASSET).bufferedReader().use { reader ->
+                NtvCxCdnLiveResolver.parseCatalogJson(reader.readText())
+            }
+        }.getOrElse { exc ->
+            Log.w(TAG, "bundled catalog unavailable", exc)
+            emptyList()
+        }.also { rows ->
+            if (rows.isNotEmpty()) {
+                Log.i(TAG, "loaded ${rows.size} ntv.cx catalog rows from bundled bootstrap")
+            }
+        }
 
     companion object {
         private const val TAG = "NtvCxCatalogStore"
+        const val BUNDLED_ASSET = "ntv_cx_catalog_bootstrap.json"
     }
 }

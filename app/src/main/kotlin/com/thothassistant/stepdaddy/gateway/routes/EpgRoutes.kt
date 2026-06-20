@@ -67,13 +67,8 @@ class EpgRoutes(
 
     private suspend fun respondXml(call: ApplicationCall, body: ByteArray, stale: Boolean) {
         call.response.header(HttpHeaders.CacheControl, "public, max-age=300")
-        call.response.header(HttpHeaders.ContentLength, body.size.toString())
         if (stale) {
             call.response.header("X-EPG-Status", "stale")
-        }
-        if (call.request.httpMethod.value == "HEAD") {
-            call.respondText("", ContentType.Application.Xml)
-            return
         }
         call.respondBytes(body, ContentType.Application.Xml)
     }

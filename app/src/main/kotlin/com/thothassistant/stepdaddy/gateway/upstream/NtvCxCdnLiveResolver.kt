@@ -59,10 +59,7 @@ class NtvCxCdnLiveResolver(
             if (attempt > 0) {
                 delay(backoffsMs[attempt.coerceAtMost(backoffsMs.lastIndex)])
             }
-            val text = fetchText(
-                NtvCxCdnLiveConfig.CHANNELS_API,
-                referer = NtvCxCdnLiveConfig.PLAYER_REFERER,
-                maxBytes = NtvCxCdnLiveConfig.MAX_CHANNELS_JSON_BYTES,
+            val text = fetchCatalogText(
                 readTimeoutMs = NtvCxCdnLiveConfig.CATALOG_FETCH_TIMEOUT_MS,
             )
             if (text != null) {
@@ -78,10 +75,14 @@ class NtvCxCdnLiveResolver(
             Log.w(TAG, "ntv.cx catalog attempt ${attempt + 1} failed or empty")
         }
         val cached = catalogStore?.loadCatalog().orEmpty()
-        if (cached.isEmpty()) {
-            Log.w(TAG, "ntv.cx catalog unavailable — no network rows and no disk cache")
+        if (cached.isNotEmpty()) {
+            if (cached.size < 50) {
+                Log.w(TAG, "ntv.cx using fallback catalog (${cached.size} rows)")
+            }
+            return@withContext cached
         }
-        cached
+        Log.w(TAG, "ntv.cx catalog unavailable — no network, disk, or bundled rows")
+        emptyList()
     }
 
     suspend fun resolveManifestUrl(key: String): String = withContext(Dispatchers.IO) {
@@ -137,11 +138,23 @@ class NtvCxCdnLiveResolver(
                 ?: error("ntv manifest fetch failed")
         }
 
+    private fun fetchCatalogText(readTimeoutMs: Long): String? =
+        fetchText(
+            url = NtvCxCdnLiveConfig.CHANNELS_API,
+            referer = NtvCxCdnLiveConfig.PLAYER_REFERER,
+            maxBytes = NtvCxCdnLiveConfig.MAX_CHANNELS_JSON_BYTES,
+            readTimeoutMs = readTimeoutMs,
+            userAgent = NtvCxCdnLiveConfig.CATALOG_USER_AGENT,
+            connectionClose = true,
+        )
+
     private fun fetchText(
         url: String,
         referer: String? = null,
         maxBytes: Int = 2 * 1024 * 1024,
         readTimeoutMs: Long = NtvCxCdnLiveConfig.FETCH_TIMEOUT_MS,
+        userAgent: String = SupplementConfig.USER_AGENT,
+        connectionClose: Boolean = false,
     ): String? {
         val client = if (readTimeoutMs == NtvCxCdnLiveConfig.FETCH_TIMEOUT_MS) {
             httpClient
@@ -153,9 +166,12 @@ class NtvCxCdnLiveResolver(
         }
         val builder = Request.Builder()
             .url(url)
-            .header("User-Agent", SupplementConfig.USER_AGENT)
-            .header("Accept", "application/json")
+            .header("User-Agent", userAgent)
+            .header("Accept", "application/json, text/plain, */*")
             .get()
+        if (connectionClose) {
+            builder.header("Connection", "close")
+        }
         referer?.let { builder.header("Referer", it) }
         return runCatching {
             client.newCall(builder.build()).execute().use { response ->
@@ -346,6 +362,7 @@ class NtvCxCdnLiveResolver(
         fun defaultClient(): OkHttpClient =
             OkHttpClient.Builder()
                 .protocols(listOf(Protocol.HTTP_1_1))
+                .retryOnConnectionFailure(true)
                 .connectTimeout(20, TimeUnit.SECONDS)
                 .readTimeout(NtvCxCdnLiveConfig.CATALOG_FETCH_TIMEOUT_MS, TimeUnit.MILLISECONDS)
                 .writeTimeout(20, TimeUnit.SECONDS)
