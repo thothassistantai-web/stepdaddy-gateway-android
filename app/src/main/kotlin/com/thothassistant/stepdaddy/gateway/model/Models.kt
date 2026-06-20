@@ -67,7 +67,11 @@ data class SupplementStatus(
     val blockedTokenProxy: Int = 0,
     val ntvCxEnabled: Boolean = false,
     val ntvCxChannels: Int = 0,
-    val ntvCxMergeMode: String = "ALL",
+    val sidecarImportMode: String = "FULL_CATALOG",
+    val iptvOrgImportMode: String = "FULL_CATALOG",
+    val ntvCxImportMode: String = "FULL_CATALOG",
+    /** @deprecated use [ntvCxImportMode] */
+    val ntvCxMergeMode: String = "FULL_CATALOG",
     val ntvCxResolveProbeOk: Boolean = false,
 )
 

@@ -37,6 +37,7 @@ Use android-debug-orchestrator to run a full debug sweep on FUSA2541006925.
 | [`gateway-logo-meta-debugger`](gateway-logo-meta-debugger.md) | Logos broken, meta tags / grouping wrong |
 | [`gateway-performance-profiler`](gateway-performance-profiler.md) | Slow builds, GC/OOM, playlist >30s |
 | [`gateway-build-deploy-debugger`](gateway-build-deploy-debugger.md) | Gradle fail, sideload, post-deploy verify |
+| [`gateway-ota-debugger`](gateway-ota-debugger.md) | OTA invalid APK, wrong package, GitHub release asset mismatch |
 
 ---
 

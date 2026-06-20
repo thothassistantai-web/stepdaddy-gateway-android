@@ -10,18 +10,28 @@ object SupplementDedup {
         entries: List<M3uParser.Entry>,
         daddyChannels: List<Channel>,
         maxChannels: Int = SupplementConfig.MAX_CHANNELS,
+        importMode: SupplementImportMode = SupplementImportMode.FULL_CATALOG,
         applySidecarProviderFilter: Boolean = true,
         mapChannel: (M3uParser.Entry, String) -> SupplementChannel = { entry, _ ->
             toSidecarChannel(entry)
         },
     ): List<SupplementChannel> {
-        val daddyNormNames = daddyChannels
-            .map { EpgChannelMapper.normalizeName(it.name) }
-            .filter { it.isNotEmpty() }
-            .toSet()
-        val daddyTvgIds = daddyChannels
-            .flatMap { channel -> tvgIdKeys(channel.tvgId) }
-            .toSet()
+        val skipDuplicates = importMode == SupplementImportMode.SKIP_DUPLICATES
+        val daddyNormNames = if (skipDuplicates) {
+            daddyChannels
+                .map { EpgChannelMapper.normalizeName(it.name) }
+                .filter { it.isNotEmpty() }
+                .toSet()
+        } else {
+            emptySet()
+        }
+        val daddyTvgIds = if (skipDuplicates) {
+            daddyChannels
+                .flatMap { channel -> tvgIdKeys(channel.tvgId) }
+                .toSet()
+        } else {
+            emptySet()
+        }
 
         val candidateEntries = if (applySidecarProviderFilter) {
             SupplementProviderFilter.filter(entries).allowed

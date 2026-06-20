@@ -3,7 +3,7 @@ package com.thothassistant.stepdaddy.gateway
 import android.content.Context
 import android.content.SharedPreferences
 import com.thothassistant.stepdaddy.gateway.network.NetworkAccessMode
-import com.thothassistant.stepdaddy.gateway.upstream.NtvCxMergeMode
+import com.thothassistant.stepdaddy.gateway.upstream.SupplementImportMode
 import java.security.SecureRandom
 import java.util.Base64
 
@@ -162,20 +162,53 @@ class GatewayEnvironment(context: Context) {
         }
 
     /**
-     * [NtvCxMergeMode.ALL] includes every 24/7 row (default).
-     * [NtvCxMergeMode.SUPPLEMENT_ONLY] skips names already on the main DaddyLive list.
+     * How MoveOnJoy sidecar channels are merged.
+     * [SupplementImportMode.FULL_CATALOG] imports the full sidecar catalog (default).
      */
-    var supplementNtvCxMergeMode: NtvCxMergeMode
+    var supplementSidecarImportMode: SupplementImportMode
+        get() = SupplementImportMode.fromPref(
+            prefs.getString(KEY_SUPPLEMENT_SIDECAR_IMPORT_MODE, null),
+        )
+        set(value) {
+            prefs.edit().putString(KEY_SUPPLEMENT_SIDECAR_IMPORT_MODE, value.name).apply()
+        }
+
+    /**
+     * How iptv-org FAST playlists are merged.
+     * [SupplementImportMode.FULL_CATALOG] imports every playlist row (default).
+     */
+    var supplementIptvOrgImportMode: SupplementImportMode
+        get() = SupplementImportMode.fromPref(
+            prefs.getString(KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE, null),
+        )
+        set(value) {
+            prefs.edit().putString(KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE, value.name).apply()
+        }
+
+    /**
+     * [SupplementImportMode.FULL_CATALOG] includes every 24/7 row (default).
+     * [SupplementImportMode.SKIP_DUPLICATES] skips names already on the main DaddyLive list.
+     */
+    var supplementNtvCxImportMode: SupplementImportMode
         get() {
             val raw = prefs.getString(KEY_SUPPLEMENT_NTV_CX_MERGE_MODE, null)
             return if (raw != null) {
-                NtvCxMergeMode.fromPref(raw)
+                SupplementImportMode.fromPref(raw)
             } else {
-                NtvCxMergeMode.fromSupplementOnlyPref(BuildConfig.DEFAULT_SUPPLEMENT_NTV_CX_SUPPLEMENT_ONLY)
+                SupplementImportMode.fromSkipDuplicatesPref(
+                    BuildConfig.DEFAULT_SUPPLEMENT_NTV_CX_SUPPLEMENT_ONLY,
+                )
             }
         }
         set(value) {
             prefs.edit().putString(KEY_SUPPLEMENT_NTV_CX_MERGE_MODE, value.name).apply()
+        }
+
+    /** @deprecated use [supplementNtvCxImportMode] */
+    var supplementNtvCxMergeMode: SupplementImportMode
+        get() = supplementNtvCxImportMode
+        set(value) {
+            supplementNtvCxImportMode = value
         }
 
     /** When true, merge iptv-org FAST provider EPG (Pluto, Plex, Xumo, Distro) for supplement channels. */
@@ -332,6 +365,8 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_SUPPLEMENT_SPORTS_ENABLED = "supplement_sports_enabled"
         private const val KEY_SUPPLEMENT_IPTV_ORG_ENABLED = "supplement_iptv_org_enabled"
         private const val KEY_SUPPLEMENT_NTV_CX_ENABLED = "supplement_ntv_cx_enabled"
+        private const val KEY_SUPPLEMENT_SIDECAR_IMPORT_MODE = "supplement_sidecar_import_mode"
+        private const val KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE = "supplement_iptv_org_import_mode"
         private const val KEY_SUPPLEMENT_NTV_CX_MERGE_MODE = "supplement_ntv_cx_merge_mode"
         private const val KEY_IPTV_ORG_EPG_ENABLED = "iptv_org_epg_enabled"
         private const val KEY_IPTV_ORG_EPG_URL = "iptv_org_epg_url"

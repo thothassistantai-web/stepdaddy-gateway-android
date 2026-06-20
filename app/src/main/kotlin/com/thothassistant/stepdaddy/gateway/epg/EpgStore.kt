@@ -98,6 +98,11 @@ class EpgStore(context: Context) {
     return (System.currentTimeMillis() - meta.builtAtMs) / 1000L
   }
 
+  fun isServeStale(): Boolean {
+    val age = ageSeconds() ?: return true
+    return age > EpgConfig.STALE_SERVE_HEADER_SECONDS
+  }
+
   fun isStale(): Boolean {
     val age = ageSeconds() ?: return true
     return age > EpgConfig.STALE_REBUILD_SECONDS

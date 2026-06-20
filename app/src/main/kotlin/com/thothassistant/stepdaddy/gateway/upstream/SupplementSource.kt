@@ -79,7 +79,10 @@ class SupplementSource(
 
     fun ntvCxEnabled(): Boolean = environment.supplementNtvCxEnabled
 
-    fun ntvCxMergeMode(): NtvCxMergeMode = environment.supplementNtvCxMergeMode
+    fun ntvCxImportMode(): SupplementImportMode = environment.supplementNtvCxImportMode
+
+    /** @deprecated use [ntvCxImportMode] */
+    fun ntvCxMergeMode(): SupplementImportMode = ntvCxImportMode()
 
     fun channels(): List<SupplementChannel> = cached
 
@@ -195,6 +198,7 @@ class SupplementSource(
                     entries = filterResult.allowed,
                     daddyChannels = daddyChannels,
                     maxChannels = SupplementConfig.MAX_CHANNELS,
+                    importMode = environment.supplementSidecarImportMode,
                 )
             } else {
                 Log.w(TAG, "Sidecar playlist fetch failed — skipping TVApp2 supplement")
@@ -217,7 +221,7 @@ class SupplementSource(
 
         val iptvOrgDeferred = async {
             if (iptvOrgEnabled()) {
-                runCatching { iptvOrgSource.fetchChannels(daddyChannels) }
+                runCatching { iptvOrgSource.fetchChannels(daddyChannels, environment.supplementIptvOrgImportMode) }
                     .getOrElse { exc ->
                         Log.w(TAG, "iptv-org fetch failed", exc)
                         emptyList<SupplementChannel>() to IptvOrgStreamsSource.FetchStats()
@@ -232,7 +236,7 @@ class SupplementSource(
                 runCatching {
                     ntvCxSource.fetchChannels(
                         daddyChannels,
-                        environment.supplementNtvCxMergeMode,
+                        environment.supplementNtvCxImportMode,
                     )
                 }
                     .getOrElse { exc ->

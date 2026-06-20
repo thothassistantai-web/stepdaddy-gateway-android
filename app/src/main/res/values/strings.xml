@@ -181,13 +181,23 @@
     <string name="settings_remote_gateway_url_hint">Used for Remote QR codes, e.g. http://your-public-ip:3000 or a DDNS hostname.</string>
     <string name="settings_dlhd_url">DaddyLive base URL</string>
     <string name="settings_mirror_urls">Mirror URLs (comma-separated)</string>
-    <string name="settings_supplement_url">Supplement sidecar URL</string>
-    <string name="settings_embedded_sidecar">Embedded MoveOnJoy sidecar</string>
+    <string name="settings_supplement_url">MoveOnJoy sidecar URL (loopback)</string>
+    <string name="settings_section_supplements">Extra channels for TiviMate</string>
+    <string name="settings_supplements_intro">DaddyLive is always imported in full as your main list. Turn on extra providers below to add more channels. By default each provider imports its full catalog.</string>
+    <string name="settings_enable_all_supplements">Enable all extra providers (MoveOnJoy, iptv-org, ntv.cx)</string>
+    <string name="settings_provider_moveonjoy">MoveOnJoy</string>
+    <string name="settings_provider_iptv_org">iptv-org (Pluto, Plex, Xumo, …)</string>
+    <string name="settings_provider_ntv_cx">ntv.cx 24/7</string>
+    <string name="settings_provider_sports">Live sports events</string>
+    <string name="settings_embedded_sidecar">Enable MoveOnJoy sidecar</string>
+    <string name="settings_supplement_iptv_org_enable">Enable iptv-org streams</string>
+    <string name="settings_supplement_ntv_cx_enable">Enable ntv.cx 24/7 (~940 channels)</string>
+    <string name="settings_supplement_sports_enable">Enable live sports (thetvapp)</string>
+    <string name="settings_import_skip_duplicates">Skip channels already on DaddyLive</string>
+    <string name="settings_import_mode_hint">Off (default) = full catalog from each provider. On = hide rows whose name already appears on the main DaddyLive list.</string>
     <string name="settings_supplement_sports">Sports supplement (thetvapp)</string>
     <string name="settings_supplement_iptv_org">iptv-org supplement</string>
     <string name="settings_supplement_ntv_cx">ntv.cx 24/7 supplement (~850 channels)</string>
-    <string name="settings_ntv_cx_supplement_only">ntv.cx: supplement only (skip main-list names)</string>
-    <string name="settings_ntv_cx_merge_hint">Enabled by default on new installs. Supplement-only off: all 24/7 channels (CDN + Falcon). Supplement-only on: hide names already on the main DaddyLive list.</string>
     <string name="settings_iptv_org_epg">iptv-org FAST EPG (Pluto, Plex, Xumo, Distro)</string>
     <string name="settings_iptv_org_epg_url">iptv-org EPG URL (gzip XMLTV, optional)</string>
     <string name="settings_port_invalid">Port must be between 1024 and 65535</string>

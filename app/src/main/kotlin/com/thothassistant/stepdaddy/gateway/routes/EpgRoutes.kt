@@ -27,7 +27,11 @@ class EpgRoutes(
 
             val cached = epgManager.readCachedXml()
             if (cached != null && hasProgrammeData(cached)) {
-                respondXml(call, cached, stale = epgManager.meta.state == "building" || epgManager.ageSeconds()?.let { it > 0 } == true)
+                respondXml(
+                    call,
+                    cached,
+                    stale = epgManager.meta.state == "building" || epgManager.isServeStale(),
+                )
                 return
             }
 

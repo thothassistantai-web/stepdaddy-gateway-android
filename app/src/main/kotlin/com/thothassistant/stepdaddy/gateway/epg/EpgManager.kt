@@ -39,11 +39,12 @@ class EpgManager(
 
   fun ageSeconds(): Long? = store.ageSeconds()
 
+  fun isServeStale(): Boolean = store.isServeStale()
+
   fun scheduleRefresh(channels: List<Channel>, force: Boolean = false) {
     if (channels.isEmpty()) return
     if (buildInFlight) return
-    if (!force && epgReady()) return
-    if (!force && !store.isStale() && store.servedXml.exists() && store.meta.programmeCount > 0) return
+    if (!force && epgReady() && !store.isStale() && !store.isServeStale()) return
     scope.launch {
       refresh(channels, force = force)
     }
@@ -55,9 +56,9 @@ class EpgManager(
       while (isActive) {
         val channels = channelProvider()
         if (channels.isNotEmpty()) {
-          refresh(channels, force = store.isStale())
+          refresh(channels, force = store.isStale() || store.isServeStale())
         }
-        delay(EpgConfig.REBUILD_INTERVAL_MS)
+        delay(EpgConfig.REBUILD_CHECK_INTERVAL_MS)
       }
     }
   }
@@ -65,8 +66,10 @@ class EpgManager(
   suspend fun refresh(channels: List<Channel>, force: Boolean = false) {
     buildMutex.withLock {
       if (buildInFlight) return
-      if (!force && epgReady()) return
-      if (!force && !store.isStale() && store.servedXml.exists() && store.meta.programmeCount > 0) return
+      if (!force && epgReady() && !store.isStale() && !store.isServeStale()) return
+      if (!force && !store.isStale() && !store.isServeStale() &&
+          store.servedXml.exists() && store.meta.programmeCount > 0
+      ) return
       buildInFlight = true
       store.updateState("building")
       val started = System.currentTimeMillis()
@@ -121,7 +124,7 @@ class EpgManager(
   fun readCachedXml(): ByteArray? = store.readServedXml()
 
   fun maybeTriggerStaleRefresh(channels: List<Channel>) {
-    if (store.isStale()) {
+    if (store.isStale() || store.isServeStale()) {
       scheduleRefresh(channels, force = false)
     }
   }

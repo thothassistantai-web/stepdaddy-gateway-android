@@ -13,7 +13,7 @@ class NtvCxCdnLiveSource(
 ) {
     suspend fun fetchChannels(
         daddyChannels: List<Channel>,
-        mergeMode: NtvCxMergeMode,
+        mergeMode: SupplementImportMode,
     ): Pair<List<SupplementChannel>, NtvCxCdnLiveResolver.FetchStats> =
         withContext(Dispatchers.IO) {
             val catalog = resolver.fetchCatalog()
@@ -25,10 +25,28 @@ class NtvCxCdnLiveSource(
 
             val probeOk = runCatching {
                 if (channels.isEmpty()) return@runCatching false
-                val first = channels.first()
-                val key = first.ntvCdnLiveKey?.trim().orEmpty()
-                if (key.isEmpty()) return@runCatching false
-                resolver.resolveManifestUrl(key)
+                var probed = false
+                channels.firstOrNull { it.ntvCdnLiveKey?.startsWith("cdnlive|") == true }
+                    ?.ntvCdnLiveKey
+                    ?.trim()
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.let { key ->
+                        resolver.resolveManifestUrl(key)
+                        probed = true
+                    }
+                channels.firstOrNull { it.ntvCdnLiveKey?.startsWith("hesgoales|") == true }
+                    ?.ntvCdnLiveKey
+                    ?.trim()
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.let { key ->
+                        resolver.resolveManifestUrl(key)
+                        probed = true
+                    }
+                if (!probed) {
+                    val key = channels.first().ntvCdnLiveKey?.trim().orEmpty()
+                    if (key.isEmpty()) return@runCatching false
+                    resolver.resolveManifestUrl(key)
+                }
                 true
             }.getOrElse { exc ->
                 Log.w(TAG, "ntv.cx 24/7 probe failed — keeping catalog", exc)
@@ -52,9 +70,10 @@ class NtvCxCdnLiveSource(
         fun buildChannels(
             catalog: List<NtvCxCdnLiveResolver.CatalogChannel>,
             daddyChannels: List<Channel>,
-            mergeMode: NtvCxMergeMode,
+            mergeMode: SupplementImportMode,
         ): List<SupplementChannel> {
-            val daddyNormNames = if (mergeMode == NtvCxMergeMode.SUPPLEMENT_ONLY) {
+            val skipDuplicates = mergeMode == SupplementImportMode.SKIP_DUPLICATES
+            val daddyNormNames = if (skipDuplicates) {
                 daddyChannels
                     .map { EpgChannelMapper.normalizeName(it.name) }
                     .filter { it.isNotEmpty() }
@@ -67,7 +86,7 @@ class NtvCxCdnLiveSource(
             for (row in catalog) {
                 if (channels.size >= NtvCxCdnLiveConfig.MAX_CHANNELS) break
                 val norm = EpgChannelMapper.normalizeName(row.name)
-                if (mergeMode == NtvCxMergeMode.SUPPLEMENT_ONLY && norm in daddyNormNames) continue
+                if (skipDuplicates && norm in daddyNormNames) continue
                 val key = NtvCxCdnLiveResolver.ntvKey(
                     server = row.server,
                     name = row.name,

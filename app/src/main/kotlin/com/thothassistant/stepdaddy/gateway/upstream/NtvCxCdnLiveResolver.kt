@@ -153,7 +153,7 @@ class NtvCxCdnLiveResolver(
         referer: String? = null,
         maxBytes: Int = 2 * 1024 * 1024,
         readTimeoutMs: Long = NtvCxCdnLiveConfig.FETCH_TIMEOUT_MS,
-        userAgent: String = SupplementConfig.USER_AGENT,
+        userAgent: String = NtvCxCdnLiveConfig.CATALOG_USER_AGENT,
         connectionClose: Boolean = false,
     ): String? {
         val client = if (readTimeoutMs == NtvCxCdnLiveConfig.FETCH_TIMEOUT_MS) {
@@ -191,7 +191,7 @@ class NtvCxCdnLiveResolver(
         val body = json.toRequestBody(JSON_MEDIA_TYPE)
         val builder = Request.Builder()
             .url(url)
-            .header("User-Agent", SupplementConfig.USER_AGENT)
+            .header("User-Agent", NtvCxCdnLiveConfig.CATALOG_USER_AGENT)
             .post(body)
         referer?.let { builder.header("Referer", it) }
         return runCatching {

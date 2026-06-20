@@ -30,7 +30,10 @@ class IptvOrgStreamsSource(
         val channelsAfterDedup: Int = 0,
     )
 
-    suspend fun fetchChannels(daddyChannels: List<Channel>): Pair<List<SupplementChannel>, FetchStats> =
+    suspend fun fetchChannels(
+        daddyChannels: List<Channel>,
+        importMode: SupplementImportMode = SupplementImportMode.FULL_CATALOG,
+    ): Pair<List<SupplementChannel>, FetchStats> =
         withContext(Dispatchers.IO) {
             val semaphore = Semaphore(4)
             val parsed = coroutineScope {
@@ -59,6 +62,7 @@ class IptvOrgStreamsSource(
                 entries = allEntries,
                 daddyChannels = daddyChannels,
                 maxChannels = IptvOrgStreamsConfig.MAX_CHANNELS_AFTER_DEDUP,
+                importMode = importMode,
                 applySidecarProviderFilter = false,
             ) { entry, _ ->
                 toIptvOrgChannel(entry, entry.sourcePlaylist.orEmpty())

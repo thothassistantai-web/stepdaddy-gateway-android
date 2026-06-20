@@ -233,56 +233,136 @@
                 android:minHeight="48dp" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/settings_section_supplements"
+            android:textColor="@color/on_background"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/settings_supplements_intro"
+            android:textColor="@color/on_background_muted"
+            android:textSize="12sp" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchEnableAllSupplements"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:minHeight="48dp"
+            android:text="@string/settings_enable_all_supplements"
+            android:textColor="@color/on_background" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/settings_provider_moveonjoy"
+            android:textColor="@color/on_background"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switchEmbeddedSidecar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="4dp"
             android:minHeight="48dp"
             android:text="@string/settings_embedded_sidecar"
             android:textColor="@color/on_background" />
 
         <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchSupplementSports"
+            android:id="@+id/switchSidecarSkipDuplicates"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
             android:minHeight="48dp"
-            android:text="@string/settings_supplement_sports"
+            android:text="@string/settings_import_skip_duplicates"
             android:textColor="@color/on_background" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/settings_provider_iptv_org"
+            android:textColor="@color/on_background"
+            android:textSize="14sp"
+            android:textStyle="bold" />
 
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switchSupplementIptvOrg"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
             android:minHeight="48dp"
-            android:text="@string/settings_supplement_iptv_org"
+            android:text="@string/settings_supplement_iptv_org_enable"
             android:textColor="@color/on_background" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchIptvOrgSkipDuplicates"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:minHeight="48dp"
+            android:text="@string/settings_import_skip_duplicates"
+            android:textColor="@color/on_background" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/settings_provider_ntv_cx"
+            android:textColor="@color/on_background"
+            android:textSize="14sp"
+            android:textStyle="bold" />
 
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switchSupplementNtvCx"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
             android:minHeight="48dp"
-            android:text="@string/settings_supplement_ntv_cx"
+            android:text="@string/settings_supplement_ntv_cx_enable"
             android:textColor="@color/on_background" />
 
         <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchNtvCxSupplementOnly"
+            android:id="@+id/switchNtvCxSkipDuplicates"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:minHeight="48dp"
-            android:text="@string/settings_ntv_cx_supplement_only"
+            android:text="@string/settings_import_skip_duplicates"
+            android:textColor="@color/on_background" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/settings_provider_sports"
+            android:textColor="@color/on_background"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchSupplementSports"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:minHeight="48dp"
+            android:text="@string/settings_supplement_sports_enable"
             android:textColor="@color/on_background" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="@string/settings_ntv_cx_merge_hint"
+            android:text="@string/settings_import_mode_hint"
             android:textColor="@color/on_background_muted"
             android:textSize="12sp" />
 

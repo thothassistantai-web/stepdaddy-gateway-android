@@ -90,14 +90,8 @@ class SettingsActivity : AppCompatActivity() {
         binding.editDlhdUrl.setText(environment.dlhdBaseUrl)
         binding.editMirrorUrls.setText(environment.mirrorUrls.joinToString(","))
         binding.editSupplementUrl.setText(environment.supplementBaseUrl)
-        binding.switchEmbeddedSidecar.isChecked = environment.embeddedSidecarEnabled
-        binding.switchSupplementSports.isChecked = environment.supplementSportsEnabled
-        binding.switchSupplementIptvOrg.isChecked = environment.supplementIptvOrgEnabled
-        binding.switchSupplementNtvCx.isChecked = environment.supplementNtvCxEnabled
-        binding.switchNtvCxSupplementOnly.isChecked =
-            environment.supplementNtvCxMergeMode == com.thothassistant.stepdaddy.gateway.upstream.NtvCxMergeMode.SUPPLEMENT_ONLY
-        updateNtvCxMergeControls()
-        binding.switchSupplementNtvCx.setOnCheckedChangeListener { _, _ -> updateNtvCxMergeControls() }
+        SettingsSupplementControls.load(binding, environment)
+        SettingsSupplementControls.wireListeners(binding)
         binding.switchIptvOrgEpg.isChecked = environment.iptvOrgEpgEnabled
         binding.editIptvOrgEpgUrl.setText(environment.iptvOrgEpgUrl)
         binding.switchAutoStart.isChecked = environment.autoStartOnLaunch
@@ -122,12 +116,6 @@ class SettingsActivity : AppCompatActivity() {
     private fun updateRemoteNetworkVisibility() {
         binding.layoutRemoteNetwork.visibility =
             if (selectedNetworkMode == NetworkAccessMode.REMOTE) View.VISIBLE else View.GONE
-    }
-
-    private fun updateNtvCxMergeControls() {
-        val enabled = binding.switchSupplementNtvCx.isChecked
-        binding.switchNtvCxSupplementOnly.isEnabled = enabled
-        binding.switchNtvCxSupplementOnly.alpha = if (enabled) 1f else 0.5f
     }
 
     private fun saveAndFinish() {
@@ -155,16 +143,7 @@ class SettingsActivity : AppCompatActivity() {
             ?.filter { it.isNotEmpty() }
             .orEmpty()
         environment.supplementBaseUrl = binding.editSupplementUrl.text?.toString().orEmpty()
-        environment.embeddedSidecarEnabled = binding.switchEmbeddedSidecar.isChecked
-        environment.supplementSportsEnabled = binding.switchSupplementSports.isChecked
-        environment.supplementIptvOrgEnabled = binding.switchSupplementIptvOrg.isChecked
-        environment.supplementNtvCxEnabled = binding.switchSupplementNtvCx.isChecked
-        environment.supplementNtvCxMergeMode =
-            if (binding.switchNtvCxSupplementOnly.isChecked) {
-                com.thothassistant.stepdaddy.gateway.upstream.NtvCxMergeMode.SUPPLEMENT_ONLY
-            } else {
-                com.thothassistant.stepdaddy.gateway.upstream.NtvCxMergeMode.ALL
-            }
+        SettingsSupplementControls.save(binding, environment)
         environment.iptvOrgEpgEnabled = binding.switchIptvOrgEpg.isChecked
         environment.iptvOrgEpgUrl = binding.editIptvOrgEpgUrl.text?.toString().orEmpty()
         environment.autoStartOnLaunch = binding.switchAutoStart.isChecked

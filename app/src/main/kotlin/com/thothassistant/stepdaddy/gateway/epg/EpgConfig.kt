@@ -20,8 +20,11 @@ object EpgConfig {
   /** Rebuild when served cache is older than this. */
   const val STALE_REBUILD_SECONDS = 6 * 3600L
 
-  /** Periodic background rebuild interval (12h light tier). */
-  const val REBUILD_INTERVAL_MS = 12 * 3600_000L
+  /** Mark EPG stale and trigger background rebuild after this age. */
+  const val STALE_SERVE_HEADER_SECONDS = 30 * 60L
+
+  /** How often to check whether EPG needs a background rebuild. */
+  const val REBUILD_CHECK_INTERVAL_MS = 30 * 60_000L
 
   /** Feed disk cache TTL before re-download. */
   const val FEED_CACHE_TTL_MS = 3600_000L

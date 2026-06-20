@@ -26,7 +26,7 @@ class NtvCxCdnLiveSourceTest {
         val channels = NtvCxCdnLiveSource.buildChannels(
             catalog = catalog,
             daddyChannels = daddy,
-            mergeMode = NtvCxMergeMode.ALL,
+            mergeMode = SupplementImportMode.FULL_CATALOG,
         )
         assertEquals(2, channels.size)
         assertTrue(channels.any { it.name == "ESPN" && it.providerTag == "CDN" })
@@ -38,7 +38,7 @@ class NtvCxCdnLiveSourceTest {
         val channels = NtvCxCdnLiveSource.buildChannels(
             catalog = catalog,
             daddyChannels = daddy,
-            mergeMode = NtvCxMergeMode.SUPPLEMENT_ONLY,
+            mergeMode = SupplementImportMode.SKIP_DUPLICATES,
         )
         assertEquals(1, channels.size)
         assertEquals("AzamSports 1", channels.single().name)
@@ -49,7 +49,7 @@ class NtvCxCdnLiveSourceTest {
         val channels = NtvCxCdnLiveSource.buildChannels(
             catalog = catalog,
             daddyChannels = emptyList(),
-            mergeMode = NtvCxMergeMode.ALL,
+            mergeMode = SupplementImportMode.FULL_CATALOG,
         )
         assertTrue(channels.all { it.id.startsWith("ntv:") })
         assertTrue(channels.all { !it.ntvCdnLiveKey.isNullOrBlank() })
