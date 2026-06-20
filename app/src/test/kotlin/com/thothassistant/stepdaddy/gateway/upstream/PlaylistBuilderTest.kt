@@ -111,7 +111,7 @@ class PlaylistBuilderTest {
                 providerTag = "CDN",
                 referer = NtvCxCdnLiveConfig.REFERER,
                 origin = NtvCxCdnLiveConfig.ORIGIN,
-                ntvCdnLiveKey = "ESPN|us",
+                ntvCdnLiveKey = "cdnlive|ESPN|us",
             ),
         )
         val playlist = PlaylistBuilder.tivimatePlaylist(

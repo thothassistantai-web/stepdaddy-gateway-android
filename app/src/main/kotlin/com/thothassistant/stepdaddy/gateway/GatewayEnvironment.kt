@@ -152,7 +152,8 @@ class GatewayEnvironment(context: Context) {
         }
 
     /**
-     * When true, merges CDN Live channels from ntv.cx (signed HLS resolved on each play).
+     * When true, merges 24/7 channels from ntv.cx (Titan CDN + Falcon; HLS resolved on each play).
+     * Enabled by default on fresh installs.
      */
     var supplementNtvCxEnabled: Boolean
         get() = prefs.getBoolean(KEY_SUPPLEMENT_NTV_CX_ENABLED, BuildConfig.DEFAULT_SUPPLEMENT_NTV_CX_ENABLED)
@@ -161,7 +162,7 @@ class GatewayEnvironment(context: Context) {
         }
 
     /**
-     * [NtvCxMergeMode.ALL] includes every CDN Live row (default).
+     * [NtvCxMergeMode.ALL] includes every 24/7 row (default).
      * [NtvCxMergeMode.SUPPLEMENT_ONLY] skips names already on the main DaddyLive list.
      */
     var supplementNtvCxMergeMode: NtvCxMergeMode

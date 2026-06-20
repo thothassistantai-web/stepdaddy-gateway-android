@@ -7,6 +7,22 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-06-20
+
+### Added
+
+- **ntv.cx 24/7 supplement (full catalog)** — Titan (`cdnlive`, ~450) + Falcon (`hesgoales`, ~493); group **Extra | 24/7**, titles tagged CDN or Falcon
+- **Falcon play-time resolve** — hesgoaler token refresh on `/ntv-stream/{id}.m3u8`
+
+### Changed
+
+- **ntv.cx 24/7 enabled by default** on fresh installs; merge mode stays **all channels** (supplement-only off)
+
+### Fixed
+
+- ntv.cx HLS playback uses direct CDN URLs (no segment proxy) for cdnlivetv and hesgoaler streams
+- Channel slugs normalized to lowercase to match ntv.cx watch URLs
+
 ## [1.0.5] - 2026-06-19
 
 ### Added

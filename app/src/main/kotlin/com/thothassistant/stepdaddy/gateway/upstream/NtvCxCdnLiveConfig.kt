@@ -5,10 +5,10 @@ object NtvCxCdnLiveConfig {
 
     const val CHANNELS_API = "$BASE_URL/api/get-channels"
 
-    const val GROUP_TITLE = "📡 | Extra | CDN Live"
+    const val GROUP_TITLE = "📡 | Extra | 24/7"
 
-    /** Max CDN Live rows merged from ntv.cx (upstream advertises ~450). */
-    const val MAX_CHANNELS = 450
+    /** Max 24/7 rows merged from ntv.cx (cdnlive + hesgoales, ~950 total). */
+    const val MAX_CHANNELS = 1000
 
     const val FETCH_TIMEOUT_MS = 65_000L
 
@@ -19,6 +19,10 @@ object NtvCxCdnLiveConfig {
     const val ORIGIN = "https://cdnlivetv.tv"
 
     const val PLAYER_REFERER = "https://www.ntv.cx/"
+
+    const val HESGOALES_REFERER = "https://hesgoaler.com/"
+
+    const val HESGOALES_ORIGIN = "https://hesgoaler.com"
 
     const val PLAYER_USER = "ntvstream"
 

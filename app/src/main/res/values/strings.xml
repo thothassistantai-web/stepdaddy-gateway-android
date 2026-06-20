@@ -80,7 +80,7 @@
     <string name="provider_daddylive">DaddyLive</string>
     <string name="provider_moveonjoy">MoveOnJoy</string>
     <string name="provider_iptv_org">iptv-org</string>
-    <string name="provider_ntv_cx">ntv.cx CDN</string>
+    <string name="provider_ntv_cx">ntv.cx 24/7</string>
     <string name="provider_sports">Sports</string>
     <string name="provider_adult">XXX Adult</string>
     <string name="dashboard_providers_total">Total: %1$s</string>
@@ -185,9 +185,9 @@
     <string name="settings_embedded_sidecar">Embedded MoveOnJoy sidecar</string>
     <string name="settings_supplement_sports">Sports supplement (thetvapp)</string>
     <string name="settings_supplement_iptv_org">iptv-org supplement</string>
-    <string name="settings_supplement_ntv_cx">ntv.cx CDN Live supplement</string>
+    <string name="settings_supplement_ntv_cx">ntv.cx 24/7 supplement (~850 channels)</string>
     <string name="settings_ntv_cx_supplement_only">ntv.cx: supplement only (skip main-list names)</string>
-    <string name="settings_ntv_cx_merge_hint">Off (default): all CDN Live channels, labeled CDN. On: hide names already on the main DaddyLive list.</string>
+    <string name="settings_ntv_cx_merge_hint">Enabled by default on new installs. Supplement-only off: all 24/7 channels (CDN + Falcon). Supplement-only on: hide names already on the main DaddyLive list.</string>
     <string name="settings_iptv_org_epg">iptv-org FAST EPG (Pluto, Plex, Xumo, Distro)</string>
     <string name="settings_iptv_org_epg_url">iptv-org EPG URL (gzip XMLTV, optional)</string>
     <string name="settings_port_invalid">Port must be between 1024 and 65535</string>

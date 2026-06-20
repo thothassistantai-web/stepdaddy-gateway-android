@@ -1,9 +1,9 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
 /**
- * How ntv.cx CDN Live rows are merged into the playlist.
+ * How ntv.cx 24/7 rows are merged into the playlist.
  *
- * - [ALL]: every CDN Live catalog row (default; useful while verifying name matching).
+ * - [ALL]: every catalog row (default).
  * - [SUPPLEMENT_ONLY]: skip rows whose normalized name already exists on the main DaddyLive list.
  */
 enum class NtvCxMergeMode {

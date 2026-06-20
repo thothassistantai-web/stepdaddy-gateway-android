@@ -1,15 +1,20 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
 import com.thothassistant.stepdaddy.gateway.model.Channel
-import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class NtvCxCdnLiveSourceTest {
     private val catalog = listOf(
-        NtvCxCdnLiveResolver.CatalogChannel("ESPN", "us", null),
-        NtvCxCdnLiveResolver.CatalogChannel("AzamSports 1", "ae", null),
+        NtvCxCdnLiveResolver.CatalogChannel("cdnlive", "ESPN", "us", null),
+        NtvCxCdnLiveResolver.CatalogChannel(
+            "hesgoales",
+            "AzamSports 1",
+            "",
+            null,
+            "https://hesgoaler.com/stream.php?ch=AzamSports1",
+        ),
     )
 
     private val daddy = listOf(
@@ -25,6 +30,7 @@ class NtvCxCdnLiveSourceTest {
         )
         assertEquals(2, channels.size)
         assertTrue(channels.any { it.name == "ESPN" && it.providerTag == "CDN" })
+        assertTrue(channels.any { it.name == "AzamSports 1" && it.providerTag == "Falcon" })
     }
 
     @Test

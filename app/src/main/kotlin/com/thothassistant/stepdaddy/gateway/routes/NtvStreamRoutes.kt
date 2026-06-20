@@ -4,7 +4,6 @@ import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import com.thothassistant.stepdaddy.gateway.upstream.HlsErrorManifest
 import com.thothassistant.stepdaddy.gateway.upstream.M3u8Rewriter
-import com.thothassistant.stepdaddy.gateway.upstream.NtvCxCdnLiveConfig
 import com.thothassistant.stepdaddy.gateway.upstream.NtvCxCdnLiveResolver
 import com.thothassistant.stepdaddy.gateway.upstream.SupplementSource
 import io.ktor.http.ContentType
@@ -70,15 +69,15 @@ class NtvStreamRoutes(
     private suspend fun resolvePlaylist(supplement: SupplementChannel): String {
         val key = supplement.ntvCdnLiveKey?.trim().orEmpty()
         if (key.isEmpty()) error("ntv_key_missing")
-        val parts = key.split("|", limit = 2)
-        if (parts.size != 2) error("ntv_key_invalid")
-        val manifestUrl = resolver.resolveManifestUrl(parts[0], parts[1])
-        val manifestText = resolver.fetchManifestText(manifestUrl)
+        if (NtvCxCdnLiveResolver.parseNtvKey(key) == null) error("ntv_key_invalid")
+        val refererHost = resolver.refererForKey(key)
+        val manifestUrl = resolver.resolveManifestUrl(key)
+        val manifestText = resolver.fetchManifestText(manifestUrl, refererHost)
         return M3u8Rewriter.rewrite(
             m3u8Text = manifestText,
             m3u8Url = manifestUrl,
-            refererHost = NtvCxCdnLiveConfig.REFERER,
-            useProxy = true,
+            refererHost = refererHost,
+            useProxy = false,
             apiUrl = environment.loopbackBase(),
         )
     }
