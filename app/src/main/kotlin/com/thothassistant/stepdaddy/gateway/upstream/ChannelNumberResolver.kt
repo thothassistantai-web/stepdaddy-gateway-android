@@ -167,7 +167,7 @@ object ChannelNumberResolver {
             val groupChannels = sorted
                 .filter { channel ->
                     channel.id !in channelResult &&
-                        GroupTitleResolver.resolve(channel.name, channel.tags).groupTitle == group
+                        GroupTitleResolver.resolve(channel.name, channel.tags, channel.id).groupTitle == group
                 }
                 .sortedWith(channelCountryNameComparator())
             allocateSequential(groupChannels, ranges, occupied, channelResult)
@@ -240,7 +240,7 @@ object ChannelNumberResolver {
         when {
             supplement.id.startsWith("sport:") -> GroupTitleResolver.SPORTS
             supplement.id.startsWith("iptv:") && supplement.tags.isNotEmpty() ->
-                GroupTitleResolver.resolve(supplement.name, supplement.tags).groupTitle
+                GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id).groupTitle
             supplement.id.startsWith("sup:") -> supplement.groupTitle
             supplement.id.startsWith("ntv:") -> supplement.groupTitle
             supplement.id.startsWith("adultswim:") -> supplement.groupTitle
@@ -336,7 +336,7 @@ object ChannelNumberResolver {
     }
 
     private fun resolvePin(channel: Channel): Int? {
-        val group = GroupTitleResolver.resolve(channel.name, channel.tags).groupTitle
+        val group = GroupTitleResolver.resolve(channel.name, channel.tags, channel.id).groupTitle
         if (CategoryNetworkSort.isBulkSortedGroup(group)) return null
         val normalizedName = normalizeName(channel.name)
 
@@ -357,7 +357,7 @@ object ChannelNumberResolver {
         tvgId.trim().lowercase()
 
     private fun fallbackNumber(channel: Channel): Int {
-        val group = GroupTitleResolver.resolve(channel.name, channel.tags).groupTitle
+        val group = GroupTitleResolver.resolve(channel.name, channel.tags, channel.id).groupTitle
         BULK_RANGES_BY_GROUP[group]?.firstOrNull()?.first?.let { return it }
         val ranges = CATEGORY_RANGES[group] ?: return 1
         return ranges.first().first
@@ -367,11 +367,11 @@ object ChannelNumberResolver {
         compareBy(
             {
                 ChannelCountrySort.prioritySortKey(
-                    GroupTitleResolver.resolve(it.name, it.tags).countryCode,
+                    GroupTitleResolver.resolve(it.name, it.tags, it.id).countryCode,
                 )
             },
             {
-                val resolution = GroupTitleResolver.resolve(it.name, it.tags)
+                val resolution = GroupTitleResolver.resolve(it.name, it.tags, it.id)
                 ChannelTitleNormalizer.displayTitle(it.name, resolution).lowercase()
             },
             { it.name.lowercase() },
@@ -384,7 +384,7 @@ object ChannelNumberResolver {
         )
 
     private fun supplementCountryCode(supplement: SupplementChannel): String {
-        val resolution = GroupTitleResolver.resolve(supplement.name, supplement.tags)
+        val resolution = GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id)
         val code = resolution.countryCode
             .takeIf { it.isNotBlank() && it != "INT" }
             ?: GroupTitleResolver.resolve(supplement.name, emptyList()).countryCode
@@ -417,7 +417,7 @@ object ChannelNumberResolver {
         if (ranges.isEmpty()) return
 
         val groupChannels = channels.filter {
-            GroupTitleResolver.resolve(it.name, it.tags).groupTitle == groupTitle
+            GroupTitleResolver.resolve(it.name, it.tags, it.id).groupTitle == groupTitle
         }
         val groupSupplements = supplements.filter { supplementGroup(it) == groupTitle }
 
@@ -442,7 +442,7 @@ object ChannelNumberResolver {
 
         val entries = buildList {
             unpinnedChannels.forEach { channel ->
-                val resolution = GroupTitleResolver.resolve(channel.name, channel.tags)
+                val resolution = GroupTitleResolver.resolve(channel.name, channel.tags, channel.id)
                 val displayTitle = ChannelTitleNormalizer.displayTitle(channel.name, resolution)
                 add(
                     BulkSortEntry.ChannelEntry(

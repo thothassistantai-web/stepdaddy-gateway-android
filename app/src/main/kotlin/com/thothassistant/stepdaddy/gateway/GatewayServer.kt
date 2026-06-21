@@ -160,6 +160,18 @@ class GatewayServer(
                         post("/overrides/epg-id") { admin.setEpgIdOverride(call) }
                         get("/resolve/logo") { admin.resolveLogo(call) }
                         get("/resolve/epg") { admin.resolveEpg(call) }
+                        get("/resolve/stream") { admin.resolveStream(call) }
+                        get("/channels/{id}") { admin.getChannel(call) }
+                        get("/categories/audit") { admin.categoryAudit(call) }
+                        post("/actions/stop") { admin.stopGateway(call) }
+                        post("/actions/restart") { admin.restartGateway(call) }
+                        get("/assets/{type}") { admin.exportAssets(call) }
+                        post("/assets/{type}") { admin.importAssets(call) }
+                        delete("/assets/{type}") { admin.clearAssets(call) }
+                        post("/import/epg-csv") { admin.importEpgCsv(call) }
+                        post("/categories/move") { admin.moveCategories(call) }
+                        post("/overrides/category") { admin.setCategoryOverride(call) }
+                        delete("/overrides/category") { admin.clearCategoryOverride(call) }
                     }
                 }
             }

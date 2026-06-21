@@ -42,7 +42,7 @@ object PlaylistBuilder {
 
         channels.forEach { channel ->
             val chno = channelNumbers[channel.id] ?: return@forEach
-            val resolution = GroupTitleResolver.resolve(channel.name, channel.tags)
+            val resolution = GroupTitleResolver.resolve(channel.name, channel.tags, channel.id)
             val title = ChannelTitleNormalizer.displayTitle(channel.name, resolution)
             rows += PlaylistRow(
                 chno = chno,
@@ -123,7 +123,7 @@ object PlaylistBuilder {
 
     private fun supplementResolution(supplement: SupplementChannel): GroupTitleResolver.Resolution {
         if (supplement.id.startsWith("iptv:") && supplement.tags.isNotEmpty()) {
-            return GroupTitleResolver.resolve(supplement.name, supplement.tags)
+            return GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id)
         }
         if (supplement.id.startsWith("iptv:")) {
             return GroupTitleResolver.Resolution(

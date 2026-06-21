@@ -8,6 +8,7 @@ import com.thothassistant.stepdaddy.gateway.epg.EpgStore
 import com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex
 import com.thothassistant.stepdaddy.gateway.epg.TvgIdResolver
 import com.thothassistant.stepdaddy.gateway.sidecar.EmbeddedSidecarRepository
+import com.thothassistant.stepdaddy.gateway.upstream.CategoryOverrideStore
 import com.thothassistant.stepdaddy.gateway.upstream.ChannelMetaStore
 import com.thothassistant.stepdaddy.gateway.upstream.LogoResolver
 import com.thothassistant.stepdaddy.gateway.upstream.PlaylistCache
@@ -119,6 +120,7 @@ class GatewayApp : Application() {
                 _epgShareIdBridge = EpgShareIdBridge(this@GatewayApp)
                 _channelMetaStore = ChannelMetaStore(this@GatewayApp)
                 _logoResolver = LogoResolver(this@GatewayApp)
+                CategoryOverrideStore.ensureLoaded(this@GatewayApp)
                 _supplementSource = SupplementSource(
                     this@GatewayApp,
                     gatewayEnvironment,

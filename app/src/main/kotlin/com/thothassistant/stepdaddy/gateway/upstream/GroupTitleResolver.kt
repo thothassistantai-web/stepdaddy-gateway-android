@@ -222,7 +222,7 @@ object GroupTitleResolver {
 
     private val resolveCache = ThreadLocal<MutableMap<ResolveKey, Resolution>?>()
 
-    private data class ResolveKey(val name: String, val tags: List<String>)
+    private data class ResolveKey(val channelId: String?, val name: String, val tags: List<String>)
 
     /** Memoize [resolve] for one playlist build (cleared when the block returns). */
     fun <T> withResolveCache(block: () -> T): T {
@@ -235,15 +235,15 @@ object GroupTitleResolver {
         }
     }
 
-    fun resolve(channelName: String, tags: List<String>): Resolution {
+    fun resolve(channelName: String, tags: List<String>, channelId: String? = null): Resolution {
         resolveCache.get()?.let { cache ->
-            val key = ResolveKey(channelName, tags)
-            return cache.getOrPut(key) { resolveUncached(channelName, tags) }
+            val key = ResolveKey(channelId, channelName, tags)
+            return cache.getOrPut(key) { resolveUncached(channelId, channelName, tags) }
         }
-        return resolveUncached(channelName, tags)
+        return resolveUncached(channelId, channelName, tags)
     }
 
-    private fun resolveUncached(channelName: String, tags: List<String>): Resolution {
+    private fun resolveUncached(channelId: String?, channelName: String, tags: List<String>): Resolution {
         val hashTags = tags
             .filter { it.startsWith("#") && it.length > 1 }
             .map { it.removePrefix("#").lowercase() }
@@ -261,7 +261,8 @@ object GroupTitleResolver {
         }
 
         val (flag, code) = resolveCountry(tags, channelName)
-        val category = resolveCategory(hashTags, code, channelName)
+        val category = CategoryOverrideStore.overrideGroup(channelId, channelName)
+            ?: resolveCategory(hashTags, code, channelName)
 
         return Resolution(
             groupTitle = category,
@@ -277,8 +278,8 @@ object GroupTitleResolver {
         channels.sortedWith(channelComparator())
 
     fun channelComparator(): Comparator<Channel> = Comparator { left, right ->
-        val a = resolve(left.name, left.tags)
-        val b = resolve(right.name, right.tags)
+        val a = resolve(left.name, left.tags, left.id)
+        val b = resolve(right.name, right.tags, right.id)
         compareValuesBy(
             a,
             b,

@@ -7,10 +7,14 @@ import com.thothassistant.stepdaddy.gateway.model.AdminSettingsPatchResult
 import com.thothassistant.stepdaddy.gateway.model.EpgIdOverrideRequest
 import com.thothassistant.stepdaddy.gateway.model.EpgNameOverrideRequest
 import com.thothassistant.stepdaddy.gateway.model.LogoOverrideRequest
+import com.thothassistant.stepdaddy.gateway.model.AssetImportRequest
+import com.thothassistant.stepdaddy.gateway.model.CategoryMoveRequest
+import com.thothassistant.stepdaddy.gateway.model.CategoryOverrideRequest
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.receive
+import io.ktor.server.request.receiveText
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import kotlinx.serialization.encodeToString
@@ -148,5 +152,90 @@ class AdminRoutes(
             return
         }
         call.respondText(json.encodeToString(admin.resolveEpg(name)), ContentType.Application.Json)
+    }
+
+    suspend fun getChannel(call: ApplicationCall) {
+        val id = call.parameters["id"].orEmpty()
+        val channel = admin.getChannel(id)
+        if (channel == null) {
+            call.respond(HttpStatusCode.NotFound, AdminErrorResponse(error = "not_found", message = "Channel $id not found"))
+            return
+        }
+        call.respondText(json.encodeToString(channel), ContentType.Application.Json)
+    }
+
+    suspend fun stopGateway(call: ApplicationCall) {
+        call.respondText(json.encodeToString(admin.stopGateway()), ContentType.Application.Json)
+    }
+
+    suspend fun restartGateway(call: ApplicationCall) {
+        val scope = call.request.queryParameters["scope"] ?: "http"
+        call.respondText(json.encodeToString(admin.restartGateway(scope)), ContentType.Application.Json)
+    }
+
+    suspend fun resolveStream(call: ApplicationCall) {
+        val id = call.request.queryParameters["channelId"].orEmpty()
+        if (id.isBlank()) {
+            call.respond(HttpStatusCode.BadRequest, AdminErrorResponse(error = "bad_request", message = "channelId required"))
+            return
+        }
+        val probe = call.request.queryParameters["probe"]?.toBooleanStrictOrNull() ?: false
+        call.respondText(json.encodeToString(admin.resolveStream(id, probe)), ContentType.Application.Json)
+    }
+
+    suspend fun exportAssets(call: ApplicationCall) {
+        val type = call.parameters["type"].orEmpty()
+        val layer = call.request.queryParameters["layer"] ?: "merged"
+        call.respondText(json.encodeToString(admin.exportAssets(type, layer)), ContentType.Application.Json)
+    }
+
+    suspend fun importAssets(call: ApplicationCall) {
+        val type = call.parameters["type"].orEmpty()
+        val body = call.receive<AssetImportRequest>()
+        call.respondText(
+            json.encodeToString(admin.importAssets(type, body.entries, body.merge)),
+            ContentType.Application.Json,
+        )
+    }
+
+    suspend fun clearAssets(call: ApplicationCall) {
+        val type = call.parameters["type"].orEmpty()
+        call.respondText(json.encodeToString(admin.clearRuntimeAssets(type)), ContentType.Application.Json)
+    }
+
+    suspend fun importEpgCsv(call: ApplicationCall) {
+        val csv = call.receiveText()
+        call.respondText(json.encodeToString(admin.importEpgCsv(csv)), ContentType.Application.Json)
+    }
+
+    suspend fun categoryAudit(call: ApplicationCall) {
+        val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 200
+        val group = call.request.queryParameters["group"]
+        call.respondText(json.encodeToString(admin.categoryAudit(limit, group)), ContentType.Application.Json)
+    }
+
+    suspend fun moveCategories(call: ApplicationCall) {
+        val body = call.receive<CategoryMoveRequest>()
+        call.respondText(
+            json.encodeToString(admin.moveCategories(body.channelIds, body.groupTitle)),
+            ContentType.Application.Json,
+        )
+    }
+
+    suspend fun setCategoryOverride(call: ApplicationCall) {
+        val body = call.receive<CategoryOverrideRequest>()
+        call.respondText(
+            json.encodeToString(admin.setCategoryOverride(body.channelId, body.channelName, body.groupTitle)),
+            ContentType.Application.Json,
+        )
+    }
+
+    suspend fun clearCategoryOverride(call: ApplicationCall) {
+        val channelId = call.request.queryParameters["channelId"]
+        val channelName = call.request.queryParameters["channelName"]
+        call.respondText(
+            json.encodeToString(admin.clearCategoryOverride(channelId, channelName)),
+            ContentType.Application.Json,
+        )
     }
 }

@@ -131,3 +131,79 @@ data class AdminErrorResponse(
     val error: String,
     val message: String,
 )
+
+@Serializable
+data class AdminImportResult(
+    val ok: Boolean,
+    val imported: Int = 0,
+    val skipped: Int = 0,
+    val errors: List<String> = emptyList(),
+    val message: String = "",
+)
+
+@Serializable
+data class AssetExportResult(
+    val type: String,
+    val layer: String,
+    val count: Int,
+    val entries: Map<String, String> = emptyMap(),
+)
+
+@Serializable
+data class AssetImportRequest(
+    val entries: Map<String, String> = emptyMap(),
+    val merge: Boolean = true,
+)
+
+@Serializable
+data class ResolveStreamResult(
+    val channelId: String,
+    val channelName: String? = null,
+    val source: String,
+    val playUrl: String,
+    val resolved: Boolean,
+    val probe: StreamProbeResult? = null,
+)
+
+@Serializable
+data class StreamProbeResult(
+    val ok: Boolean,
+    val cached: Boolean = false,
+    val bytes: Int? = null,
+    val error: String? = null,
+)
+
+@Serializable
+data class CategoryOverrideRequest(
+    val channelId: String? = null,
+    val channelName: String? = null,
+    val groupTitle: String,
+)
+
+@Serializable
+data class CategoryMoveRequest(
+    val channelIds: List<String>,
+    val groupTitle: String,
+)
+
+@Serializable
+data class CategoryAuditEntry(
+    val id: String,
+    val name: String,
+    val source: String,
+    val currentGroup: String,
+    val suggestedGroup: String,
+    val reason: String,
+)
+
+@Serializable
+data class CategoryAuditResult(
+    val scanned: Int,
+    val misplacements: Int,
+    val entries: List<CategoryAuditEntry>,
+)
+
+@Serializable
+data class GatewayLifecycleRequest(
+    val scope: String = "http",
+)

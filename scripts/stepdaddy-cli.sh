@@ -34,6 +34,18 @@ Commands:
   resolve logo CHANNEL [TVG_ID] Probe logo lookup
   resolve epg CHANNEL          Probe EPG tvg-id lookup
 
+  resolve stream CHANNEL [probe] Probe play URL (add probe to fetch manifest)
+  channel ID                 Lookup channel by id
+  stop                         Stop gateway service
+  restart [http|full]          Restart HTTP engine or full gateway
+  audit [GROUP]                Category misplacement audit
+  move ID [ID...] GROUP        Move channels to category
+  category ID|NAME GROUP       Set category override
+  assets export TYPE [layer]     Export asset overlay (epg-name|logo|epg-id|category)
+  assets import TYPE FILE.json   Import runtime asset overlay
+  assets clear TYPE              Clear runtime asset overlay
+  import-csv FILE.csv            Bulk EPG mapping import
+
 Examples:
   ./scripts/stepdaddy-cli.sh health
   ./scripts/stepdaddy-cli.sh search hbo
@@ -210,8 +222,97 @@ case "$cmd" in
         q="$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "$1")"
         request GET "/api/v1/resolve/epg?channelName=${q}"
         ;;
-      *) echo "Usage: resolve logo|epg ..." >&2; exit 1 ;;
+      stream)
+        [[ $# -ge 1 ]] || { echo "Usage: resolve stream CHANNEL [probe]" >&2; exit 1; }
+        id="$1"
+        probe="${2:-}"
+        q="$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "$id")"
+        path="/api/v1/resolve/stream?channelId=${q}"
+        [[ "$probe" == "probe" ]] && path="${path}&probe=true"
+        request GET "$path"
+        ;;
+      *) echo "Usage: resolve logo|epg|stream ..." >&2; exit 1 ;;
     esac
+    ;;
+  channel)
+    [[ $# -eq 1 ]] || { echo "Usage: channel ID" >&2; exit 1; }
+    q="$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "$1")"
+    request GET "/api/v1/channels/${q}"
+    ;;
+  stop)
+    request POST /api/v1/actions/stop
+    ;;
+  restart)
+    scope="${1:-http}"
+    request POST "/api/v1/actions/restart?scope=${scope}"
+    ;;
+  audit)
+    group="${1:-}"
+    path="/api/v1/categories/audit?limit=50"
+    [[ -n "$group" ]] && path="${path}&group=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "$group")"
+    request GET "$path"
+    ;;
+  move)
+    [[ $# -ge 2 ]] || { echo "Usage: move ID [ID...] GROUP" >&2; exit 1; }
+    group="${!#}"
+    ids=("${@:1:$#-1}")
+    json_ids="$(printf '"%s",' "${ids[@]}")"
+    json_ids="[${json_ids%,}]"
+    body="$(printf '{"channelIds":%s,"groupTitle":"%s"}' "$json_ids" "$group")"
+    request POST /api/v1/categories/move "$body"
+    ;;
+  category)
+    [[ $# -eq 2 ]] || { echo "Usage: category ID|NAME GROUP" >&2; exit 1; }
+    if [[ "$1" =~ ^[0-9]+$|^[a-z]+: ]]; then
+      body="$(printf '{"channelId":"%s","groupTitle":"%s"}' "${1//\"/\\\"}" "${2//\"/\\\"}")"
+    else
+      body="$(printf '{"channelName":"%s","groupTitle":"%s"}' "${1//\"/\\\"}" "${2//\"/\\\"}")"
+    fi
+    request POST /api/v1/overrides/category "$body"
+    ;;
+  assets)
+    sub="${1:-}"
+    shift || true
+    case "$sub" in
+      export)
+        type="${1:-epg-name}"
+        layer="${2:-runtime}"
+        request GET "/api/v1/assets/${type}?layer=${layer}"
+        ;;
+      import)
+        type="${1:-}"
+        file="${2:-}"
+        [[ -n "$type" && -f "$file" ]] || { echo "Usage: assets import TYPE FILE.json" >&2; exit 1; }
+        body="$(python3 -c "import json,sys; print(json.dumps({'entries':json.load(open(sys.argv[1])),'merge':True}))" "$file")"
+        request POST "/api/v1/assets/${type}" "$body"
+        ;;
+      clear)
+        type="${1:-}"
+        [[ -n "$type" ]] || { echo "Usage: assets clear TYPE" >&2; exit 1; }
+        request DELETE "/api/v1/assets/${type}"
+        ;;
+      *) echo "Usage: assets export|import|clear ..." >&2; exit 1 ;;
+    esac
+    ;;
+  import-csv)
+    [[ $# -eq 1 && -f "$1" ]] || { echo "Usage: import-csv FILE.csv" >&2; exit 1; }
+    tmp="$(mktemp)"
+    args=(-sS -o "$tmp" -w '%{http_code}' -X POST -H 'Content-Type: text/csv' --data-binary @"$1")
+    [[ -n "$TOKEN" ]] && args+=(-H "X-StepDaddy-Token: $TOKEN")
+    code="$(curl "${args[@]}" "${BASE}/api/v1/import/epg-csv")"
+    if [[ "$code" -ge 400 ]]; then echo "HTTP $code" >&2; cat "$tmp" >&2; rm -f "$tmp"; exit 1; fi
+    python3 -m json.tool "$tmp" 2>/dev/null || cat "$tmp"
+    rm -f "$tmp"
+    ;;
+  test)
+    echo "== StepDaddy API smoke test =="
+    request GET /health
+    request GET /api/v1
+    request GET /api/v1/settings
+    request GET "/api/v1/channels?q=cnn&limit=3"
+    request GET "/api/v1/categories/audit?limit=5"
+    request POST /api/v1/actions/prewarm-playlist
+    echo "== smoke test complete =="
     ;;
   *)
     echo "Unknown command: $cmd" >&2

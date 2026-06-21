@@ -140,6 +140,18 @@ class ServerService : LifecycleService() {
                         logoResolver = app.logoResolver,
                         prewarmPlaylist = { gatewayServer?.prewarmPlaylist() },
                         runLogoBackfill = { runLogoBackfillNow() },
+                        stopGatewayAction = { stopGateway() },
+                        restartHttpAction = { restartGatewayAfterFailure() },
+                        restartFullAction = {
+                            lifecycleScope.launch(Dispatchers.IO) {
+                                startMutex.withLock {
+                                    gatewayServer?.stop()
+                                    gatewayServer = null
+                                }
+                                delay(500L)
+                                startGateway(skipReadyBanner = true)
+                            }
+                        },
                     )
                     val server = GatewayServer(
                         this@ServerService,
