@@ -123,6 +123,7 @@ class GatewayApp : Application() {
                     this@GatewayApp,
                     gatewayEnvironment,
                     nameIndex = _iptvOrgNameIndex!!,
+                    epgChannelMapper = _epgChannelMapper!!,
                 )
                 _epgManager = EpgManager(
                     store,

@@ -34,11 +34,14 @@ class EpgChannelMapper(context: Context) {
 
   fun tvgIdFor(channelId: String, channelName: String): String? {
     byChannelId[channelId.trim()]?.let { return it }
+    return tvgIdForName(channelName)
+  }
+
+  /** Name-only lookup (supplements, runtime overrides). */
+  fun tvgIdForName(channelName: String): String? {
     val norm = normalizeName(channelName)
-    if (norm.isNotEmpty()) {
-      byNormName[norm]?.let { return it }
-    }
-    return null
+    if (norm.isEmpty()) return null
+    return byNormName[norm]
   }
 
   fun mappedCount(): Int = byChannelId.size + byNormName.size

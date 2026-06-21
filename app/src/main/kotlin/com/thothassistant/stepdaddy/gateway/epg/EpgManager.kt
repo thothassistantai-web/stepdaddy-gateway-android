@@ -77,6 +77,7 @@ class EpgManager(
       val started = System.currentTimeMillis()
       try {
         supplementSource?.prepareFastEpgForBuild()
+        supplementSource?.applyNameEpgOverrides()
         val namesById = channels.associate { it.id to it.name }
         val tvgIds = mapper.allTvgIds(channels.map { it.id }, namesById)
         val supplementTvgIds = supplementSource?.tvgIdsForEpg().orEmpty()

@@ -7,6 +7,13 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.18] - 2026-06-21
+
+### Added
+
+- **455 high-confidence EPG name overrides** — verified tvg-ids from XMLTV feed crosswalk (Samsung/Pluto/Plex hash ids, epgshare, iptv-org)
+- **Supplement EPG override pass** — bundled name overrides now apply to iptv-org supplement channels before EPG build
+
 ## [1.0.17] - 2026-06-20
 
 ### Added
@@ -149,7 +156,8 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 - Upstream DaddyLive / resportz availability is third-party dependent
 - Full web UI / mapping editor remains in Linux `stepdaddy-web` only
 
-[Unreleased]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/compare/v1.0.17...HEAD
+[Unreleased]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/compare/v1.0.18...HEAD
+[1.0.18]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.18
 [1.0.17]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.17
 [1.0.16]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.16
 [1.0.2]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.2

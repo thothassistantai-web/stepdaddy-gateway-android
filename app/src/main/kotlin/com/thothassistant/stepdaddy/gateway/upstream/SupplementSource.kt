@@ -3,6 +3,7 @@ package com.thothassistant.stepdaddy.gateway.upstream
 import android.content.Context
 import android.util.Log
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
+import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex
 import com.thothassistant.stepdaddy.gateway.epg.TheTvAppSportsEpgGenerator
 import com.thothassistant.stepdaddy.gateway.model.Channel
@@ -27,6 +28,7 @@ class SupplementSource(
     context: Context,
     private val environment: GatewayEnvironment,
     private val nameIndex: IptvOrgNameIndex = IptvOrgNameIndex(context),
+    private val epgChannelMapper: EpgChannelMapper? = null,
     private val httpClient: OkHttpClient = defaultClient(),
     private val sportsResolver: TheTvAppSportsResolver = TheTvAppSportsResolver(httpClient),
     private val iptvOrgEpgRepository: IptvOrgEpgRepository = IptvOrgEpgRepository(context, httpClient),
@@ -131,6 +133,7 @@ class SupplementSource(
 
     /** Download FAST provider guides if missing; backfill mjh hash tvg-ids on cached iptv-org rows. */
     fun prepareFastEpgForBuild(): Int {
+        applyNameEpgOverrides()
         if (!environment.iptvOrgEpgEnabled || !iptvOrgEnabled()) return 0
         runCatching {
             fastEpgCatalog.refresh(
@@ -141,6 +144,25 @@ class SupplementSource(
             return 0
         }
         return backfillFastTvgIdsFromCatalog()
+    }
+
+    /** Apply bundled/runtime EPG name overrides to cached supplement rows. */
+    fun applyNameEpgOverrides(): Int {
+        val mapper = epgChannelMapper ?: return 0
+        if (cached.isEmpty()) return 0
+        var updated = 0
+        val next = cached.map { channel ->
+            val override = mapper.tvgIdForName(channel.name)?.trim().orEmpty()
+            if (override.isEmpty() || override == channel.tvgId?.trim()) return@map channel
+            updated++
+            channel.copy(tvgId = override)
+        }
+        if (updated > 0) {
+            cached = next
+            store.writeChannels(next)
+            Log.i(TAG, "EPG name overrides applied to $updated supplement channels")
+        }
+        return updated
     }
 
     private fun backfillFastTvgIdsFromCatalog(): Int {
@@ -243,6 +265,7 @@ class SupplementSource(
                 }
                 cached = supplements
                 store.writeChannels(supplements)
+                applyNameEpgOverrides()
                 Log.i(
                     TAG,
                     "Supplement sync: ${supplements.size} total " +
