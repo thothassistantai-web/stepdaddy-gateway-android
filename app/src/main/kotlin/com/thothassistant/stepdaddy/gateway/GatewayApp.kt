@@ -116,7 +116,7 @@ class GatewayApp : Application() {
                 val store = EpgStore(this@GatewayApp)
                 _epgChannelMapper = EpgChannelMapper(this@GatewayApp)
                 _iptvOrgNameIndex = IptvOrgNameIndex(this@GatewayApp)
-                _tvgIdResolver = TvgIdResolver(_iptvOrgNameIndex!!)
+                _tvgIdResolver = TvgIdResolver(_iptvOrgNameIndex!!, _epgChannelMapper!!)
                 _epgShareIdBridge = EpgShareIdBridge(this@GatewayApp)
                 _channelMetaStore = ChannelMetaStore(this@GatewayApp)
                 _logoResolver = LogoResolver(this@GatewayApp)

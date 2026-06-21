@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import sys
@@ -38,8 +39,78 @@ def norm_key(name: str) -> str:
     return re.sub(r"\s+", " ", s).strip()
 
 
-def main() -> int:
-    csv_path = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_CSV
+def epg_source_matches_provider(epg_source: str, provider: str) -> bool:
+    """True when mjh-{provider} style epg_source aligns with the CSV provider column."""
+    es = (epg_source or "").strip().lower()
+    prov = (provider or "").strip().lower()
+    if not es or not prov or prov == "unknown":
+        return False
+    if not es.startswith("mjh-"):
+        return False
+    return es[len("mjh-") :] == prov
+
+
+def row_should_merge(row: dict[str, str], *, include_provider_medium: bool) -> bool:
+    confidence = (row.get("confidence") or "").strip().lower()
+    if confidence == "high":
+        return True
+    if include_provider_medium and confidence == "medium":
+        return epg_source_matches_provider(
+            row.get("epg_source") or "",
+            row.get("provider") or "",
+        )
+    return False
+
+
+def merge_row(
+    row: dict[str, str],
+    existing: dict[str, str],
+    norm_to_key: dict[str, str],
+) -> str:
+    """Apply one CSV row; return 'added', 'updated', or 'skipped'."""
+    proposed = (row.get("proposed_tvg_id") or "").strip()
+    if not proposed:
+        return "skipped"
+    label = clean_display_name(row.get("display_name") or "")
+    if not label:
+        return "skipped"
+    nk = norm_key(label)
+    if nk in norm_to_key:
+        key = norm_to_key[nk]
+        if existing.get(key) == proposed:
+            return "skipped"
+        existing[key] = proposed
+        return "updated"
+    existing[label] = proposed
+    norm_to_key[nk] = label
+    return "added"
+
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Merge EPG repair CSV rows into epg_name_overrides.json",
+    )
+    parser.add_argument(
+        "csv_path",
+        nargs="?",
+        type=Path,
+        default=DEFAULT_CSV,
+        help=f"Repair mappings CSV (default: {DEFAULT_CSV})",
+    )
+    parser.add_argument(
+        "--include-provider-medium",
+        action="store_true",
+        help=(
+            "Also merge medium-confidence rows when provider matches the "
+            "epg_source mjh- prefix (e.g. mjh-samsung + Samsung)"
+        ),
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv if argv is not None else sys.argv[1:])
+    csv_path = args.csv_path
     if not csv_path.is_file():
         print(f"CSV not found: {csv_path}", file=sys.stderr)
         return 1
@@ -55,26 +126,15 @@ def main() -> int:
 
     with csv_path.open(encoding="utf-8") as f:
         for row in csv.DictReader(f):
-            if row.get("confidence") != "high":
+            if not row_should_merge(row, include_provider_medium=args.include_provider_medium):
                 continue
-            proposed = (row.get("proposed_tvg_id") or "").strip()
-            if not proposed:
-                continue
-            label = clean_display_name(row.get("display_name") or "")
-            if not label:
-                continue
-            nk = norm_key(label)
-            if nk in norm_to_key:
-                key = norm_to_key[nk]
-                if existing.get(key) == proposed:
-                    skipped += 1
-                    continue
-                existing[key] = proposed
+            outcome = merge_row(row, existing, norm_to_key)
+            if outcome == "added":
+                added += 1
+            elif outcome == "updated":
                 updated += 1
             else:
-                existing[label] = proposed
-                norm_to_key[nk] = label
-                added += 1
+                skipped += 1
 
     OVERRIDES_PATH.write_text(
         json.dumps(dict(sorted(existing.items(), key=lambda kv: kv[0].lower())), indent=2, ensure_ascii=False)

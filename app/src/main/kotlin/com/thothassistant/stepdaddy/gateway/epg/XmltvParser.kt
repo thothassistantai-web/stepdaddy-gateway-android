@@ -39,6 +39,22 @@ object XmltvParser {
     }
   }
 
+  fun iterAllBlocksFromFile(
+      file: File,
+      startTag: String,
+      endTag: String,
+  ): Sequence<String> =
+      if (file.name.endsWith(".gz", ignoreCase = true)) {
+          iterAllBlocksFromGzip(file, startTag, endTag)
+      } else {
+          sequence {
+              if (!file.exists()) return@sequence
+              file.inputStream().use { input ->
+                  yieldAll(iterAllBlocksFromStream(input, startTag, endTag))
+              }
+          }
+      }
+
   fun iterAllBlocksFromStream(
       input: InputStream,
       startTag: String,

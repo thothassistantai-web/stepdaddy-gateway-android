@@ -109,17 +109,42 @@ def feed_ids_for_playlist_id(
     return feed_ids
 
 
-def main() -> int:
-    mapping = json.loads(MAPPING_PATH.read_text(encoding="utf-8"))["mapping"]
-    overrides_src = WEB_ROOT / "app" / "epg_overrides.json"
-    overrides: dict[str, str] = {}
-    if overrides_src.is_file():
-        overrides = json.loads(overrides_src.read_text(encoding="utf-8"))
+def load_name_overrides() -> dict[str, str]:
+    """Prefer bundled Android overrides; optionally merge web copy when larger."""
+    android: dict[str, str] = {}
+    if NAME_OVERRIDES_OUT.is_file():
+        android = json.loads(NAME_OVERRIDES_OUT.read_text(encoding="utf-8"))
+    web_src = WEB_ROOT / "app" / "epg_overrides.json"
+    if not web_src.is_file():
+        return android
+    web = json.loads(web_src.read_text(encoding="utf-8"))
+    if not android:
         NAME_OVERRIDES_OUT.write_text(
-            json.dumps(overrides, indent=2, sort_keys=True) + "\n",
+            json.dumps(web, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
         )
-        print(f"Synced {NAME_OVERRIDES_OUT.name} ({len(overrides)} entries)")
+        print(f"Initialized {NAME_OVERRIDES_OUT.name} from web ({len(web)} entries)")
+        return web
+    # Never shrink bundled overrides — merge web-only keys in.
+    merged = dict(android)
+    added = 0
+    for name, tvg in web.items():
+        if name not in merged:
+            merged[name] = tvg
+            added += 1
+    if added:
+        NAME_OVERRIDES_OUT.write_text(
+            json.dumps(dict(sorted(merged.items(), key=lambda kv: kv[0].lower())), indent=2, ensure_ascii=False)
+            + "\n",
+            encoding="utf-8",
+        )
+        print(f"Merged {added} web-only overrides into {NAME_OVERRIDES_OUT.name} (total {len(merged)})")
+    return merged if added else android
+
+
+def main() -> int:
+    mapping = json.loads(MAPPING_PATH.read_text(encoding="utf-8"))["mapping"]
+    overrides: dict[str, str] = load_name_overrides()
 
     index = EpgShareChannelIndex()
     if not index._load_cache():

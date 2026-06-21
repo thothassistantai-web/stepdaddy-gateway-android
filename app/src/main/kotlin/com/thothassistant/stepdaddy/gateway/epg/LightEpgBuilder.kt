@@ -69,6 +69,35 @@ class LightEpgBuilder(
         )
       }
 
+      val epgshareGapIds = (
+          tvgIds.filter { it !in idsWithProgrammes } +
+              fastEpgTvgIds.filter { isHashStyleFastId(it) && it !in idsWithProgrammes }
+          ).toSet()
+      if (epgshareGapIds.isNotEmpty()) {
+        val gapGrouped = groupTvgIdsByGapFillFeed(epgshareGapIds)
+        gapGrouped.keys.forEach { url -> ensureFeedCached(url) }
+        val gapExpansion = idBridge?.expandWantedIds(epgshareGapIds)
+            ?: EpgTvgIdMatcher.expandWantedIds(epgshareGapIds)
+        gapGrouped.forEach { (url, playlistIds) ->
+          val cache = store.feedCacheFile(url)
+          if (!cache.exists()) return@forEach
+          mergeEpgshareFeed(
+              writer = writer,
+              cache = cache,
+              playlistIds = playlistIds,
+              expansion = gapExpansion,
+              writtenChannelIds = writtenChannelIds,
+              idsWithProgrammes = idsWithProgrammes,
+              windowStart = windowStart,
+              windowEnd = windowEnd,
+              channelCountRef = { channelCount = it },
+              programmeCountRef = { programmeCount = it },
+              getChannelCount = { channelCount },
+              getProgrammeCount = { programmeCount },
+          )
+        }
+      }
+
       val gapFillIds = tvgIds.filter { it !in idsWithProgrammes }.toSet()
       val supplementIds = (supplementTvgIds + gapFillIds).filter { it !in idsWithProgrammes }.toSet()
       if (supplementEpgFile != null && supplementIds.isNotEmpty()) {
@@ -359,11 +388,59 @@ class LightEpgBuilder(
       val grouped = linkedMapOf<String, MutableSet<String>>()
       tvgIds.forEach { tvgId ->
         val routed = scheduleUrlsForTvgId(tvgId)
+            .filter { it in EpgConfig.PRIMARY_FEED_URLS }
         val primary = routed.firstOrNull() ?: return@forEach
         grouped.getOrPut(primary) { linkedSetOf() } += tvgId
       }
       return grouped
     }
+
+    fun groupTvgIdsByGapFillFeed(tvgIds: Set<String>): Map<String, Set<String>> {
+      val grouped = linkedMapOf<String, MutableSet<String>>()
+      tvgIds.forEach { tvgId ->
+        val feed = gapFillUrlForTvgId(tvgId) ?: return@forEach
+        grouped.getOrPut(feed) { linkedSetOf() } += tvgId
+      }
+      return grouped
+    }
+
+    fun isHashStyleFastId(tvgId: String): Boolean {
+      if ('.' !in tvgId) return true
+      return tvgId.uppercase().startsWith("USBD")
+    }
+
+    fun gapFillUrlForTvgId(tvgId: String): String? {
+      val tl = tvgId.lowercase()
+      if (isHashStyleFastId(tvgId) || "plex" in tl) {
+        return feedUrlContaining("PLEX1")
+      }
+      if ("distro" in tl) {
+        return feedUrlContaining("DISTROTV1")
+      }
+      val regional = listOf(
+          listOf(".uk", ".gb", ".ie") to "UK1",
+          listOf(".de") to "DE1",
+          listOf(".fr") to "FR1",
+          listOf(".it") to "IT1",
+          listOf(".es") to "ES1",
+          listOf(".ca") to "CA2",
+          listOf(".au") to "AU1",
+          listOf(".nz") to "NZ1",
+          listOf(".tr") to "TR1",
+          listOf(".ae") to "AE1",
+          listOf(".br") to "BR1",
+          listOf("bein") to "BEIN1",
+      )
+      regional.forEach { (markers, feedName) ->
+        if (markers.any { tl.contains(it) }) {
+          return feedUrlContaining(feedName)
+        }
+      }
+      return EpgConfig.GAP_FILL_FEED_URLS.firstOrNull()
+    }
+
+    private fun feedUrlContaining(token: String): String? =
+        EpgConfig.GAP_FILL_FEED_URLS.firstOrNull { token in it }
 
     fun scheduleUrlsForTvgId(tvgId: String): List<String> {
       val tl = tvgId.lowercase()
@@ -401,7 +478,7 @@ class LightEpgBuilder(
           }
         }
       }
-      EpgConfig.FEED_URLS.forEach { url ->
+      EpgConfig.PRIMARY_FEED_URLS.forEach { url ->
         if (url !in routed) routed += url
       }
       if ("us_locals" in tl) {
@@ -411,7 +488,7 @@ class LightEpgBuilder(
       return routed
     }
 
-    private fun usFeeds(): List<String> = EpgConfig.FEED_URLS
+    private fun usFeeds(): List<String> = EpgConfig.PRIMARY_FEED_URLS
 
     private fun feed(name: String): String =
         "https://epgshare01.online/epgshare01/epg_ripper_${name}.xml.gz"

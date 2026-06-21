@@ -72,6 +72,7 @@ object IptvOrgStreamsConfig {
         "pluto" to "Pluto",
         "samsung" to "Samsung",
         "tubi" to "Tubi",
+        "local" to "LocalNow",
         "stirr" to "STIRR",
         "vizio" to "Vizio",
         "bbc" to "BBC",

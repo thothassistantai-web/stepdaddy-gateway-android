@@ -1,6 +1,7 @@
 package com.thothassistant.stepdaddy.gateway.admin
 
 import android.content.Context
+import com.thothassistant.stepdaddy.gateway.epg.DaddyliveEpgResearchStore
 import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.model.AdminImportResult
 import com.thothassistant.stepdaddy.gateway.upstream.CategoryOverrideStore
@@ -15,6 +16,7 @@ class AdminAssetManager(private val context: Context) {
         EPG_NAME("epg-name-overrides", "epg_name_overrides.json"),
         LOGO("logo-overrides", "channel_logo_overrides.json"),
         EPG_ID("epg-id-map", "channel_epg_map.json"),
+        EPG_RESEARCH("epg-research", "daddylive_epg_research.json"),
         CATEGORY("category-overrides", null),
     }
 
@@ -22,6 +24,7 @@ class AdminAssetManager(private val context: Context) {
         AssetType.EPG_NAME -> exportEpgName(layer)
         AssetType.LOGO -> exportLogo(layer)
         AssetType.EPG_ID -> exportEpgId(layer)
+        AssetType.EPG_RESEARCH -> exportEpgResearch(layer)
         AssetType.CATEGORY -> CategoryOverrideStore.snapshot()
     }
 
@@ -74,6 +77,23 @@ class AdminAssetManager(private val context: Context) {
                     imported++
                 }
                 mapper.saveRuntimeIdMap(context)
+            }
+            AssetType.EPG_RESEARCH -> {
+                val store = DaddyliveEpgResearchStore(context)
+                entries.forEach { (channelId, tvgId) ->
+                    if (channelId.isBlank() || tvgId.isBlank()) {
+                        skipped++
+                        return@forEach
+                    }
+                    store.putRuntimeMapping(
+                        channelId = channelId,
+                        tvgId = tvgId,
+                        confidence = 1.0f,
+                        method = "admin_import",
+                    )
+                    imported++
+                }
+                store.save()
             }
             AssetType.CATEGORY -> {
                 entries.forEach { (key, group) ->
@@ -166,6 +186,7 @@ class AdminAssetManager(private val context: Context) {
             }
             AssetType.LOGO -> LogoBackfillService.runtimeOverridesFile(context).delete()
             AssetType.EPG_ID -> File(context.filesDir, "epg/channel_epg_map.json").delete()
+            AssetType.EPG_RESEARCH -> DaddyliveEpgResearchStore.runtimeResearchFile(context).delete()
             AssetType.CATEGORY -> CategoryOverrideStore.clearRuntime(context)
         }
     }
@@ -190,6 +211,22 @@ class AdminAssetManager(private val context: Context) {
         }
     }
 
+    private fun exportEpgResearch(layer: String): Map<String, String> {
+        val bundled = loadBundledEpgResearch()
+        val runtimeFile = DaddyliveEpgResearchStore.runtimeResearchFile(context)
+        val runtime = if (runtimeFile.isFile) {
+            loadEpgResearchMappings(runtimeFile)
+        } else {
+            emptyMap()
+        }
+        val merged = when (layer.lowercase()) {
+            "bundled" -> bundled
+            "runtime" -> runtime
+            else -> bundled + runtime
+        }
+        return merged.mapValues { (_, entry) -> entry.tvgId }
+    }
+
     private fun exportEpgId(layer: String): Map<String, String> {
         val bundled = loadBundledEpgIdMap()
         val runtimeFile = File(context.filesDir, "epg/channel_epg_map.json")
@@ -206,6 +243,38 @@ class AdminAssetManager(private val context: Context) {
             "bundled" -> bundled
             "runtime" -> runtime
             else -> bundled + runtime
+        }
+    }
+
+    private fun loadBundledEpgResearch(): Map<String, DaddyliveEpgResearchStore.ResearchMatch> =
+        runCatching {
+            val text = context.assets.open("daddylive_epg_research.json").bufferedReader().use { it.readText() }
+            parseEpgResearchAsset(text)
+        }.getOrDefault(emptyMap())
+
+    private fun loadEpgResearchMappings(file: File): Map<String, DaddyliveEpgResearchStore.ResearchMatch> =
+        runCatching {
+            parseEpgResearchAsset(file.readText())
+        }.getOrDefault(emptyMap())
+
+    private fun parseEpgResearchAsset(text: String): Map<String, DaddyliveEpgResearchStore.ResearchMatch> {
+        val root = JSONObject(text)
+        val mappings = root.optJSONObject("mappings") ?: return emptyMap()
+        return buildMap {
+            mappings.keys().forEach { channelId ->
+                val entry = mappings.optJSONObject(channelId) ?: return@forEach
+                val tvgId = entry.optString("tvg_id").trim()
+                if (tvgId.isEmpty()) return@forEach
+                put(
+                    channelId,
+                    DaddyliveEpgResearchStore.ResearchMatch(
+                        tvgId = tvgId,
+                        confidence = entry.optDouble("confidence", 0.0).toFloat(),
+                        method = entry.optString("method"),
+                        channelName = entry.optString("channel_name").trim().takeIf { it.isNotEmpty() },
+                    ),
+                )
+            }
         }
     }
 

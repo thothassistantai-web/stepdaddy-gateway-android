@@ -4,11 +4,32 @@ object EpgConfig {
   const val USER_AGENT =
       "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:137.0) Gecko/20100101 Firefox/137.0"
 
-  val FEED_URLS = listOf(
+  val PRIMARY_FEED_URLS = listOf(
       "https://epgshare01.online/epgshare01/epg_ripper_US2.xml.gz",
       "https://epgshare01.online/epgshare01/epg_ripper_US_SPORTS1.xml.gz",
       "https://epgshare01.online/epgshare01/epg_ripper_US_LOCALS1.xml.gz",
   )
+
+  /** Plex/DistroTV + regional sports feeds — lazy-loaded when primary merge leaves gaps. */
+  val GAP_FILL_FEED_URLS = listOf(
+      "https://epgshare01.online/epgshare01/epg_ripper_PLEX1.xml.gz",
+      "https://epgshare01.online/epgshare01/epg_ripper_DISTROTV1.xml.gz",
+      "https://epgshare01.online/epgshare01/epg_ripper_BEIN1.xml.gz",
+      "https://epgshare01.online/epgshare01/epg_ripper_UK1.xml.gz",
+      "https://epgshare01.online/epgshare01/epg_ripper_DE1.xml.gz",
+      "https://epgshare01.online/epgshare01/epg_ripper_FR1.xml.gz",
+      "https://epgshare01.online/epgshare01/epg_ripper_IT1.xml.gz",
+      "https://epgshare01.online/epgshare01/epg_ripper_ES1.xml.gz",
+      "https://epgshare01.online/epgshare01/epg_ripper_CA2.xml.gz",
+      "https://epgshare01.online/epgshare01/epg_ripper_AU1.xml.gz",
+      "https://epgshare01.online/epgshare01/epg_ripper_TR1.xml.gz",
+      "https://epgshare01.online/epgshare01/epg_ripper_AE1.xml.gz",
+      "https://epgshare01.online/epgshare01/epg_ripper_BR1.xml.gz",
+      "https://epgshare01.online/epgshare01/epg_ripper_NZ1.xml.gz",
+  )
+
+  /** All epgshare feeds (primary + gap-fill). Gap-fill entries are lazy-loaded. */
+  val FEED_URLS = PRIMARY_FEED_URLS + GAP_FILL_FEED_URLS
 
   /** Max bytes per upstream gzip feed download. */
   const val MAX_FEED_BYTES = 64 * 1024 * 1024
@@ -31,10 +52,11 @@ object EpgConfig {
 
   const val DOWNLOAD_TIMEOUT_MS = 60_000L
 
-  /** Cap total feed cache on disk (~US locals + US2 + sports; trim after each build). */
-  const val MAX_FEED_CACHE_BYTES = 160 * 1024 * 1024L
+  /** Cap total feed cache on disk (primary + on-demand regional gap-fill; trim after each build). */
+  const val MAX_FEED_CACHE_BYTES = 320 * 1024 * 1024L
 
   const val MAPPING_ASSET = "channel_epg_map.json"
   const val NAME_OVERRIDES_ASSET = "epg_name_overrides.json"
   const val ID_BRIDGE_ASSET = "epg_id_bridge.json"
+  const val RESEARCH_ASSET = "daddylive_epg_research.json"
 }

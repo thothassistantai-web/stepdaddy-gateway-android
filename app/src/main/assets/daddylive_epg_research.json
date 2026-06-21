@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "mappings": {
+    "186": {
+      "tvg_id": "Sky.Sport..254.it",
+      "confidence": 0.92,
+      "method": "epgshare_compact",
+      "channel_name": "Sky Sport 254 IT"
+    },
+    "508": {
+      "tvg_id": "Brazzers.TV.HD.gr",
+      "confidence": 0.92,
+      "method": "epgshare_compact",
+      "channel_name": "Brazzers"
+    },
+    "2381": {
+      "tvg_id": "Motorvision.TV.Español.distro",
+      "confidence": 0.92,
+      "method": "epgshare_compact",
+      "channel_name": "Motorvision TV Español (1080p) 🇺🇸 US Distro"
+    },
+    "3008": {
+      "tvg_id": "CBSSportsNetworkUSA.us",
+      "confidence": 0.95,
+      "method": "iptv_exact_name",
+      "channel_name": "CBS Sports Network"
+    },
+    "3012": {
+      "tvg_id": "ProSieben.MAXX.de",
+      "confidence": 0.92,
+      "method": "epgshare_compact",
+      "channel_name": "ProSieben MAXX DE"
+    }
+  }
+}

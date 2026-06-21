@@ -14,6 +14,7 @@ object IptvOrgEpgConfig {
         "plex.tv",
         "xumo.tv",
         "distro.tv",
+        "watch.whaletvplus.com",
     )
 
     /**

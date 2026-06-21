@@ -2,6 +2,7 @@ package com.thothassistant.stepdaddy.gateway.upstream
 
 import android.content.Context
 import android.util.Log
+import com.thothassistant.stepdaddy.gateway.epg.FastChannelTvgIdResolver
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import java.security.MessageDigest
@@ -23,6 +24,7 @@ class IptvOrgStreamsSource(
     private val httpClient: OkHttpClient,
     private val channelResolver: IptvOrgChannelResolver = IptvOrgChannelResolver(context),
     private val fastEpgCatalog: FastEpgCatalog? = null,
+    private val fastChannelTvgIdResolver: FastChannelTvgIdResolver? = null,
     private val nameIndex: com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex? = null,
 ) {
     data class FetchStats(
@@ -121,7 +123,13 @@ class IptvOrgStreamsSource(
         val tags = channelResolver.buildTags(entry, playlistFile)
         val providerTag = IptvOrgStreamsConfig.providerTagFor(playlistFile).takeIf { it.isNotEmpty() }
         val id = "iptv:${shortHash(resolution.groupTitle + "|" + norm + "|" + entry.streamUrl)}"
-        val tvgId = entry.tvgId?.trim()?.takeIf { it.isNotEmpty() }
+        val tvgId = fastChannelTvgIdResolver?.resolve(
+            displayName = entry.name.trim(),
+            groupTitle = resolution.groupTitle,
+            providerTag = providerTag,
+            currentTvgId = entry.tvgId,
+        )?.tvgId
+            ?: entry.tvgId?.trim()?.takeIf { it.isNotEmpty() }
             ?: fastEpgCatalog?.lookupChannelId(entry.name, providerTag)
             ?: nameIndex?.lookupExact(entry.name)
         return SupplementChannel(

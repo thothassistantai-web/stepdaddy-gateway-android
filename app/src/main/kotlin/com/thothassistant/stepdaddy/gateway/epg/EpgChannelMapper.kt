@@ -17,11 +17,12 @@ private data class MappingAsset(
 
 /**
  * Maps DaddyLive channel ids / display names to playlist [tvg-id] values.
- * Load order: bundled id map → runtime id map → bundled name overrides → runtime name overrides.
+ * Load order: bundled id map → runtime id map → research mappings → bundled name overrides → runtime name overrides.
  */
 class EpgChannelMapper(context: Context) {
   private val appContext = context.applicationContext
   private val json = Json { ignoreUnknownKeys = true }
+  private val researchStore = DaddyliveEpgResearchStore(appContext)
   private val byChannelId: MutableMap<String, String> = mutableMapOf()
   private val byNormName: MutableMap<String, String> = mutableMapOf()
 
@@ -34,14 +35,41 @@ class EpgChannelMapper(context: Context) {
 
   fun tvgIdFor(channelId: String, channelName: String): String? {
     byChannelId[channelId.trim()]?.let { return it }
+    researchStore.lookupByChannelId(channelId)?.tvgId?.let { return it }
+    researchStore.lookupByName(channelName)?.tvgId?.let { return it }
     return tvgIdForName(channelName)
   }
 
-  /** Name-only lookup (supplements, runtime overrides). */
+  /** Name-only lookup (supplements, runtime overrides, research). */
   fun tvgIdForName(channelName: String): String? {
+    researchStore.lookupByName(channelName)?.tvgId?.let { return it }
+    lookupNameOverride(channelName)?.let { return it }
+    for (variant in nameLookupVariants(channelName)) {
+      if (variant == channelName) continue
+      researchStore.lookupByName(variant)?.tvgId?.let { return it }
+      lookupNameOverride(variant)?.let { return it }
+    }
+    return null
+  }
+
+  private fun lookupNameOverride(channelName: String): String? {
     val norm = normalizeName(channelName)
     if (norm.isEmpty()) return null
     return byNormName[norm]
+  }
+
+  private fun nameLookupVariants(channelName: String): List<String> {
+    val trimmed = channelName.trim()
+    if (trimmed.isEmpty()) return emptyList()
+    val variants = linkedSetOf(trimmed)
+    val stripped = trimmed.replace(
+        Regex("\\s+(CDN|Falcon|Mena|\\(MOJ\\))\\s*$", RegexOption.IGNORE_CASE),
+        "",
+    ).trim()
+    if (stripped.isNotEmpty()) variants += stripped
+    val noFlag = trimmed.replace(Regex("[🇺🇸🇬🇧🇨🇦📡🎬]"), "").trim()
+    if (noFlag.isNotEmpty()) variants += noFlag
+    return variants.toList()
   }
 
   fun mappedCount(): Int = byChannelId.size + byNormName.size

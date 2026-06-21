@@ -427,7 +427,8 @@ class GatewayAdminController(
         val result = assetManager.importJson(assetType, entries, merge, logoResolver)
         prewarmPlaylist()
         if (assetType == AdminAssetManager.AssetType.EPG_NAME ||
-            assetType == AdminAssetManager.AssetType.EPG_ID
+            assetType == AdminAssetManager.AssetType.EPG_ID ||
+            assetType == AdminAssetManager.AssetType.EPG_RESEARCH
         ) {
             epgManager.scheduleRefresh(client.channels, force = true)
         }
@@ -530,6 +531,7 @@ class GatewayAdminController(
         "epg-name-overrides", "epg-name", "epg_name" -> AdminAssetManager.AssetType.EPG_NAME
         "logo-overrides", "logo", "logos" -> AdminAssetManager.AssetType.LOGO
         "epg-id-map", "epg-id", "epg_id" -> AdminAssetManager.AssetType.EPG_ID
+        "epg-research", "epg_research", "daddylive-epg-research" -> AdminAssetManager.AssetType.EPG_RESEARCH
         "category-overrides", "category", "categories" -> AdminAssetManager.AssetType.CATEGORY
         else -> null
     }

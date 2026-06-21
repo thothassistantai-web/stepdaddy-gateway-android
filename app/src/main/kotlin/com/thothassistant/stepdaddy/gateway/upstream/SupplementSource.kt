@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
+import com.thothassistant.stepdaddy.gateway.epg.FastChannelTvgIdResolver
 import com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex
 import com.thothassistant.stepdaddy.gateway.epg.TheTvAppSportsEpgGenerator
 import com.thothassistant.stepdaddy.gateway.model.Channel
@@ -34,10 +35,12 @@ class SupplementSource(
     private val iptvOrgEpgRepository: IptvOrgEpgRepository = IptvOrgEpgRepository(context, httpClient),
 ) {
     private val fastEpgCatalog = FastEpgCatalog(context)
+    private val fastChannelTvgIdResolver = FastChannelTvgIdResolver(fastEpgCatalog, epgChannelMapper)
     private val iptvOrgSource = IptvOrgStreamsSource(
         context,
         httpClient,
         fastEpgCatalog = fastEpgCatalog,
+        fastChannelTvgIdResolver = fastChannelTvgIdResolver,
         nameIndex = nameIndex,
     )
     private val ntvCxCatalogStore = NtvCxCatalogStore(context)
@@ -170,16 +173,14 @@ class SupplementSource(
         var updated = 0
         val next = cached.map { channel ->
             if (!channel.id.startsWith("iptv:")) return@map channel
-            val provider = channel.providerTag?.takeIf { it.isNotEmpty() } ?: return@map channel
-            val hashId = fastEpgCatalog.lookupChannelId(channel.name, provider) ?: return@map channel
-            val current = channel.tvgId?.trim().orEmpty()
-            if (current == hashId) return@map channel
-            if (current.isEmpty() || current.contains('.')) {
-                updated++
-                channel.copy(tvgId = hashId)
-            } else {
-                channel
-            }
+            val fixed = fastChannelTvgIdResolver.validateAndFix(
+                currentTvgId = channel.tvgId,
+                displayName = channel.name,
+                groupTitle = channel.groupTitle,
+                providerTag = channel.providerTag,
+            ) ?: return@map channel
+            updated++
+            channel.copy(tvgId = fixed)
         }
         if (updated > 0) {
             cached = next

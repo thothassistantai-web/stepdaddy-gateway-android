@@ -817,7 +817,7 @@ class DaddyLiveClient(
         val tvgId = cachedTvgId?.takeIf { it.isNotBlank() }
             ?: epgChannelMapper?.tvgIdFor(id, upstreamName)
             ?: epgChannelMapper?.tvgIdFor(id, name)
-            ?: if (fastPath) null else tvgIdResolver?.resolve(name)?.tvgId
+            ?: if (fastPath) null else tvgIdResolver?.resolve(name, groupTitle = tags.firstOrNull())?.tvgId
         val metaLogo = channelMetaStore?.logoFor(upstreamName)
             ?: channelMetaStore?.logoFor(name)
         val apiBase = environment.loopbackBase()

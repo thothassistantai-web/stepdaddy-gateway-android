@@ -7,6 +7,25 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.21] - 2026-06-21
+
+### Added
+
+- **EPG gap-fill + regional feeds** — lazy merge of PLEX1, DISTROTV1, BEIN1, UK1, DE1, FR1, IT1, ES1, CA2, AU1, TR1, AE1, BR1, NZ1 when primary US feeds leave gaps
+- **FAST XMLTV sources** — Roku (GitHub mirror), Xumo, Tubi, LocalNow; mjh.nz Pluto/Plex/Samsung retained
+- **Context-aware tvg-id resolution** — `FastChannelContext` + `FastChannelTvgIdResolver` validate provider suffixes; reject wrong id styles on FAST channels
+- **DaddyLive EPG research** — `daddylive_epg_research.json`, `DaddyliveEpgResearchStore`, admin `epg-research` asset import/export
+- **~1,958 bundled name overrides** — FAST repair, ntv.cx Falcon/CDN parent mapping (581), DaddyLive research merges
+- **EPG research scripts** — `research-daddylive-tvg-ids.py`, `research-supplement-tvg-ids.py`, `map-ntv-falcon-cdn-epg.py`, `grab-event-epg.sh` (off-device NHL/Peacock/tvtv.us)
+
+### Changed
+
+- **Primary epgshare routing** — US2/US_SPORTS1/US_LOCALS1 on boot; regional/Plex/Distro deferred to gap-fill (320 MB feed cache cap)
+- **EpgChannelMapper** — research store + CDN/Falcon/(MOJ) suffix stripping for override lookup
+- **TvgIdResolver** — name overrides first; context-aware fuzzy rejection; fixes mismatched ids on backfill
+- **iptv-org grab script** — adds `watch.whaletvplus.com`
+- **generate-epg-id-bridge.py** — merge-only sync; no longer shrinks bundled overrides
+
 ## [1.0.18] - 2026-06-21
 
 ### Added

@@ -10,7 +10,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 
 /**
- * Downloads i.mjh.nz FAST provider guides and maps display names → channel ids
+ * Downloads FAST provider XMLTV guides and maps display names → channel ids
  * for iptv-org supplements that ship with empty tvg-id in upstream M3U.
  */
 class FastEpgCatalog(
@@ -31,11 +31,9 @@ class FastEpgCatalog(
         return nameToChannelId[LookupKey(provider, norm)]
     }
 
-    /** Per-provider cached gzip feeds — merged at EPG build time (avoids OOM). */
+    /** Per-provider cached feeds — merged at EPG build time (avoids OOM). */
     fun cachedFeedFiles(): List<File> =
-        FEED_URLS.keys.mapNotNull { provider ->
-            File(dir, "${provider.lowercase()}.xml.gz").takeIf { it.isFile && it.length() > 0L }
-        }
+        FEED_URLS.keys.mapNotNull { existingCacheFile(it) }
 
     fun isStale(): Boolean {
         if (cachedFeedFiles().isEmpty()) return true
@@ -48,7 +46,7 @@ class FastEpgCatalog(
         val index = linkedMapOf<LookupKey, String>()
         var downloaded = 0
         for ((provider, url) in FEED_URLS) {
-            val cache = File(dir, "${provider.lowercase()}.xml.gz")
+            val cache = cacheFileFor(provider, url)
             if (!download(url, cache)) continue
             downloaded++
             indexChannels(cache, provider, index)
@@ -67,7 +65,7 @@ class FastEpgCatalog(
         provider: String,
         index: MutableMap<LookupKey, String>,
     ) {
-        XmltvParser.iterAllBlocksFromGzip(file, "channel", "channel").forEach { block ->
+        XmltvParser.iterAllBlocksFromFile(file, "channel", "channel").forEach { block ->
             val id = XmltvParser.blockAttrValue(block, "id") ?: return@forEach
             val display = Regex("<display-name[^>]*>([^<]+)</display-name>", RegexOption.IGNORE_CASE)
                 .find(block)?.groupValues?.getOrNull(1)?.trim().orEmpty()
@@ -115,6 +113,17 @@ class FastEpgCatalog(
         }
     }
 
+    private fun cacheFileFor(provider: String, url: String): File {
+        val ext = if (url.endsWith(".gz", ignoreCase = true)) ".xml.gz" else ".xml"
+        return File(dir, "${provider.lowercase()}$ext")
+    }
+
+    private fun existingCacheFile(provider: String): File? {
+        val base = provider.lowercase()
+        return listOf(File(dir, "$base.xml.gz"), File(dir, "$base.xml"))
+            .firstOrNull { it.isFile && it.length() > 0L }
+    }
+
     private fun stripQuality(name: String): String =
         name.replace(Regex("\\(\\s*\\d+p\\s*\\)", RegexOption.IGNORE_CASE), "").trim()
 
@@ -129,6 +138,7 @@ class FastEpgCatalog(
             "xumo" -> "Xumo"
             "roku" -> "Roku"
             "tubi" -> "Tubi"
+            "local", "localnow" -> "LocalNow"
             "stirr" -> "STIRR"
             "firetv" -> "FireTV"
             "vizio" -> "Vizio"
@@ -140,18 +150,23 @@ class FastEpgCatalog(
 
     companion object {
         private const val TAG = "FastEpgCatalog"
-        private const val MAX_BYTES = 32 * 1024 * 1024L
+        /** Roku gzip ~3.4MB; Tubi plain XML ~3MB — headroom for future growth. */
+        private const val MAX_BYTES = 48 * 1024 * 1024L
         private const val CACHE_TTL_MS = 12 * 3600_000L
         private const val USER_AGENT = "Mozilla/5.0 StepDaddy-Gateway/1.0"
 
         val FEED_URLS: Map<String, String> = mapOf(
+            // i.mjh.nz (verified working Jun 2026)
             "Pluto" to "https://i.mjh.nz/PlutoTV/us.xml.gz",
             "Samsung" to "https://i.mjh.nz/SamsungTVPlus/us.xml.gz",
-            "Distro" to "https://i.mjh.nz/DistroTV/us.xml.gz",
             "Plex" to "https://i.mjh.nz/Plex/us.xml.gz",
-            "Xumo" to "https://i.mjh.nz/Xumo/us.xml.gz",
-            "Roku" to "https://i.mjh.nz/Roku/us.xml.gz",
-            "Stirr" to "https://i.mjh.nz/Stirr/us.xml.gz",
+            // i.mjh.nz 404 as of Jun 2026 — alternate public sources
+            "Roku" to "https://raw.githubusercontent.com/matthuisman/i.mjh.nz/master/Roku/all.xml.gz",
+            "Xumo" to "https://raw.githubusercontent.com/BuddyChewChew/xumo-playlist-generator/main/playlists/xumo_epg.xml.gz",
+            "Tubi" to "https://raw.githubusercontent.com/BuddyChewChew/tubi-scraper/main/tubi_epg.xml",
+            "LocalNow" to "https://raw.githubusercontent.com/BuddyChewChew/localnow-playlist-generator/main/epg.xml",
+            // Distro: covered via epgshare DISTROTV1 in EpgConfig (mjh CDN 404).
+            // Stirr: omitted — no stable public XMLTV feed (mjh CDN 404).
         )
 
         private fun defaultClient(): OkHttpClient =

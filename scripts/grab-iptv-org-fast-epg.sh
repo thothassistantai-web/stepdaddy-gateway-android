@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Generate merged iptv-org FAST provider EPG for StepDaddy gateway supplements.
-# Sites: pluto.tv, plex.tv, xumo.tv, distro.tv (matches iptv-org M3U tvg-id namespace).
+# Sites: pluto.tv, plex.tv, xumo.tv, distro.tv, watch.whaletvplus.com (iptv-org M3U tvg-id namespace).
 #
 # Usage:
 #   ./scripts/grab-iptv-org-fast-epg.sh
@@ -15,7 +15,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="${1:-$ROOT/app/src/main/assets/epg/iptv_org_fast_epg.dat}"
 WORKDIR="${TMPDIR:-/tmp}/stepdaddy-iptv-org-epg-$$"
-SITES="pluto.tv,plex.tv,xumo.tv,distro.tv"
+SITES="pluto.tv,plex.tv,xumo.tv,distro.tv,watch.whaletvplus.com"
 
 mkdir -p "$(dirname "$OUT")"
 rm -rf "$WORKDIR"
