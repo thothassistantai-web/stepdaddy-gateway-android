@@ -1,7 +1,7 @@
 {
-  "versionCode": 27,
-  "versionName": "1.0.24",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.24/stepdaddy-gateway-1.0.24-debug.apk",
+  "versionCode": 28,
+  "versionName": "1.0.25",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.25/stepdaddy-gateway-1.0.25-debug.apk",
   "releaseNotes": "See CHANGELOG.md",
   "mandatory": false
 }
