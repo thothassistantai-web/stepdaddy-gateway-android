@@ -1,7 +1,9 @@
 package com.thothassistant.stepdaddy.gateway
 
 import android.content.Context
+import com.thothassistant.stepdaddy.gateway.admin.GatewayAdminActions
 import com.thothassistant.stepdaddy.gateway.epg.EpgManager
+import com.thothassistant.stepdaddy.gateway.routes.AdminRoutes
 import com.thothassistant.stepdaddy.gateway.routes.ContentRoutes
 import com.thothassistant.stepdaddy.gateway.network.createGatewayNetworkPlugin
 import com.thothassistant.stepdaddy.gateway.network.GatewayNetworkGuard
@@ -23,8 +25,11 @@ import io.ktor.server.cio.CIO
 import io.ktor.server.engine.ApplicationEngine
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.head
+import io.ktor.server.routing.patch
+import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import java.io.File
@@ -39,6 +44,7 @@ class GatewayServer(
     private val channelMetaStore: com.thothassistant.stepdaddy.gateway.upstream.ChannelMetaStore,
     private val supplementSource: com.thothassistant.stepdaddy.gateway.upstream.SupplementSource,
     private val playlistCache: PlaylistCache,
+    private val adminActions: GatewayAdminActions? = null,
 ) {
     private val uiRoutes = UiRoutes(context.applicationContext, logoResolver)
     private var playlistRoutes: PlaylistRoutes? = null
@@ -71,6 +77,7 @@ class GatewayServer(
         )
         val contentRoutes = ContentRoutes(environment, client, ResportzParser.defaultClient())
         val epgRoutes = EpgRoutes(client, epgManager)
+        val adminRoutes = adminActions?.let { AdminRoutes(it) }
 
         val bindHost = GatewayNetworkGuard.bindHost(environment.networkAccessMode)
         val gatewayEnvironment = environment
@@ -134,6 +141,26 @@ class GatewayServer(
                 }
                 get("/ui/channel/{token}.svg") {
                     uiRoutes.channelPlaceholder(call, call.parameters["token"].orEmpty())
+                }
+                adminRoutes?.let { admin ->
+                    route("/api/v1") {
+                        get { admin.discovery(call) }
+                        get("/settings") { admin.getSettings(call) }
+                        patch("/settings") { admin.patchSettings(call) }
+                        get("/channels") { admin.searchChannels(call) }
+                        post("/actions/refresh-channels") { admin.refreshChannels(call) }
+                        post("/actions/refresh-supplements") { admin.refreshSupplements(call) }
+                        post("/actions/refresh-epg") { admin.refreshEpg(call) }
+                        post("/actions/refresh-logos") { admin.refreshLogos(call) }
+                        post("/actions/refresh-tvg-ids") { admin.refreshTvgIds(call) }
+                        post("/actions/prewarm-playlist") { admin.prewarmPlaylist(call) }
+                        post("/overrides/logo") { admin.setLogoOverride(call) }
+                        delete("/overrides/logo") { admin.clearLogoOverride(call) }
+                        post("/overrides/epg-name") { admin.setEpgNameOverride(call) }
+                        post("/overrides/epg-id") { admin.setEpgIdOverride(call) }
+                        get("/resolve/logo") { admin.resolveLogo(call) }
+                        get("/resolve/epg") { admin.resolveEpg(call) }
+                    }
                 }
             }
         }.start(wait = false)

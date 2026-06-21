@@ -50,8 +50,9 @@ class ChannelNumberResolverTest {
     assertEquals(118, numbers["17"])
     assertEquals(250, numbers["18"])
     assertEquals(252, numbers["19"])
-    assertEquals(365, numbers["20"])
-    assertEquals(401, numbers["21"])
+    assertTrue(numbers.getValue("20") >= 4000)
+    assertTrue(numbers.getValue("21") >= 4000)
+    assertTrue(numbers.getValue("21") < numbers.getValue("20"))
   }
 
   @Test

@@ -138,6 +138,16 @@ class LogoResolver(context: Context) {
     fun findBackfillLogo(channelName: String, tvgId: String?, metaLogo: String? = null): String? =
         resolveRemoteLogo(channelName, tvgId, metaLogo)
 
+    fun removeRuntimeOverride(channelName: String): Boolean {
+        val stripped = stripCategorySuffix(channelName.trim())
+        synchronized(overridesByName) {
+            var removed = false
+            if (overridesByName.remove(channelName) != null) removed = true
+            if (stripped != channelName && overridesByName.remove(stripped) != null) removed = true
+            return removed
+        }
+    }
+
     fun putRuntimeOverride(channelName: String, remoteUrl: String) {
         synchronized(overridesByName) {
             overridesByName[channelName] = remoteUrl
@@ -256,7 +266,31 @@ class LogoResolver(context: Context) {
         fuzzyMatch(norm)?.let { cid ->
             byChannelId[cid]?.let { return it }
         }
+        tokenFuzzyMatch(norm)?.let { cid ->
+            byChannelId[cid]?.let { return it }
+        }
         return null
+    }
+
+    private fun tokenFuzzyMatch(norm: String): String? {
+        if (norm.length < 4 || nameToId.isEmpty()) return null
+        val queryTokens = norm.split(' ').filter { it.length > 1 }.toSet()
+        if (queryTokens.isEmpty()) return null
+        var bestName: String? = null
+        var bestScore = TOKEN_FUZZY_CUTOFF
+        for (candidate in nameToId.keys) {
+            val keyTokens = candidate.split(' ').filter { it.length > 1 }.toSet()
+            if (keyTokens.isEmpty()) continue
+            val intersection = queryTokens.intersect(keyTokens).size
+            val union = queryTokens.union(keyTokens).size
+            if (union == 0) continue
+            val score = intersection.toDouble() / union.toDouble()
+            if (score > bestScore) {
+                bestScore = score
+                bestName = candidate
+            }
+        }
+        return bestName?.let { nameToId[it] }
     }
 
     private fun resolveRemoteLogoExact(channelName: String, tvgId: String?): String? {
@@ -396,6 +430,12 @@ class LogoResolver(context: Context) {
                 if (norm.isNotEmpty() && norm !in local) {
                     local[norm] = channelId
                 }
+                row["alt_names"].orEmpty().split(';').forEach { alt ->
+                    val altNorm = TvgIdNormalizer.normalizeChannelName(alt)
+                    if (altNorm.isNotEmpty() && altNorm !in local) {
+                        local[altNorm] = channelId
+                    }
+                }
             }
         }
         synchronized(nameToId) {
@@ -474,7 +514,8 @@ class LogoResolver(context: Context) {
 
     companion object {
         private const val TAG = "LogoResolver"
-        private const val FUZZY_CUTOFF = 0.88
+        private const val FUZZY_CUTOFF = 0.85
+        private const val TOKEN_FUZZY_CUTOFF = 0.72
         private val LOGO_CSV_KEYS = listOf("channel", "feed", "in_use", "tags", "width", "height", "format", "url")
         private val httpClient = OkHttpClient.Builder()
             .connectTimeout(8, TimeUnit.SECONDS)

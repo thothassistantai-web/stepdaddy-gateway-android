@@ -147,12 +147,13 @@ object GroupTitleResolver {
         "regional" to LOCAL_CHANNELS,
         "premium" to ENTERTAINMENT,
         "live" to ENTERTAINMENT,
-        "movies" to ENTERTAINMENT,
-        "action" to ENTERTAINMENT,
-        "thriller" to ENTERTAINMENT,
-        "horror" to ENTERTAINMENT,
-        "classic" to ENTERTAINMENT,
-        "romance" to ENTERTAINMENT,
+        "movies" to MOVIES,
+        "action" to MOVIES,
+        "thriller" to MOVIES,
+        "horror" to MOVIES,
+        "classic" to MOVIES,
+        "romance" to MOVIES,
+        "mystery" to MOVIES,
     )
 
     /** Longest suffixes first so "New Zealand" matches before " Zealand". */
@@ -330,6 +331,8 @@ object GroupTitleResolver {
         if (hashTags.contains("local") || hashTags.contains("regional")) return LOCAL_CHANNELS
 
         if (PremiumMovieChannelMatcher.matches(channelName)) return MOVIES
+
+        if (hashTags.contains("movies")) return MOVIES
 
         if (isPremiumMovieChannel(hashTags)) return MOVIES
 

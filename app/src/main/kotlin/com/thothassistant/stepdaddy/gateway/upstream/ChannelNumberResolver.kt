@@ -5,7 +5,8 @@ import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 
 /**
  * Assigns `tvg-chno` values per group-title category.
- * Local, Sports, and Entertainment are fully bulk-sorted (US → CA → UK → rest, network families, no pin exceptions).
+ * Local, Sports, Entertainment, and Movies are fully bulk-sorted
+ * (US → CA → UK → rest, network families, no pin exceptions).
  * Other categories keep FiOS/Spectrum-inspired pins and sequential fill.
  */
 object ChannelNumberResolver {
@@ -32,6 +33,7 @@ object ChannelNumberResolver {
         GroupTitleResolver.LOCAL_CHANNELS,
         GroupTitleResolver.SPORTS,
         GroupTitleResolver.ENTERTAINMENT,
+        GroupTitleResolver.MOVIES,
     )
 
     /** Numeric bands per group-title (FiOS/Spectrum NYC hybrid). */
@@ -39,7 +41,7 @@ object ChannelNumberResolver {
         GroupTitleResolver.LOCAL_CHANNELS to emptyList(),
         GroupTitleResolver.SPORTS to emptyList(),
         GroupTitleResolver.ENTERTAINMENT to emptyList(),
-        GroupTitleResolver.MOVIES to listOf(340..379),
+        GroupTitleResolver.MOVIES to emptyList(),
         GroupTitleResolver.NEWS to listOf(100..119),
         GroupTitleResolver.DOCUMENTARY to listOf(120..139),
         GroupTitleResolver.MUSIC to listOf(210..229),
@@ -52,11 +54,13 @@ object ChannelNumberResolver {
     private val LOCAL_BULK_RANGES = listOf(1..499)
     private val SPORTS_BULK_RANGES = listOf(500..1599)
     private val ENTERTAINMENT_BULK_RANGES = listOf(1600..3999)
+    private val MOVIES_BULK_RANGES = listOf(4000..5499)
 
     private val BULK_RANGES_BY_GROUP = mapOf(
         GroupTitleResolver.LOCAL_CHANNELS to LOCAL_BULK_RANGES,
         GroupTitleResolver.SPORTS to SPORTS_BULK_RANGES,
         GroupTitleResolver.ENTERTAINMENT to ENTERTAINMENT_BULK_RANGES,
+        GroupTitleResolver.MOVIES to MOVIES_BULK_RANGES,
     )
 
     /** Exact normalized channel name → channel number (non-bulk categories only). */
@@ -85,13 +89,6 @@ object ChannelNumberResolver {
         put("disney xd", 251)
         put("cartoon network", 257)
 
-        // Movies — premium anchors
-        put("showtime usa", 365)
-        put("starz", 370)
-        put("hbo usa", 401)
-        put("hbo2 usa", 402)
-        put("cinemax usa", 420)
-
         // En Español
         put("espn deportes", 1520)
         put("fox deportes usa", 1522)
@@ -116,8 +113,6 @@ object ChannelNumberResolver {
         "fnc.us" to 118,
         "disney.us" to 250,
         "nick.us" to 252,
-        "hbo.us" to 401,
-        "sho.us" to 365,
     )
 
     fun assignAll(channels: List<Channel>): Map<String, Int> =

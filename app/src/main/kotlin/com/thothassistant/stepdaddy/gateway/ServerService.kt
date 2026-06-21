@@ -16,6 +16,7 @@ import com.thothassistant.stepdaddy.gateway.ui.MainActivity
 import com.thothassistant.stepdaddy.gateway.ui.dashboard.GatewayDiagnostics
 import com.thothassistant.stepdaddy.gateway.ui.dashboard.GatewayMessageBus
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
+import com.thothassistant.stepdaddy.gateway.admin.GatewayAdminController
 import com.thothassistant.stepdaddy.gateway.upstream.LogoBackfillService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -130,6 +131,16 @@ class ServerService : LifecycleService() {
                     startEmbeddedSidecar(app)
                     val client = ensureDaddyLiveClient(app)
                     client.awaitInitialLoad()
+                    val adminController = GatewayAdminController(
+                        context = this@ServerService,
+                        environment = environment,
+                        client = client,
+                        epgManager = epgManager,
+                        app = app,
+                        logoResolver = app.logoResolver,
+                        prewarmPlaylist = { gatewayServer?.prewarmPlaylist() },
+                        runLogoBackfill = { runLogoBackfillNow() },
+                    )
                     val server = GatewayServer(
                         this@ServerService,
                         environment,
@@ -139,6 +150,7 @@ class ServerService : LifecycleService() {
                         app.channelMetaStore,
                         app.supplementSource,
                         app.playlistCache,
+                        adminController,
                     )
                     gatewayServer = server
                     app.supplementSource.onRefreshComplete = {
@@ -207,30 +219,32 @@ class ServerService : LifecycleService() {
         logoBackfillJob = lifecycleScope.launch(Dispatchers.IO) {
             delay(deferMs)
             if (!isServiceActive || !::daddyLiveClient.isInitialized) return@launch
-            val app = application as GatewayApp
-            runCatching {
-                app.logoResolver.awaitLoaded()
-                val result = LogoBackfillService(
-                    this@ServerService,
-                    app.logoResolver,
-                    app.channelMetaStore,
-                    environment.loopbackBase(),
-                ).run(
-                    daddyLiveClient.channels,
-                    app.supplementSource.channels(),
-                )
-                if (result.assigned > 0) {
-                    GatewayDiagnostics.info(
-                        TAG,
-                        "Logo backfill assigned ${result.assigned}/${result.scanned} " +
-                            "across ${result.groupsProcessed} groups",
-                    )
-                    gatewayServer?.prewarmPlaylist()
-                }
-            }.onFailure { exc ->
-                GatewayDiagnostics.error(TAG, "Logo backfill failed", exc)
-            }
+            runCatching { runLogoBackfillNow() }
+                .onFailure { exc -> GatewayDiagnostics.error(TAG, "Logo backfill failed", exc) }
         }
+    }
+
+    private suspend fun runLogoBackfillNow(): LogoBackfillService.Result {
+        val app = application as GatewayApp
+        app.logoResolver.awaitLoaded()
+        val result = LogoBackfillService(
+            this@ServerService,
+            app.logoResolver,
+            app.channelMetaStore,
+            environment.loopbackBase(),
+        ).run(
+            daddyLiveClient.channels,
+            app.supplementSource.channels(),
+        )
+        if (result.assigned > 0) {
+            GatewayDiagnostics.info(
+                TAG,
+                "Logo backfill assigned ${result.assigned}/${result.scanned} " +
+                    "across ${result.groupsProcessed} groups",
+            )
+            gatewayServer?.prewarmPlaylist()
+        }
+        return result
     }
 
     private suspend fun startEmbeddedSidecar(app: GatewayApp) {
@@ -287,6 +301,7 @@ class ServerService : LifecycleService() {
                     app.epgChannelMapper,
                     daddyLiveClient.channels,
                 )
+                scheduleLogoBackfill(deferMs = 2_000L)
                 app.logoResolver.schedulePrewarm(
                     daddyLiveClient.channels.map { it.name to it.tvgId },
                 )

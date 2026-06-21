@@ -65,18 +65,21 @@ class GroupTitleResolverTest {
   }
 
   @Test
+  fun `hash movies tag lands in Movies`() {
+    val resolution = GroupTitleResolver.resolve(
+      "ION USA",
+      listOf("🇺🇸", "#movies", "#thriller"),
+    )
+    assertEquals("Movies", resolution.groupTitle)
+  }
+
+  @Test
   fun `premium movie tier only lands in Movies`() {
     val movies = GroupTitleResolver.resolve(
       "HBO Poland",
       listOf("🇵🇱", "#movies", "#premium"),
     )
     assertEquals("Movies", movies.groupTitle)
-
-    val entertainment = GroupTitleResolver.resolve(
-      "ION USA",
-      listOf("🇺🇸", "#movies", "#thriller"),
-    )
-    assertEquals("Entertainment", entertainment.groupTitle)
   }
 
   @Test

@@ -4,7 +4,7 @@ import java.text.Normalizer
 
 /**
  * Country + network-family ordering for bulk-sorted playlist categories
- * (Local, Sports, Entertainment): US → CA → UK → rest, then grouped by network family.
+ * (Local, Sports, Entertainment, Movies): US → CA → UK → rest, then grouped by network family.
  */
 object CategoryNetworkSort {
     private val categorySuffixRe = Regex(" \\[[^\\]]+\\]$")
@@ -183,9 +183,84 @@ object CategoryNetworkSort {
         "yes tv" to "yes tv",
         "ytv" to "ytv",
         "noovo" to "noovo",
-        "reelz" to "reelz",
         "3abn" to "3abn",
         "30a" to "30a",
+    ).sortedByDescending { it.first.length }
+
+    /**
+     * US premium-movie network popularity (longest prefix first).
+     * Rank gaps leave room for sub-variants within a family via orderHint / title tie-break.
+     */
+    private val MOVIES_FAMILIES: List<Triple<String, String, Int>> = listOf(
+        Triple("starz encore westerns", "encore", 700),
+        Triple("starz encore suspense", "encore", 700),
+        Triple("starz encore classic", "encore", 700),
+        Triple("starz encore family", "encore", 700),
+        Triple("starz encore black", "encore", 700),
+        Triple("starz encore action", "encore", 700),
+        Triple("starz encore", "encore", 700),
+        Triple("starz kids & family", "starz", 300),
+        Triple("starz kids and family", "starz", 300),
+        Triple("starz in black", "starz", 300),
+        Triple("starz cinema", "starz", 300),
+        Triple("starz comedy", "starz", 300),
+        Triple("starz edge", "starz", 300),
+        Triple("starz west", "starz", 300),
+        Triple("the movie channel xtra", "tmc", 600),
+        Triple("the movie channel extra", "tmc", 600),
+        Triple("the movie channel", "tmc", 600),
+        Triple("showtime family zone", "showtime", 200),
+        Triple("showtime showcase", "showtime", 200),
+        Triple("showtime extreme", "showtime", 200),
+        Triple("showtime beyond", "showtime", 200),
+        Triple("showtime women", "showtime", 200),
+        Triple("showtime next", "showtime", 200),
+        Triple("showtime 2", "showtime", 200),
+        Triple("showtime west", "showtime", 200),
+        Triple("mgm+ drive-in", "mgm", 500),
+        Triple("mgm+ marquee", "mgm", 500),
+        Triple("mgm+ hits", "mgm", 500),
+        Triple("mgm+ epix", "mgm", 500),
+        Triple("mgm epix", "mgm", 500),
+        Triple("mgm+", "mgm", 500),
+        Triple("family movie classics", "fmc", 960),
+        Triple("hdnet movies", "hdnet", 850),
+        Triple("turner classic movies", "tcm", 930),
+        Triple("tcm", "tcm", 930),
+        Triple("fx movie", "fxmovie", 940),
+        Triple("fxx movie", "fxmovie", 940),
+        Triple("lifetime movies", "lifetime", 920),
+        Triple("hallmark movies", "hallmark", 910),
+        Triple("screenpix", "screenpix", 970),
+        Triple("sony movies", "sony", 900),
+        Triple("5starmax", "cinemax", 400),
+        Triple("outermax", "cinemax", 400),
+        Triple("moviemax", "cinemax", 400),
+        Triple("thrillermax", "cinemax", 400),
+        Triple("actionmax", "cinemax", 400),
+        Triple("moremax", "cinemax", 400),
+        Triple("cinemax west", "cinemax", 400),
+        Triple("cinemax", "cinemax", 400),
+        Triple("hbo signature", "hbo", 100),
+        Triple("hbo comedy", "hbo", 100),
+        Triple("hbo family", "hbo", 100),
+        Triple("hbo latino", "hbo", 100),
+        Triple("hbo zone", "hbo", 100),
+        Triple("hbo west", "hbo", 100),
+        Triple("hbo2 west", "hbo", 100),
+        Triple("hbo2", "hbo", 100),
+        Triple("showtime", "showtime", 200),
+        Triple("starz", "starz", 300),
+        Triple("hbo", "hbo", 100),
+        Triple("flix", "flix", 950),
+        Triple("reelz", "reelz", 800),
+        Triple("indieplex", "movieplex", 810),
+        Triple("retroplex", "movieplex", 810),
+        Triple("movieplex", "movieplex", 810),
+        Triple("cineplex", "movieplex", 810),
+        Triple("fmc", "fmc", 960),
+        Triple("family movies", "fmc", 960),
+        Triple("encore", "encore", 700),
     ).sortedByDescending { it.first.length }
 
     private var normalizeCache: HashMap<String, String>? = null
@@ -194,6 +269,7 @@ object CategoryNetworkSort {
         GroupTitleResolver.LOCAL_CHANNELS,
         GroupTitleResolver.SPORTS,
         GroupTitleResolver.ENTERTAINMENT,
+        GroupTitleResolver.MOVIES,
     )
 
     fun beginBatch() {
@@ -223,6 +299,7 @@ object CategoryNetworkSort {
             GroupTitleResolver.LOCAL_CHANNELS -> LOCAL_FAMILIES
             GroupTitleResolver.SPORTS -> SPORTS_FAMILIES
             GroupTitleResolver.ENTERTAINMENT -> ENTERTAINMENT_FAMILIES
+            GroupTitleResolver.MOVIES -> emptyList()
             else -> ENTERTAINMENT_FAMILIES
         }
         val norm = normalize(channelName)
@@ -231,6 +308,18 @@ object CategoryNetworkSort {
             if (norm == prefix || norm.startsWith("$prefix ")) return family
         }
         return norm.substringBefore(' ').ifBlank { norm }
+    }
+
+    /** US popularity rank prefix for Movies bulk sort (HBO → Showtime → Starz → …). */
+    fun moviesFamilySortKey(channelName: String): String {
+        val norm = normalize(channelName)
+        if (norm.isEmpty()) return "99999misc"
+        for ((prefix, family, rank) in MOVIES_FAMILIES) {
+            if (norm == prefix || norm.startsWith("$prefix ")) {
+                return rank.toString().padStart(5, '0') + family
+            }
+        }
+        return "99999misc"
     }
 
     fun normalize(channelName: String): String {
@@ -249,7 +338,11 @@ object CategoryNetworkSort {
     ): String = buildString(96) {
         append(countrySortKey(countryCode))
         append('\u0000')
-        append(familyKey(groupTitle, channelName))
+        if (groupTitle == GroupTitleResolver.MOVIES) {
+            append(moviesFamilySortKey(channelName))
+        } else {
+            append(familyKey(groupTitle, channelName))
+        }
         append('\u0000')
         append(orderHint.toString().padStart(8, '0'))
         append('\u0000')
