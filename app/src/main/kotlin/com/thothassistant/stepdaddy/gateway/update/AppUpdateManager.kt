@@ -18,6 +18,8 @@ class AppUpdateManager(
     private val repository: AppUpdateRepository = AppUpdateRepository(environment),
 ) {
     private val downloadMutex = Mutex()
+    @Volatile
+    private var stalePendingDiscarded = false
     private var pendingApkPath: String?
         get() = environment.pendingUpdateApkPath.takeIf { it.isNotEmpty() }
         set(value) {
@@ -73,6 +75,13 @@ class AppUpdateManager(
                         "expected $expectedPackage",
                 )
             }
+            val apkVersionCode = packageInfo.longVersionCode.toInt()
+            if (apkVersionCode <= currentVersionCode) {
+                apkFile.delete()
+                error(
+                    "Downloaded package ($apkVersionCode) is not newer than installed ($currentVersionCode)",
+                )
+            }
             pendingApkPath = apkFile.absolutePath
             apkFile
         }
@@ -81,13 +90,40 @@ class AppUpdateManager(
     fun launchInstall(apkFile: java.io.File): Boolean = installManager.launchInstall(apkFile)
 
     fun launchPendingInstall(): Boolean {
-        val path = pendingApkPath ?: return false
-        val file = java.io.File(path)
-        if (!file.exists()) {
-            pendingApkPath = null
-            return false
-        }
+        val file = pendingApkFile() ?: return false
         return launchInstall(file)
+    }
+
+    fun pendingApkFile(): java.io.File? {
+        val path = pendingApkPath ?: return null
+        val file = java.io.File(path)
+        if (!file.isFile || file.length() <= 0L) {
+            clearPendingApk()
+            return null
+        }
+        val apkVersionCode = installManager.resolvePackageInfo(file)?.longVersionCode?.toInt()
+        if (apkVersionCode == null || apkVersionCode <= currentVersionCode) {
+            clearStalePendingApk(file)
+            return null
+        }
+        return file
+    }
+
+    /** True once after a cached APK was dropped because it was not newer than the installed build. */
+    fun consumeStalePendingDiscarded(): Boolean {
+        val discarded = stalePendingDiscarded
+        stalePendingDiscarded = false
+        return discarded
+    }
+
+    private fun clearPendingApk() {
+        pendingApkPath = null
+    }
+
+    private fun clearStalePendingApk(file: java.io.File) {
+        pendingApkPath = null
+        stalePendingDiscarded = true
+        runCatching { file.delete() }
     }
 
     fun canInstallPackages(): Boolean = installManager.canRequestPackageInstalls()

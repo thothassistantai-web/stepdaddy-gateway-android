@@ -393,7 +393,7 @@ class DaddyLiveClient(
                 markMirrorAlive(baseUrl)
                 activeBaseUrl = baseUrl
                 return rows.map { row ->
-                    channelFromRow(row.channelId, row.channelName)
+                    channelFromRow(row.channelId, row.channelName, fastPath = true)
                 }.sortedWith(GroupTitleResolver.channelComparator())
             } catch (exc: Exception) {
                 lastError = exc

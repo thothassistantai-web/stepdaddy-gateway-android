@@ -7,6 +7,20 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.17] - 2026-06-20
+
+### Added
+
+- **Unified update coordinator** — single auto-check per session, startup grace, no overlapping update/install dialogs
+- **Stale update cleanup** — cached APKs older than the installed build are discarded with a short toast
+
+### Fixed
+
+- **Fresh-install boot** — channel fetch runs before supplement sync; empty cache triggers immediate upstream refresh (~10s vs stuck at 0 channels)
+- **Misleading “starting” UI** — dashboard distinguishes server listening vs channels still loading; `/health` `starting` only when the gateway is not yet up
+- **Upstream channel load** — fast logo path on live fetch (same as disk cache) to avoid long boot delays
+- **Update UX collisions** — Settings no longer duplicates MainActivity auto-check; auto-download skips straight to install-ready; pending APK never auto-installs
+
 ## [1.0.16] - 2026-06-20
 
 ### Added
@@ -135,7 +149,8 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 - Upstream DaddyLive / resportz availability is third-party dependent
 - Full web UI / mapping editor remains in Linux `stepdaddy-web` only
 
-[Unreleased]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/compare/v1.0.16...HEAD
+[Unreleased]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/compare/v1.0.17...HEAD
+[1.0.17]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.17
 [1.0.16]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.16
 [1.0.2]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.2
 [1.0.1]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.1

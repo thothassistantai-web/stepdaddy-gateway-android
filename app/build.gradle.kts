@@ -22,8 +22,8 @@ android {
         applicationId = "com.thothassistant.stepdaddy.gateway"
         minSdk = 24
         targetSdk = 34
-        versionCode = 19
-        versionName = "1.0.16"
+        versionCode = 20
+        versionName = "1.0.17"
 
         buildConfigField("int", "DEFAULT_PORT", "3000")
         buildConfigField("String", "DEFAULT_API_URL", "\"http://127.0.0.1:3000\"")

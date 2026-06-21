@@ -166,6 +166,11 @@ class ServerService : LifecycleService() {
                     GatewayMessageBus.postReady(environment.loopbackBase())
                     GatewayDiagnostics.info(TAG, "Gateway listening on ${environment.loopbackBase()} ($channelCount channels)")
                     scheduleEmbeddedSidecarRefreshIfEmpty(app)
+                    if (client.channels.isEmpty()) {
+                        client.scheduleChannelRefresh(force = true) {
+                            updateRunningNotification()
+                        }
+                    }
                     epgManager.schedulePeriodicRefresh { daddyLiveClient.channels }
                     if (epgManager.needsBuild()) {
                         epgManager.scheduleRefresh(client.channels, force = true)
@@ -265,16 +270,15 @@ class ServerService : LifecycleService() {
      */
     private fun scheduleDeferredBootChannelRefresh(skipReadyBanner: Boolean) {
         lifecycleScope.launch(Dispatchers.IO) {
-            delay(BOOT_CHANNEL_REFRESH_DEFER_MS)
+            val deferMs =
+                if (::daddyLiveClient.isInitialized && daddyLiveClient.channels.isEmpty()) {
+                    8_000L
+                } else {
+                    BOOT_CHANNEL_REFRESH_DEFER_MS
+                }
+            delay(deferMs)
             if (!isServiceActive || !::daddyLiveClient.isInitialized) return@launch
             val app = application as GatewayApp
-            val channels = daddyLiveClient.channels
-            runCatching {
-                app.supplementSource.refresh(channels, force = true)
-            }.onFailure { exc ->
-                Log.w(TAG, "Boot supplement refresh failed", exc)
-            }
-            epgManager.scheduleRefresh(daddyLiveClient.channels, force = true)
             daddyLiveClient.scheduleChannelRefresh(force = true) {
                 updateRunningNotification()
                 daddyLiveClient.schedulePrewarmDelayed()
@@ -290,6 +294,12 @@ class ServerService : LifecycleService() {
                     showReadyBanner(daddyLiveClient.channels.size)
                 }
             }
+            runCatching {
+                app.supplementSource.refresh(daddyLiveClient.channels, force = true)
+            }.onFailure { exc ->
+                Log.w(TAG, "Boot supplement refresh failed", exc)
+            }
+            epgManager.scheduleRefresh(daddyLiveClient.channels, force = true)
         }
     }
 

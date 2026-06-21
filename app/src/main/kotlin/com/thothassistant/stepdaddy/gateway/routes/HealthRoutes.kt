@@ -45,7 +45,7 @@ class HealthRoutes(
         val supplementCount = supplementSource.channelCount()
         val payload = HealthResponse(
             ok = true,
-            starting = channelCount == 0,
+            starting = channelCount == 0 && !environment.serverRunning,
             version = BuildConfig.VERSION_NAME,
             channels = channelCount,
             port = environment.port,

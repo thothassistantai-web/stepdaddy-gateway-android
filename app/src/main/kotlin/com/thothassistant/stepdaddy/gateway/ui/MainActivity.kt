@@ -29,9 +29,8 @@ import com.thothassistant.stepdaddy.gateway.ui.dashboard.GatewayMessageBus
 import com.thothassistant.stepdaddy.gateway.install.ApkInstallManager
 import com.thothassistant.stepdaddy.gateway.install.InstallAppsCatalogRepository
 import com.thothassistant.stepdaddy.gateway.model.HealthResponse
-import com.thothassistant.stepdaddy.gateway.update.AppUpdateDialogHelper
+import com.thothassistant.stepdaddy.gateway.update.AppUpdateCoordinator
 import com.thothassistant.stepdaddy.gateway.update.AppUpdateInfo
-import com.thothassistant.stepdaddy.gateway.update.AppUpdateManager
 import com.thothassistant.stepdaddy.gateway.network.GatewayPeerScanner
 import com.thothassistant.stepdaddy.gateway.network.GatewayUrlBuilder
 import com.thothassistant.stepdaddy.gateway.network.LanAddressResolver
@@ -56,16 +55,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusMonitor: GatewayStatusMonitor
     private lateinit var catalogRepository: InstallAppsCatalogRepository
     private lateinit var installManager: ApkInstallManager
-    private lateinit var appUpdateManager: AppUpdateManager
+    private lateinit var updateCoordinator: AppUpdateCoordinator
     private var pollJob: Job? = null
     private var clockJob: Job? = null
     private var tivimateInstallJob: Job? = null
     private var restartJob: Job? = null
-    private var updateCheckJob: Job? = null
-    private var updateDownloadJob: Job? = null
     private var peerScanJob: Job? = null
-    private var hasAutoCheckedUpdates = false
+    private val mainUpdateListener: (AppUpdateInfo?) -> Unit = { onUpdateAvailability(it) }
     private var pendingUpdateInfo: AppUpdateInfo? = null
+    private var lastGatewayOnline = false
     private val tivimateInstallMutex = Mutex()
     private lateinit var bottomPanel: DashboardBottomPanel
     private val numberFormat = NumberFormat.getIntegerInstance(Locale.US)
@@ -88,7 +86,9 @@ class MainActivity : AppCompatActivity() {
         statusMonitor = GatewayStatusMonitor { healthUrl() }
         catalogRepository = InstallAppsCatalogRepository(this)
         installManager = ApkInstallManager(this)
-        appUpdateManager = AppUpdateManager(this, environment, installManager)
+        updateCoordinator = (application as GatewayApp).appUpdateCoordinator
+        updateCoordinator.setPrimaryHost(this)
+        updateCoordinator.addAvailabilityListener(mainUpdateListener)
         requestRuntimePermissions()
         bindUrls()
         bindVersion()
@@ -102,13 +102,16 @@ class MainActivity : AppCompatActivity() {
         updateEpgStatus()
         updateFooterMetrics(null)
         maybeAutoStartServer()
-        maybeAutoCheckUpdates(force = false)
-        maybePromptPendingInstall()
+        updateCoordinator.scheduleStartupFlow(this)
     }
 
     override fun onResume() {
         super.onResume()
         isInForeground = true
+        if (::updateCoordinator.isInitialized) {
+            updateCoordinator.setPrimaryHost(this)
+            updateCoordinator.flushPendingPrompts(this)
+        }
         bottomPanel.onResume()
         updateStatus()
         bindNetworkMode()
@@ -129,6 +132,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        if (::updateCoordinator.isInitialized) {
+            updateCoordinator.removeAvailabilityListener(mainUpdateListener)
+            updateCoordinator.setPrimaryHost(null)
+        }
         if (::bottomPanel.isInitialized) {
             bottomPanel.onDestroy()
         }
@@ -254,103 +261,13 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent(this, SettingsActivity::class.java))
     }
 
-    private fun maybeAutoCheckUpdates(force: Boolean) {
-        if (!force) {
-            if (hasAutoCheckedUpdates || !environment.autoCheckUpdates) return
-            hasAutoCheckedUpdates = true
-        }
-        checkForUpdates(manual = force)
-    }
-
     private fun checkForUpdates(manual: Boolean) {
-        if (updateCheckJob?.isActive == true) return
-        updateCheckJob = lifecycleScope.launch {
-            if (manual) {
-                Toast.makeText(this@MainActivity, R.string.update_checking, Toast.LENGTH_SHORT).show()
-            }
-            appUpdateManager.checkForUpdate()
-                .onSuccess { info ->
-                    if (info == null) {
-                        pendingUpdateInfo = null
-                        updateFooterUpdateVisibility(null)
-                        if (manual) {
-                            Toast.makeText(this@MainActivity, R.string.update_none, Toast.LENGTH_SHORT).show()
-                        }
-                        return@launch
-                    }
-                    pendingUpdateInfo = info
-                    updateFooterUpdateVisibility(info)
-                    if (environment.autoDownloadUpdates) {
-                        downloadAndInstallUpdate(info, showProgressToast = false)
-                    }
-                    if (manual || appUpdateManager.shouldPrompt(info)) {
-                        promptForUpdate(info)
-                    }
-                }
-                .onFailure { exc ->
-                    if (manual) {
-                        Toast.makeText(
-                            this@MainActivity,
-                            getString(R.string.update_check_failed, exc.message ?: "error"),
-                            Toast.LENGTH_LONG,
-                        ).show()
-                    }
-                }
-        }
+        updateCoordinator.checkForUpdate(this, manual)
     }
 
-    private fun promptForUpdate(info: AppUpdateInfo) {
-        val mandatory = appUpdateManager.isMandatory(info)
-        AppUpdateDialogHelper.showUpdateDialog(
-            activity = this,
-            info = info,
-            mandatory = mandatory,
-            onUpdate = { downloadAndInstallUpdate(info, showProgressToast = true) },
-            onDismiss = {
-                if (!mandatory) {
-                    appUpdateManager.dismissUpdate(info)
-                }
-            },
-        )
-    }
-
-    private fun downloadAndInstallUpdate(info: AppUpdateInfo, showProgressToast: Boolean) {
-        if (!ensureInstallAllowed()) return
-        if (updateDownloadJob?.isActive == true) return
-        updateDownloadJob = lifecycleScope.launch {
-            if (showProgressToast) {
-                Toast.makeText(this@MainActivity, R.string.update_downloading, Toast.LENGTH_SHORT).show()
-            }
-            appUpdateManager.downloadUpdate(info) { }
-                .onSuccess { apkFile ->
-                    AppUpdateDialogHelper.showInstallReadyDialog(
-                        activity = this@MainActivity,
-                        info = info,
-                        onInstall = { launchUpdateInstall(apkFile) },
-                    )
-                }
-                .onFailure { exc ->
-                    Toast.makeText(
-                        this@MainActivity,
-                        getString(R.string.update_download_failed, exc.message ?: "error"),
-                        Toast.LENGTH_LONG,
-                    ).show()
-                }
-        }
-    }
-
-    private fun launchUpdateInstall(apkFile: java.io.File) {
-        if (!ensureInstallAllowed()) return
-        if (!appUpdateManager.launchInstall(apkFile)) {
-            Toast.makeText(this, R.string.install_apps_launch_failed, Toast.LENGTH_LONG).show()
-            return
-        }
-        Toast.makeText(this, R.string.update_download_ready, Toast.LENGTH_LONG).show()
-    }
-
-    private fun maybePromptPendingInstall() {
-        if (!appUpdateManager.launchPendingInstall()) return
-        Toast.makeText(this, R.string.update_download_ready, Toast.LENGTH_LONG).show()
+    private fun onUpdateAvailability(info: AppUpdateInfo?) {
+        pendingUpdateInfo = info
+        updateFooterUpdateVisibility(info)
     }
 
     private fun updateFooterUpdateVisibility(info: AppUpdateInfo?) {
@@ -468,6 +385,7 @@ class MainActivity : AppCompatActivity() {
         updateEpgStatus()
         Toast.makeText(this, R.string.toast_server_starting, Toast.LENGTH_SHORT).show()
         GatewayMessageBus.post("Starting gateway server")
+        updateCoordinator.deferPrompts()
     }
 
     private fun stopServer() {
@@ -595,9 +513,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         val health = live.health
-        val online = live.fetchError == null && health.ok && !health.starting
+        val online = live.fetchError == null && health.ok && (!health.starting || health.channels > 0 || (health.providers?.total ?: 0) > 0)
+        if (online && !lastGatewayOnline) {
+            updateCoordinator.deferPrompts()
+        }
+        lastGatewayOnline = online
         views.textHealthStatus.text = when {
             live.fetchError != null -> getString(R.string.status_offline_upper)
+            health.channels == 0 && (health.providers?.total ?: 0) == 0 && health.ok ->
+                getString(R.string.dashboard_health_starting).uppercase(Locale.US)
             health.starting -> getString(R.string.dashboard_health_starting).uppercase(Locale.US)
             health.ok -> getString(R.string.status_online_upper)
             else -> getString(R.string.status_offline_upper)
@@ -611,6 +535,8 @@ class MainActivity : AppCompatActivity() {
         views.imageHealthBadge.setColorFilter(ContextCompat.getColor(this, healthColor))
         views.textHealthSubtitle.text = when {
             live.fetchError != null -> live.fetchError
+            health.channels == 0 && (health.providers?.total ?: 0) == 0 && health.ok ->
+                getString(R.string.dashboard_health_starting)
             health.ok && !health.starting -> getString(R.string.dashboard_health_ok_detail)
             else -> getString(R.string.dashboard_health_starting)
         }
@@ -656,6 +582,8 @@ class MainActivity : AppCompatActivity() {
 
         updateSummaryStatus(online, true, health)
         updateFooterOnline(online)
+        pendingUpdateInfo = updateCoordinator.currentUpdate()
+        updateFooterUpdateVisibility(pendingUpdateInfo)
     }
 
     private fun updateSummaryStatus(online: Boolean, active: Boolean, health: HealthResponse?) {
@@ -663,6 +591,7 @@ class MainActivity : AppCompatActivity() {
         views.statProgramsValue.text = health?.let { numberFormat.format(it.epgProgrammeCount) } ?: "—"
         views.statStatusValue.text = when {
             online -> getString(R.string.status_online)
+            active && health != null && health.ok -> getString(R.string.dashboard_health_starting)
             active -> getString(R.string.status_starting)
             else -> getString(R.string.status_offline)
         }

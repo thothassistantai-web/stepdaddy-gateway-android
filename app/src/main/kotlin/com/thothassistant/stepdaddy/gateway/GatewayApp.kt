@@ -69,6 +69,15 @@ class GatewayApp : Application() {
     val epgManager: EpgManager
         get() = _epgManager ?: error("Gateway components not initialized")
 
+    private var _appUpdateCoordinator: com.thothassistant.stepdaddy.gateway.update.AppUpdateCoordinator? = null
+
+    val appUpdateCoordinator: com.thothassistant.stepdaddy.gateway.update.AppUpdateCoordinator
+        get() = _appUpdateCoordinator
+            ?: com.thothassistant.stepdaddy.gateway.update.AppUpdateCoordinator(
+                this,
+                gatewayEnvironment,
+            ).also { _appUpdateCoordinator = it }
+
     override fun onCreate() {
         super.onCreate()
         // Keep Application.onCreate minimal — heavy init during BOOT_COMPLETED ANRs the

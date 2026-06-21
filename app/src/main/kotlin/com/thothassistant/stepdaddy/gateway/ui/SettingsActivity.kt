@@ -15,9 +15,8 @@ import com.thothassistant.stepdaddy.gateway.R
 import com.thothassistant.stepdaddy.gateway.databinding.ActivitySettingsBinding
 import com.thothassistant.stepdaddy.gateway.install.ApkInstallManager
 import com.thothassistant.stepdaddy.gateway.network.NetworkAccessMode
-import com.thothassistant.stepdaddy.gateway.update.AppUpdateDialogHelper
+import com.thothassistant.stepdaddy.gateway.update.AppUpdateCoordinator
 import com.thothassistant.stepdaddy.gateway.update.AppUpdateInfo
-import com.thothassistant.stepdaddy.gateway.update.AppUpdateManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -27,9 +26,17 @@ import java.util.Locale
 class SettingsActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySettingsBinding
     private lateinit var environment: com.thothassistant.stepdaddy.gateway.GatewayEnvironment
-    private lateinit var appUpdateManager: AppUpdateManager
-    private var updateCheckJob: Job? = null
-    private var updateDownloadJob: Job? = null
+    private lateinit var updateCoordinator: AppUpdateCoordinator
+    private val settingsUpdateListener: (AppUpdateInfo?) -> Unit = { info ->
+        binding.textUpdateStatus.text = when {
+            info == null -> getString(R.string.settings_update_none, BuildConfig.VERSION_NAME)
+            else -> getString(
+                R.string.settings_update_available,
+                info.manifest.versionName,
+                info.manifest.versionCode,
+            )
+        }
+    }
     private var selectedNetworkMode: NetworkAccessMode = NetworkAccessMode.DEFAULT
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,7 +44,8 @@ class SettingsActivity : AppCompatActivity() {
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
         environment = (application as GatewayApp).gatewayEnvironment
-        appUpdateManager = AppUpdateManager(this, environment, ApkInstallManager(this))
+        updateCoordinator = (application as GatewayApp).appUpdateCoordinator
+        updateCoordinator.addAvailabilityListener(settingsUpdateListener)
         loadFields()
         binding.buttonSave.setOnClickListener { saveAndFinish() }
         binding.buttonBack.setOnClickListener { finish() }
@@ -46,9 +54,11 @@ class SettingsActivity : AppCompatActivity() {
         binding.buttonRegenerateAccessToken.setOnClickListener { regenerateAccessToken() }
         binding.toggleNetworkMode.addOnButtonCheckedListener(networkModeListener)
         binding.buttonSave.requestFocus()
-        if (environment.autoCheckUpdates) {
-            checkForUpdates(manual = false)
-        }
+    }
+
+    override fun onDestroy() {
+        updateCoordinator.removeAvailabilityListener(settingsUpdateListener)
+        super.onDestroy()
     }
 
     private val networkModeListener =
@@ -178,104 +188,16 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun checkForUpdates(manual: Boolean) {
-        if (updateCheckJob?.isActive == true) return
         syncUpdateFieldsFromBinding()
         binding.textUpdateStatus.text = getString(R.string.settings_update_checking)
-        updateCheckJob = lifecycleScope.launch {
-            appUpdateManager.checkForUpdate()
-                .onSuccess { info ->
-                    if (info == null) {
-                        binding.textUpdateStatus.text = getString(
-                            R.string.settings_update_none,
-                            BuildConfig.VERSION_NAME,
-                        )
-                        if (manual) {
-                            Toast.makeText(this@SettingsActivity, R.string.update_none, Toast.LENGTH_SHORT).show()
-                        }
-                        return@launch
-                    }
-                    binding.textUpdateStatus.text = getString(
-                        R.string.settings_update_available,
-                        info.manifest.versionName,
-                        info.manifest.versionCode,
-                    )
-                    if (binding.switchAutoDownloadUpdates.isChecked) {
-                        downloadUpdate(info)
-                    }
-                    if (manual || appUpdateManager.shouldPrompt(info)) {
-                        promptForUpdate(info)
-                    }
-                }
-                .onFailure { exc ->
-                    val message = exc.message ?: "error"
-                    binding.textUpdateStatus.text = getString(R.string.settings_update_check_failed, message)
-                    if (manual) {
-                        Toast.makeText(
-                            this@SettingsActivity,
-                            getString(R.string.settings_update_check_failed, message),
-                            Toast.LENGTH_LONG,
-                        ).show()
-                    }
-                }
-        }
-    }
-
-    private fun promptForUpdate(info: AppUpdateInfo) {
-        val mandatory = appUpdateManager.isMandatory(info)
-        AppUpdateDialogHelper.showUpdateDialog(
-            activity = this,
-            info = info,
-            mandatory = mandatory,
-            onUpdate = { downloadUpdate(info) },
-            onDismiss = {
-                if (!mandatory) {
-                    appUpdateManager.dismissUpdate(info)
-                }
-            },
-        )
-    }
-
-    private fun downloadUpdate(info: AppUpdateInfo) {
-        if (!ensureInstallAllowed()) return
-        if (updateDownloadJob?.isActive == true) return
-        updateDownloadJob = lifecycleScope.launch {
-            Toast.makeText(this@SettingsActivity, R.string.update_downloading, Toast.LENGTH_SHORT).show()
-            appUpdateManager.downloadUpdate(info) { }
-                .onSuccess { apkFile ->
-                    AppUpdateDialogHelper.showInstallReadyDialog(
-                        activity = this@SettingsActivity,
-                        info = info,
-                        onInstall = {
-                            if (appUpdateManager.launchInstall(apkFile)) {
-                                Toast.makeText(
-                                    this@SettingsActivity,
-                                    R.string.update_download_ready,
-                                    Toast.LENGTH_LONG,
-                                ).show()
-                            } else {
-                                Toast.makeText(
-                                    this@SettingsActivity,
-                                    R.string.install_apps_launch_failed,
-                                    Toast.LENGTH_LONG,
-                                ).show()
-                            }
-                        },
-                    )
-                }
-                .onFailure { exc ->
-                    Toast.makeText(
-                        this@SettingsActivity,
-                        getString(R.string.update_download_failed, exc.message ?: "error"),
-                        Toast.LENGTH_LONG,
-                    ).show()
-                }
-        }
+        updateCoordinator.checkForUpdate(this, manual)
     }
 
     private fun ensureInstallAllowed(): Boolean {
-        if (!appUpdateManager.canInstallPackages()) {
+        val manager = updateCoordinator.manager()
+        if (!manager.canInstallPackages()) {
             Toast.makeText(this, R.string.install_apps_unknown_sources_hint, Toast.LENGTH_LONG).show()
-            appUpdateManager.openInstallPermissionSettings()
+            manager.openInstallPermissionSettings()
             return false
         }
         return true
