@@ -21,6 +21,9 @@ object TvtvUsEpgConfig {
     /** tvtv.us returns HTTP 400 when the grid window exceeds ~24 hours. */
     const val MAX_GRID_WINDOW_HOURS = 24L
 
+    /** tvtv.us also rejects trailing partial windows shorter than 24 hours. */
+    const val MIN_GRID_WINDOW_HOURS = 24L
+
     /** Cap grid fetches per build; tvtv.us rate-limits above ~20–30 rapid requests. */
     const val MAX_CHANNELS_PER_BUILD = 24
 

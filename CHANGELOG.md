@@ -7,6 +7,12 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.23] - 2026-06-21
+
+### Fixed
+
+- **tvtv.us trailing grid chunk** — skip partial windows under 24h at the end of the 48h EPG horizon (HTTP 400 was failing every cable gap-fill channel, including Lifetime)
+
 ## [1.0.22] - 2026-06-21
 
 ### Added

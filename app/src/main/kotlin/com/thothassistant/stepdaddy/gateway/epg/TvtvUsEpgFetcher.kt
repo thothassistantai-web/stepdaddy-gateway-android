@@ -104,6 +104,9 @@ class TvtvUsEpgFetcher(
         val merged = linkedMapOf<String, ParsedProgramme>()
         var chunkStart = windowStart
         while (chunkStart.isBefore(windowEnd)) {
+            if (ChronoUnit.HOURS.between(chunkStart, windowEnd) < TvtvUsEpgConfig.MIN_GRID_WINDOW_HOURS) {
+                break
+            }
             val chunkEnd = minOf(
                 chunkStart.plus(TvtvUsEpgConfig.MAX_GRID_WINDOW_HOURS, ChronoUnit.HOURS),
                 windowEnd,
