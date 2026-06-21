@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
+import com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex
+import com.thothassistant.stepdaddy.gateway.epg.TvgIdResolver
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.UpstreamChannelRow
 import com.thothassistant.stepdaddy.gateway.model.UpstreamManifest
@@ -32,6 +34,7 @@ import java.util.concurrent.TimeUnit
 class DaddyLiveClient(
     private val environment: GatewayEnvironment,
     private val epgChannelMapper: EpgChannelMapper? = null,
+    private val tvgIdResolver: TvgIdResolver? = null,
     private val logoResolver: LogoResolver? = null,
     private val channelMetaStore: ChannelMetaStore? = null,
     private val resportzParser: ResportzParser = ResportzParser(),
@@ -785,7 +788,7 @@ class DaddyLiveClient(
                     val tvgId = row.optString("tvg_id").takeIf { it.isNotBlank() }
                         ?: epgChannelMapper?.tvgIdFor(id, name)
                     if (id.isNotBlank() && name.isNotBlank()) {
-                        add(channelFromRow(id, name, tvgId))
+                        add(channelFromRow(id, name, tvgId, fastPath = true))
                     }
                 }
             }
@@ -800,7 +803,12 @@ class DaddyLiveClient(
         }
     }
 
-    private fun channelFromRow(channelId: String, channelName: String, cachedTvgId: String? = null): Channel {
+    private fun channelFromRow(
+        channelId: String,
+        channelName: String,
+        cachedTvgId: String? = null,
+        fastPath: Boolean = false,
+    ): Channel {
         val id = channelId.trim()
         val upstreamName = channelName.trim().replace("#", "")
         val name = channelNameOverrides.nameFor(id, upstreamName)
@@ -809,19 +817,21 @@ class DaddyLiveClient(
         val tvgId = cachedTvgId?.takeIf { it.isNotBlank() }
             ?: epgChannelMapper?.tvgIdFor(id, upstreamName)
             ?: epgChannelMapper?.tvgIdFor(id, name)
+            ?: if (fastPath) null else tvgIdResolver?.resolve(name)?.tvgId
         val metaLogo = channelMetaStore?.logoFor(upstreamName)
             ?: channelMetaStore?.logoFor(name)
+        val apiBase = environment.loopbackBase()
+        val logo = if (fastPath) {
+            logoResolver?.resolvePlaylistLogoUrl(apiBase, name, tvgId, metaLogo)
+        } else {
+            logoResolver?.resolveLogoUrlBlocking(apiBase, name, tvgId, metaLogo)
+        }
         return Channel(
             id = id,
             name = name,
             tags = tags,
             tvgId = tvgId,
-            logo = logoResolver?.resolveLogoUrlBlocking(
-                environment.loopbackBase(),
-                name,
-                tvgId,
-                metaLogo,
-            ),
+            logo = logo,
         )
     }
 

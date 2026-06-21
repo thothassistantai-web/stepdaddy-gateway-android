@@ -1,7 +1,7 @@
 {
-  "versionCode": 13,
-  "versionName": "1.0.10",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.10/stepdaddy-gateway-1.0.10-debug.apk",
-  "releaseNotes": "Per-provider full-catalog import with Enable all supplements master switch. EPG auto-refresh after 30 min. ntv.cx Chrome TV UA on play + dual CDN/Falcon probe.",
+  "versionCode": 19,
+  "versionName": "1.0.16",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.16/stepdaddy-gateway-1.0.16-debug.apk",
+  "releaseNotes": "See CHANGELOG.md",
   "mandatory": false
 }

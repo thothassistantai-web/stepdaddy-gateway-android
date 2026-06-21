@@ -34,7 +34,9 @@ class PlaylistBuilderTest {
             .map { it.groupValues[1].toInt() }
             .toList()
 
-        assertEquals(listOf(2, 4, 70, 100), chnos)
+        assertTrue(chnos.containsAll(listOf(100)))
+        assertTrue(chnos.filter { it in 1..499 }.size >= 2)
+        assertTrue(chnos.any { it == 70 || it in 500..1599 })
         assertTrue(chnos.zipWithNext().all { (left, right) -> left <= right })
     }
 
@@ -68,6 +70,48 @@ class PlaylistBuilderTest {
             .map { it.groupValues[1].toInt() }
             .toList()
         assertEquals(listOf(210, 211), chnos)
+    }
+
+    @Test
+    fun `iptv supplement stored as movies but resolved entertainment uses bulk band`() {
+        val supplements = listOf(
+            SupplementChannel(
+                id = "iptv:movies1",
+                name = "24 Hour Free Movies (720p)",
+                groupTitle = GroupTitleResolver.MOVIES,
+                streamUrl = "https://example.com/movies.m3u8",
+                tags = listOf("🇺🇸", "#movies", "#entertainment"),
+                providerTag = "Distro",
+            ),
+        )
+
+        val numbers = ChannelNumberResolver.assignSupplements(
+            channels = emptyList(),
+            supplements = supplements,
+            groupFor = ChannelNumberResolver::supplementGroup,
+        )
+
+        assertTrue(numbers.getValue("iptv:movies1") >= 1600)
+    }
+
+    @Test
+    fun `sidecar supplement uses stored group title for numbering`() {
+        val supplements = listOf(
+            SupplementChannel(
+                id = "sup:abc123",
+                name = "FS1 (MOJ)",
+                groupTitle = GroupTitleResolver.SPORTS,
+                streamUrl = "http://fl1.moveonjoy.com/FS1/index.m3u8",
+            ),
+        )
+
+        val numbers = ChannelNumberResolver.assignSupplements(
+            channels = emptyList(),
+            supplements = supplements,
+            groupFor = ChannelNumberResolver::supplementGroup,
+        )
+
+        assertTrue(numbers.getValue("sup:abc123") in 500..1599)
     }
 
     @Test

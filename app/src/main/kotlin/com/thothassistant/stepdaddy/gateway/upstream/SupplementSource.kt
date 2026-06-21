@@ -3,6 +3,8 @@ package com.thothassistant.stepdaddy.gateway.upstream
 import android.content.Context
 import android.util.Log
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
+import com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex
+import com.thothassistant.stepdaddy.gateway.epg.TheTvAppSportsEpgGenerator
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import java.io.File
@@ -24,11 +26,18 @@ import okhttp3.Request
 class SupplementSource(
     context: Context,
     private val environment: GatewayEnvironment,
+    private val nameIndex: IptvOrgNameIndex = IptvOrgNameIndex(context),
     private val httpClient: OkHttpClient = defaultClient(),
     private val sportsResolver: TheTvAppSportsResolver = TheTvAppSportsResolver(httpClient),
-    private val iptvOrgSource: IptvOrgStreamsSource = IptvOrgStreamsSource(context, httpClient),
     private val iptvOrgEpgRepository: IptvOrgEpgRepository = IptvOrgEpgRepository(context, httpClient),
 ) {
+    private val fastEpgCatalog = FastEpgCatalog(context)
+    private val iptvOrgSource = IptvOrgStreamsSource(
+        context,
+        httpClient,
+        fastEpgCatalog = fastEpgCatalog,
+        nameIndex = nameIndex,
+    )
     private val ntvCxCatalogStore = NtvCxCatalogStore(context)
     private val ntvCxSource = NtvCxCdnLiveSource(
         NtvCxCdnLiveResolver(
@@ -36,6 +45,8 @@ class SupplementSource(
             catalogStore = ntvCxCatalogStore,
         ),
     )
+
+    private val adultSwimSource = AdultSwimStreamsSource(AdultSwimStreamsSource.defaultClient())
 
     data class SyncSnapshot(
         val blockedTheTvApp: Int = 0,
@@ -50,6 +61,9 @@ class SupplementSource(
         val iptvOrgEntriesParsed: Int = 0,
         val ntvCxChannels: Int = 0,
         val ntvCxResolveProbeOk: Boolean = false,
+        val adultSwimChannels: Int = 0,
+        val adultSwimProbed: Int = 0,
+        val adultSwimProbeOk: Int = 0,
     )
 
     private val store = SupplementStore(context)
@@ -69,7 +83,8 @@ class SupplementSource(
         environment.supplementBaseUrl.isNotBlank() ||
             environment.supplementSportsEnabled ||
             environment.supplementIptvOrgEnabled ||
-            environment.supplementNtvCxEnabled
+            environment.supplementNtvCxEnabled ||
+            environment.supplementAdultSwimEnabled
 
     fun sidecarEnabled(): Boolean = environment.supplementBaseUrl.isNotBlank()
 
@@ -78,6 +93,10 @@ class SupplementSource(
     fun iptvOrgEnabled(): Boolean = environment.supplementIptvOrgEnabled
 
     fun ntvCxEnabled(): Boolean = environment.supplementNtvCxEnabled
+
+    fun adultSwimEnabled(): Boolean = environment.supplementAdultSwimEnabled
+
+    fun adultSwimImportMode(): SupplementImportMode = environment.supplementAdultSwimImportMode
 
     fun ntvCxImportMode(): SupplementImportMode = environment.supplementNtvCxImportMode
 
@@ -96,6 +115,8 @@ class SupplementSource(
 
     fun ntvCxCount(): Int = cached.count { it.id.startsWith("ntv:") }
 
+    fun adultSwimCount(): Int = cached.count { it.id.startsWith("adultswim:") }
+
     fun ntvChannel(token: String): SupplementChannel? =
         cached.firstOrNull { it.id == "ntv:$token" }
 
@@ -103,10 +124,72 @@ class SupplementSource(
 
     fun epgXmlFile(): File? = store.epgFile()
 
+    fun fastEpgFeedFiles(): List<File> {
+        if (!environment.iptvOrgEpgEnabled || !iptvOrgEnabled()) return emptyList()
+        return fastEpgCatalog.cachedFeedFiles()
+    }
+
+    /** Download FAST provider guides if missing; backfill mjh hash tvg-ids on cached iptv-org rows. */
+    fun prepareFastEpgForBuild(): Int {
+        if (!environment.iptvOrgEpgEnabled || !iptvOrgEnabled()) return 0
+        runCatching {
+            fastEpgCatalog.refresh(
+                force = fastEpgCatalog.isStale() || fastEpgCatalog.cachedFeedFiles().isEmpty(),
+            )
+        }.onFailure { exc ->
+            Log.w(TAG, "FAST EPG refresh failed", exc)
+            return 0
+        }
+        return backfillFastTvgIdsFromCatalog()
+    }
+
+    private fun backfillFastTvgIdsFromCatalog(): Int {
+        if (cached.isEmpty()) return 0
+        var updated = 0
+        val next = cached.map { channel ->
+            if (!channel.id.startsWith("iptv:")) return@map channel
+            val provider = channel.providerTag?.takeIf { it.isNotEmpty() } ?: return@map channel
+            val hashId = fastEpgCatalog.lookupChannelId(channel.name, provider) ?: return@map channel
+            val current = channel.tvgId?.trim().orEmpty()
+            if (current == hashId) return@map channel
+            if (current.isEmpty() || current.contains('.')) {
+                updated++
+                channel.copy(tvgId = hashId)
+            } else {
+                channel
+            }
+        }
+        if (updated > 0) {
+            cached = next
+            store.writeChannels(next)
+            Log.i(TAG, "FAST EPG backfill: updated $updated iptv-org tvg-ids")
+        }
+        return updated
+    }
+
     fun iptvOrgEpgFile(): File? {
         if (!environment.iptvOrgEpgEnabled || !iptvOrgEnabled()) return null
         return iptvOrgEpgRepository.mergedGuideFile()
     }
+
+    fun sportsEpgXmlFile(): File? {
+        val file = store.sportsEpgFile
+        return file.takeIf { it.isFile && it.length() > 0L }
+    }
+
+    fun sportsTvgIdsForEpg(): Set<String> =
+        cached.filter { it.id.startsWith("sport:") }
+            .mapNotNull { it.tvgId?.trim()?.takeIf { id -> id.isNotEmpty() } }
+            .toSet()
+
+    fun fastTvgIdsForEpg(): Set<String> =
+        cached.filter { it.id.startsWith("iptv:") }
+            .mapNotNull { channel ->
+                channel.tvgId?.trim()?.takeIf { id ->
+                    id.isNotEmpty() && !id.contains('.')
+                }
+            }
+            .toSet()
 
     fun tvgIdsForEpg(): Set<String> =
         cached.mapNotNull { channel ->
@@ -165,6 +248,7 @@ class SupplementSource(
                     "Supplement sync: ${supplements.size} total " +
                         "(moveonjoy=${moveOnJoyCount()}, sports=${sportsCount()}, " +
                         "iptv-org=${iptvOrgCount()}, ntv.cx=${ntvCxCount()}, " +
+                        "adultswim=${adultSwimCount()}, " +
                         "blocked_thetvapp=${lastSync.blockedTheTvApp})",
                 )
                 onRefreshComplete?.invoke()
@@ -214,9 +298,30 @@ class SupplementSource(
                     Log.w(TAG, "Sports resolver failed", exc)
                     emptyList<SupplementChannel>() to TheTvAppSportsResolver.ResolveStats()
                 }
-                .let { (channels, _) -> channels.take(SupplementConfig.MAX_SPORTS_EVENTS) }
+                .let { (channels, _) ->
+                    val live = channels.take(SupplementConfig.MAX_SPORTS_EVENTS)
+                    if (live.isNotEmpty()) {
+                        runCatching {
+                            TheTvAppSportsEpgGenerator.writeXml(
+                                TheTvAppSportsEpgGenerator.programmesForChannels(live),
+                                store.sportsEpgFile,
+                            )
+                        }.onFailure { exc ->
+                            Log.w(TAG, "Sports EPG write failed", exc)
+                        }
+                    }
+                    live
+                }
         } else {
             emptyList()
+        }
+
+        if (iptvOrgEnabled() && environment.iptvOrgEpgEnabled) {
+            runCatching {
+                fastEpgCatalog.refresh(
+                    force = fastEpgCatalog.isStale() || fastEpgCatalog.cachedFeedFiles().isEmpty(),
+                )
+            }.onFailure { exc -> Log.w(TAG, "FAST EPG refresh failed", exc) }
         }
 
         val iptvOrgDeferred = async {
@@ -237,6 +342,7 @@ class SupplementSource(
                     ntvCxSource.fetchChannels(
                         daddyChannels,
                         environment.supplementNtvCxImportMode,
+                        nameIndex,
                     )
                 }
                     .getOrElse { exc ->
@@ -248,14 +354,40 @@ class SupplementSource(
             }
         }
 
+        val adultSwimDeferred = async {
+            if (adultSwimEnabled()) {
+                runCatching {
+                    adultSwimSource.fetchChannels(
+                        daddyChannels,
+                        environment.supplementAdultSwimImportMode,
+                    )
+                }
+                    .getOrElse { exc ->
+                        Log.w(TAG, "adult swim fetch failed", exc)
+                        emptyList<SupplementChannel>() to AdultSwimStreamsSource.FetchStats()
+                    }
+            } else {
+                emptyList<SupplementChannel>() to AdultSwimStreamsSource.FetchStats()
+            }
+        }
+
         val (iptvOrg, iptvStats) = iptvOrgDeferred.await()
         var (ntvCx, ntvStats) = ntvCxDeferred.await()
+        var (adultSwim, adultSwimStats) = adultSwimDeferred.await()
 
         if (ntvCx.isEmpty() && ntvCxEnabled()) {
             val cachedNtv = cached.filter { it.id.startsWith("ntv:") }
             if (cachedNtv.isNotEmpty()) {
                 Log.w(TAG, "ntv.cx fetch empty — keeping ${cachedNtv.size} cached channels")
                 ntvCx = cachedNtv
+            }
+        }
+
+        if (adultSwim.isEmpty() && adultSwimEnabled()) {
+            val cachedAdultSwim = cached.filter { it.id.startsWith("adultswim:") }
+            if (cachedAdultSwim.isNotEmpty()) {
+                Log.w(TAG, "adult swim probe empty — keeping ${cachedAdultSwim.size} cached channels")
+                adultSwim = cachedAdultSwim
             }
         }
 
@@ -279,9 +411,12 @@ class SupplementSource(
             iptvOrgEntriesParsed = iptvStats.entriesParsed,
             ntvCxChannels = ntvCx.size,
             ntvCxResolveProbeOk = ntvStats.resolveProbeOk,
+            adultSwimChannels = adultSwim.size,
+            adultSwimProbed = adultSwimStats.probed,
+            adultSwimProbeOk = adultSwimStats.probeOk,
         )
 
-        sidecar + sports + iptvOrg + ntvCx
+        sidecar + sports + iptvOrg + ntvCx + adultSwim
     }
 
     private fun downloadEpg(base: String) {

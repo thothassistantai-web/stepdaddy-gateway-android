@@ -2,6 +2,8 @@ package com.thothassistant.stepdaddy.gateway.upstream
 
 import android.util.Log
 import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
+import com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex
+import com.thothassistant.stepdaddy.gateway.epg.SupplementTvgIdResolver
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import java.security.MessageDigest
@@ -14,6 +16,7 @@ class NtvCxCdnLiveSource(
     suspend fun fetchChannels(
         daddyChannels: List<Channel>,
         mergeMode: SupplementImportMode,
+        nameIndex: IptvOrgNameIndex? = null,
     ): Pair<List<SupplementChannel>, NtvCxCdnLiveResolver.FetchStats> =
         withContext(Dispatchers.IO) {
             val catalog = resolver.fetchCatalog()
@@ -21,6 +24,7 @@ class NtvCxCdnLiveSource(
                 catalog = catalog,
                 daddyChannels = daddyChannels,
                 mergeMode = mergeMode,
+                nameIndex = nameIndex,
             )
 
             val probeOk = runCatching {
@@ -71,6 +75,7 @@ class NtvCxCdnLiveSource(
             catalog: List<NtvCxCdnLiveResolver.CatalogChannel>,
             daddyChannels: List<Channel>,
             mergeMode: SupplementImportMode,
+            nameIndex: IptvOrgNameIndex? = null,
         ): List<SupplementChannel> {
             val skipDuplicates = mergeMode == SupplementImportMode.SKIP_DUPLICATES
             val daddyNormNames = if (skipDuplicates) {
@@ -110,7 +115,7 @@ class NtvCxCdnLiveSource(
                 channels += SupplementChannel(
                     id = id,
                     name = row.name,
-                    tvgId = null,
+                    tvgId = nameIndex?.let { SupplementTvgIdResolver.forChannelName(it, row.name) },
                     logo = row.logo,
                     groupTitle = NtvCxCdnLiveConfig.GROUP_TITLE,
                     streamUrl = "",

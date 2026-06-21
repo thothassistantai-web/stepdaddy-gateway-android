@@ -4,8 +4,9 @@ import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 
 /**
- * Assigns NYC FiOS/Spectrum-inspired `tvg-chno` values per group-title category block.
- * Pinned flagship channels keep stable numbers; remaining channels fill sequentially within ranges.
+ * Assigns `tvg-chno` values per group-title category.
+ * Local, Sports, and Entertainment are fully bulk-sorted (US → CA → UK → rest, network families, no pin exceptions).
+ * Other categories keep FiOS/Spectrum-inspired pins and sequential fill.
  */
 object ChannelNumberResolver {
     private val categorySuffixRe = Regex(" \\[[^\\]]+\\]$")
@@ -26,19 +27,19 @@ object ChannelNumberResolver {
         GroupTitleResolver.ADULT,
     )
 
+    /** Bulk-sorted categories — skipped during pin + sequential passes. */
+    private val BULK_SORT_GROUPS = listOf(
+        GroupTitleResolver.LOCAL_CHANNELS,
+        GroupTitleResolver.SPORTS,
+        GroupTitleResolver.ENTERTAINMENT,
+    )
+
     /** Numeric bands per group-title (FiOS/Spectrum NYC hybrid). */
     private val CATEGORY_RANGES: Map<String, List<IntRange>> = mapOf(
-        GroupTitleResolver.LOCAL_CHANNELS to listOf(1..49),
-        GroupTitleResolver.SPORTS to listOf(
-            26..29,
-            48..48,
-            53..53,
-            70..99,
-            300..339,
-            380..449,
-        ),
-        GroupTitleResolver.ENTERTAINMENT to listOf(50..69, 170..209),
-        GroupTitleResolver.MOVIES to listOf(340..379, 500..549),
+        GroupTitleResolver.LOCAL_CHANNELS to emptyList(),
+        GroupTitleResolver.SPORTS to emptyList(),
+        GroupTitleResolver.ENTERTAINMENT to emptyList(),
+        GroupTitleResolver.MOVIES to listOf(340..379),
         GroupTitleResolver.NEWS to listOf(100..119),
         GroupTitleResolver.DOCUMENTARY to listOf(120..139),
         GroupTitleResolver.MUSIC to listOf(210..229),
@@ -48,57 +49,18 @@ object ChannelNumberResolver {
         GroupTitleResolver.ADULT to listOf(900..999),
     )
 
-    /** Exact normalized channel name → channel number (group-agnostic). */
+    private val LOCAL_BULK_RANGES = listOf(1..499)
+    private val SPORTS_BULK_RANGES = listOf(500..1599)
+    private val ENTERTAINMENT_BULK_RANGES = listOf(1600..3999)
+
+    private val BULK_RANGES_BY_GROUP = mapOf(
+        GroupTitleResolver.LOCAL_CHANNELS to LOCAL_BULK_RANGES,
+        GroupTitleResolver.SPORTS to SPORTS_BULK_RANGES,
+        GroupTitleResolver.ENTERTAINMENT to ENTERTAINMENT_BULK_RANGES,
+    )
+
+    /** Exact normalized channel name → channel number (non-bulk categories only). */
     private val NAME_PINS: Map<String, Int> = buildMap {
-        // Local Channels — NYC broadcast anchors
-        put("cbs usa", 2)
-        put("cbsny usa", 2)
-        put("nbc usa", 4)
-        put("fox usa", 5)
-        put("abc usa", 7)
-        put("abc ny usa", 7)
-        put("cw usa", 11)
-        put("cw pix 11 usa", 11)
-        put("pbs usa", 13)
-        put("cbc ca", 4)
-
-        // Sports — Spectrum RSN + FiOS national anchors
-        put("sportsnet new york (sny)", 26)
-        put("msg usa", 27)
-        put("sportsnet 360", 28)
-        put("sportsnet ontario", 28)
-        put("sportsnet east", 28)
-        put("sportsnet west", 28)
-        put("sportsnet one", 28)
-        put("tsn1", 29)
-        put("tsn2", 29)
-        put("tsn3", 29)
-        put("tsn4", 29)
-        put("tsn5", 29)
-        put("espn usa", 70)
-        put("espn2 usa", 74)
-        put("yes network usa", 53)
-        put("fox sports 1 usa", 83)
-        put("fox sports 2 usa", 84)
-        put("mlb network usa", 86)
-        put("nfl network", 88)
-        put("cbs sports network (cbssn)", 94)
-        put("nba tv usa", 308)
-        put("nfl redzone", 335)
-        put("big ten network (btn usa)", 382)
-        put("sec network usa", 384)
-        put("acc network usa", 388)
-        put("bein sports max 4 france", 417)
-
-        // Entertainment
-        put("usa network", 50)
-        put("tnt usa", 51)
-        put("tbs usa", 52)
-        put("amc usa", 54)
-        put("bravo usa", 55)
-        put("comedy central", 56)
-        put("fx usa", 58)
-
         // News
         put("cnn usa", 100)
         put("cnbc usa", 102)
@@ -142,39 +104,13 @@ object ChannelNumberResolver {
 
     /** Group-specific pins when the same normalized name could map differently. */
     private val GROUP_NAME_PINS: Map<String, Map<String, Int>> = mapOf(
-        GroupTitleResolver.ENTERTAINMENT to mapOf(
-            "mtv usa" to 57,
-        ),
         GroupTitleResolver.MUSIC to mapOf(
             "mtv usa" to 210,
         ),
     )
 
-    /** EPG tvg-id (lowercase) → channel number. */
+    /** EPG tvg-id (lowercase) → channel number (non-bulk categories). */
     private val TVG_ID_PINS: Map<String, Int> = mapOf(
-        "wcbs.us" to 2,
-        "wcbshd.us" to 2,
-        "wnbc.us" to 4,
-        "wnbchd.us" to 4,
-        "nbc.east.stream.us2" to 4,
-        "wnyw.us" to 5,
-        "wnywhd.us" to 5,
-        "wabc.us" to 7,
-        "wabchd.us" to 7,
-        "wpix.us" to 11,
-        "wpixhd.us" to 11,
-        "wnet.us" to 13,
-        "wnethd.us" to 13,
-        "sny.us" to 26,
-        "msg.us" to 27,
-        "msgplus.us" to 48,
-        "yes.us" to 53,
-        "espn.us" to 70,
-        "espn2.us" to 74,
-        "fs1.us" to 83,
-        "fs2.us" to 84,
-        "mlbn.us" to 86,
-        "nfln.us" to 88,
         "cnn.us" to 100,
         "msnbc.us" to 103,
         "fnc.us" to 118,
@@ -184,56 +120,83 @@ object ChannelNumberResolver {
         "sho.us" to 365,
     )
 
-    /** Tag-assisted local affiliate pins: hashtag → (name substring → number). */
-    private val TAG_LOCAL_PINS: Map<String, List<Pair<String, Int>>> = mapOf(
-        "local" to listOf(
-            "cbs" to 2,
-            "nbc" to 4,
-            "fox" to 5,
-            "abc" to 7,
-            "cw" to 11,
-            "pix 11" to 11,
-            "pbs" to 13,
-            "wliw" to 21,
-            "wnye" to 25,
-            "univision" to 41,
-            "telemundo" to 47,
-        ),
-        "regional" to listOf(
-            "cbs" to 2,
-            "nbc" to 4,
-            "fox" to 5,
-            "abc" to 7,
-            "cw" to 11,
-            "pbs" to 13,
-        ),
-    )
+    fun assignAll(channels: List<Channel>): Map<String, Int> =
+        assignPlaylist(channels, emptyList()).first
 
-    fun assignAll(channels: List<Channel>): Map<String, Int> {
+    fun assignPlaylist(
+        channels: List<Channel>,
+        supplements: List<SupplementChannel>,
+    ): Pair<Map<String, Int>, Map<String, Int>> = GroupTitleResolver.withResolveCache {
+        CategoryNetworkSort.beginBatch()
+        try {
+            assignPlaylistUncached(channels, supplements)
+        } finally {
+            CategoryNetworkSort.endBatch()
+        }
+    }
+
+    private fun assignPlaylistUncached(
+        channels: List<Channel>,
+        supplements: List<SupplementChannel>,
+    ): Pair<Map<String, Int>, Map<String, Int>> {
         val sorted = GroupTitleResolver.sortChannels(channels)
         val occupied = mutableSetOf<Int>()
-        val result = linkedMapOf<String, Int>()
+        val channelResult = linkedMapOf<String, Int>()
+        val supplementResult = linkedMapOf<String, Int>()
 
         for (channel in sorted) {
             val pin = resolvePin(channel) ?: continue
             if (pin !in occupied) {
-                result[channel.id] = pin
+                channelResult[channel.id] = pin
                 occupied += pin
             }
         }
 
+        for (group in BULK_SORT_GROUPS) {
+            val ranges = BULK_RANGES_BY_GROUP[group] ?: continue
+            allocateBulkCategoryBlock(
+                groupTitle = group,
+                channels = sorted,
+                supplements = supplements,
+                channelResult = channelResult,
+                supplementResult = supplementResult,
+                ranges = ranges,
+                occupied = occupied,
+            )
+        }
+
         for (group in GROUP_FILL_ORDER) {
+            if (group in BULK_SORT_GROUPS) continue
             val ranges = CATEGORY_RANGES[group] ?: continue
+
             val groupChannels = sorted
                 .filter { channel ->
-                    channel.id !in result &&
+                    channel.id !in channelResult &&
                         GroupTitleResolver.resolve(channel.name, channel.tags).groupTitle == group
                 }
                 .sortedWith(channelCountryNameComparator())
-            allocateSequential(groupChannels, ranges, occupied, result)
+            allocateSequential(groupChannels, ranges, occupied, channelResult)
+
+            val groupSupplements = supplements
+                .filter {
+                    it.id !in supplementResult && supplementGroup(it) == group
+                }
+                .sortedWith(supplementCountryNameComparator())
+            allocateSupplementSequential(groupSupplements, ranges, occupied, supplementResult)
         }
 
-        return result
+        val unassigned = supplements.filter { it.id !in supplementResult }
+        if (unassigned.isNotEmpty()) {
+            var cursor = (occupied.maxOrNull() ?: 0) + 1
+            for (supplement in unassigned.sortedWith(supplementCountryNameComparator())) {
+                while (cursor in occupied) cursor++
+                supplementResult[supplement.id] = cursor
+                occupied += cursor
+                cursor++
+            }
+        }
+
+        return channelResult to supplementResult
     }
 
     fun assignSupplements(
@@ -241,6 +204,18 @@ object ChannelNumberResolver {
         supplements: List<SupplementChannel>,
         groupFor: (SupplementChannel) -> String,
         channelNumbers: Map<String, Int> = assignAll(channels),
+    ): Map<String, Int> {
+        if (groupFor == ::supplementGroup) {
+            return assignPlaylist(channels, supplements).second
+        }
+        return assignSupplementsLegacy(channels, supplements, groupFor, channelNumbers)
+    }
+
+    private fun assignSupplementsLegacy(
+        @Suppress("UNUSED_PARAMETER") channels: List<Channel>,
+        supplements: List<SupplementChannel>,
+        groupFor: (SupplementChannel) -> String,
+        channelNumbers: Map<String, Int>,
     ): Map<String, Int> {
         val occupied = channelNumbers.values.toMutableSet()
         val result = linkedMapOf<String, Int>()
@@ -269,8 +244,11 @@ object ChannelNumberResolver {
     fun supplementGroup(supplement: SupplementChannel): String =
         when {
             supplement.id.startsWith("sport:") -> GroupTitleResolver.SPORTS
+            supplement.id.startsWith("iptv:") && supplement.tags.isNotEmpty() ->
+                GroupTitleResolver.resolve(supplement.name, supplement.tags).groupTitle
+            supplement.id.startsWith("sup:") -> supplement.groupTitle
             supplement.id.startsWith("ntv:") -> supplement.groupTitle
-            supplement.id.startsWith("iptv:") -> supplement.groupTitle
+            supplement.id.startsWith("adultswim:") -> supplement.groupTitle
             else -> GroupTitleResolver.ENTERTAINMENT
         }
 
@@ -364,6 +342,7 @@ object ChannelNumberResolver {
 
     private fun resolvePin(channel: Channel): Int? {
         val group = GroupTitleResolver.resolve(channel.name, channel.tags).groupTitle
+        if (CategoryNetworkSort.isBulkSortedGroup(group)) return null
         val normalizedName = normalizeName(channel.name)
 
         GROUP_NAME_PINS[group]?.get(normalizedName)?.let { return it }
@@ -371,55 +350,7 @@ object ChannelNumberResolver {
 
         channel.tvgId?.let { normalizeTvgId(it) }?.let { TVG_ID_PINS[it] }?.let { return it }
 
-        matchPinByTags(channel, normalizedName)?.let { return it }
-
-        return matchPartialNamePin(group, normalizedName)
-    }
-
-    private fun matchPinByTags(channel: Channel, normalizedName: String): Int? {
-        val hashTags = channel.tags
-            .filter { it.startsWith("#") && it.length > 1 }
-            .map { it.removePrefix("#").lowercase() }
-
-        for (tag in hashTags) {
-            val patterns = TAG_LOCAL_PINS[tag] ?: continue
-            for ((fragment, number) in patterns) {
-                if (normalizedName.contains(fragment) && !isExcludedLocalMatch(normalizedName, fragment)) {
-                    return number
-                }
-            }
-        }
         return null
-    }
-
-    private fun isExcludedLocalMatch(normalizedName: String, fragment: String): Boolean {
-        if (fragment == "fox") {
-            return normalizedName.contains("fox sports") ||
-                normalizedName.contains("fox news") ||
-                normalizedName.contains("fox deportes")
-        }
-        if (fragment == "nbc") {
-            return normalizedName.contains("nbc sports") ||
-                normalizedName.contains("nbc universo")
-        }
-        if (fragment == "cbs") {
-            return normalizedName.contains("cbs sports")
-        }
-        if (fragment == "abc") {
-            return normalizedName.contains("abc news")
-        }
-        return false
-    }
-
-    private fun matchPartialNamePin(group: String, normalizedName: String): Int? {
-        if (group != GroupTitleResolver.SPORTS) return null
-        return when {
-            normalizedName.contains("sny") || normalizedName.contains("sportsnet new york") -> 26
-            normalizedName.contains("msg plus") -> 48
-            normalizedName == "msg usa" || normalizedName.startsWith("msg ") -> 27
-            normalizedName.contains("yes network") -> 53
-            else -> null
-        }
     }
 
     private fun normalizeName(name: String): String =
@@ -432,6 +363,7 @@ object ChannelNumberResolver {
 
     private fun fallbackNumber(channel: Channel): Int {
         val group = GroupTitleResolver.resolve(channel.name, channel.tags).groupTitle
+        BULK_RANGES_BY_GROUP[group]?.firstOrNull()?.first?.let { return it }
         val ranges = CATEGORY_RANGES[group] ?: return 1
         return ranges.first().first
     }
@@ -462,5 +394,149 @@ object ChannelNumberResolver {
             .takeIf { it.isNotBlank() && it != "INT" }
             ?: GroupTitleResolver.resolve(supplement.name, emptyList()).countryCode
         return ChannelCountrySort.normalizeCode(code)
+    }
+
+    private sealed class BulkSortEntry {
+        abstract val sortKey: String
+
+        data class ChannelEntry(
+            val channel: Channel,
+            override val sortKey: String,
+        ) : BulkSortEntry()
+
+        data class SupplementEntry(
+            val supplement: SupplementChannel,
+            override val sortKey: String,
+        ) : BulkSortEntry()
+    }
+
+    private fun allocateBulkCategoryBlock(
+        groupTitle: String,
+        channels: List<Channel>,
+        supplements: List<SupplementChannel>,
+        channelResult: MutableMap<String, Int>,
+        supplementResult: MutableMap<String, Int>,
+        ranges: List<IntRange>,
+        occupied: MutableSet<Int>,
+    ) {
+        if (ranges.isEmpty()) return
+
+        val groupChannels = channels.filter {
+            GroupTitleResolver.resolve(it.name, it.tags).groupTitle == groupTitle
+        }
+        val groupSupplements = supplements.filter { supplementGroup(it) == groupTitle }
+
+        releaseBulkCategoryNumbers(
+            groupChannels = groupChannels,
+            groupSupplements = groupSupplements,
+            channelResult = channelResult,
+            supplementResult = supplementResult,
+            occupied = occupied,
+        )
+
+        val unpinnedChannels = groupChannels.filter { it.id !in channelResult }
+
+        val channelOrder = unpinnedChannels
+            .sortedWith(channelCountryNameComparator())
+            .mapIndexed { index, channel -> channel.id to index }
+            .toMap()
+        val supplementOrder = groupSupplements
+            .sortedWith(supplementCountryNameComparator())
+            .mapIndexed { index, supplement -> supplement.id to (50_000 + index) }
+            .toMap()
+
+        val entries = buildList {
+            unpinnedChannels.forEach { channel ->
+                val resolution = GroupTitleResolver.resolve(channel.name, channel.tags)
+                val displayTitle = ChannelTitleNormalizer.displayTitle(channel.name, resolution)
+                add(
+                    BulkSortEntry.ChannelEntry(
+                        channel = channel,
+                        sortKey = CategoryNetworkSort.bulkSortKey(
+                            groupTitle = groupTitle,
+                            countryCode = resolution.countryCode,
+                            channelName = channel.name,
+                            orderHint = channelOrder[channel.id] ?: Int.MAX_VALUE,
+                            displayTitle = displayTitle,
+                        ),
+                    ),
+                )
+            }
+            groupSupplements.forEach { supplement ->
+                add(
+                    BulkSortEntry.SupplementEntry(
+                        supplement = supplement,
+                        sortKey = CategoryNetworkSort.bulkSortKey(
+                            groupTitle = groupTitle,
+                            countryCode = supplementCountryCode(supplement),
+                            channelName = supplement.name,
+                            orderHint = supplementOrder[supplement.id] ?: Int.MAX_VALUE,
+                            displayTitle = supplement.name,
+                        ),
+                    ),
+                )
+            }
+        }.sortedBy { it.sortKey }
+
+        var rangeIndex = 0
+        var cursor = ranges[rangeIndex].first
+
+        for (entry in entries) {
+            while (true) {
+                if (rangeIndex >= ranges.size) {
+                    assignBulkSortNumber(entry, cursor, channelResult, supplementResult, occupied)
+                    cursor++
+                    break
+                }
+                val range = ranges[rangeIndex]
+                if (cursor > range.last) {
+                    rangeIndex++
+                    if (rangeIndex >= ranges.size) {
+                        assignBulkSortNumber(entry, cursor, channelResult, supplementResult, occupied)
+                        cursor++
+                        break
+                    }
+                    cursor = ranges[rangeIndex].first
+                    continue
+                }
+                if (cursor !in occupied) {
+                    assignBulkSortNumber(entry, cursor, channelResult, supplementResult, occupied)
+                    cursor++
+                    break
+                }
+                cursor++
+            }
+        }
+    }
+
+    private fun releaseBulkCategoryNumbers(
+        groupChannels: List<Channel>,
+        groupSupplements: List<SupplementChannel>,
+        channelResult: MutableMap<String, Int>,
+        supplementResult: MutableMap<String, Int>,
+        occupied: MutableSet<Int>,
+    ) {
+        for (channel in groupChannels) {
+            val number = channelResult.remove(channel.id) ?: continue
+            occupied.remove(number)
+        }
+        for (supplement in groupSupplements) {
+            val number = supplementResult.remove(supplement.id) ?: continue
+            occupied.remove(number)
+        }
+    }
+
+    private fun assignBulkSortNumber(
+        entry: BulkSortEntry,
+        number: Int,
+        channelResult: MutableMap<String, Int>,
+        supplementResult: MutableMap<String, Int>,
+        occupied: MutableSet<Int>,
+    ) {
+        when (entry) {
+            is BulkSortEntry.ChannelEntry -> channelResult[entry.channel.id] = number
+            is BulkSortEntry.SupplementEntry -> supplementResult[entry.supplement.id] = number
+        }
+        occupied += number
     }
 }

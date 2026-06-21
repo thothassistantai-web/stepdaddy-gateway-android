@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit
 
 class LightEpgBuilder(
     private val store: EpgStore,
+    private val idBridge: EpgShareIdBridge? = null,
     private val httpClient: OkHttpClient = defaultClient(),
 ) {
   fun build(
@@ -16,12 +17,21 @@ class LightEpgBuilder(
       supplementTvgIds: Set<String> = emptySet(),
       iptvOrgSupplementTvgIds: Set<String> = emptySet(),
       iptvOrgEpgFile: File? = null,
+      sportsEpgFile: File? = null,
+      sportsTvgIds: Set<String> = emptySet(),
+      fastEpgFiles: List<File> = emptyList(),
+      fastEpgTvgIds: Set<String> = emptySet(),
+      channelNamesByTvgId: Map<String, String> = emptyMap(),
+      placeholdersEnabled: Boolean = true,
   ): BuildResult {
     val output = File(store.servedXml.parentFile, "epg.build.part")
-    if (tvgIds.isEmpty() && supplementTvgIds.isEmpty()) {
+    val allIds = tvgIds + supplementTvgIds + sportsTvgIds + fastEpgTvgIds
+    if (allIds.isEmpty()) {
       output.writeBytes(emptyXml())
       return BuildResult(output, 0, 0)
     }
+    val primaryExpansion = idBridge?.expandWantedIds(tvgIds)
+        ?: EpgTvgIdMatcher.expandWantedIds(tvgIds)
     val grouped = groupTvgIdsByFeed(tvgIds)
     grouped.keys.forEach { url -> ensureFeedCached(url) }
 
@@ -32,29 +42,31 @@ class LightEpgBuilder(
     val idsWithProgrammes = linkedSetOf<String>()
     var channelCount = 0
     var programmeCount = 0
+    var realProgrammeCount = 0
+    var realChannelsWithProgrammes = 0
+    var placeholderProgrammeCount = 0
 
     output.bufferedWriter(Charsets.UTF_8).use { writer ->
       writer.write("""<?xml version="1.0" encoding="UTF-8"?>""")
       writer.write("\n<tv generator-info-name=\"StepDaddy Gateway\">")
 
-      grouped.forEach { (url, ids) ->
+      grouped.forEach { (url, playlistIds) ->
         val cache = store.feedCacheFile(url)
         if (!cache.exists()) return@forEach
-        XmltvParser.iterBlocksFromGzip(cache, "channel", "channel", "id", ids).forEach channelBlock@{ block ->
-          val channelId = XmltvParser.blockAttrValue(block, "id") ?: return@channelBlock
-          if (!writtenChannelIds.add(channelId)) return@channelBlock
-          writer.write("\n")
-          writer.write(block.trim())
-          channelCount++
-        }
-        XmltvParser.iterBlocksFromGzip(cache, "programme", "programme", "channel", ids).forEach { block ->
-          if (XmltvParser.programmeInWindow(block, windowStart, windowEnd)) {
-            writer.write("\n")
-            writer.write(block.trim())
-            programmeCount++
-            XmltvParser.blockAttrValue(block, "channel")?.let { idsWithProgrammes += it }
-          }
-        }
+        mergeEpgshareFeed(
+            writer = writer,
+            cache = cache,
+            playlistIds = playlistIds,
+            expansion = primaryExpansion,
+            writtenChannelIds = writtenChannelIds,
+            idsWithProgrammes = idsWithProgrammes,
+            windowStart = windowStart,
+            windowEnd = windowEnd,
+            channelCountRef = { channelCount = it },
+            programmeCountRef = { programmeCount = it },
+            getChannelCount = { channelCount },
+            getProgrammeCount = { programmeCount },
+        )
       }
 
       val gapFillIds = tvgIds.filter { it !in idsWithProgrammes }.toSet()
@@ -100,11 +112,130 @@ class LightEpgBuilder(
         }
       }
 
+      val fastIds = fastEpgTvgIds.filter { it !in idsWithProgrammes }.toSet()
+      if (fastIds.isNotEmpty()) {
+        fastEpgFiles.forEach { feed ->
+          mergeSupplementEpgFile(
+              writer = writer,
+              file = feed,
+              supplementIds = fastIds,
+              writtenChannelIds = writtenChannelIds,
+              idsWithProgrammes = idsWithProgrammes,
+              windowStart = windowStart,
+              windowEnd = windowEnd,
+              channelCountRef = { channelCount = it },
+              programmeCountRef = { programmeCount = it },
+              getChannelCount = { channelCount },
+              getProgrammeCount = { programmeCount },
+          )
+        }
+      }
+
+      val sportsIds = sportsTvgIds.filter { it !in idsWithProgrammes }.toSet()
+      if (sportsEpgFile != null && sportsIds.isNotEmpty()) {
+        mergeSupplementEpgFile(
+            writer = writer,
+            file = sportsEpgFile,
+            supplementIds = sportsIds,
+            writtenChannelIds = writtenChannelIds,
+            idsWithProgrammes = idsWithProgrammes,
+            windowStart = windowStart,
+            windowEnd = windowEnd,
+            channelCountRef = { channelCount = it },
+            programmeCountRef = { programmeCount = it },
+            getChannelCount = { channelCount },
+            getProgrammeCount = { programmeCount },
+        )
+      }
+
+      realProgrammeCount = programmeCount
+      realChannelsWithProgrammes = idsWithProgrammes.size
+      if (placeholdersEnabled) {
+        val gapIds = allIds.filter { it !in idsWithProgrammes }.toSet()
+        if (gapIds.isNotEmpty()) {
+          placeholderProgrammeCount = PlaceholderProgrammeWriter.appendPlaceholders(
+              writer = writer,
+              channelIds = gapIds,
+              channelNames = channelNamesByTvgId,
+              windowStart = windowStart,
+              windowEnd = windowEnd,
+              writtenChannelIds = writtenChannelIds,
+              idsWithProgrammes = idsWithProgrammes,
+          )
+          channelCount = writtenChannelIds.size
+          programmeCount = realProgrammeCount + placeholderProgrammeCount
+        }
+      }
+
       writer.write("\n</tv>\n")
     }
 
     store.trimFeedCache()
-    return BuildResult(output, channelCount, programmeCount, idsWithProgrammes)
+    return BuildResult(
+        outputFile = output,
+        channelCount = channelCount,
+        programmeCount = programmeCount,
+        channelIdsWithProgrammes = idsWithProgrammes,
+        realProgrammeCount = realProgrammeCount,
+        placeholderProgrammeCount = placeholderProgrammeCount,
+        channelsWithRealProgrammes = realChannelsWithProgrammes,
+        channelsWithPlaceholders = if (placeholderProgrammeCount > 0) {
+            idsWithProgrammes.size - realChannelsWithProgrammes
+        } else {
+            0
+        },
+    )
+  }
+
+  private fun mergeEpgshareFeed(
+      writer: java.io.BufferedWriter,
+      cache: File,
+      playlistIds: Set<String>,
+      expansion: EpgTvgIdMatcher.IdExpansion,
+      writtenChannelIds: MutableSet<String>,
+      idsWithProgrammes: MutableSet<String>,
+      windowStart: java.time.Instant,
+      windowEnd: java.time.Instant,
+      channelCountRef: (Int) -> Unit,
+      programmeCountRef: (Int) -> Unit,
+      getChannelCount: () -> Int,
+      getProgrammeCount: () -> Int,
+  ) {
+    val lookupIds = expansion.lookupIds
+    var channelCount = getChannelCount()
+    var programmeCount = getProgrammeCount()
+
+    XmltvParser.iterBlocksFromGzip(cache, "channel", "channel", "id", lookupIds).forEach channelBlock@{ block ->
+      val feedId = XmltvParser.blockAttrValue(block, "id") ?: return@channelBlock
+      val playlistId = EpgTvgIdMatcher.canonicalPlaylistId(expansion, feedId) ?: return@channelBlock
+      if (playlistId !in playlistIds) return@channelBlock
+      if (!writtenChannelIds.add(playlistId)) return@channelBlock
+      val out = if (feedId != playlistId) {
+        XmltvParser.rewriteIdAttributes(block, listOf("id"), playlistId)
+      } else {
+        block.trim()
+      }
+      writer.write("\n")
+      writer.write(out)
+      channelCount++
+    }
+    XmltvParser.iterBlocksFromGzip(cache, "programme", "programme", "channel", lookupIds).forEach { block ->
+      val feedId = XmltvParser.blockAttrValue(block, "channel") ?: return@forEach
+      val playlistId = EpgTvgIdMatcher.canonicalPlaylistId(expansion, feedId) ?: return@forEach
+      if (playlistId !in playlistIds) return@forEach
+      if (!XmltvParser.programmeInWindow(block, windowStart, windowEnd)) return@forEach
+      val out = if (feedId != playlistId) {
+        XmltvParser.rewriteIdAttributes(block, listOf("channel"), playlistId)
+      } else {
+        block.trim()
+      }
+      writer.write("\n")
+      writer.write(out)
+      programmeCount++
+      idsWithProgrammes += playlistId
+    }
+    channelCountRef(channelCount)
+    programmeCountRef(programmeCount)
   }
 
   private fun mergeSupplementEpgFile(
@@ -213,6 +344,10 @@ class LightEpgBuilder(
       val channelCount: Int,
       val programmeCount: Int,
       val channelIdsWithProgrammes: Set<String> = emptySet(),
+      val realProgrammeCount: Int = programmeCount,
+      val placeholderProgrammeCount: Int = 0,
+      val channelsWithRealProgrammes: Int = 0,
+      val channelsWithPlaceholders: Int = 0,
   )
 
   companion object {

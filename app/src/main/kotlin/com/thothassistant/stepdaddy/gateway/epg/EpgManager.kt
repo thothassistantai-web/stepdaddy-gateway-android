@@ -17,10 +17,12 @@ class EpgManager(
     private val store: EpgStore,
     private val mapper: EpgChannelMapper,
     private val supplementSource: SupplementSource? = null,
-    private val builder: LightEpgBuilder = LightEpgBuilder(store),
+    idBridge: EpgShareIdBridge? = null,
+    builder: LightEpgBuilder? = null,
 ) {
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
   private val buildMutex = Mutex()
+  private val epgBuilder = builder ?: LightEpgBuilder(store, idBridge)
   @Volatile
   private var buildInFlight = false
 
@@ -74,17 +76,30 @@ class EpgManager(
       store.updateState("building")
       val started = System.currentTimeMillis()
       try {
+        supplementSource?.prepareFastEpgForBuild()
         val namesById = channels.associate { it.id to it.name }
         val tvgIds = mapper.allTvgIds(channels.map { it.id }, namesById)
         val supplementTvgIds = supplementSource?.tvgIdsForEpg().orEmpty()
+        val fastTvgIds = supplementSource?.fastTvgIdsForEpg().orEmpty()
         val iptvOrgTvgIds = supplementSource?.iptvOrgTvgIdsForEpg().orEmpty()
+        val sportsTvgIds = supplementSource?.sportsTvgIdsForEpg().orEmpty()
+        val channelNamesByTvgId = buildMap<String, String> {
+          channels.forEach { ch -> ch.tvgId?.let { put(it, ch.name) } }
+          supplementSource?.channels()?.forEach { sup -> sup.tvgId?.let { put(it, sup.name) } }
+        }
         val result = withContext(Dispatchers.IO) {
-          builder.build(
+          epgBuilder.build(
               tvgIds = tvgIds,
               supplementEpgFile = supplementSource?.epgXmlFile(),
               supplementTvgIds = supplementTvgIds,
               iptvOrgSupplementTvgIds = iptvOrgTvgIds,
               iptvOrgEpgFile = supplementSource?.iptvOrgEpgFile(),
+              sportsEpgFile = supplementSource?.sportsEpgXmlFile(),
+              sportsTvgIds = sportsTvgIds,
+              fastEpgFiles = supplementSource?.fastEpgFeedFiles().orEmpty(),
+              fastEpgTvgIds = fastTvgIds,
+              channelNamesByTvgId = channelNamesByTvgId,
+              placeholdersEnabled = true,
           )
         }
         val elapsed = (System.currentTimeMillis() - started) / 1000.0
@@ -101,10 +116,19 @@ class EpgManager(
             source = result.outputFile,
             programmeCount = result.programmeCount,
             channelCount = result.channelCount,
-            mappedTvgCount = tvgIds.size,
+            mappedTvgCount = tvgIds.size + supplementTvgIds.size,
             buildSeconds = elapsed,
+            realProgrammeCount = result.realProgrammeCount,
+            placeholderProgrammeCount = result.placeholderProgrammeCount,
+            channelsWithProgrammes = result.channelIdsWithProgrammes.size,
+            channelsWithRealProgrammes = result.channelsWithRealProgrammes,
+            channelsWithPlaceholders = result.channelsWithPlaceholders,
         )
-        Log.i(TAG, "EPG built: ${result.programmeCount} programmes, ${result.channelCount} channels in ${elapsed}s")
+        Log.i(
+            TAG,
+            "EPG built: ${result.programmeCount} programmes (${result.realProgrammeCount} real, " +
+                "${result.placeholderProgrammeCount} placeholder), ${result.channelCount} channels in ${elapsed}s",
+        )
       } catch (exc: Throwable) {
         if (exc is OutOfMemoryError) {
           Log.e(TAG, "EPG build OOM — keeping cached epg.xml", exc)
@@ -122,6 +146,12 @@ class EpgManager(
   }
 
   fun readCachedXml(): ByteArray? = store.readServedXml()
+
+  fun servedXmlFile(): java.io.File? =
+      store.servedXml.takeIf { it.isFile && it.length() > 0L }
+
+  fun hasCachedProgrammes(): Boolean =
+      store.meta.programmeCount > 0 && servedXmlFile() != null
 
   fun maybeTriggerStaleRefresh(channels: List<Channel>) {
     if (store.isStale() || store.isServeStale()) {

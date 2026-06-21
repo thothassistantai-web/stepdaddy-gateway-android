@@ -22,6 +22,8 @@ class IptvOrgStreamsSource(
     context: Context,
     private val httpClient: OkHttpClient,
     private val channelResolver: IptvOrgChannelResolver = IptvOrgChannelResolver(context),
+    private val fastEpgCatalog: FastEpgCatalog? = null,
+    private val nameIndex: com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex? = null,
 ) {
     data class FetchStats(
         val playlistsFetched: Int = 0,
@@ -119,10 +121,13 @@ class IptvOrgStreamsSource(
         val tags = channelResolver.buildTags(entry, playlistFile)
         val providerTag = IptvOrgStreamsConfig.providerTagFor(playlistFile).takeIf { it.isNotEmpty() }
         val id = "iptv:${shortHash(resolution.groupTitle + "|" + norm + "|" + entry.streamUrl)}"
+        val tvgId = entry.tvgId?.trim()?.takeIf { it.isNotEmpty() }
+            ?: fastEpgCatalog?.lookupChannelId(entry.name, providerTag)
+            ?: nameIndex?.lookupExact(entry.name)
         return SupplementChannel(
             id = id,
             name = entry.name.trim(),
-            tvgId = entry.tvgId?.trim()?.takeIf { it.isNotEmpty() },
+            tvgId = tvgId,
             logo = entry.logo?.trim()?.takeIf { it.isNotEmpty() },
             groupTitle = resolution.groupTitle,
             streamUrl = entry.streamUrl.trim(),

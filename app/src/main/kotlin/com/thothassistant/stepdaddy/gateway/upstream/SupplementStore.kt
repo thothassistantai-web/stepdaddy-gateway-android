@@ -18,6 +18,7 @@ class SupplementStore(context: Context) {
     private val channelsFile = File(dir, "channels.json")
     val epgGzipFile = File(dir, "epg.xml.gz")
     val epgPlainFile = File(dir, "epg.xml")
+    val sportsEpgFile = File(dir, "sports_epg.xml")
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
     fun epgFile(): File? {

@@ -27,6 +27,49 @@ object XmltvParser {
     }
   }
 
+  /** Stream all blocks of [startTag] without filtering by attribute value. */
+  fun iterAllBlocksFromGzip(
+      file: File,
+      startTag: String,
+      endTag: String,
+  ): Sequence<String> = sequence {
+    if (!file.exists()) return@sequence
+    GZIPInputStream(file.inputStream()).use { gzip ->
+      yieldAll(iterAllBlocksFromStream(gzip, startTag, endTag))
+    }
+  }
+
+  fun iterAllBlocksFromStream(
+      input: InputStream,
+      startTag: String,
+      endTag: String,
+  ): Sequence<String> = sequence {
+    val startMarker = "<$startTag ".toByteArray(Charsets.UTF_8)
+    val endMarker = "</$endTag>".toByteArray(Charsets.UTF_8)
+    var buf = ByteArray(0)
+    val chunk = ByteArray(CHUNK_SIZE)
+    while (true) {
+      val read = input.read(chunk)
+      if (read <= 0) break
+      buf = buf + chunk.copyOf(read)
+      while (true) {
+        val start = buf.indexOf(startMarker)
+        if (start < 0) {
+          buf = if (buf.size > 256) buf.copyOfRange(buf.size - 256, buf.size) else buf
+          break
+        }
+        val end = buf.indexOf(endMarker, start)
+        if (end < 0) {
+          buf = buf.copyOfRange(start, buf.size)
+          break
+        }
+        val blockEnd = end + endMarker.size
+        yield(buf.copyOfRange(start, blockEnd).toString(Charsets.UTF_8))
+        buf = buf.copyOfRange(blockEnd, buf.size)
+      }
+    }
+  }
+
   fun iterBlocksFromFile(
       file: File,
       startTag: String,

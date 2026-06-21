@@ -15,6 +15,11 @@ data class EpgMeta(
     val buildSeconds: Double = 0.0,
     val lastError: String? = null,
     val state: String = "idle",
+    val realProgrammeCount: Int = 0,
+    val placeholderProgrammeCount: Int = 0,
+    val channelsWithProgrammes: Int = 0,
+    val channelsWithRealProgrammes: Int = 0,
+    val channelsWithPlaceholders: Int = 0,
 )
 
 class EpgStore(context: Context) {
@@ -56,12 +61,28 @@ class EpgStore(context: Context) {
       channelCount: Int,
       mappedTvgCount: Int,
       buildSeconds: Double,
+      realProgrammeCount: Int = programmeCount,
+      placeholderProgrammeCount: Int = 0,
+      channelsWithProgrammes: Int = 0,
+      channelsWithRealProgrammes: Int = 0,
+      channelsWithPlaceholders: Int = 0,
   ) {
     val tmp = File(root, "epg.xml.tmp")
     source.inputStream().use { input ->
       tmp.outputStream().use { output -> input.copyTo(output) }
     }
-    commitServedXml(tmp, programmeCount, channelCount, mappedTvgCount, buildSeconds)
+    commitServedXml(
+        tmp,
+        programmeCount,
+        channelCount,
+        mappedTvgCount,
+        buildSeconds,
+        realProgrammeCount,
+        placeholderProgrammeCount,
+        channelsWithProgrammes,
+        channelsWithRealProgrammes,
+        channelsWithPlaceholders,
+    )
     runCatching { source.delete() }
   }
 
@@ -71,6 +92,11 @@ class EpgStore(context: Context) {
       channelCount: Int,
       mappedTvgCount: Int,
       buildSeconds: Double,
+      realProgrammeCount: Int = programmeCount,
+      placeholderProgrammeCount: Int = 0,
+      channelsWithProgrammes: Int = 0,
+      channelsWithRealProgrammes: Int = 0,
+      channelsWithPlaceholders: Int = 0,
   ) {
     if (!tmp.renameTo(servedXml)) {
       tmp.copyTo(servedXml, overwrite = true)
@@ -84,6 +110,11 @@ class EpgStore(context: Context) {
         buildSeconds = buildSeconds,
         lastError = null,
         state = "ready",
+        realProgrammeCount = realProgrammeCount,
+        placeholderProgrammeCount = placeholderProgrammeCount,
+        channelsWithProgrammes = channelsWithProgrammes,
+        channelsWithRealProgrammes = channelsWithRealProgrammes,
+        channelsWithPlaceholders = channelsWithPlaceholders,
     )
     saveMeta()
   }

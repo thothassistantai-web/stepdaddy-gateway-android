@@ -73,6 +73,11 @@ data class SupplementStatus(
     /** @deprecated use [ntvCxImportMode] */
     val ntvCxMergeMode: String = "FULL_CATALOG",
     val ntvCxResolveProbeOk: Boolean = false,
+    val adultSwimEnabled: Boolean = false,
+    val adultSwimChannels: Int = 0,
+    val adultSwimImportMode: String = "FULL_CATALOG",
+    val adultSwimProbed: Int = 0,
+    val adultSwimProbeOk: Int = 0,
 )
 
 @Serializable
@@ -82,6 +87,7 @@ data class ProviderStats(
     val iptvOrg: Int = 0,
     val sports: Int = 0,
     val ntvCx: Int = 0,
+    val adultSwim: Int = 0,
     val adult: Int = 0,
     val total: Int = 0,
 )
@@ -90,6 +96,20 @@ data class ProviderStats(
 data class CategoryCount(
     val groupTitle: String,
     val count: Int,
+)
+
+@Serializable
+data class EpgCoverage(
+    val playlistChannels: Int = 0,
+    val withTvgId: Int = 0,
+    val withProgrammes: Int = 0,
+    val withRealProgrammes: Int = 0,
+    val withPlaceholders: Int = 0,
+    val unmapped: Int = 0,
+    val supplementNoTvgId: Int = 0,
+    val mappedPercent: Float = 0f,
+    val programmePercent: Float = 0f,
+    val placeholderProgrammes: Int = 0,
 )
 
 @Serializable
@@ -105,6 +125,7 @@ data class HealthResponse(
     val epgReady: Boolean = false,
     val epgProgrammeCount: Int = 0,
     val epgAgeSeconds: Long? = null,
+    val epgCoverage: EpgCoverage? = null,
     val supplementEnabled: Boolean = false,
     val supplementChannels: Int = 0,
     val supplement: SupplementStatus? = null,

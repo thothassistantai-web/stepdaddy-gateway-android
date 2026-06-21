@@ -5,13 +5,16 @@ import com.thothassistant.stepdaddy.gateway.epg.LightEpgBuilder
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.httpMethod
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytes
+import io.ktor.server.response.respondOutputStream
 import io.ktor.server.response.respondText
+import java.io.File
 
 class EpgRoutes(
     private val client: DaddyLiveClient,
@@ -25,41 +28,36 @@ class EpgRoutes(
             val channels = client.channels
             epgManager.maybeTriggerStaleRefresh(channels)
 
-            val cached = epgManager.readCachedXml()
-            if (cached != null && hasProgrammeData(cached)) {
-                respondXml(
+            val cachedFile = epgManager.servedXmlFile()
+            if (cachedFile != null && epgManager.hasCachedProgrammes()) {
+                respondXmlFile(
                     call,
-                    cached,
+                    cachedFile,
                     stale = epgManager.meta.state == "building" || epgManager.isServeStale(),
                 )
                 return
             }
 
-            epgManager.scheduleRefresh(channels, force = cached == null)
+            epgManager.scheduleRefresh(channels, force = cachedFile == null)
 
-            if (cached != null) {
-                respondXml(call, cached, stale = true)
+            if (cachedFile != null) {
+                respondXmlFile(call, cachedFile, stale = true)
                 return
             }
 
-            val body = LightEpgBuilder.emptyXml()
-            if (!hasProgrammeData(body)) {
-                if (call.request.httpMethod.value == "HEAD") {
-                    call.respondText("", ContentType.Application.Xml, HttpStatusCode.ServiceUnavailable)
-                    return
-                }
-                call.respondBytes(
-                    LightEpgBuilder.emptyXml(),
-                    ContentType.Application.Xml,
-                    HttpStatusCode.ServiceUnavailable,
-                )
+            if (call.request.httpMethod == HttpMethod.Head) {
+                call.respondText("", ContentType.Application.Xml, HttpStatusCode.ServiceUnavailable)
                 return
             }
-            respondXml(call, body, stale = true)
+            call.respondBytes(
+                LightEpgBuilder.emptyXml(),
+                ContentType.Application.Xml,
+                HttpStatusCode.ServiceUnavailable,
+            )
         } catch (exc: Exception) {
-            val fallback = epgManager.readCachedXml()
-            if (fallback != null && hasProgrammeData(fallback)) {
-                respondXml(call, fallback, stale = true)
+            val fallback = epgManager.servedXmlFile()
+            if (fallback != null && epgManager.hasCachedProgrammes()) {
+                respondXmlFile(call, fallback, stale = true)
                 return
             }
             call.respond(
@@ -69,15 +67,18 @@ class EpgRoutes(
         }
     }
 
-    private suspend fun respondXml(call: ApplicationCall, body: ByteArray, stale: Boolean) {
+    private suspend fun respondXmlFile(call: ApplicationCall, file: File, stale: Boolean) {
         call.response.header(HttpHeaders.CacheControl, "public, max-age=300")
+        call.response.header(HttpHeaders.ContentLength, file.length().toString())
         if (stale) {
             call.response.header("X-EPG-Status", "stale")
         }
-        call.respondBytes(body, ContentType.Application.Xml)
-    }
-
-    private fun hasProgrammeData(body: ByteArray): Boolean {
-        return "<programme" in body.toString(Charsets.UTF_8)
+        if (call.request.httpMethod == HttpMethod.Head) {
+            call.respond(HttpStatusCode.OK)
+            return
+        }
+        call.respondOutputStream(ContentType.Application.Xml, HttpStatusCode.OK) {
+            file.inputStream().use { input -> input.copyTo(this) }
+        }
     }
 }

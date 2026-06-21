@@ -46,37 +46,29 @@ class PlaylistCache {
         key = key * 31 + supplementSyncedAtMs
         key = key * 31 + channelRevision
         key = key * 31 + if (logoDbLoaded) 1 else 0
+        key = key * 31 + PLAYLIST_SORT_REVISION
         return key
     }
 
     suspend fun getOrBuild(key: Long, builder: () -> String): String {
         snapshot?.takeIf { it.key == key }?.let { return it.body }
 
-        val deferred = mutex.withLock {
+        val staleBody = mutex.withLock {
             snapshot?.takeIf { it.key == key }?.let { return it.body }
-            val existing = buildFlight
-            if (existing?.key == key) {
-                return@withLock existing.deferred
-            }
-            val flight = scope.async {
-                val started = System.currentTimeMillis()
-                val body = builder()
-                mutex.withLock {
-                    snapshot = Snapshot(key = key, body = body, builtAtMs = System.currentTimeMillis())
-                    if (buildFlight?.key == key) {
-                        buildFlight = null
-                    }
-                }
+            val stale = snapshot
+            if (stale != null && stale.key != key && buildFlight?.key != key) {
+                scheduleBuildLocked(key, builder)
                 Log.i(
                     TAG,
-                    "Playlist cache built: ${body.length} bytes in ${System.currentTimeMillis() - started}ms",
+                    "Serving stale playlist (${stale.body.length} bytes) while rebuilding key ${stale.key} -> $key",
                 )
-                body
+                return@withLock stale.body
             }
-            buildFlight = BuildFlight(key = key, deferred = flight)
-            flight
+            null
         }
-        return deferred.await()
+        if (staleBody != null) return staleBody
+
+        return awaitBuild(key, builder)
     }
 
     fun invalidate() {
@@ -86,7 +78,7 @@ class PlaylistCache {
     fun schedulePrewarm(key: Long, builder: () -> String) {
         if (snapshot?.key == key) return
         scope.launch {
-            runCatching { getOrBuild(key, builder) }
+            runCatching { awaitBuild(key, builder) }
                 .onFailure { exc -> Log.w(TAG, "Playlist prewarm failed", exc) }
         }
     }
@@ -96,7 +88,42 @@ class PlaylistCache {
         return (System.currentTimeMillis() - builtAt) / 1000
     }
 
+    private fun scheduleBuildLocked(key: Long, builder: () -> String) {
+        if (buildFlight?.key == key) return
+        val flight = scope.async {
+            val started = System.currentTimeMillis()
+            val body = builder()
+            mutex.withLock {
+                snapshot = Snapshot(key = key, body = body, builtAtMs = System.currentTimeMillis())
+                if (buildFlight?.key == key) {
+                    buildFlight = null
+                }
+            }
+            Log.i(
+                TAG,
+                "Playlist cache built: ${body.length} bytes in ${System.currentTimeMillis() - started}ms",
+            )
+            body
+        }
+        buildFlight = BuildFlight(key = key, deferred = flight)
+    }
+
+    private suspend fun awaitBuild(key: Long, builder: () -> String): String {
+        val deferred = mutex.withLock {
+            snapshot?.takeIf { it.key == key }?.let { return it.body }
+            val existing = buildFlight
+            if (existing?.key == key) {
+                return@withLock existing.deferred
+            }
+            scheduleBuildLocked(key, builder)
+            buildFlight!!.deferred
+        }
+        return deferred.await()
+    }
+
     companion object {
         private const val TAG = "PlaylistCache"
+        /** Bump when playlist ordering logic changes so in-memory cache rebuilds. */
+        private const val PLAYLIST_SORT_REVISION = 8
     }
 }

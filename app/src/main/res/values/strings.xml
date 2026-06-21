@@ -81,6 +81,7 @@
     <string name="provider_moveonjoy">MoveOnJoy</string>
     <string name="provider_iptv_org">iptv-org</string>
     <string name="provider_ntv_cx">ntv.cx 24/7</string>
+    <string name="provider_adult_swim">Adult Swim</string>
     <string name="provider_sports">Sports</string>
     <string name="provider_adult">XXX Adult</string>
     <string name="dashboard_providers_total">Total: %1$s</string>
@@ -184,10 +185,12 @@
     <string name="settings_supplement_url">MoveOnJoy sidecar URL (loopback)</string>
     <string name="settings_section_supplements">Extra channels for TiviMate</string>
     <string name="settings_supplements_intro">DaddyLive is always imported in full as your main list. Turn on extra providers below to add more channels. By default each provider imports its full catalog.</string>
-    <string name="settings_enable_all_supplements">Enable all extra providers (MoveOnJoy, iptv-org, ntv.cx)</string>
+    <string name="settings_enable_all_supplements">Enable all extra providers (MoveOnJoy, iptv-org, ntv.cx, Adult Swim)</string>
     <string name="settings_provider_moveonjoy">MoveOnJoy</string>
     <string name="settings_provider_iptv_org">iptv-org (Pluto, Plex, Xumo, …)</string>
     <string name="settings_provider_ntv_cx">ntv.cx 24/7</string>
+    <string name="settings_provider_adult_swim">Adult Swim 24/7</string>
+    <string name="settings_supplement_adult_swim_enable">Enable Adult Swim marathon streams</string>
     <string name="settings_provider_sports">Live sports events</string>
     <string name="settings_embedded_sidecar">Enable MoveOnJoy sidecar</string>
     <string name="settings_supplement_iptv_org_enable">Enable iptv-org streams</string>

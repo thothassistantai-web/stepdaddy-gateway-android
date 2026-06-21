@@ -22,8 +22,8 @@ android {
         applicationId = "com.thothassistant.stepdaddy.gateway"
         minSdk = 24
         targetSdk = 34
-        versionCode = 13
-        versionName = "1.0.10"
+        versionCode = 19
+        versionName = "1.0.16"
 
         buildConfigField("int", "DEFAULT_PORT", "3000")
         buildConfigField("String", "DEFAULT_API_URL", "\"http://127.0.0.1:3000\"")
@@ -37,6 +37,7 @@ android {
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_SPORTS_ENABLED", "false")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_IPTV_ORG_ENABLED", "true")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_NTV_CX_ENABLED", "true")
+        buildConfigField("boolean", "DEFAULT_SUPPLEMENT_ADULT_SWIM_ENABLED", "true")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_NTV_CX_SUPPLEMENT_ONLY", "false")
         buildConfigField("boolean", "DEFAULT_IPTV_ORG_EPG_ENABLED", "true")
         buildConfigField("String", "DEFAULT_IPTV_ORG_EPG_URL", "\"\"")

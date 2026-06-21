@@ -162,6 +162,29 @@ class GatewayEnvironment(context: Context) {
         }
 
     /**
+     * When true, merges Adult Swim 24/7 marathon streams (Turner CDN; probed at sync).
+     */
+    var supplementAdultSwimEnabled: Boolean
+        get() = prefs.getBoolean(
+            KEY_SUPPLEMENT_ADULT_SWIM_ENABLED,
+            BuildConfig.DEFAULT_SUPPLEMENT_ADULT_SWIM_ENABLED,
+        )
+        set(value) {
+            prefs.edit().putBoolean(KEY_SUPPLEMENT_ADULT_SWIM_ENABLED, value).apply()
+        }
+
+    /**
+     * How Adult Swim marathon rows are merged.
+     */
+    var supplementAdultSwimImportMode: SupplementImportMode
+        get() = SupplementImportMode.fromPref(
+            prefs.getString(KEY_SUPPLEMENT_ADULT_SWIM_IMPORT_MODE, null),
+        )
+        set(value) {
+            prefs.edit().putString(KEY_SUPPLEMENT_ADULT_SWIM_IMPORT_MODE, value.name).apply()
+        }
+
+    /**
      * How MoveOnJoy sidecar channels are merged.
      * [SupplementImportMode.FULL_CATALOG] imports the full sidecar catalog (default).
      */
@@ -365,6 +388,8 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_SUPPLEMENT_SPORTS_ENABLED = "supplement_sports_enabled"
         private const val KEY_SUPPLEMENT_IPTV_ORG_ENABLED = "supplement_iptv_org_enabled"
         private const val KEY_SUPPLEMENT_NTV_CX_ENABLED = "supplement_ntv_cx_enabled"
+        private const val KEY_SUPPLEMENT_ADULT_SWIM_ENABLED = "supplement_adult_swim_enabled"
+        private const val KEY_SUPPLEMENT_ADULT_SWIM_IMPORT_MODE = "supplement_adult_swim_import_mode"
         private const val KEY_SUPPLEMENT_SIDECAR_IMPORT_MODE = "supplement_sidecar_import_mode"
         private const val KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE = "supplement_iptv_org_import_mode"
         private const val KEY_SUPPLEMENT_NTV_CX_MERGE_MODE = "supplement_ntv_cx_merge_mode"

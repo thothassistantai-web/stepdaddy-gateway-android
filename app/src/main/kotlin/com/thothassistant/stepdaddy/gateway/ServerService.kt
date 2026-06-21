@@ -16,7 +16,9 @@ import com.thothassistant.stepdaddy.gateway.ui.MainActivity
 import com.thothassistant.stepdaddy.gateway.ui.dashboard.GatewayDiagnostics
 import com.thothassistant.stepdaddy.gateway.ui.dashboard.GatewayMessageBus
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
+import com.thothassistant.stepdaddy.gateway.upstream.LogoBackfillService
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -40,6 +42,7 @@ class ServerService : LifecycleService() {
     private var skipBannerForCrashRecovery = false
     private var httpHealthCheckPosted = false
     private var tiviMateWatchPosted = false
+    private var logoBackfillJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -71,7 +74,6 @@ class ServerService : LifecycleService() {
             val app = application as GatewayApp
             app.awaitComponents()
             epgManager = app.epgManager
-            startGateway()
         }
     }
 
@@ -122,6 +124,9 @@ class ServerService : LifecycleService() {
                 try {
                     val app = application as GatewayApp
                     app.awaitComponents()
+                    if (!::epgManager.isInitialized) {
+                        epgManager = app.epgManager
+                    }
                     startEmbeddedSidecar(app)
                     val client = ensureDaddyLiveClient(app)
                     client.awaitInitialLoad()
@@ -139,6 +144,7 @@ class ServerService : LifecycleService() {
                     app.supplementSource.onRefreshComplete = {
                         server.prewarmPlaylist()
                         epgManager.scheduleRefresh(client.channels, force = true)
+                        scheduleLogoBackfill()
                     }
                     server.start()
                     server.prewarmPlaylist()
@@ -159,11 +165,13 @@ class ServerService : LifecycleService() {
                     notifyForegroundIfVisible(R.string.toast_server_running)
                     GatewayMessageBus.postReady(environment.loopbackBase())
                     GatewayDiagnostics.info(TAG, "Gateway listening on ${environment.loopbackBase()} ($channelCount channels)")
+                    scheduleEmbeddedSidecarRefreshIfEmpty(app)
                     epgManager.schedulePeriodicRefresh { daddyLiveClient.channels }
                     if (epgManager.needsBuild()) {
                         epgManager.scheduleRefresh(client.channels, force = true)
                     }
                     app.supplementSource.schedulePeriodicRefresh { daddyLiveClient.channels }
+                    scheduleLogoBackfill(deferMs = 8_000L)
                     scheduleDeferredBootChannelRefresh(skipReadyBanner)
                 } catch (exc: Exception) {
                     GatewayDiagnostics.error(TAG, "Failed to start gateway on port ${environment.port}", exc)
@@ -188,13 +196,52 @@ class ServerService : LifecycleService() {
         }
     }
 
+    /** Debounced fuzzy logo backfill — smallest playlist category first. */
+    private fun scheduleLogoBackfill(deferMs: Long = 3_000L) {
+        logoBackfillJob?.cancel()
+        logoBackfillJob = lifecycleScope.launch(Dispatchers.IO) {
+            delay(deferMs)
+            if (!isServiceActive || !::daddyLiveClient.isInitialized) return@launch
+            val app = application as GatewayApp
+            runCatching {
+                app.logoResolver.awaitLoaded()
+                val result = LogoBackfillService(
+                    this@ServerService,
+                    app.logoResolver,
+                    app.channelMetaStore,
+                    environment.loopbackBase(),
+                ).run(
+                    daddyLiveClient.channels,
+                    app.supplementSource.channels(),
+                )
+                if (result.assigned > 0) {
+                    GatewayDiagnostics.info(
+                        TAG,
+                        "Logo backfill assigned ${result.assigned}/${result.scanned} " +
+                            "across ${result.groupsProcessed} groups",
+                    )
+                    gatewayServer?.prewarmPlaylist()
+                }
+            }.onFailure { exc ->
+                GatewayDiagnostics.error(TAG, "Logo backfill failed", exc)
+            }
+        }
+    }
+
     private suspend fun startEmbeddedSidecar(app: GatewayApp) {
         if (!environment.embeddedSidecarEnabled) return
         if (embeddedSidecarServer?.isRunning == true) return
         environment.ensureEmbeddedSidecarUrl()
         app.embeddedSidecarRepository.schedulePeriodicRefresh()
         embeddedSidecarServer = EmbeddedSidecarServer(app.embeddedSidecarRepository).also { it.start() }
-        app.embeddedSidecarRepository.refresh(force = app.embeddedSidecarRepository.channelCount() == 0)
+    }
+
+    private fun scheduleEmbeddedSidecarRefreshIfEmpty(app: GatewayApp) {
+        if (!environment.embeddedSidecarEnabled) return
+        if (app.embeddedSidecarRepository.channelCount() > 0) return
+        lifecycleScope.launch(Dispatchers.IO) {
+            app.embeddedSidecarRepository.refresh(force = true)
+        }
     }
 
     private suspend fun ensureDaddyLiveClient(app: GatewayApp): DaddyLiveClient {
@@ -204,6 +251,7 @@ class ServerService : LifecycleService() {
         daddyLiveClient = DaddyLiveClient(
             environment,
             app.epgChannelMapper,
+            app.tvgIdResolver,
             app.logoResolver,
             app.channelMetaStore,
             context = this,
@@ -220,18 +268,26 @@ class ServerService : LifecycleService() {
             delay(BOOT_CHANNEL_REFRESH_DEFER_MS)
             if (!isServiceActive || !::daddyLiveClient.isInitialized) return@launch
             val app = application as GatewayApp
+            val channels = daddyLiveClient.channels
+            runCatching {
+                app.supplementSource.refresh(channels, force = true)
+            }.onFailure { exc ->
+                Log.w(TAG, "Boot supplement refresh failed", exc)
+            }
+            epgManager.scheduleRefresh(daddyLiveClient.channels, force = true)
             daddyLiveClient.scheduleChannelRefresh(force = true) {
                 updateRunningNotification()
                 daddyLiveClient.schedulePrewarmDelayed()
+                app.tvgIdResolver.backfillUnmapped(
+                    this@ServerService,
+                    app.epgChannelMapper,
+                    daddyLiveClient.channels,
+                )
                 app.logoResolver.schedulePrewarm(
                     daddyLiveClient.channels.map { it.name to it.tvgId },
                 )
                 if (!skipReadyBanner && !MainActivity.isInForeground) {
                     showReadyBanner(daddyLiveClient.channels.size)
-                }
-                app.supplementSource.scheduleRefresh(daddyLiveClient.channels, force = true)
-                if (!epgManager.epgReady()) {
-                    epgManager.scheduleRefresh(daddyLiveClient.channels, force = epgManager.needsBuild())
                 }
             }
         }

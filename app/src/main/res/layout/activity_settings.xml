@@ -344,6 +344,33 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
+            android:text="@string/settings_provider_adult_swim"
+            android:textColor="@color/on_background"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchSupplementAdultSwim"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:minHeight="48dp"
+            android:text="@string/settings_supplement_adult_swim_enable"
+            android:textColor="@color/on_background" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchAdultSwimSkipDuplicates"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:minHeight="48dp"
+            android:text="@string/settings_import_skip_duplicates"
+            android:textColor="@color/on_background" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
             android:text="@string/settings_provider_sports"
             android:textColor="@color/on_background"
             android:textSize="14sp"

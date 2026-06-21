@@ -3,7 +3,10 @@ package com.thothassistant.stepdaddy.gateway
 import android.app.Application
 import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.epg.EpgManager
+import com.thothassistant.stepdaddy.gateway.epg.EpgShareIdBridge
 import com.thothassistant.stepdaddy.gateway.epg.EpgStore
+import com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex
+import com.thothassistant.stepdaddy.gateway.epg.TvgIdResolver
 import com.thothassistant.stepdaddy.gateway.sidecar.EmbeddedSidecarRepository
 import com.thothassistant.stepdaddy.gateway.upstream.ChannelMetaStore
 import com.thothassistant.stepdaddy.gateway.upstream.LogoResolver
@@ -31,6 +34,9 @@ class GatewayApp : Application() {
     private var _playlistCache: PlaylistCache? = null
     private var _embeddedSidecarRepository: EmbeddedSidecarRepository? = null
     private var _epgChannelMapper: EpgChannelMapper? = null
+    private var _iptvOrgNameIndex: IptvOrgNameIndex? = null
+    private var _tvgIdResolver: TvgIdResolver? = null
+    private var _epgShareIdBridge: EpgShareIdBridge? = null
     private var _channelMetaStore: ChannelMetaStore? = null
     private var _logoResolver: LogoResolver? = null
     private var _supplementSource: SupplementSource? = null
@@ -44,6 +50,12 @@ class GatewayApp : Application() {
 
     val epgChannelMapper: EpgChannelMapper
         get() = _epgChannelMapper ?: error("Gateway components not initialized")
+
+    val tvgIdResolver: TvgIdResolver
+        get() = _tvgIdResolver ?: error("Gateway components not initialized")
+
+    val epgShareIdBridge: EpgShareIdBridge
+        get() = _epgShareIdBridge ?: error("Gateway components not initialized")
 
     val channelMetaStore: ChannelMetaStore
         get() = _channelMetaStore ?: error("Gateway components not initialized")
@@ -93,10 +105,22 @@ class GatewayApp : Application() {
                 _embeddedSidecarRepository = EmbeddedSidecarRepository(this@GatewayApp)
                 val store = EpgStore(this@GatewayApp)
                 _epgChannelMapper = EpgChannelMapper(this@GatewayApp)
+                _iptvOrgNameIndex = IptvOrgNameIndex(this@GatewayApp)
+                _tvgIdResolver = TvgIdResolver(_iptvOrgNameIndex!!)
+                _epgShareIdBridge = EpgShareIdBridge(this@GatewayApp)
                 _channelMetaStore = ChannelMetaStore(this@GatewayApp)
                 _logoResolver = LogoResolver(this@GatewayApp)
-                _supplementSource = SupplementSource(this@GatewayApp, gatewayEnvironment)
-                _epgManager = EpgManager(store, _epgChannelMapper!!, _supplementSource!!)
+                _supplementSource = SupplementSource(
+                    this@GatewayApp,
+                    gatewayEnvironment,
+                    nameIndex = _iptvOrgNameIndex!!,
+                )
+                _epgManager = EpgManager(
+                    store,
+                    _epgChannelMapper!!,
+                    _supplementSource!!,
+                    _epgShareIdBridge!!,
+                )
             }
         }
         if (!componentsReady.isCompleted) {

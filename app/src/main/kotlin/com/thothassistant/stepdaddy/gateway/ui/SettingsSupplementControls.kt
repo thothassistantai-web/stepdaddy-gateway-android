@@ -11,12 +11,15 @@ internal object SettingsSupplementControls {
         binding.switchSupplementSports.isChecked = environment.supplementSportsEnabled
         binding.switchSupplementIptvOrg.isChecked = environment.supplementIptvOrgEnabled
         binding.switchSupplementNtvCx.isChecked = environment.supplementNtvCxEnabled
+        binding.switchSupplementAdultSwim.isChecked = environment.supplementAdultSwimEnabled
         binding.switchSidecarSkipDuplicates.isChecked =
             environment.supplementSidecarImportMode == SupplementImportMode.SKIP_DUPLICATES
         binding.switchIptvOrgSkipDuplicates.isChecked =
             environment.supplementIptvOrgImportMode == SupplementImportMode.SKIP_DUPLICATES
         binding.switchNtvCxSkipDuplicates.isChecked =
             environment.supplementNtvCxImportMode == SupplementImportMode.SKIP_DUPLICATES
+        binding.switchAdultSwimSkipDuplicates.isChecked =
+            environment.supplementAdultSwimImportMode == SupplementImportMode.SKIP_DUPLICATES
         syncMasterSwitch(binding)
     }
 
@@ -28,12 +31,14 @@ internal object SettingsSupplementControls {
         binding.switchEmbeddedSidecar.setOnCheckedChangeListener(providerListener)
         binding.switchSupplementIptvOrg.setOnCheckedChangeListener(providerListener)
         binding.switchSupplementNtvCx.setOnCheckedChangeListener(providerListener)
+        binding.switchSupplementAdultSwim.setOnCheckedChangeListener(providerListener)
         binding.switchEnableAllSupplements.setOnCheckedChangeListener { _, checked ->
             if (syncingMaster) return@setOnCheckedChangeListener
             syncingMaster = true
             binding.switchEmbeddedSidecar.isChecked = checked
             binding.switchSupplementIptvOrg.isChecked = checked
             binding.switchSupplementNtvCx.isChecked = checked
+            binding.switchSupplementAdultSwim.isChecked = checked
             syncingMaster = false
             updateSkipDuplicateEnabled(binding)
         }
@@ -45,9 +50,11 @@ internal object SettingsSupplementControls {
         environment.supplementSportsEnabled = binding.switchSupplementSports.isChecked
         environment.supplementIptvOrgEnabled = binding.switchSupplementIptvOrg.isChecked
         environment.supplementNtvCxEnabled = binding.switchSupplementNtvCx.isChecked
+        environment.supplementAdultSwimEnabled = binding.switchSupplementAdultSwim.isChecked
         environment.supplementSidecarImportMode = importMode(binding.switchSidecarSkipDuplicates.isChecked)
         environment.supplementIptvOrgImportMode = importMode(binding.switchIptvOrgSkipDuplicates.isChecked)
         environment.supplementNtvCxImportMode = importMode(binding.switchNtvCxSkipDuplicates.isChecked)
+        environment.supplementAdultSwimImportMode = importMode(binding.switchAdultSwimSkipDuplicates.isChecked)
     }
 
     private fun importMode(skipDuplicates: Boolean): SupplementImportMode =
@@ -58,7 +65,8 @@ internal object SettingsSupplementControls {
         syncingMaster = true
         val allCore = binding.switchEmbeddedSidecar.isChecked &&
             binding.switchSupplementIptvOrg.isChecked &&
-            binding.switchSupplementNtvCx.isChecked
+            binding.switchSupplementNtvCx.isChecked &&
+            binding.switchSupplementAdultSwim.isChecked
         binding.switchEnableAllSupplements.isChecked = allCore
         syncingMaster = false
     }
@@ -75,5 +83,9 @@ internal object SettingsSupplementControls {
         val ntvOn = binding.switchSupplementNtvCx.isChecked
         binding.switchNtvCxSkipDuplicates.isEnabled = ntvOn
         binding.switchNtvCxSkipDuplicates.alpha = if (ntvOn) 1f else 0.5f
+
+        val adultSwimOn = binding.switchSupplementAdultSwim.isChecked
+        binding.switchAdultSwimSkipDuplicates.isEnabled = adultSwimOn
+        binding.switchAdultSwimSkipDuplicates.alpha = if (adultSwimOn) 1f else 0.5f
     }
 }

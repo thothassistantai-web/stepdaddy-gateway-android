@@ -39,11 +39,37 @@ export_from_api() {
     rm -f "$tmp"
     return 1
   fi
-  if ! python3 -c "import json; json.load(open('$tmp'))" 2>/dev/null; then
-    rm -f "$tmp"
-    return 1
-  fi
-  mv "$tmp" "$OUT"
+  python3 - "$tmp" "$OUT" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+src = Path(sys.argv[1])
+out = Path(sys.argv[2])
+raw = json.loads(src.read_text(encoding="utf-8"))
+
+mapping: dict[str, str] = {}
+if isinstance(raw, dict):
+    if isinstance(raw.get("mapping"), dict):
+        mapping = {str(k): str(v) for k, v in raw["mapping"].items() if k and v}
+    elif isinstance(raw.get("mappings"), list):
+        for row in raw["mappings"]:
+            cid = str(row.get("channel_id") or row.get("id") or "").strip()
+            tvg = str(row.get("tvg_id") or row.get("xmltv_id") or "").strip()
+            if cid and tvg:
+                mapping[cid] = tvg
+    else:
+        mapping = {str(k): str(v) for k, v in raw.items() if k not in ("exported_at", "mapped_count") and v}
+
+payload = {
+    "exported_at": raw.get("exported_at") if isinstance(raw, dict) else None,
+    "mapped_count": len(mapping),
+    "mapping": dict(sorted(mapping.items(), key=lambda kv: int(kv[0]) if kv[0].isdigit() else kv[0])),
+}
+out.write_text(json.dumps(payload, indent=2, sort_keys=False) + "\n", encoding="utf-8")
+print(f"Wrote {len(mapping)} mappings to {out}")
+PY
+  rm -f "$tmp"
   return 0
 }
 
@@ -65,22 +91,29 @@ channels = cache.get("channels") or cache
 mapping = {}
 for ch in channels:
     cid = str(ch.get("channel_id") or ch.get("id") or "")
+    name = str(ch.get("channel_name") or ch.get("name") or "").strip()
     if not cid:
         continue
-    tvg = overrides.get(cid) or ch.get("tvg_id") or ch.get("xmltv_id")
+    tvg = overrides.get(name) or ch.get("tvg_id") or ch.get("xmltv_id")
     if tvg:
         mapping[cid] = tvg
 
+payload = {
+    "exported_at": None,
+    "mapped_count": len(mapping),
+    "mapping": dict(sorted(mapping.items(), key=lambda kv: int(kv[0]) if kv[0].isdigit() else kv[0])),
+}
 out.parent.mkdir(parents=True, exist_ok=True)
-out.write_text(json.dumps(mapping, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+out.write_text(json.dumps(payload, indent=2, sort_keys=False) + "\n", encoding="utf-8")
 print(f"Wrote {len(mapping)} mappings to {out}")
 PY
 }
 
 if export_from_api; then
   echo "Exported mapping from $API_URL -> $OUT"
-  exit 0
+else
+  echo "API unavailable at $API_URL — falling back to stepdaddy-web files" >&2
+  export_from_files
 fi
 
-echo "API unavailable at $API_URL — falling back to stepdaddy-web files" >&2
-export_from_files
+python3 "$SCRIPT_DIR/generate-epg-id-bridge.py"

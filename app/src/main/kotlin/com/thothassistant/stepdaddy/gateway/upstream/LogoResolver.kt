@@ -123,6 +123,67 @@ class LogoResolver(context: Context) {
         return placeholderUrl(apiBase, channelName)
     }
 
+    /** True when exact DB / override lookup would yield a remote logo (playlist-safe). */
+    fun hasResolvableLogo(channelName: String, tvgId: String?, metaLogo: String? = null): Boolean {
+        metaLogo?.trim()?.takeIf { it.startsWith("http") }?.let { return true }
+        return resolveRemoteLogoExact(channelName, tvgId) != null
+    }
+
+    fun isGatewayPlaceholderUrl(apiBase: String, logo: String): Boolean =
+        isGatewayPlaceholder(apiBase, logo)
+
+    /**
+     * Full lookup including fuzzy match — for offline backfill only, not M3U build hot path.
+     */
+    fun findBackfillLogo(channelName: String, tvgId: String?, metaLogo: String? = null): String? =
+        resolveRemoteLogo(channelName, tvgId, metaLogo)
+
+    fun putRuntimeOverride(channelName: String, remoteUrl: String) {
+        synchronized(overridesByName) {
+            overridesByName[channelName] = remoteUrl
+            overridesByName[stripCategorySuffix(channelName)] = remoteUrl
+        }
+    }
+
+    fun saveRuntimeOverrides(context: Context) {
+        val file = LogoBackfillService.runtimeOverridesFile(context)
+        file.parentFile?.mkdirs()
+        val snapshot = synchronized(overridesByName) { overridesByName.toMap() }
+        val bundled = loadBundledOverrideNames(context)
+        val runtimeOnly = snapshot.filterKeys { it !in bundled }
+        val json = JSONObject()
+        runtimeOnly.forEach { (name, url) -> json.put(name, url) }
+        file.writeText(json.toString())
+        Log.i(TAG, "Saved ${runtimeOnly.size} runtime logo overrides")
+    }
+
+    private fun loadBundledOverrideNames(context: Context): Set<String> {
+        return runCatching {
+            val text = context.assets.open("channel_logo_overrides.json").bufferedReader().use { it.readText() }
+            val root = JSONObject(text)
+            buildSet { root.keys().forEach { add(it) } }
+        }.getOrDefault(emptySet())
+    }
+
+    private fun loadRuntimeOverrides(context: Context) {
+        val file = LogoBackfillService.runtimeOverridesFile(context)
+        if (!file.isFile) return
+        runCatching {
+            val root = JSONObject(file.readText())
+            synchronized(overridesByName) {
+                root.keys().forEach { key ->
+                    val url = root.optString(key).trim()
+                    if (url.startsWith("http")) {
+                        overridesByName[key] = url
+                    }
+                }
+            }
+            Log.i(TAG, "Loaded ${root.length()} runtime logo overrides")
+        }.onFailure { exc ->
+            Log.w(TAG, "Runtime logo overrides load failed", exc)
+        }
+    }
+
     private fun isGatewayPlaceholder(apiBase: String, logo: String): Boolean {
         val base = apiBase.trimEnd('/')
         return logo.startsWith("$base/ui/channel/") ||
@@ -288,6 +349,7 @@ class LogoResolver(context: Context) {
         loadLogosCsv()
         loadChannelsCsv()
         loadOverrides()
+        loadRuntimeOverrides(appContext)
         rebuildIndexes()
     }
 

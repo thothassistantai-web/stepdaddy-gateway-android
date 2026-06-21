@@ -35,4 +35,6 @@ object EpgConfig {
   const val MAX_FEED_CACHE_BYTES = 160 * 1024 * 1024L
 
   const val MAPPING_ASSET = "channel_epg_map.json"
+  const val NAME_OVERRIDES_ASSET = "epg_name_overrides.json"
+  const val ID_BRIDGE_ASSET = "epg_id_bridge.json"
 }

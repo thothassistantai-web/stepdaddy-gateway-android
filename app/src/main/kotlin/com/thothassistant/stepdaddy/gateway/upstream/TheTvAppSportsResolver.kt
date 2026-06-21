@@ -1,5 +1,6 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
+import com.thothassistant.stepdaddy.gateway.epg.SupplementTvgIdResolver
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import java.security.MessageDigest
 import okhttp3.OkHttpClient
@@ -39,7 +40,7 @@ class TheTvAppSportsResolver(
             channels += SupplementChannel(
                 id = "sport:${shortHash(eventUrl)}",
                 name = name,
-                tvgId = null,
+                tvgId = SupplementTvgIdResolver.forSportsEvent(eventUrl),
                 logo = null,
                 groupTitle = SupplementConfig.SPORTS_GROUP_TITLE,
                 streamUrl = variant,

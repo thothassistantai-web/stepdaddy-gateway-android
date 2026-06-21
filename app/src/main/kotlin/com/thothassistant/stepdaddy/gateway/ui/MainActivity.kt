@@ -697,6 +697,7 @@ class MainActivity : AppCompatActivity() {
             if (supplement.sportsEnabled) count++
             if (supplement.iptvOrgEnabled) count++
             if (supplement.ntvCxEnabled) count++
+            if (supplement.adultSwimEnabled) count++
         } else if (health.supplementEnabled) {
             count++
         }

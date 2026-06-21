@@ -7,6 +7,26 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.16] - 2026-06-20
+
+### Added
+
+- **FAST EPG (mjh.nz)** — Pluto, Samsung, Distro, Plex, Xumo, Roku, Stirr guides merged at build time; name→channel-id index backfills empty iptv-org `tvg-id`s
+- **EPG Phase 0–2** — bundled name overrides + epgshare ID bridge; auto `tvg-id` resolver; sports synthetic EPG; 2h placeholder programmes; `/health` `epgCoverage` metrics
+- **Logo backfill** — fuzzy logo assignment, smallest playlist category first
+- **Adult Swim 24/7** supplement with live HLS probe (from prior branch work)
+
+### Fixed
+
+- **Boot hang** — disk channel load uses exact-only logo lookup (no fuzzy Levenshtein on 1k+ channels); embedded sidecar refresh deferred until after HTTP listen
+- **EPG HTTP 500 / OOM** — `/epg.xml` streams from disk instead of loading 27MB+ into memory
+- **Supplement sync order** — FAST guides download before iptv-org fetch; boot path refreshes supplements before upstream channel pull
+- **FastEpgCatalog OOM** — per-feed cached gzips merged at EPG build time (index-only refresh)
+
+### Changed
+
+- Entertainment / category network sort refinements; channel numbering updates
+
 ## [1.0.9] - 2026-06-20
 
 ### Added
@@ -115,7 +135,8 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 - Upstream DaddyLive / resportz availability is third-party dependent
 - Full web UI / mapping editor remains in Linux `stepdaddy-web` only
 
-[Unreleased]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/compare/v1.0.16...HEAD
+[1.0.16]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.16
 [1.0.2]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.2
 [1.0.1]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.1
 [1.0.0]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.0

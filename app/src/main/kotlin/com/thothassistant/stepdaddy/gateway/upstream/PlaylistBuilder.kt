@@ -37,13 +37,7 @@ object PlaylistBuilder {
         supplements: List<SupplementChannel> = emptyList(),
     ): String {
         val base = baseUrl.trimEnd('/')
-        val channelNumbers = ChannelNumberResolver.assignAll(channels)
-        val supplementNumbers = ChannelNumberResolver.assignSupplements(
-            channels = channels,
-            supplements = supplements,
-            groupFor = ChannelNumberResolver::supplementGroup,
-            channelNumbers = channelNumbers,
-        )
+        val (channelNumbers, supplementNumbers) = ChannelNumberResolver.assignPlaylist(channels, supplements)
         val rows = ArrayList<PlaylistRow>(channels.size + supplements.size)
 
         channels.forEach { channel ->
@@ -114,7 +108,9 @@ object PlaylistBuilder {
 
     private fun supplementDisplayTitle(supplement: SupplementChannel): String {
         val resolution = supplementResolution(supplement)
-        return         if (supplement.id.startsWith("iptv:") || supplement.id.startsWith("ntv:")) {
+        return         if (supplement.id.startsWith("iptv:") || supplement.id.startsWith("ntv:") ||
+            supplement.id.startsWith("adultswim:")
+        ) {
             ChannelTitleNormalizer.supplementDisplayTitle(
                 supplement.name,
                 resolution,

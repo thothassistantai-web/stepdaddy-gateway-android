@@ -3,6 +3,7 @@ package com.thothassistant.stepdaddy.gateway.routes
 import com.thothassistant.stepdaddy.gateway.BuildConfig
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.epg.EpgManager
+import com.thothassistant.stepdaddy.gateway.epg.EpgCoverageCalculator
 import com.thothassistant.stepdaddy.gateway.model.CanaryStatus
 import com.thothassistant.stepdaddy.gateway.model.CategoryCount
 import com.thothassistant.stepdaddy.gateway.model.ProviderStats
@@ -53,6 +54,11 @@ class HealthRoutes(
             epgReady = epgManager.epgReady(),
             epgProgrammeCount = epgManager.programmeCount(),
             epgAgeSeconds = epgManager.ageSeconds(),
+            epgCoverage = EpgCoverageCalculator.snapshot(
+                channels = client.channels,
+                supplementSource = supplementSource,
+                meta = epgManager.meta,
+            ),
             supplementEnabled = supplementSource.enabled(),
             supplementChannels = supplementCount,
             supplement = SupplementStatus(
@@ -61,16 +67,21 @@ class HealthRoutes(
                 sportsEnabled = supplementSource.sportsEnabled(),
                 iptvOrgEnabled = supplementSource.iptvOrgEnabled(),
                 ntvCxEnabled = supplementSource.ntvCxEnabled(),
+                adultSwimEnabled = supplementSource.adultSwimEnabled(),
                 channels = supplementSource.channelCount(),
                 moveOnJoyChannels = supplementSource.moveOnJoyCount(),
                 sportsChannels = supplementSource.sportsCount(),
                 iptvOrgChannels = supplementSource.iptvOrgCount(),
                 ntvCxChannels = supplementSource.ntvCxCount(),
+                adultSwimChannels = supplementSource.adultSwimCount(),
                 ntvCxImportMode = supplementSource.ntvCxImportMode().name,
                 ntvCxMergeMode = supplementSource.ntvCxImportMode().name,
                 sidecarImportMode = environment.supplementSidecarImportMode.name,
                 iptvOrgImportMode = environment.supplementIptvOrgImportMode.name,
+                adultSwimImportMode = environment.supplementAdultSwimImportMode.name,
                 ntvCxResolveProbeOk = sync.ntvCxResolveProbeOk,
+                adultSwimProbed = sync.adultSwimProbed,
+                adultSwimProbeOk = sync.adultSwimProbeOk,
                 iptvOrgPlaylistsFetched = sync.iptvOrgPlaylistsFetched,
                 iptvOrgPlaylistsFailed = sync.iptvOrgPlaylistsFailed,
                 blockedTheTvApp = sync.blockedTheTvApp,
@@ -83,6 +94,7 @@ class HealthRoutes(
                 iptvOrg = supplementSource.iptvOrgCount(),
                 sports = supplementSource.sportsCount(),
                 ntvCx = supplementSource.ntvCxCount(),
+                adultSwim = supplementSource.adultSwimCount(),
                 adult = adultCount,
                 total = channelCount + supplementCount,
             ),

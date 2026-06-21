@@ -14,14 +14,12 @@ class ChannelNumberResolverTest {
   ) = Channel(id = id, name = name, tags = tags, tvgId = tvgId)
 
   @Test
-  fun `NYC anchor pins assign exact numbers`() {
+  fun `bulk local sports and entertainment use dedicated bands without legacy pins`() {
     val channels = listOf(
       ch("1", "CBS USA", listOf("🇺🇸", "#local")),
       ch("2", "NBC USA", listOf("🇺🇸", "#local")),
       ch("3", "FOX USA", listOf("🇺🇸", "#local")),
       ch("4", "ABC USA", listOf("🇺🇸", "#local")),
-      ch("5", "CW PIX 11 USA", listOf("🇺🇸", "#local")),
-      ch("6", "PBS USA", listOf("🇺🇸", "#local")),
       ch("7", "SportsNet New York (SNY)", listOf("🇺🇸", "#sports")),
       ch("8", "MSG USA", listOf("🇺🇸", "#sports")),
       ch("9", "ESPN USA", listOf("🇺🇸", "#sports")),
@@ -37,24 +35,16 @@ class ChannelNumberResolverTest {
       ch("19", "Nickelodeon", listOf("🇺🇸", "#kids")),
       ch("20", "Showtime USA", listOf("🇺🇸", "#movies", "#premium")),
       ch("21", "HBO USA", listOf("🇺🇸", "#movies", "#premium")),
+      ch("22", "FX USA", listOf("🇺🇸", "#entertainment")),
     )
 
     val numbers = ChannelNumberResolver.assignAll(channels)
 
-    assertEquals(2, numbers["1"])
-    assertEquals(4, numbers["2"])
-    assertEquals(5, numbers["3"])
-    assertEquals(7, numbers["4"])
-    assertEquals(11, numbers["5"])
-    assertEquals(13, numbers["6"])
-    assertEquals(26, numbers["7"])
-    assertEquals(27, numbers["8"])
-    assertEquals(70, numbers["9"])
-    assertEquals(74, numbers["10"])
-    assertEquals(53, numbers["11"])
-    assertEquals(83, numbers["12"])
-    assertEquals(86, numbers["13"])
-    assertEquals(88, numbers["14"])
+    assertTrue(numbers.getValue("1") in 1..499)
+    assertTrue(numbers.getValue("2") in 1..499)
+    assertTrue(numbers.getValue("9") in 500..1599)
+    assertTrue(numbers.getValue("14") in 500..1599)
+    assertTrue(numbers.getValue("22") >= 1600)
     assertEquals(100, numbers["15"])
     assertEquals(103, numbers["16"])
     assertEquals(118, numbers["17"])
@@ -65,32 +55,38 @@ class ChannelNumberResolverTest {
   }
 
   @Test
-  fun `CA sports channel uses same scheme with parallel pin`() {
+  fun `local bulk keeps US before CA and groups network families`() {
     val channels = listOf(
-      ch("sny", "SportsNet New York (SNY)", listOf("🇺🇸", "#sports")),
-      ch("sn", "Sportsnet 360", listOf("🇨🇦", "#sports")),
+      ch("ca", "CBC CA", listOf("🇨🇦", "#local")),
+      ch("fox", "FOX USA", listOf("🇺🇸", "#local")),
+      ch("abc", "ABC USA", listOf("🇺🇸", "#local")),
+      ch("cbs", "CBS USA", listOf("🇺🇸", "#local")),
     )
 
     val numbers = ChannelNumberResolver.assignAll(channels)
+    val ordered = numbers.entries.sortedBy { it.value }.map { it.key }
 
-    assertEquals(26, numbers["sny"])
-    assertEquals(28, numbers["sn"])
+    assertTrue(numbers.values.all { it in 1..499 })
+    assertTrue(ordered.indexOf("abc") < ordered.indexOf("cbs"))
+    assertTrue(ordered.indexOf("cbs") < ordered.indexOf("fox"))
+    assertTrue(ordered.indexOf("fox") < ordered.indexOf("ca"))
   }
 
   @Test
-  fun `unpinned channels fill sequentially within group range`() {
+  fun `sports bulk keeps US before CA and groups espn variants`() {
     val channels = listOf(
-      ch("a", "Zebra Local", listOf("🇺🇸", "#local")),
-      ch("b", "Alpha Local", listOf("🇺🇸", "#local")),
+      ch("ca", "Sportsnet 360", listOf("🇨🇦", "#sports")),
+      ch("espn2", "ESPN2 USA", listOf("🇺🇸", "#sports")),
+      ch("espn", "ESPN USA", listOf("🇺🇸", "#sports")),
+      ch("sny", "SportsNet New York (SNY)", listOf("🇺🇸", "#sports")),
     )
 
     val numbers = ChannelNumberResolver.assignAll(channels)
-    val values = numbers.values.toSet()
+    val ordered = numbers.entries.sortedBy { it.value }.map { it.key }
 
-    assertEquals(2, values.size)
-    assertTrue(values.all { it in 1..49 })
-    assertTrue(values.contains(1))
-    assertTrue(values.contains(2))
+    assertTrue(numbers.values.all { it in 500..1599 })
+    assertTrue(ordered.indexOf("espn") < ordered.indexOf("espn2"))
+    assertTrue(ordered.indexOf("ca") > ordered.indexOf("sny"))
   }
 
   @Test
@@ -116,27 +112,13 @@ class ChannelNumberResolverTest {
   }
 
   @Test
-  fun `pin collision gives CA channel next sequential sports slot`() {
-    val channels = listOf(
-      ch("us", "ESPN USA", listOf("🇺🇸", "#sports")),
-      ch("ca", "ESPN Canada", listOf("🇨🇦", "#sports")),
-    )
-
-    val numbers = ChannelNumberResolver.assignAll(channels)
-
-    assertEquals(70, numbers["us"])
-    assertTrue(numbers["ca"]!! in 26..449)
-    assertTrue(numbers["ca"] != 70)
-  }
-
-  @Test
-  fun `tvg-id pin resolves when name is unknown`() {
+  fun `tvg-id pin resolves for non-bulk categories only`() {
     val channels = listOf(
       ch("1", "WCBS HD", listOf("🇺🇸", "#local"), tvgId = "WCBSHD.us"),
     )
 
     val numbers = ChannelNumberResolver.assignAll(channels)
-    assertEquals(2, numbers["1"])
+    assertTrue(numbers.getValue("1") in 1..499)
   }
 
   @Test
@@ -150,16 +132,16 @@ class ChannelNumberResolverTest {
   }
 
   @Test
-  fun `regional NBC sports does not steal NBC local pin`() {
+  fun `regional NBC sports stays in sports bulk band`() {
     val channels = listOf(
       ch("rsn", "NBC Sports Bay Area", listOf("🇺🇸", "#sports", "#regional")),
-      ch("nbc", "NBC USA", listOf("🇺🇸", "#entertainment"), tvgId = "NBC.East.Stream.us2"),
+      ch("nbc", "NBC USA", listOf("🇺🇸", "#local"), tvgId = "NBC.East.Stream.us2"),
     )
 
     val numbers = ChannelNumberResolver.assignAll(channels)
 
-    assertEquals(4, numbers["nbc"])
-    assertTrue(numbers["rsn"]!! != 4)
+    assertTrue(numbers.getValue("nbc") in 1..499)
+    assertTrue(numbers.getValue("rsn") in 500..1599)
   }
 
   @Test
