@@ -43,7 +43,8 @@ class TheTvAppSportsResolverTest {
     assertEquals(1, channels.size)
     val ch = channels.first()
     assertTrue(ch.name.contains("Panama", ignoreCase = true))
-    assertEquals(SupplementConfig.SPORTS_GROUP_TITLE, ch.groupTitle)
+    assertEquals(GroupTitleResolver.SPECIAL_EVENTS, ch.groupTitle)
+    assertNotNull(ch.eventSourceUrl)
     assertNotNull(ch.referer)
     assertTrue(ch.streamUrl.contains("goozekhar3.space"))
   }

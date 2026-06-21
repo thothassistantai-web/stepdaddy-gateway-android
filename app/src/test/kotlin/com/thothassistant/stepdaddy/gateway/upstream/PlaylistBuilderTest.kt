@@ -148,19 +148,27 @@ class PlaylistBuilderTest {
     }
 
     @Test
-    fun `xtream category style formats cable and fast supplements`() {
+    fun `xtream category style formats cable adult swim and special events`() {
         val channels = listOf(
             ch("fox", "Fox News Channel", listOf("🇺🇸", "#news"), tvgId = "FoxNews.us"),
         )
         val supplements = listOf(
             SupplementChannel(
-                id = "iptv:as1",
-                name = "Adult Swim Marathon (1080p)",
+                id = "adultswim:rick-and-morty",
+                name = "Rick and Morty",
                 groupTitle = GroupTitleResolver.ENTERTAINMENT,
                 streamUrl = "https://example.com/as.m3u8",
                 tags = listOf("🇺🇸", "#entertainment", "#animation"),
-                providerTag = "Samsung",
-                tvgId = "adultswim.marathon.us",
+                providerTag = "Adult Swim",
+                tvgId = "AdultSwimRickandMorty.us",
+            ),
+            SupplementChannel(
+                id = "sport:abc123",
+                name = "Lakers vs Celtics",
+                groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+                streamUrl = "https://example.com/nba.m3u8",
+                providerTag = "NBA",
+                eventSourceUrl = "https://thetvapp.link/nba/lakers-celtics/123",
             ),
         )
 
@@ -176,7 +184,42 @@ class PlaylistBuilderTest {
         assertTrue(playlist.contains("US: FOX NEWS CHANNEL HD"))
         assertTrue(playlist.contains("tvg-name=\"US: FOX NEWS CHANNEL HD\""))
         assertTrue(playlist.contains("group-title=\"Entertainment\""))
-        assertTrue(playlist.contains("US: ADULT SWIM MARATHON ᴿᴬᵂ"))
+        assertTrue(playlist.contains("US: 24/7 : Adultswim RICK AND MORTY ᴿᴬᵂ"))
+        assertTrue(playlist.contains("group-title=\"🎟️ Special Events\""))
+        assertTrue(playlist.contains("US: NBA LAKERS VS CELTICS ᴸᴵⱽᴱ"))
+    }
+
+    @Test
+    fun `special events sort by league before channel number`() {
+        val supplements = listOf(
+            SupplementChannel(
+                id = "sport:nfl",
+                name = "Chiefs vs Bills",
+                groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+                streamUrl = "https://example.com/nfl.m3u8",
+                providerTag = "NFL",
+            ),
+            SupplementChannel(
+                id = "sport:nba",
+                name = "Lakers vs Celtics",
+                groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+                streamUrl = "https://example.com/nba.m3u8",
+                providerTag = "NBA",
+            ),
+        )
+
+        val playlist = PlaylistBuilder.tivimatePlaylist(
+            channels = emptyList(),
+            baseUrl = "http://127.0.0.1:3000",
+            dlhdOrigin = "https://daddylive.org",
+            supplements = supplements,
+            titleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
+        )
+
+        val nflIndex = playlist.indexOf("US: NFL CHIEFS VS BILLS")
+        val nbaIndex = playlist.indexOf("US: NBA LAKERS VS CELTICS")
+        assertTrue(nflIndex >= 0 && nbaIndex >= 0)
+        assertTrue(nflIndex < nbaIndex)
     }
 
     @Test

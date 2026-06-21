@@ -44,11 +44,37 @@ object XtreamCategoryTitleFormatter {
 
         val countryPrefix = countryPrefix(resolution.countryCode)
         val quality = when {
+            source == PlaylistTitleSource.ADULT_SWIM_247 -> " ᴿᴬᵂ"
+            source == PlaylistTitleSource.SPECIAL_EVENT -> " ᴸᴵⱽᴱ"
             source == PlaylistTitleSource.FAST || hadFastResolution -> " ᴿᴬᵂ"
             source == PlaylistTitleSource.SIDECAR -> " ᴸᴵⱽᴱ"
             else -> " HD"
         }
         return "$countryPrefix: ${core.uppercase()}$quality".trim()
+    }
+
+    fun formatAdultSwimMarathon(channelName: String): String {
+        val core = sanitizeCore(channelName)
+        if (core.isEmpty()) return "US: 24/7 : Adultswim ${channelName.trim()} ᴿᴬᵂ"
+        return "US: 24/7 : Adultswim ${core.uppercase()} ᴿᴬᵂ"
+    }
+
+    fun formatSpecialEvent(channelName: String, league: String?): String {
+        val core = sanitizeCore(channelName)
+        val leagueLabel = league?.trim()?.uppercase().orEmpty().ifBlank { "EVENT" }
+        if (core.isEmpty()) return "US: $leagueLabel ${channelName.trim()} ᴸᴵⱽᴱ"
+        return "US: $leagueLabel ${core.uppercase()} ᴸᴵⱽᴱ"
+    }
+
+    fun formatGuideSchedule(category: String, league: String?): String {
+        val core = sanitizeCore(category).ifEmpty { category.trim() }
+        val leagueLabel = league?.trim()?.uppercase().orEmpty()
+        val prefix = if (leagueLabel.isNotEmpty() && !core.uppercase().contains(leagueLabel)) {
+            "$leagueLabel "
+        } else {
+            ""
+        }
+        return "US: ${prefix}${core.uppercase()} SCHEDULE ᴸᴵⱽᴱ"
     }
 
     private fun formatAdult(channelName: String): String {

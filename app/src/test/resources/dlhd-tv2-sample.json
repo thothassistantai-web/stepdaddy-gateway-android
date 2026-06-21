@@ -1,0 +1,20 @@
+{
+  "Popular Live (by viewers)": {
+    "Live Events": [
+      {
+        "time": "Live",
+        "event": "Baseball : Seattle Mariners vs Boston Red Sox",
+        "channels": [
+          {
+            "channel_name": "Link - 1",
+            "channel_id": "admin/ppv-boston-red-sox-vs-seattle-mariners/1"
+          },
+          {
+            "channel_name": "Link - 2",
+            "channel_id": "admin/ppv-boston-red-sox-vs-seattle-mariners/2"
+          }
+        ]
+      }
+    ]
+  }
+}

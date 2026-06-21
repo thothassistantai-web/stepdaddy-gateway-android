@@ -19,4 +19,7 @@ enum class PlaylistTitleSource {
     FAST,
     SIDECAR,
     ADULT,
+    ADULT_SWIM_247,
+    SPECIAL_EVENT,
+    SPECIAL_EVENT_GUIDE,
 }

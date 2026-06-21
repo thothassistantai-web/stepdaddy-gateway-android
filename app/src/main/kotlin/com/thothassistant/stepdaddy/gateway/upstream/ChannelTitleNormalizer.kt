@@ -31,12 +31,26 @@ object ChannelTitleNormalizer {
         providerTag: String?,
         style: PlaylistTitleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
         source: PlaylistTitleSource = PlaylistTitleSource.FAST,
+        eventSourceUrl: String? = null,
     ): String {
         if (style == PlaylistTitleStyle.LEGACY) {
             val base = legacyDisplayTitle(channelName, resolution)
             val tag = providerTag?.trim().orEmpty()
             if (tag.isEmpty() || base.endsWith(tag, ignoreCase = true)) return base
             return "$base $tag"
+        }
+        if (source == PlaylistTitleSource.ADULT_SWIM_247) {
+            return XtreamCategoryTitleFormatter.formatAdultSwimMarathon(channelName)
+        }
+        if (source == PlaylistTitleSource.SPECIAL_EVENT_GUIDE) {
+            val category = channelName.removeSuffix(" Schedule").trim()
+            return XtreamCategoryTitleFormatter.formatGuideSchedule(category, providerTag)
+        }
+        if (source == PlaylistTitleSource.SPECIAL_EVENT) {
+            val league = providerTag?.trim().orEmpty().ifEmpty {
+                eventSourceUrl?.let { SpecialEventSort.leagueFromEventUrl(it) }
+            }
+            return XtreamCategoryTitleFormatter.formatSpecialEvent(channelName, league)
         }
         return XtreamCategoryTitleFormatter.format(channelName, resolution, source)
     }

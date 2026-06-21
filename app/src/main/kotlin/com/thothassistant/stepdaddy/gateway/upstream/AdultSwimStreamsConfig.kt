@@ -5,7 +5,8 @@ package com.thothassistant.stepdaddy.gateway.upstream
  * @see <a href="https://www.adultswim.com/videos/streams">adultswim.com/videos/streams</a>
  */
 object AdultSwimStreamsConfig {
-    const val GROUP_TITLE = "🎬 | Adult Swim | Marathon"
+    /** Published under [GroupTitleResolver.ENTERTAINMENT] with 24/7 Adult Swim titles. */
+    const val GROUP_TITLE = GroupTitleResolver.ENTERTAINMENT
 
     const val REFERER = "https://www.adultswim.com/"
 

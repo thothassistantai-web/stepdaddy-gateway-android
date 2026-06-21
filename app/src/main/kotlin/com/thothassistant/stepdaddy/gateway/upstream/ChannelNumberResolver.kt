@@ -36,6 +36,7 @@ object ChannelNumberResolver {
         GroupTitleResolver.KIDS to listOf(250..269),
         GroupTitleResolver.INTERNATIONAL to listOf(1400..1549),
         GroupTitleResolver.EN_ESPANOL to listOf(1500..1699),
+        GroupTitleResolver.SPECIAL_EVENTS to listOf(920..989),
         GroupTitleResolver.ADULT to listOf(900..999),
     )
 
@@ -226,12 +227,14 @@ object ChannelNumberResolver {
 
     fun supplementGroup(supplement: SupplementChannel): String =
         when {
-            supplement.id.startsWith("sport:") -> GroupTitleResolver.SPORTS
+            supplement.id.startsWith("sport:") ||
+                supplement.id.startsWith("dlhd-guide:") ||
+                supplement.id.startsWith("dlhd-event:") -> GroupTitleResolver.SPECIAL_EVENTS
+            supplement.id.startsWith("adultswim:") -> GroupTitleResolver.ENTERTAINMENT
             supplement.id.startsWith("iptv:") && supplement.tags.isNotEmpty() ->
                 GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id).groupTitle
             supplement.id.startsWith("sup:") -> supplement.groupTitle
             supplement.id.startsWith("ntv:") -> supplement.groupTitle
-            supplement.id.startsWith("adultswim:") -> supplement.groupTitle
             else -> GroupTitleResolver.ENTERTAINMENT
         }
 

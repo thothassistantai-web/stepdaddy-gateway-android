@@ -11,7 +11,10 @@ class GroupTitleResolverTest {
     }
     assertEquals(2, GroupTitleResolver.groupSortOrder("Locals"))
     assertEquals(1, GroupTitleResolver.groupSortOrder("Premium"))
-    assertEquals(8, GroupTitleResolver.groupSortOrder("🎬 | Adult Swim | Marathon"))
+    assertEquals(0, GroupTitleResolver.groupSortOrder("🎬 | Adult Swim | Marathon"))
+    assertEquals(11, GroupTitleResolver.groupSortOrder("🏈 | Sports | TheTvApp"))
+    assertEquals(11, GroupTitleResolver.groupSortOrder("🎟️ Special Events"))
+    assertEquals(11, GroupTitleResolver.groupSortOrder("🎟️ | Special Events"))
   }
   @Test
   fun `ACC Network USA resolves to Sports with US suffix`() {
@@ -24,7 +27,11 @@ class GroupTitleResolverTest {
     assertEquals("🇺🇸", resolution.flagEmoji)
     assertEquals(
       "ACC Network USA 🇺🇸 US",
-      ChannelTitleNormalizer.displayTitle("ACC Network USA", resolution),
+      ChannelTitleNormalizer.displayTitle(
+        "ACC Network USA",
+        resolution,
+        style = PlaylistTitleStyle.LEGACY,
+      ),
     )
   }
 
@@ -37,7 +44,11 @@ class GroupTitleResolverTest {
     assertEquals("Sports", resolution.groupTitle)
     assertEquals(
       "beIN Sports MAX 4 France 🇫🇷 FR",
-      ChannelTitleNormalizer.displayTitle("beIN Sports MAX 4 France", resolution),
+      ChannelTitleNormalizer.displayTitle(
+        "beIN Sports MAX 4 France",
+        resolution,
+        style = PlaylistTitleStyle.LEGACY,
+      ),
     )
   }
 
@@ -51,7 +62,11 @@ class GroupTitleResolverTest {
     assertEquals("CA", resolution.countryCode)
     assertEquals(
       "Sportsnet 360 🇨🇦 CA",
-      ChannelTitleNormalizer.displayTitle("Sportsnet 360", resolution),
+      ChannelTitleNormalizer.displayTitle(
+        "Sportsnet 360",
+        resolution,
+        style = PlaylistTitleStyle.LEGACY,
+      ),
     )
   }
 
@@ -182,7 +197,11 @@ class GroupTitleResolverTest {
     )
     assertEquals(
       "ACC Network USA 🇺🇸 US",
-      ChannelTitleNormalizer.displayTitle("ACC Network USA [Sports]", resolution),
+      ChannelTitleNormalizer.displayTitle(
+        "ACC Network USA [Sports]",
+        resolution,
+        style = PlaylistTitleStyle.LEGACY,
+      ),
     )
   }
 }

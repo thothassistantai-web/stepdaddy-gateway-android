@@ -7,6 +7,25 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.25] - 2026-06-21
+
+### Added
+
+- **🎟️ Special Events** — merged DaddyLive schedule (`tv.json` / `tv2.json`) + TheTvApp live events in one category
+- **Category guide channels** — PPV, Tennis, Live Events, etc. with full schedule EPG from DaddyLive page titles/times
+- **DaddyLive tv2 streams** — `/dlhd-event-stream/{token}` resolves `embed.st` paths at play time
+- **`SpecialEventsMerger`**, **`DaddyLiveEventResolver`**, **`SpecialEventsEpgGenerator`**
+
+### Changed
+
+- **Adult Swim 24/7** — moved to Entertainment with `US: 24/7 : Adultswim {NAME} ᴿᴬᵂ` titles
+- **Group label** — `🎟️ Special Events` (legacy `🎟️ | Special Events` aliases forward)
+- **Supplement Sports toggle** — enables merged Special Events (DaddyLive + TheTvApp)
+
+### Fixed
+
+- **EPG HEAD** — duplicate `Content-Length` on `/epg.xml` HEAD (TiviMate playlist update failure)
+
 ## [1.0.24] - 2026-06-21
 
 ### Added

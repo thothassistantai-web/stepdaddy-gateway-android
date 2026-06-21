@@ -1,0 +1,30 @@
+{
+  "Sunday 21st June 2026 - Schedule Time UK GMT": {
+    "PPV Events": [
+      {
+        "time": "20:00",
+        "event": "NASCAR Cup Series Anduril 250",
+        "channels": [
+          {
+            "channel_name": "Prime Video",
+            "channel_id": "153"
+          }
+        ],
+        "channels2": []
+      }
+    ],
+    "Tennis": [
+      {
+        "time": "18:00",
+        "event": "Wimbledon Centre Court",
+        "channels": [
+          {
+            "channel_name": "Tennis Stream",
+            "channel_id": "110"
+          }
+        ],
+        "channels2": []
+      }
+    ]
+  }
+}

@@ -143,8 +143,8 @@ class GatewayEnvironment(context: Context) {
         }
 
     /**
-     * When true, fetches live sports events from thetvapp.link (embed chain).
-     * Independent of [supplementBaseUrl]; off by default.
+     * When true, merges Special Events from DaddyLive schedule (tv.json/tv2.json) and TheTvApp embeds.
+     * Off by default.
      */
     var supplementSportsEnabled: Boolean
         get() = prefs.getBoolean(KEY_SUPPLEMENT_SPORTS_ENABLED, BuildConfig.DEFAULT_SUPPLEMENT_SPORTS_ENABLED)

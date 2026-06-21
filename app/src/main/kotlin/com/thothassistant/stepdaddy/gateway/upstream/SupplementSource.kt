@@ -6,7 +6,7 @@ import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.epg.FastChannelTvgIdResolver
 import com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex
-import com.thothassistant.stepdaddy.gateway.epg.TheTvAppSportsEpgGenerator
+import com.thothassistant.stepdaddy.gateway.epg.SpecialEventsEpgGenerator
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import java.io.File
@@ -52,6 +52,7 @@ class SupplementSource(
     )
 
     private val adultSwimSource = AdultSwimStreamsSource(AdultSwimStreamsSource.defaultClient())
+    private val dlhdEventResolver = DaddyLiveEventResolver(httpClient)
 
     data class SyncSnapshot(
         val blockedTheTvApp: Int = 0,
@@ -59,6 +60,8 @@ class SupplementSource(
         val blockedTokenProxy: Int = 0,
         val moveOnJoyChannels: Int = 0,
         val sportsChannels: Int = 0,
+        val specialEventGuides: Int = 0,
+        val dlhdEventStreams: Int = 0,
         val sportsEventsScanned: Int = 0,
         val iptvOrgChannels: Int = 0,
         val iptvOrgPlaylistsFetched: Int = 0,
@@ -201,9 +204,21 @@ class SupplementSource(
     }
 
     fun sportsTvgIdsForEpg(): Set<String> =
-        cached.filter { it.id.startsWith("sport:") }
+        cached.filter {
+            it.id.startsWith("sport:") ||
+                it.id.startsWith("dlhd-guide:") ||
+                it.id.startsWith("dlhd-event:")
+        }
             .mapNotNull { it.tvgId?.trim()?.takeIf { id -> id.isNotEmpty() } }
             .toSet()
+
+    fun dlhdEventChannel(token: String): SupplementChannel? {
+        val trimmed = token.trim()
+        if (trimmed.isEmpty()) return null
+        return cached.firstOrNull {
+            it.id == "dlhd-event:$trimmed" || it.id.removePrefix("dlhd-event:") == trimmed
+        }
+    }
 
     fun fastTvgIdsForEpg(): Set<String> =
         cached.filter { it.id.startsWith("iptv:") }
@@ -316,26 +331,46 @@ class SupplementSource(
             emptyList()
         }
 
-        val sports = if (sportsEnabled()) {
-            runCatching { sportsResolver.resolveFromNetwork() }
+        var tvAppEventsScanned = 0
+        var specialEventGuides = 0
+        var dlhdEventStreams = 0
+        val specialEvents = if (sportsEnabled()) {
+            val theTvApp = runCatching { sportsResolver.resolveFromNetwork() }
                 .getOrElse { exc ->
-                    Log.w(TAG, "Sports resolver failed", exc)
+                    Log.w(TAG, "TheTvApp sports resolver failed", exc)
                     emptyList<SupplementChannel>() to TheTvAppSportsResolver.ResolveStats()
                 }
-                .let { (channels, _) ->
-                    val live = channels.take(SupplementConfig.MAX_SPORTS_EVENTS)
-                    if (live.isNotEmpty()) {
-                        runCatching {
-                            TheTvAppSportsEpgGenerator.writeXml(
-                                TheTvAppSportsEpgGenerator.programmesForChannels(live),
-                                store.sportsEpgFile,
-                            )
-                        }.onFailure { exc ->
-                            Log.w(TAG, "Sports EPG write failed", exc)
-                        }
-                    }
-                    live
+            val (tvAppChannels, tvAppStats) = theTvApp
+            tvAppEventsScanned = tvAppStats.eventsScanned
+            val bundle = runCatching {
+                SpecialEventsMerger.merge(
+                    dlhdBaseUrl = environment.dlhdBaseUrl,
+                    dlhdResolver = dlhdEventResolver,
+                    theTvAppChannels = tvAppChannels,
+                    maxStreams = SupplementConfig.MAX_SPECIAL_EVENT_STREAMS,
+                )
+            }.getOrElse { exc ->
+                Log.w(TAG, "Special Events merge failed", exc)
+                SpecialEventsMerger.EpgBundle(
+                    channels = tvAppChannels.map { it.copy(groupTitle = GroupTitleResolver.SPECIAL_EVENTS) },
+                )
+            }
+            specialEventGuides = bundle.channels.count { it.id.startsWith("dlhd-guide:") }
+            dlhdEventStreams = bundle.channels.count { it.id.startsWith("dlhd-event:") }
+            if (bundle.channels.isNotEmpty()) {
+                runCatching {
+                    SpecialEventsEpgGenerator.writeXml(
+                        SpecialEventsEpgGenerator.programmesForBundle(
+                            bundle.channels,
+                            bundle.guideProgrammes,
+                        ),
+                        store.sportsEpgFile,
+                    )
+                }.onFailure { exc ->
+                    Log.w(TAG, "Special Events EPG write failed", exc)
                 }
+            }
+            bundle.channels
         } else {
             emptyList()
         }
@@ -428,7 +463,10 @@ class SupplementSource(
             blockedTvPass = filterResult.blockedTvPass,
             blockedTokenProxy = filterResult.blockedTokenProxy,
             moveOnJoyChannels = sidecar.size,
-            sportsChannels = sports.size,
+            sportsChannels = specialEvents.size,
+            specialEventGuides = specialEventGuides,
+            dlhdEventStreams = dlhdEventStreams,
+            sportsEventsScanned = tvAppEventsScanned,
             iptvOrgChannels = iptvOrg.size,
             iptvOrgPlaylistsFetched = iptvStats.playlistsFetched,
             iptvOrgPlaylistsFailed = iptvStats.playlistsFailed,
@@ -440,7 +478,7 @@ class SupplementSource(
             adultSwimProbeOk = adultSwimStats.probeOk,
         )
 
-        sidecar + sports + iptvOrg + ntvCx + adultSwim
+        sidecar + specialEvents + iptvOrg + ntvCx + adultSwim
     }
 
     private fun downloadEpg(base: String) {

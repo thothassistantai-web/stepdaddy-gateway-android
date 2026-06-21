@@ -27,6 +27,7 @@ object CategoryOverrideStore {
         GroupTitleResolver.EXTRA_247,
         GroupTitleResolver.INTERNATIONAL,
         GroupTitleResolver.EN_ESPANOL,
+        GroupTitleResolver.SPECIAL_EVENTS,
         GroupTitleResolver.ADULT,
     )
 

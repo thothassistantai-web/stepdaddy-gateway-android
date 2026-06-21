@@ -65,4 +65,16 @@ class XtreamCategoryTitleFormatterTest {
         )
         assertEquals("US: LIFETIME NETWORK HD", title)
     }
+
+    @Test
+    fun formatAdultSwimMarathon_uses247Prefix() {
+        val title = XtreamCategoryTitleFormatter.formatAdultSwimMarathon("Rick and Morty")
+        assertEquals("US: 24/7 : Adultswim RICK AND MORTY ᴿᴬᵂ", title)
+    }
+
+    @Test
+    fun formatSpecialEvent_includesLeagueAndLiveSuffix() {
+        val title = XtreamCategoryTitleFormatter.formatSpecialEvent("Lakers vs Celtics", "NBA")
+        assertEquals("US: NBA LAKERS VS CELTICS ᴸᴵⱽᴱ", title)
+    }
 }

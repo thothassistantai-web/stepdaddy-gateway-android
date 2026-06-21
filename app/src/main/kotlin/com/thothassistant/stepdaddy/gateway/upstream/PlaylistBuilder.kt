@@ -66,13 +66,14 @@ object PlaylistBuilder {
             val groupTitle = supplementPlaylistGroupTitle(supplement)
             rows += PlaylistRow(
                 groupOrder = GroupTitleResolver.groupSortOrder(groupTitle),
+                intraGroupOrder = supplementIntraGroupOrder(supplement),
                 chno = chno,
                 extinf = "#EXTINF:-1 ${supplementExtinfAttrs(supplement, base, logoResolver, chno, title, titleStyle)},$title",
-                stream = supplementStreamLine(supplement, base),
+                stream = supplementStreamLine(supplement, base, dlhdOrigin),
             )
         }
 
-        rows.sortWith(compareBy({ it.groupOrder }, { it.chno }))
+        rows.sortWith(compareBy({ it.groupOrder }, { it.intraGroupOrder }, { it.chno }))
 
         val estimatedBytes = rows.size * 420 + 128
         val out = StringBuilder(estimatedBytes.coerceAtMost(8 * 1024 * 1024))
@@ -86,6 +87,7 @@ object PlaylistBuilder {
 
     private data class PlaylistRow(
         val groupOrder: Int,
+        val intraGroupOrder: Int = 0,
         val chno: Int,
         val extinf: String,
         val stream: String,
@@ -129,7 +131,9 @@ object PlaylistBuilder {
         val resolution = supplementResolution(supplement)
         val source = supplementTitleSource(supplement, resolution)
         return if (supplement.id.startsWith("iptv:") || supplement.id.startsWith("ntv:") ||
-            supplement.id.startsWith("adultswim:") || titleStyle == PlaylistTitleStyle.XTREAM_CATEGORY
+            supplement.id.startsWith("adultswim:") || supplement.id.startsWith("sport:") ||
+            supplement.id.startsWith("dlhd-guide:") || supplement.id.startsWith("dlhd-event:") ||
+            titleStyle == PlaylistTitleStyle.XTREAM_CATEGORY
         ) {
             ChannelTitleNormalizer.supplementDisplayTitle(
                 channelName = supplement.name,
@@ -137,6 +141,7 @@ object PlaylistBuilder {
                 providerTag = supplement.providerTag,
                 style = titleStyle,
                 source = source,
+                eventSourceUrl = supplement.eventSourceUrl,
             )
         } else {
             escape(supplement.name)
@@ -148,16 +153,53 @@ object PlaylistBuilder {
         resolution: GroupTitleResolver.Resolution,
     ): PlaylistTitleSource = when {
         resolution.isAdult -> PlaylistTitleSource.ADULT
-        supplement.id.startsWith("iptv:") ||
-            supplement.id.startsWith("ntv:") ||
-            supplement.id.startsWith("adultswim:") -> PlaylistTitleSource.FAST
-        supplement.id.startsWith("sport:") -> PlaylistTitleSource.SIDECAR
+        supplement.id.startsWith("adultswim:") -> PlaylistTitleSource.ADULT_SWIM_247
+        supplement.id.startsWith("dlhd-guide:") -> PlaylistTitleSource.SPECIAL_EVENT_GUIDE
+        supplement.id.startsWith("sport:") || supplement.id.startsWith("dlhd-event:") -> PlaylistTitleSource.SPECIAL_EVENT
+        supplement.id.startsWith("iptv:") || supplement.id.startsWith("ntv:") -> PlaylistTitleSource.FAST
         else -> PlaylistTitleSource.SIDECAR
+    }
+
+    private fun supplementIntraGroupOrder(supplement: SupplementChannel): Int {
+        val leagueKey = SpecialEventSort.sortKey(
+            providerTag = supplement.providerTag,
+            channelName = supplement.name,
+            eventUrl = supplement.eventSourceUrl,
+        )
+        return when {
+            supplement.id.startsWith("dlhd-guide:") -> leagueKey * 1_000
+            supplement.id.startsWith("sport:") || supplement.id.startsWith("dlhd-event:") ->
+                leagueKey * 1_000 + 500 + supplement.name.lowercase().hashCode().and(0xFF)
+            else -> 0
+        }
     }
 
     private fun supplementResolution(supplement: SupplementChannel): GroupTitleResolver.Resolution {
         if (supplement.id.startsWith("iptv:")) {
             return GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id)
+        }
+        if (supplement.id.startsWith("adultswim:")) {
+            return GroupTitleResolver.Resolution(
+                groupTitle = GroupTitleResolver.ENTERTAINMENT,
+                categoryLabel = GroupTitleResolver.ENTERTAINMENT,
+                countryCode = "US",
+                flagEmoji = "🇺🇸",
+                isAdult = false,
+                appendCountrySuffix = true,
+            )
+        }
+        if (supplement.id.startsWith("sport:") ||
+            supplement.id.startsWith("dlhd-guide:") ||
+            supplement.id.startsWith("dlhd-event:")
+        ) {
+            return GroupTitleResolver.Resolution(
+                groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+                categoryLabel = GroupTitleResolver.SPECIAL_EVENTS,
+                countryCode = "US",
+                flagEmoji = "🇺🇸",
+                isAdult = false,
+                appendCountrySuffix = true,
+            )
         }
         return GroupTitleResolver.Resolution(
             groupTitle = supplement.groupTitle,
@@ -175,7 +217,24 @@ object PlaylistBuilder {
         return "$stream|User-Agent=$TIVIMATE_USER_AGENT|Referer=$origin/|Origin=$origin"
     }
 
-    private fun supplementStreamLine(supplement: SupplementChannel, base: String): String {
+    private fun supplementStreamLine(
+        supplement: SupplementChannel,
+        base: String,
+        dlhdOrigin: String,
+    ): String {
+        if (supplement.id.startsWith("dlhd-guide:")) {
+            return "${base.trimEnd('/')}/dlhd-event-guide/slate.m3u8|User-Agent=$TIVIMATE_USER_AGENT"
+        }
+        if (supplement.id.startsWith("dlhd-event:")) {
+            val key = supplement.dlhdEventStreamKey?.trim().orEmpty()
+            if (key.startsWith("tv|", ignoreCase = true)) {
+                return tivimateStreamLine(base, key.substringAfter("|"), dlhdOrigin)
+            }
+            val token = supplement.id.removePrefix("dlhd-event:")
+            val stream = "${base.trimEnd('/')}/dlhd-event-stream/$token.m3u8"
+            val referer = DlhdEventStreamResolver.EMBED_REFERER
+            return "$stream|User-Agent=$TIVIMATE_USER_AGENT|Referer=$referer|Origin=${referer.trimEnd('/')}"
+        }
         if (supplement.id.startsWith("ntv:")) {
             val token = supplement.id.removePrefix("ntv:")
             val stream = "${base.trimEnd('/')}/ntv-stream/$token.m3u8"
@@ -222,12 +281,14 @@ object PlaylistBuilder {
     private fun supplementPlaylistGroupTitle(
         supplement: SupplementChannel,
         resolution: GroupTitleResolver.Resolution = supplementResolution(supplement),
-    ): String =
-        if (supplement.id.startsWith("iptv:")) {
-            resolution.groupTitle
-        } else {
-            supplement.groupTitle
-        }
+    ): String = when {
+        supplement.id.startsWith("adultswim:") -> GroupTitleResolver.ENTERTAINMENT
+        supplement.id.startsWith("sport:") ||
+            supplement.id.startsWith("dlhd-guide:") ||
+            supplement.id.startsWith("dlhd-event:") -> GroupTitleResolver.SPECIAL_EVENTS
+        supplement.id.startsWith("iptv:") -> resolution.groupTitle
+        else -> supplement.groupTitle
+    }
 
     private fun escape(value: String): String =
         value

@@ -7,6 +7,7 @@ import com.thothassistant.stepdaddy.gateway.routes.AdminRoutes
 import com.thothassistant.stepdaddy.gateway.routes.ContentRoutes
 import com.thothassistant.stepdaddy.gateway.network.createGatewayNetworkPlugin
 import com.thothassistant.stepdaddy.gateway.network.GatewayNetworkGuard
+import com.thothassistant.stepdaddy.gateway.routes.DlhdEventStreamRoutes
 import com.thothassistant.stepdaddy.gateway.routes.EpgRoutes
 import com.thothassistant.stepdaddy.gateway.routes.HealthRoutes
 import com.thothassistant.stepdaddy.gateway.routes.LogoRoutes
@@ -70,6 +71,7 @@ class GatewayServer(
         )
         playlistRoutes = routes
         val streamRoutes = StreamRoutes(environment, client)
+        val dlhdEventStreamRoutes = DlhdEventStreamRoutes(environment, supplementSource)
         val ntvStreamRoutes = NtvStreamRoutes(
             environment,
             supplementSource,
@@ -114,6 +116,14 @@ class GatewayServer(
                 route("/ntv-stream/{token}.m3u8") {
                     get { ntvStreamRoutes.tivimateStream(call, call.parameters["token"].orEmpty()) }
                     head { ntvStreamRoutes.tivimateStream(call, call.parameters["token"].orEmpty()) }
+                }
+                route("/dlhd-event-stream/{token}.m3u8") {
+                    get { dlhdEventStreamRoutes.eventStream(call, call.parameters["token"].orEmpty()) }
+                    head { dlhdEventStreamRoutes.eventStream(call, call.parameters["token"].orEmpty()) }
+                }
+                route("/dlhd-event-guide/slate.m3u8") {
+                    get { dlhdEventStreamRoutes.guideStream(call) }
+                    head { dlhdEventStreamRoutes.guideStream(call) }
                 }
                 route("/stream/{channelId}.m3u8") {
                     get { streamRoutes.genericStream(call, call.parameters["channelId"].orEmpty()) }

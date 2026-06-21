@@ -68,12 +68,28 @@ Playlist emits channels in this group order (then `tvg-chno` within each group):
 6. Kids
 7. Documentary
 8. Music
-9. 📡 | Extra | 24/7 (incl. Adult Swim marathon)
+9. 📡 | Extra | 24/7
 10. International
 11. En Español
-12. XXX Adult
+12. 🎟️ Special Events (DaddyLive schedule + TheTvApp; sorted by sport/league)
+13. XXX Adult
 
-Legacy labels `Locals` → Local Channels slot; `Premium` → Movies slot.
+Legacy labels `Locals` → Local Channels slot; `Premium` → Movies slot; `🎬 | Adult Swim | Marathon` → Entertainment; `🏈 | Sports | TheTvApp` → Special Events.
+
+### Adult Swim 24/7 marathons
+
+Published under **Entertainment** (not Extra 24/7). Xtream-style display title:
+
+`US: 24/7 : Adultswim {CHANNEL NAME} ᴿᴬᵂ`
+
+### Special Events (DaddyLive + TheTvApp)
+
+Live event supplements (`dlhd-guide:*`, `dlhd-event:*`, `sport:*` ids) use group **🎟️ Special Events** at the bottom of the sidebar (above XXX Adult).
+
+- **Guide rows** (`dlhd-guide:*`) — one per event category (PPV, Tennis, …) with full schedule EPG from DaddyLive `tv.json` / `tv2.json`
+- **Stream rows** — DaddyLive numeric ids use `/tivimate-stream/{id}`; tv2 path ids use `/dlhd-event-stream/{token}`; TheTvApp uses `sport:*` embed URLs
+
+Display title: `US: {LEAGUE} {EVENT NAME} ᴸᴵⱽᴱ` (guides: `US: {CATEGORY} SCHEDULE ᴸᴵⱽᴱ`)
 
 Within each group: US → CA → other countries A→Z, then channel name.
 

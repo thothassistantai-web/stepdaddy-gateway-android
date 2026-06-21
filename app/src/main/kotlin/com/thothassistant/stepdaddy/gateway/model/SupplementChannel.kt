@@ -17,6 +17,10 @@ data class SupplementChannel(
     /** TiviMate pipe Referer= when set (sports embed CDN, MoveOnJoy, etc.). */
     val referer: String? = null,
     val origin: String? = null,
+    /** TheTvApp (or similar) event page URL — used for league sort in Special Events. */
+    val eventSourceUrl: String? = null,
     /** Play-time resolve key for ntv.cx 24/7 (`server|name|regionOrStreamUrl`). */
     val ntvCdnLiveKey: String? = null,
+    /** DaddyLive event stream key: `tv|153` or `tv2|admin/ppv-.../1`. */
+    val dlhdEventStreamKey: String? = null,
 )

@@ -37,15 +37,18 @@ class TheTvAppSportsResolver(
             val playlist = fetchPlaylist(embedId, embedReferer) ?: continue
             val variant = firstVariantUrl(playlist) ?: continue
             val name = eventTitle(eventHtml, eventUrl)
+            val league = SpecialEventSort.leagueFromEventUrl(eventUrl)
             channels += SupplementChannel(
                 id = "sport:${shortHash(eventUrl)}",
                 name = name,
                 tvgId = SupplementTvgIdResolver.forSportsEvent(eventUrl),
                 logo = null,
-                groupTitle = SupplementConfig.SPORTS_GROUP_TITLE,
+                groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
                 streamUrl = variant,
+                providerTag = league,
                 referer = embedReferer,
                 origin = EMBED_ORIGIN,
+                eventSourceUrl = eventUrl,
             )
         }
         return channels to ResolveStats(

@@ -12,6 +12,7 @@ import io.ktor.server.request.httpMethod
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytes
+import io.ktor.server.response.respondFile
 import io.ktor.server.response.respondOutputStream
 import io.ktor.server.response.respondText
 import java.io.File
@@ -69,16 +70,9 @@ class EpgRoutes(
 
     private suspend fun respondXmlFile(call: ApplicationCall, file: File, stale: Boolean) {
         call.response.header(HttpHeaders.CacheControl, "public, max-age=300")
-        call.response.header(HttpHeaders.ContentLength, file.length().toString())
         if (stale) {
             call.response.header("X-EPG-Status", "stale")
         }
-        if (call.request.httpMethod == HttpMethod.Head) {
-            call.respond(HttpStatusCode.OK)
-            return
-        }
-        call.respondOutputStream(ContentType.Application.Xml, HttpStatusCode.OK) {
-            file.inputStream().use { input -> input.copyTo(this) }
-        }
+        call.respondFile(file)
     }
 }

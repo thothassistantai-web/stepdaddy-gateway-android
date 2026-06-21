@@ -15,6 +15,7 @@ object GroupTitleResolver {
     const val EN_ESPANOL = "En Español"
     const val ADULT = "XXX Adult"
     const val EXTRA_247 = "📡 | Extra | 24/7"
+    const val SPECIAL_EVENTS = "🎟️ Special Events"
 
     /** Default sort slot for unknown / legacy group-title labels. */
     const val DEFAULT_GROUP_SORT_ORDER = 50
@@ -40,7 +41,7 @@ object GroupTitleResolver {
             key.equals("Locals", ignoreCase = true) -> GROUP_ORDER.getValue(LOCAL_CHANNELS)
             key.equals("Premium", ignoreCase = true) -> GROUP_ORDER.getValue(MOVIES)
             key.startsWith("🌐 | iptv-org") -> GROUP_ORDER.getValue(INTERNATIONAL)
-            key.startsWith("🏈 | Sports") -> GROUP_ORDER.getValue(SPORTS)
+            key.startsWith("🏈 | Sports") -> GROUP_ORDER.getValue(SPECIAL_EVENTS)
             else -> DEFAULT_GROUP_SORT_ORDER
         }
     }
@@ -58,6 +59,7 @@ object GroupTitleResolver {
         EXTRA_247,
         INTERNATIONAL,
         EN_ESPANOL,
+        SPECIAL_EVENTS,
         ADULT,
     )
 
@@ -128,12 +130,15 @@ object GroupTitleResolver {
         EXTRA_247 to 8,
         INTERNATIONAL to 9,
         EN_ESPANOL to 10,
-        ADULT to 11,
+        SPECIAL_EVENTS to 11,
+        ADULT to 12,
     )
 
     /** Supplement / legacy group-title labels that share a canonical sort slot. */
     private val GROUP_TITLE_ALIASES = mapOf(
-        "🎬 | Adult Swim | Marathon" to EXTRA_247,
+        "🏈 | Sports | TheTvApp" to SPECIAL_EVENTS,
+        "🎟️ | Special Events" to SPECIAL_EVENTS,
+        "🎬 | Adult Swim | Marathon" to ENTERTAINMENT,
     )
 
     private val SPORT_TAGS = setOf(

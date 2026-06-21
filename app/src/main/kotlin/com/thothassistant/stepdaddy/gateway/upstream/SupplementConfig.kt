@@ -3,7 +3,17 @@ package com.thothassistant.stepdaddy.gateway.upstream
 object SupplementConfig {
     const val MAX_CHANNELS = 100
 
-    const val MAX_SPORTS_EVENTS = 12
+    /** Max playable event streams (DaddyLive + TheTvApp combined). */
+    const val MAX_SPECIAL_EVENT_STREAMS = 60
+
+    /** @deprecated Use [MAX_SPECIAL_EVENT_STREAMS]. */
+    const val MAX_SPORTS_EVENTS = MAX_SPECIAL_EVENT_STREAMS
+
+    const val MAX_JSON_BYTES = 4 * 1024 * 1024
+
+    fun dlhdTvJsonUrl(base: String): String = "${base.trimEnd('/')}/cache/tv/tv.json"
+
+    fun dlhdTv2JsonUrl(base: String): String = "${base.trimEnd('/')}/cache/tv2/tv2.json"
 
     const val SYNC_INTERVAL_MS = 6 * 3600_000L
 
@@ -18,7 +28,8 @@ object SupplementConfig {
 
     const val GROUP_PREFIX = "📡 | Extra"
 
-    const val SPORTS_GROUP_TITLE = "🏈 | Sports | TheTvApp"
+    /** @deprecated Stored on disk from older builds; maps to [GroupTitleResolver.SPECIAL_EVENTS]. */
+    const val LEGACY_SPORTS_GROUP_TITLE = "🏈 | Sports | TheTvApp"
 
     const val MOVEONJOY_REFERER = "https://moveonjoy.com/"
 
