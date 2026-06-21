@@ -5,6 +5,7 @@ import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.epg.EpgManager
 import com.thothassistant.stepdaddy.gateway.epg.EpgShareIdBridge
 import com.thothassistant.stepdaddy.gateway.epg.EpgStore
+import com.thothassistant.stepdaddy.gateway.epg.TvtvUsEpgFetcher
 import com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex
 import com.thothassistant.stepdaddy.gateway.epg.TvgIdResolver
 import com.thothassistant.stepdaddy.gateway.sidecar.EmbeddedSidecarRepository
@@ -127,11 +128,13 @@ class GatewayApp : Application() {
                     nameIndex = _iptvOrgNameIndex!!,
                     epgChannelMapper = _epgChannelMapper!!,
                 )
+                val tvtvFetcher = TvtvUsEpgFetcher(this@GatewayApp, store)
                 _epgManager = EpgManager(
                     store,
                     _epgChannelMapper!!,
                     _supplementSource!!,
                     _epgShareIdBridge!!,
+                    tvtvFetcher,
                 )
             }
         }

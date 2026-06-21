@@ -814,9 +814,10 @@ class DaddyLiveClient(
         val name = channelNameOverrides.nameFor(id, upstreamName)
         val tags = channelMetaStore?.tagsFor(upstreamName).orEmpty()
             .ifEmpty { channelMetaStore?.tagsFor(name).orEmpty() }
-        val tvgId = cachedTvgId?.takeIf { it.isNotBlank() }
-            ?: epgChannelMapper?.tvgIdFor(id, upstreamName)
+        val mappedId = epgChannelMapper?.tvgIdFor(id, upstreamName)
             ?: epgChannelMapper?.tvgIdFor(id, name)
+        val tvgId = mappedId?.takeIf { it.isNotBlank() }
+            ?: cachedTvgId?.takeIf { it.isNotBlank() }
             ?: if (fastPath) null else tvgIdResolver?.resolve(name, groupTitle = tags.firstOrNull())?.tvgId
         val metaLogo = channelMetaStore?.logoFor(upstreamName)
             ?: channelMetaStore?.logoFor(name)

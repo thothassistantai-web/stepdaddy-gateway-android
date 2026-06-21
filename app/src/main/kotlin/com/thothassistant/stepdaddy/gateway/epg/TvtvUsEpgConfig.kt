@@ -1,0 +1,40 @@
+package com.thothassistant.stepdaddy.gateway.epg
+
+/**
+ * Public tvtv.us grid API for US cable/OTA programme data (iptv-org lineup USA-NY71652-X).
+ * Used as on-device gap-fill when epgshare leaves mapped Xtream-style ids empty.
+ */
+object TvtvUsEpgConfig {
+    const val LINEUP_ID = "USA-NY71652-X"
+
+    const val GRID_URL_TEMPLATE =
+        "https://www.tvtv.us/api/v1/lineup/$LINEUP_ID/grid/{start}/{end}/{site_id}"
+
+    const val BRIDGE_ASSET = "tvtv_id_bridge.json"
+
+    /** Re-download grid JSON after this age. */
+    const val GRID_CACHE_TTL_MS = 3600_000L
+
+    /** Max bytes per grid response. */
+    const val MAX_GRID_BYTES = 4 * 1024 * 1024
+
+    /** tvtv.us returns HTTP 400 when the grid window exceeds ~24 hours. */
+    const val MAX_GRID_WINDOW_HOURS = 24L
+
+    /** Cap grid fetches per build; tvtv.us rate-limits above ~20–30 rapid requests. */
+    const val MAX_CHANNELS_PER_BUILD = 24
+
+    /** Pause between grid HTTP calls to avoid 429 rate limits. */
+    const val GRID_REQUEST_DELAY_MS = 1_500L
+
+    const val DOWNLOAD_TIMEOUT_MS = 45_000L
+
+    const val USER_AGENT =
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+
+    fun gridUrl(startIso: String, endIso: String, siteId: String): String =
+        GRID_URL_TEMPLATE
+            .replace("{start}", startIso)
+            .replace("{end}", endIso)
+            .replace("{site_id}", siteId)
+}

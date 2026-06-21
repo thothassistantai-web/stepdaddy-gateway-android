@@ -7,6 +7,21 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.22] - 2026-06-21
+
+### Added
+
+- **tvtv.us cable EPG gap-fill** — on-device fetch from public Gracenote/TMS grid API (no Stalker/Xtream login); `TvtvUsEpgFetcher` + `tvtv_id_bridge.json` (~2k playlist id → site_id mappings)
+- **`scripts/generate-tvtv-id-bridge.py`** — rebuild bridge from iptv-org `tvtv.us.channels.xml` + bundled playlist ids
+- **`scripts/fetch-xtream-epg-crosswalk.py`** — optional crosswalk export via env credentials (research only)
+
+### Fixed
+
+- **Lifetime EPG mappings** — `LifetimeNetwork.us` / `LifetimeMovieNetwork.us` with tvtv.us schedules; no longer `USANetwork.us` or epgshare NCIS mis-tags
+- **DaddyLive tvg-id load order** — bundled/runtime mapper overrides win over stale disk cache
+- **PLEX FAST overrides** — Love & Drama and geo-blocked Movie Favorites
+- **tvtv.us rate limits** — 24h grid windows, 24 channels/build cap, 1.5s request delay, main playlist prioritized
+
 ## [1.0.21] - 2026-06-21
 
 ### Added

@@ -18,11 +18,12 @@ class EpgManager(
     private val mapper: EpgChannelMapper,
     private val supplementSource: SupplementSource? = null,
     idBridge: EpgShareIdBridge? = null,
+    tvtvFetcher: TvtvUsEpgFetcher? = null,
     builder: LightEpgBuilder? = null,
 ) {
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
   private val buildMutex = Mutex()
-  private val epgBuilder = builder ?: LightEpgBuilder(store, idBridge)
+  private val epgBuilder = builder ?: LightEpgBuilder(store, idBridge, tvtvFetcher)
   @Volatile
   private var buildInFlight = false
 

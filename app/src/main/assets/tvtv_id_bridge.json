@@ -1,0 +1,8587 @@
+{
+  "version": 1,
+  "bridge_count": 2145,
+  "generated_at": "2026-06-21T17:32:15.809181+00:00",
+  "bridge": {
+    "3ABNEnglish.us": {
+      "site_id": "10002",
+      "xmltv_id": "3ABNEnglish.us"
+    },
+    "5StarMax.us": {
+      "site_id": "25620",
+      "xmltv_id": "5StarMax.us"
+    },
+    "AajTak.in": {
+      "site_id": "48512",
+      "xmltv_id": "AajTak.in"
+    },
+    "AasthaBhajan.in": {
+      "site_id": "71402",
+      "xmltv_id": "AasthaBhajan.in"
+    },
+    "ABC.us": {
+      "site_id": "10003",
+      "xmltv_id": "ABC.us"
+    },
+    "ABCNewsLive.us": {
+      "site_id": "113380",
+      "xmltv_id": "ABCNewsLive.us"
+    },
+    "ABCSpark.ca": {
+      "site_id": "75031",
+      "xmltv_id": "ABCSpark.ca"
+    },
+    "ACCNetwork.us": {
+      "site_id": "111871",
+      "xmltv_id": "ACCNetwork.us"
+    },
+    "AccuWeatherNOW.us": {
+      "site_id": "56193",
+      "xmltv_id": "AccuWeatherNOW.us"
+    },
+    "ActionMax.us": {
+      "site_id": "18433",
+      "xmltv_id": "ActionMax.us"
+    },
+    "AdrenalinaSportsNetwork.us": {
+      "site_id": "83162",
+      "xmltv_id": "AdrenalinaSportsNetwork.us"
+    },
+    "AdultSwim.us": {
+      "site_id": "83166",
+      "xmltv_id": "AdultSwim.us"
+    },
+    "AE.us": {
+      "site_id": "10035",
+      "xmltv_id": "AE.us"
+    },
+    "AFNSpectrum.us": {
+      "site_id": "106653",
+      "xmltv_id": "AFNSpectrum.us"
+    },
+    "AFNSports.us": {
+      "site_id": "45901",
+      "xmltv_id": "AFNSports.us"
+    },
+    "AFNSports2.us": {
+      "site_id": "46634",
+      "xmltv_id": "AFNSports2.us"
+    },
+    "AlResalah.sa": {
+      "site_id": "31969",
+      "xmltv_id": "AlResalah.sa"
+    },
+    "AltitudeSports.us": {
+      "site_id": "44263",
+      "xmltv_id": "AltitudeSports.us"
+    },
+    "AMC.us": {
+      "site_id": "10021",
+      "xmltv_id": "AMC.us"
+    },
+    "AMCPlus.us": {
+      "site_id": "114759",
+      "xmltv_id": "AMCPlus.us"
+    },
+    "AmericanHeroesChannel.us": {
+      "site_id": "78808",
+      "xmltv_id": "AmericanHeroesChannel.us"
+    },
+    "AmericasAuctionChannel.us": {
+      "site_id": "50180",
+      "xmltv_id": "AmericasAuctionChannel.us"
+    },
+    "AMItv.ca": {
+      "site_id": "10756",
+      "xmltv_id": "AMItv.ca"
+    },
+    "AMP2.us": {
+      "site_id": "94852",
+      "xmltv_id": "AMP2.us"
+    },
+    "AnimalPlanet.us": {
+      "site_id": "16331",
+      "xmltv_id": "AnimalPlanet.us"
+    },
+    "ANT1Satellite.gr": {
+      "site_id": "16800",
+      "xmltv_id": "ANT1Satellite.gr"
+    },
+    "AntennaTV.us": {
+      "site_id": "70248",
+      "xmltv_id": "AntennaTV.us"
+    },
+    "ArirangWorld.kr": {
+      "site_id": "10575",
+      "xmltv_id": "ArirangWorld.kr"
+    },
+    "ARTAmerica.sa": {
+      "site_id": "19979",
+      "xmltv_id": "ARTAmerica.sa"
+    },
+    "ARYZauq.pk": {
+      "site_id": "70524",
+      "xmltv_id": "ARYZauq.pk"
+    },
+    "ASide.ca": {
+      "site_id": "65409",
+      "xmltv_id": "ASide.ca"
+    },
+    "Aspire.us": {
+      "site_id": "76126",
+      "xmltv_id": "Aspire.us"
+    },
+    "ATNColorsRishtey.ca": {
+      "site_id": "17038",
+      "xmltv_id": "ATNColorsRishtey.ca"
+    },
+    "ATNMovies.ca": {
+      "site_id": "11052",
+      "xmltv_id": "ATNMovies.ca"
+    },
+    "ATNPunjabi5.ca": {
+      "site_id": "17040",
+      "xmltv_id": "ATNPunjabi5.ca"
+    },
+    "ATNPunjabiPlus.ca": {
+      "site_id": "17043",
+      "xmltv_id": "ATNPunjabiPlus.ca"
+    },
+    "ATNZoom.ca": {
+      "site_id": "10246",
+      "xmltv_id": "ATNZoom.ca"
+    },
+    "ATTSportsNetPittsburgh.us": {
+      "site_id": "26028",
+      "xmltv_id": "ATTSportsNetPittsburgh.us"
+    },
+    "ATTSportsNetRockyMountain.us": {
+      "site_id": "96959",
+      "xmltv_id": "ATTSportsNetRockyMountain.us"
+    },
+    "ATTSportsNetRockyMountainUtah.us": {
+      "site_id": "50236",
+      "xmltv_id": "ATTSportsNetRockyMountainUtah.us"
+    },
+    "ATTSportsNetRockyMountainWest.us": {
+      "site_id": "11065",
+      "xmltv_id": "ATTSportsNetRockyMountainWest.us"
+    },
+    "ATTSportsNetSouthwest.us": {
+      "site_id": "77744",
+      "xmltv_id": "ATTSportsNetSouthwest.us"
+    },
+    "ATTSportsNetSouthwestPlus.us": {
+      "site_id": "81287",
+      "xmltv_id": "ATTSportsNetSouthwestPlus.us"
+    },
+    "AWE.us": {
+      "site_id": "44895",
+      "xmltv_id": "AWE.us"
+    },
+    "AXSTV.us": {
+      "site_id": "92053",
+      "xmltv_id": "AXSTV.us"
+    },
+    "AyMSports.mx": {
+      "site_id": "34863",
+      "xmltv_id": "AyMSports.mx"
+    },
+    "Azteca7.mx": {
+      "site_id": "116154",
+      "xmltv_id": "Azteca7.mx"
+    },
+    "B4UMusic.in": {
+      "site_id": "24465",
+      "xmltv_id": "B4UMusic.in"
+    },
+    "BabyFirst.us": {
+      "site_id": "50338",
+      "xmltv_id": "BabyFirst.us"
+    },
+    "BallySportsArizona.us": {
+      "site_id": "75119",
+      "xmltv_id": "BallySportsArizona.us"
+    },
+    "BallySportsArizonaExtra.us": {
+      "site_id": "31547",
+      "xmltv_id": "BallySportsArizonaExtra.us"
+    },
+    "BallySportsNewOrleans.us": {
+      "site_id": "108162",
+      "xmltv_id": "BallySportsNewOrleans.us"
+    },
+    "BallySportsSanDiego.us": {
+      "site_id": "102061",
+      "xmltv_id": "BallySportsSanDiego.us"
+    },
+    "Bandamax.mx": {
+      "site_id": "54867",
+      "xmltv_id": "Bandamax.mx"
+    },
+    "BBCAmerica.us": {
+      "site_id": "18332",
+      "xmltv_id": "BBCAmerica.us"
+    },
+    "BBCNews.uk": {
+      "site_id": "89690",
+      "xmltv_id": "BBCNews.uk"
+    },
+    "beINSports3.qa": {
+      "site_id": "92442",
+      "xmltv_id": "beINSports3.qa"
+    },
+    "beINSports4.qa": {
+      "site_id": "92443",
+      "xmltv_id": "beINSports4.qa"
+    },
+    "beINSports5.qa": {
+      "site_id": "92439",
+      "xmltv_id": "beINSports5.qa"
+    },
+    "beINSports6.qa": {
+      "site_id": "92437",
+      "xmltv_id": "beINSports6.qa"
+    },
+    "beINSports7.qa": {
+      "site_id": "92438",
+      "xmltv_id": "beINSports7.qa"
+    },
+    "beINSports8.qa": {
+      "site_id": "92436",
+      "xmltv_id": "beINSports8.qa"
+    },
+    "beINSportsenEspanol.qa": {
+      "site_id": "76943",
+      "xmltv_id": "beINSportsenEspanol.qa"
+    },
+    "beINSportsUSA.us": {
+      "site_id": "76942",
+      "xmltv_id": "beINSportsUSA.us"
+    },
+    "beINSPORTSXTRA.us": {
+      "site_id": "113143",
+      "xmltv_id": "beINSPORTSXTRA.us"
+    },
+    "beINSPORTSXTRAenEspanol.us": {
+      "site_id": "122816",
+      "xmltv_id": "beINSPORTSXTRAenEspanol.us"
+    },
+    "BET.us": {
+      "site_id": "10051",
+      "xmltv_id": "BET.us"
+    },
+    "BETGospel.us": {
+      "site_id": "16484",
+      "xmltv_id": "BETGospel.us"
+    },
+    "BETHer.us": {
+      "site_id": "14897",
+      "xmltv_id": "BETHer.us"
+    },
+    "BETJams.us": {
+      "site_id": "30419",
+      "xmltv_id": "BETJams.us"
+    },
+    "BETSoul.us": {
+      "site_id": "18718",
+      "xmltv_id": "BETSoul.us"
+    },
+    "BigTenNetwork.us": {
+      "site_id": "56783",
+      "xmltv_id": "BigTenNetwork.us"
+    },
+    "BigTenNetworkAlternate.us": {
+      "site_id": "11580",
+      "xmltv_id": "BigTenNetworkAlternate.us"
+    },
+    "BigTenNetworkOverflow2.us": {
+      "site_id": "71198",
+      "xmltv_id": "BigTenNetworkOverflow2.us"
+    },
+    "BigTenNetworkOverflow3.us": {
+      "site_id": "71200",
+      "xmltv_id": "BigTenNetworkOverflow3.us"
+    },
+    "BigTenNetworkOverflow4.us": {
+      "site_id": "71202",
+      "xmltv_id": "BigTenNetworkOverflow4.us"
+    },
+    "BLAZE.uk": {
+      "site_id": "11549",
+      "xmltv_id": "BLAZE.uk"
+    },
+    "Blaze.uk": {
+      "site_id": "11549",
+      "xmltv_id": "Blaze.uk"
+    },
+    "BloombergTV.us": {
+      "site_id": "71799",
+      "xmltv_id": "BloombergTV.us"
+    },
+    "Boomerang.us": {
+      "site_id": "21883",
+      "xmltv_id": "Boomerang.us"
+    },
+    "Bounce.us": {
+      "site_id": "73067",
+      "xmltv_id": "Bounce.us"
+    },
+    "Bravo.us": {
+      "site_id": "10057",
+      "xmltv_id": "Bravo.us"
+    },
+    "BrazzersTVEurope.us": {
+      "site_id": "97431",
+      "xmltv_id": "BrazzersTVEurope.us"
+    },
+    "Buzzr.us": {
+      "site_id": "93430",
+      "xmltv_id": "Buzzr.us"
+    },
+    "Buzzr.us@SD": {
+      "site_id": "93430",
+      "xmltv_id": "Buzzr.us@SD"
+    },
+    "CaribVision.bb": {
+      "site_id": "49411",
+      "xmltv_id": "CaribVision.bb"
+    },
+    "CarsTV.us": {
+      "site_id": "71302",
+      "xmltv_id": "CarsTV.us"
+    },
+    "CartoonNetwork.ca": {
+      "site_id": "10613",
+      "xmltv_id": "CartoonNetwork.ca"
+    },
+    "CartoonNetwork.us": {
+      "site_id": "60048",
+      "xmltv_id": "CartoonNetwork.us"
+    },
+    "CatholicFaithNetwork.us": {
+      "site_id": "62900",
+      "xmltv_id": "CatholicFaithNetwork.us"
+    },
+    "CBCNewsNetwork.ca": {
+      "site_id": "63287",
+      "xmltv_id": "CBCNewsNetwork.ca"
+    },
+    "CBETDT.ca": {
+      "site_id": "72772",
+      "xmltv_id": "CBETDT.ca"
+    },
+    "CBFTDT.ca": {
+      "site_id": "45867",
+      "xmltv_id": "CBFTDT.ca"
+    },
+    "CBHTDT.ca": {
+      "site_id": "72723",
+      "xmltv_id": "CBHTDT.ca"
+    },
+    "CBLTDT.ca": {
+      "site_id": "10091",
+      "xmltv_id": "CBLTDT.ca"
+    },
+    "CBMTDT.ca": {
+      "site_id": "53502",
+      "xmltv_id": "CBMTDT.ca"
+    },
+    "CBOTDT.ca": {
+      "site_id": "10097",
+      "xmltv_id": "CBOTDT.ca"
+    },
+    "CBRTDT.ca": {
+      "site_id": "15939",
+      "xmltv_id": "CBRTDT.ca"
+    },
+    "CBS.us": {
+      "site_id": "10098",
+      "xmltv_id": "CBS.us"
+    },
+    "CBSSportsNetworkCanada.ca": {
+      "site_id": "10708",
+      "xmltv_id": "CBSSportsNetworkCanada.ca"
+    },
+    "CBSSportsNetworkUSA.us": {
+      "site_id": "59250",
+      "xmltv_id": "CBSSportsNetworkUSA.us"
+    },
+    "CBWTDT.ca": {
+      "site_id": "72940",
+      "xmltv_id": "CBWTDT.ca"
+    },
+    "CBXTDT.ca": {
+      "site_id": "71733",
+      "xmltv_id": "CBXTDT.ca"
+    },
+    "CentroamericaTV.us": {
+      "site_id": "44448",
+      "xmltv_id": "CentroamericaTV.us"
+    },
+    "CFHDDT.ca": {
+      "site_id": "26780",
+      "xmltv_id": "CFHDDT.ca"
+    },
+    "CFPLDT.ca": {
+      "site_id": "72720",
+      "xmltv_id": "CFPLDT.ca"
+    },
+    "CFTMDT.ca": {
+      "site_id": "72755",
+      "xmltv_id": "CFTMDT.ca"
+    },
+    "CFTODT.ca": {
+      "site_id": "44784",
+      "xmltv_id": "CFTODT.ca"
+    },
+    "ChannelI.bd": {
+      "site_id": "14202",
+      "xmltv_id": "ChannelI.bd"
+    },
+    "Charge.us": {
+      "site_id": "102148",
+      "xmltv_id": "Charge.us"
+    },
+    "CHBCDT2.ca": {
+      "site_id": "13834",
+      "xmltv_id": "CHBCDT2.ca"
+    },
+    "CheddarNews.us": {
+      "site_id": "109333",
+      "xmltv_id": "CheddarNews.us"
+    },
+    "CHKMDT.ca": {
+      "site_id": "11597",
+      "xmltv_id": "CHKMDT.ca"
+    },
+    "CHWIDT.ca": {
+      "site_id": "72956",
+      "xmltv_id": "CHWIDT.ca"
+    },
+    "CICADT.ca": {
+      "site_id": "70583",
+      "xmltv_id": "CICADT.ca"
+    },
+    "CineEstelar.us": {
+      "site_id": "62125",
+      "xmltv_id": "CineEstelar.us"
+    },
+    "Cinemax.us": {
+      "site_id": "10120",
+      "xmltv_id": "Cinemax.us"
+    },
+    "CineSony.us": {
+      "site_id": "102978",
+      "xmltv_id": "CineSony.us"
+    },
+    "Circle.us": {
+      "site_id": "113430",
+      "xmltv_id": "Circle.us"
+    },
+    "CIVMDT.ca": {
+      "site_id": "63040",
+      "xmltv_id": "CIVMDT.ca"
+    },
+    "CKCODT.ca": {
+      "site_id": "72614",
+      "xmltv_id": "CKCODT.ca"
+    },
+    "CKVRDT.ca": {
+      "site_id": "72705",
+      "xmltv_id": "CKVRDT.ca"
+    },
+    "ClassicArtsShowcase.us": {
+      "site_id": "16325",
+      "xmltv_id": "ClassicArtsShowcase.us"
+    },
+    "CleoTV.us": {
+      "site_id": "110288",
+      "xmltv_id": "CleoTV.us"
+    },
+    "CMT.us": {
+      "site_id": "10138",
+      "xmltv_id": "CMT.us"
+    },
+    "CMTMusic.us": {
+      "site_id": "18717",
+      "xmltv_id": "CMTMusic.us"
+    },
+    "CNBC.us": {
+      "site_id": "10139",
+      "xmltv_id": "CNBC.us"
+    },
+    "CNBCWorld.us": {
+      "site_id": "26849",
+      "xmltv_id": "CNBCWorld.us"
+    },
+    "CNN.us": {
+      "site_id": "58646",
+      "xmltv_id": "CNN.us"
+    },
+    "CNNenEspanol.us": {
+      "site_id": "58631",
+      "xmltv_id": "CNNenEspanol.us"
+    },
+    "CNNInternational.us": {
+      "site_id": "40821",
+      "xmltv_id": "CNNInternational.us"
+    },
+    "CNNInternational.us@MENA": {
+      "site_id": "40821",
+      "xmltv_id": "CNNInternational.us@MENA"
+    },
+    "ColorsBangla.in": {
+      "site_id": "72103",
+      "xmltv_id": "ColorsBangla.in"
+    },
+    "ComedyCentral.us": {
+      "site_id": "10149",
+      "xmltv_id": "ComedyCentral.us"
+    },
+    "ComedyTV.us": {
+      "site_id": "80740",
+      "xmltv_id": "ComedyTV.us"
+    },
+    "Comet.us": {
+      "site_id": "97051",
+      "xmltv_id": "Comet.us"
+    },
+    "CONtv.us": {
+      "site_id": "110483",
+      "xmltv_id": "CONtv.us"
+    },
+    "CookingChannel.us": {
+      "site_id": "30156",
+      "xmltv_id": "CookingChannel.us"
+    },
+    "CourtTVMystery.us": {
+      "site_id": "15773",
+      "xmltv_id": "CourtTVMystery.us"
+    },
+    "CoziTV.us": {
+      "site_id": "78851",
+      "xmltv_id": "CoziTV.us"
+    },
+    "CPACEnglish.ca": {
+      "site_id": "17608",
+      "xmltv_id": "CPACEnglish.ca"
+    },
+    "Create.us": {
+      "site_id": "48990",
+      "xmltv_id": "Create.us"
+    },
+    "CSPAN.us": {
+      "site_id": "10161",
+      "xmltv_id": "CSPAN.us"
+    },
+    "CSPAN2.us": {
+      "site_id": "10162",
+      "xmltv_id": "CSPAN2.us"
+    },
+    "CSPAN3.us": {
+      "site_id": "17665",
+      "xmltv_id": "CSPAN3.us"
+    },
+    "CTVSciFiChannel.ca": {
+      "site_id": "72484",
+      "xmltv_id": "CTVSciFiChannel.ca"
+    },
+    "CW.us": {
+      "site_id": "51306",
+      "xmltv_id": "CW.us"
+    },
+    "Dabl.us": {
+      "site_id": "112157",
+      "xmltv_id": "Dabl.us"
+    },
+    "DaystarTV.us": {
+      "site_id": "19026",
+      "xmltv_id": "DaystarTV.us"
+    },
+    "Decades.us": {
+      "site_id": "91415",
+      "xmltv_id": "Decades.us"
+    },
+    "DejaView.ca": {
+      "site_id": "100638",
+      "xmltv_id": "DejaView.ca"
+    },
+    "DePeliculaClasico.mx": {
+      "site_id": "33628",
+      "xmltv_id": "DePeliculaClasico.mx"
+    },
+    "DePeliculaUS.us": {
+      "site_id": "35401",
+      "xmltv_id": "DePeliculaUS.us"
+    },
+    "DestinationAmerica.us": {
+      "site_id": "16617",
+      "xmltv_id": "DestinationAmerica.us"
+    },
+    "DiscoveryChannel.us": {
+      "site_id": "56905",
+      "xmltv_id": "DiscoveryChannel.us"
+    },
+    "DiscoveryenEspanol.us": {
+      "site_id": "19247",
+      "xmltv_id": "DiscoveryenEspanol.us"
+    },
+    "DiscoveryFamilia.us": {
+      "site_id": "99630",
+      "xmltv_id": "DiscoveryFamilia.us"
+    },
+    "DiscoveryFamily.us": {
+      "site_id": "16618",
+      "xmltv_id": "DiscoveryFamily.us"
+    },
+    "DiscoveryLife.us": {
+      "site_id": "16125",
+      "xmltv_id": "DiscoveryLife.us"
+    },
+    "DisneyChannel.ca": {
+      "site_id": "16831",
+      "xmltv_id": "DisneyChannel.ca"
+    },
+    "DisneyChannel.us": {
+      "site_id": "10171",
+      "xmltv_id": "DisneyChannel.us"
+    },
+    "DisneyJunior.us": {
+      "site_id": "74796",
+      "xmltv_id": "DisneyJunior.us"
+    },
+    "DisneyXD.us": {
+      "site_id": "18279",
+      "xmltv_id": "DisneyXD.us"
+    },
+    "DoctorWho.us": {
+      "site_id": "120086",
+      "xmltv_id": "DoctorWho.us"
+    },
+    "DocuBox.nl": {
+      "site_id": "78765",
+      "xmltv_id": "DocuBox.nl"
+    },
+    "Docurama.us": {
+      "site_id": "110479",
+      "xmltv_id": "Docurama.us"
+    },
+    "DogTV.us": {
+      "site_id": "82446",
+      "xmltv_id": "DogTV.us"
+    },
+    "DUST.us": {
+      "site_id": "112881",
+      "xmltv_id": "DUST.us"
+    },
+    "DW.de": {
+      "site_id": "74479",
+      "xmltv_id": "DW.de"
+    },
+    "E.us": {
+      "site_id": "10989",
+      "xmltv_id": "E.us"
+    },
+    "ElectricNow.us": {
+      "site_id": "112797",
+      "xmltv_id": "ElectricNow.us"
+    },
+    "Enlace.cr": {
+      "site_id": "20286",
+      "xmltv_id": "Enlace.cr"
+    },
+    "EsperanzaTV.us": {
+      "site_id": "65095",
+      "xmltv_id": "EsperanzaTV.us"
+    },
+    "ESPN.us": {
+      "site_id": "10179",
+      "xmltv_id": "ESPN.us"
+    },
+    "ESPN2.us": {
+      "site_id": "45507",
+      "xmltv_id": "ESPN2.us"
+    },
+    "ESPNCollegeExtra1.us": {
+      "site_id": "20687",
+      "xmltv_id": "ESPNCollegeExtra1.us"
+    },
+    "ESPNCollegeExtra2.us": {
+      "site_id": "20688",
+      "xmltv_id": "ESPNCollegeExtra2.us"
+    },
+    "ESPNCollegeExtra3.us": {
+      "site_id": "20689",
+      "xmltv_id": "ESPNCollegeExtra3.us"
+    },
+    "ESPNCollegeExtra4.us": {
+      "site_id": "20690",
+      "xmltv_id": "ESPNCollegeExtra4.us"
+    },
+    "ESPNCollegeExtra5.us": {
+      "site_id": "20691",
+      "xmltv_id": "ESPNCollegeExtra5.us"
+    },
+    "ESPNCollegeExtra6.us": {
+      "site_id": "20692",
+      "xmltv_id": "ESPNCollegeExtra6.us"
+    },
+    "ESPNCollegeExtra7.us": {
+      "site_id": "73263",
+      "xmltv_id": "ESPNCollegeExtra7.us"
+    },
+    "ESPNCollegeExtra8.us": {
+      "site_id": "73264",
+      "xmltv_id": "ESPNCollegeExtra8.us"
+    },
+    "ESPNDeportes.us": {
+      "site_id": "25595",
+      "xmltv_id": "ESPNDeportes.us"
+    },
+    "ESPNews.us": {
+      "site_id": "59976",
+      "xmltv_id": "ESPNews.us"
+    },
+    "ESPNU.us": {
+      "site_id": "45654",
+      "xmltv_id": "ESPNU.us"
+    },
+    "EstrellaTV.us": {
+      "site_id": "65064",
+      "xmltv_id": "EstrellaTV.us"
+    },
+    "EstrellaTV.us@SD": {
+      "site_id": "65064",
+      "xmltv_id": "EstrellaTV.us@SD"
+    },
+    "ESTV.us": {
+      "site_id": "120205",
+      "xmltv_id": "ESTV.us"
+    },
+    "ETLive.us": {
+      "site_id": "110291",
+      "xmltv_id": "ETLive.us"
+    },
+    "ETTVChina.tw": {
+      "site_id": "10488",
+      "xmltv_id": "ETTVChina.tw"
+    },
+    "ETTVDrama.tw": {
+      "site_id": "35271",
+      "xmltv_id": "ETTVDrama.tw"
+    },
+    "ETTVGlobal.tw": {
+      "site_id": "35277",
+      "xmltv_id": "ETTVGlobal.tw"
+    },
+    "ETTVNews.tw": {
+      "site_id": "35273",
+      "xmltv_id": "ETTVNews.tw"
+    },
+    "EuronewsEnglish.fr": {
+      "site_id": "2121",
+      "xmltv_id": "EuronewsEnglish.fr"
+    },
+    "EuronewsEnglish.fr@SD": {
+      "site_id": "2121",
+      "xmltv_id": "EuronewsEnglish.fr@SD"
+    },
+    "EuronewsFrench.fr": {
+      "site_id": "3900",
+      "xmltv_id": "EuronewsFrench.fr"
+    },
+    "EWTN.us": {
+      "site_id": "10183",
+      "xmltv_id": "EWTN.us"
+    },
+    "FairchildTV2.ca": {
+      "site_id": "11397",
+      "xmltv_id": "FairchildTV2.ca"
+    },
+    "FanDuelRacing.us": {
+      "site_id": "32258",
+      "xmltv_id": "FanDuelRacing.us"
+    },
+    "FanDuelTV.us": {
+      "site_id": "21345",
+      "xmltv_id": "FanDuelTV.us"
+    },
+    "FETV.us": {
+      "site_id": "73413",
+      "xmltv_id": "FETV.us"
+    },
+    "FightNetwork.ca": {
+      "site_id": "48099",
+      "xmltv_id": "FightNetwork.ca"
+    },
+    "Flix.us": {
+      "site_id": "10201",
+      "xmltv_id": "Flix.us"
+    },
+    "FolkTV.us": {
+      "site_id": "33640",
+      "xmltv_id": "FolkTV.us"
+    },
+    "FoodNetwork.us": {
+      "site_id": "12574",
+      "xmltv_id": "FoodNetwork.us"
+    },
+    "Fox.us": {
+      "site_id": "10212",
+      "xmltv_id": "Fox.us"
+    },
+    "FoxBusinessNetwork.us": {
+      "site_id": "58649",
+      "xmltv_id": "FoxBusinessNetwork.us"
+    },
+    "FoxDeportes.us": {
+      "site_id": "15377",
+      "xmltv_id": "FoxDeportes.us"
+    },
+    "FoxNews.us": {
+      "site_id": "60179",
+      "xmltv_id": "FoxNews.us"
+    },
+    "FoxNewsChannel.us": {
+      "site_id": "60179",
+      "xmltv_id": "FoxNewsChannel.us"
+    },
+    "FoxSoccerPlus.us": {
+      "site_id": "66879",
+      "xmltv_id": "FoxSoccerPlus.us"
+    },
+    "FoxSports2LatinAmerica.us": {
+      "site_id": "59305",
+      "xmltv_id": "FoxSports2LatinAmerica.us"
+    },
+    "FoxWeather.us": {
+      "site_id": "121307",
+      "xmltv_id": "FoxWeather.us"
+    },
+    "FoxWeather.us@SD": {
+      "site_id": "121307",
+      "xmltv_id": "FoxWeather.us@SD"
+    },
+    "France24.fr": {
+      "site_id": "70130",
+      "xmltv_id": "France24.fr"
+    },
+    "Freeform.us": {
+      "site_id": "10093",
+      "xmltv_id": "Freeform.us"
+    },
+    "FreeSpeechTV.us": {
+      "site_id": "16220",
+      "xmltv_id": "FreeSpeechTV.us"
+    },
+    "FrissonsTV.ca": {
+      "site_id": "32125",
+      "xmltv_id": "FrissonsTV.ca"
+    },
+    "Fuse.us": {
+      "site_id": "14929",
+      "xmltv_id": "Fuse.us"
+    },
+    "Fusion.us": {
+      "site_id": "83173",
+      "xmltv_id": "Fusion.us"
+    },
+    "FX.us": {
+      "site_id": "14321",
+      "xmltv_id": "FX.us"
+    },
+    "FXMovieChannel.us": {
+      "site_id": "70253",
+      "xmltv_id": "FXMovieChannel.us"
+    },
+    "FXX.us": {
+      "site_id": "17927",
+      "xmltv_id": "FXX.us"
+    },
+    "FYI.us": {
+      "site_id": "16834",
+      "xmltv_id": "FYI.us"
+    },
+    "Galavision.us": {
+      "site_id": "10222",
+      "xmltv_id": "Galavision.us"
+    },
+    "GameShowCentral.us": {
+      "site_id": "116474",
+      "xmltv_id": "GameShowCentral.us"
+    },
+    "GameShowNetwork.us": {
+      "site_id": "14909",
+      "xmltv_id": "GameShowNetwork.us"
+    },
+    "GemShoppingNetwork.us": {
+      "site_id": "26643",
+      "xmltv_id": "GemShoppingNetwork.us"
+    },
+    "GetTV.us": {
+      "site_id": "82563",
+      "xmltv_id": "GetTV.us"
+    },
+    "GMALifeTV.ph": {
+      "site_id": "60152",
+      "xmltv_id": "GMALifeTV.ph"
+    },
+    "GMANewsTV.ph": {
+      "site_id": "75448",
+      "xmltv_id": "GMANewsTV.ph"
+    },
+    "GMAPinoyTV.ph": {
+      "site_id": "46463",
+      "xmltv_id": "GMAPinoyTV.ph"
+    },
+    "GODTV.uk": {
+      "site_id": "52697",
+      "xmltv_id": "GODTV.uk"
+    },
+    "GolfChannel.us": {
+      "site_id": "61854",
+      "xmltv_id": "GolfChannel.us"
+    },
+    "GolTVUSA.us": {
+      "site_id": "32161",
+      "xmltv_id": "GolTVUSA.us"
+    },
+    "GreatAmericanFamily.us": {
+      "site_id": "16062",
+      "xmltv_id": "GreatAmericanFamily.us"
+    },
+    "Grit.us": {
+      "site_id": "89922",
+      "xmltv_id": "Grit.us"
+    },
+    "HallmarkChannel.us": {
+      "site_id": "11221",
+      "xmltv_id": "HallmarkChannel.us"
+    },
+    "HallmarkDrama.us": {
+      "site_id": "105723",
+      "xmltv_id": "HallmarkDrama.us"
+    },
+    "HallmarkMoviesMysteries.us": {
+      "site_id": "61522",
+      "xmltv_id": "HallmarkMoviesMysteries.us"
+    },
+    "HBO.us": {
+      "site_id": "10240",
+      "xmltv_id": "HBO.us"
+    },
+    "HBO2.us": {
+      "site_id": "10241",
+      "xmltv_id": "HBO2.us"
+    },
+    "HBOComedy.us": {
+      "site_id": "18429",
+      "xmltv_id": "HBOComedy.us"
+    },
+    "HBOFamily.us": {
+      "site_id": "16585",
+      "xmltv_id": "HBOFamily.us"
+    },
+    "HBOFamilyLatinAmerica.us": {
+      "site_id": "32933",
+      "xmltv_id": "HBOFamilyLatinAmerica.us"
+    },
+    "HBOSignature.us": {
+      "site_id": "10243",
+      "xmltv_id": "HBOSignature.us"
+    },
+    "HBOZone.us": {
+      "site_id": "18431",
+      "xmltv_id": "HBOZone.us"
+    },
+    "HDNetMovies.us": {
+      "site_id": "33668",
+      "xmltv_id": "HDNetMovies.us"
+    },
+    "HGTV.us": {
+      "site_id": "14902",
+      "xmltv_id": "HGTV.us"
+    },
+    "HillsongChannel.us": {
+      "site_id": "29328",
+      "xmltv_id": "HillsongChannel.us"
+    },
+    "History.us": {
+      "site_id": "57708",
+      "xmltv_id": "History.us"
+    },
+    "History2.ca": {
+      "site_id": "26772",
+      "xmltv_id": "History2.ca"
+    },
+    "HistoryenEspanol.us": {
+      "site_id": "105678",
+      "xmltv_id": "HistoryenEspanol.us"
+    },
+    "HITN.us": {
+      "site_id": "17142",
+      "xmltv_id": "HITN.us"
+    },
+    "HLN.us": {
+      "site_id": "10145",
+      "xmltv_id": "HLN.us"
+    },
+    "HollywoodSuite00sMovies.ca": {
+      "site_id": "73578",
+      "xmltv_id": "HollywoodSuite00sMovies.ca"
+    },
+    "HollywoodSuite70sMovies.ca": {
+      "site_id": "73572",
+      "xmltv_id": "HollywoodSuite70sMovies.ca"
+    },
+    "HollywoodSuite80sMovies.ca": {
+      "site_id": "73574",
+      "xmltv_id": "HollywoodSuite80sMovies.ca"
+    },
+    "HollywoodSuite90sMovies.ca": {
+      "site_id": "73571",
+      "xmltv_id": "HollywoodSuite90sMovies.ca"
+    },
+    "HopeChannelNorthAmerica.us": {
+      "site_id": "49266",
+      "xmltv_id": "HopeChannelNorthAmerica.us"
+    },
+    "HSN.us": {
+      "site_id": "10269",
+      "xmltv_id": "HSN.us"
+    },
+    "HSN.us@East": {
+      "site_id": "10269",
+      "xmltv_id": "HSN.us@East"
+    },
+    "HSN2.us": {
+      "site_id": "10270",
+      "xmltv_id": "HSN2.us"
+    },
+    "HTV.us": {
+      "site_id": "15969",
+      "xmltv_id": "HTV.us"
+    },
+    "HumTV.pk": {
+      "site_id": "66899",
+      "xmltv_id": "HumTV.pk"
+    },
+    "i24NEWSEnglishUSA.il": {
+      "site_id": "87376",
+      "xmltv_id": "i24NEWSEnglishUSA.il"
+    },
+    "IciRDI.ca": {
+      "site_id": "60327",
+      "xmltv_id": "IciRDI.ca"
+    },
+    "IFC.us": {
+      "site_id": "14873",
+      "xmltv_id": "IFC.us"
+    },
+    "ImpactNetwork.us": {
+      "site_id": "71798",
+      "xmltv_id": "ImpactNetwork.us"
+    },
+    "IndiePlex.us": {
+      "site_id": "49751",
+      "xmltv_id": "IndiePlex.us"
+    },
+    "INSP.us": {
+      "site_id": "11066",
+      "xmltv_id": "INSP.us"
+    },
+    "Investigation.ca": {
+      "site_id": "11344",
+      "xmltv_id": "Investigation.ca"
+    },
+    "InvestigationDiscovery.us": {
+      "site_id": "16615",
+      "xmltv_id": "InvestigationDiscovery.us"
+    },
+    "IONPlus.us": {
+      "site_id": "55241",
+      "xmltv_id": "IONPlus.us"
+    },
+    "IONTV.us": {
+      "site_id": "18633",
+      "xmltv_id": "IONTV.us"
+    },
+    "IVC.ve": {
+      "site_id": "18867",
+      "xmltv_id": "IVC.ve"
+    },
+    "JayaPlus.in": {
+      "site_id": "67068",
+      "xmltv_id": "JayaPlus.in"
+    },
+    "JBS.us": {
+      "site_id": "74978",
+      "xmltv_id": "JBS.us"
+    },
+    "JewelryTV.us": {
+      "site_id": "16604",
+      "xmltv_id": "JewelryTV.us"
+    },
+    "JewishLifeTelevision.us": {
+      "site_id": "60165",
+      "xmltv_id": "JewishLifeTelevision.us"
+    },
+    "JohnnyCarsonTV.us": {
+      "site_id": "115370",
+      "xmltv_id": "JohnnyCarsonTV.us"
+    },
+    "K05FWD73.us": {
+      "site_id": "12531",
+      "xmltv_id": "K05FWD73.us"
+    },
+    "K08MMD1.us": {
+      "site_id": "103348",
+      "xmltv_id": "K08MMD1.us"
+    },
+    "K11LCD32.us": {
+      "site_id": "34499",
+      "xmltv_id": "K11LCD32.us"
+    },
+    "K13AVD3.us": {
+      "site_id": "17836",
+      "xmltv_id": "K13AVD3.us"
+    },
+    "K13AVD5.us": {
+      "site_id": "17835",
+      "xmltv_id": "K13AVD5.us"
+    },
+    "K13AVD6.us": {
+      "site_id": "17839",
+      "xmltv_id": "K13AVD6.us"
+    },
+    "K14HCD452.us": {
+      "site_id": "35568",
+      "xmltv_id": "K14HCD452.us"
+    },
+    "K14HCD453.us": {
+      "site_id": "35569",
+      "xmltv_id": "K14HCD453.us"
+    },
+    "K14JSD142.us": {
+      "site_id": "17830",
+      "xmltv_id": "K14JSD142.us"
+    },
+    "K14JSD143.us": {
+      "site_id": "17831",
+      "xmltv_id": "K14JSD143.us"
+    },
+    "K14JSD144.us": {
+      "site_id": "17832",
+      "xmltv_id": "K14JSD144.us"
+    },
+    "K14JSD145.us": {
+      "site_id": "17833",
+      "xmltv_id": "K14JSD145.us"
+    },
+    "K14JSD146.us": {
+      "site_id": "17834",
+      "xmltv_id": "K14JSD146.us"
+    },
+    "K15HJD461.us": {
+      "site_id": "63944",
+      "xmltv_id": "K15HJD461.us"
+    },
+    "K17JID121.us": {
+      "site_id": "84833",
+      "xmltv_id": "K17JID121.us"
+    },
+    "K17JID122.us": {
+      "site_id": "84834",
+      "xmltv_id": "K17JID122.us"
+    },
+    "K17JID123.us": {
+      "site_id": "84835",
+      "xmltv_id": "K17JID123.us"
+    },
+    "K17JID124.us": {
+      "site_id": "84836",
+      "xmltv_id": "K17JID124.us"
+    },
+    "K18DRD74.us": {
+      "site_id": "17923",
+      "xmltv_id": "K18DRD74.us"
+    },
+    "K18HDD181.us": {
+      "site_id": "66964",
+      "xmltv_id": "K18HDD181.us"
+    },
+    "K19KVD152.us": {
+      "site_id": "35560",
+      "xmltv_id": "K19KVD152.us"
+    },
+    "K19KVD4.us": {
+      "site_id": "35562",
+      "xmltv_id": "K19KVD4.us"
+    },
+    "K21DOD211.us": {
+      "site_id": "102713",
+      "xmltv_id": "K21DOD211.us"
+    },
+    "K21DOD212.us": {
+      "site_id": "102714",
+      "xmltv_id": "K21DOD212.us"
+    },
+    "K21DOD214.us": {
+      "site_id": "102715",
+      "xmltv_id": "K21DOD214.us"
+    },
+    "K21LCD45.us": {
+      "site_id": "18169",
+      "xmltv_id": "K21LCD45.us"
+    },
+    "K23DTD1.us": {
+      "site_id": "70292",
+      "xmltv_id": "K23DTD1.us"
+    },
+    "K25OMD2.us": {
+      "site_id": "35557",
+      "xmltv_id": "K25OMD2.us"
+    },
+    "K25OMD3.us": {
+      "site_id": "35555",
+      "xmltv_id": "K25OMD3.us"
+    },
+    "K25OMD5.us": {
+      "site_id": "35558",
+      "xmltv_id": "K25OMD5.us"
+    },
+    "K26CID263.us": {
+      "site_id": "18211",
+      "xmltv_id": "K26CID263.us"
+    },
+    "K26CID265.us": {
+      "site_id": "18223",
+      "xmltv_id": "K26CID265.us"
+    },
+    "K26CID267.us": {
+      "site_id": "18226",
+      "xmltv_id": "K26CID267.us"
+    },
+    "K26GSD262.us": {
+      "site_id": "15800",
+      "xmltv_id": "K26GSD262.us"
+    },
+    "K26GSD263.us": {
+      "site_id": "17260",
+      "xmltv_id": "K26GSD263.us"
+    },
+    "K26GSD8.us": {
+      "site_id": "18229",
+      "xmltv_id": "K26GSD8.us"
+    },
+    "K28CWD452.us": {
+      "site_id": "15561",
+      "xmltv_id": "K28CWD452.us"
+    },
+    "K28CWD453.us": {
+      "site_id": "15562",
+      "xmltv_id": "K28CWD453.us"
+    },
+    "K28CWD454.us": {
+      "site_id": "15559",
+      "xmltv_id": "K28CWD454.us"
+    },
+    "K30JDD53.us": {
+      "site_id": "34501",
+      "xmltv_id": "K30JDD53.us"
+    },
+    "K31NFD312.us": {
+      "site_id": "35565",
+      "xmltv_id": "K31NFD312.us"
+    },
+    "K31NFD314.us": {
+      "site_id": "35567",
+      "xmltv_id": "K31NFD314.us"
+    },
+    "K32LOD193.us": {
+      "site_id": "35587",
+      "xmltv_id": "K32LOD193.us"
+    },
+    "K38IZD2.us": {
+      "site_id": "16729",
+      "xmltv_id": "K38IZD2.us"
+    },
+    "K38IZD4.us": {
+      "site_id": "16730",
+      "xmltv_id": "K38IZD4.us"
+    },
+    "K38IZD7.us": {
+      "site_id": "36171",
+      "xmltv_id": "K38IZD7.us"
+    },
+    "K38JPD3.us": {
+      "site_id": "99050",
+      "xmltv_id": "K38JPD3.us"
+    },
+    "K43LWD2.us": {
+      "site_id": "35552",
+      "xmltv_id": "K43LWD2.us"
+    },
+    "K46LGD1.us": {
+      "site_id": "98273",
+      "xmltv_id": "K46LGD1.us"
+    },
+    "K46LGD2.us": {
+      "site_id": "98274",
+      "xmltv_id": "K46LGD2.us"
+    },
+    "K46LGD3.us": {
+      "site_id": "98275",
+      "xmltv_id": "K46LGD3.us"
+    },
+    "K46LGD4.us": {
+      "site_id": "98276",
+      "xmltv_id": "K46LGD4.us"
+    },
+    "K48MND2.us": {
+      "site_id": "12650",
+      "xmltv_id": "K48MND2.us"
+    },
+    "KAAPLD243.us": {
+      "site_id": "113390",
+      "xmltv_id": "KAAPLD243.us"
+    },
+    "KAAPLD247.us": {
+      "site_id": "121383",
+      "xmltv_id": "KAAPLD247.us"
+    },
+    "KAAPLD248.us": {
+      "site_id": "113391",
+      "xmltv_id": "KAAPLD248.us"
+    },
+    "KABCTV71.us": {
+      "site_id": "19570",
+      "xmltv_id": "KABCTV71.us"
+    },
+    "KABCTV72.us": {
+      "site_id": "42615",
+      "xmltv_id": "KABCTV72.us"
+    },
+    "KABCTV73.us": {
+      "site_id": "42616",
+      "xmltv_id": "KABCTV73.us"
+    },
+    "KAET81.us": {
+      "site_id": "25102",
+      "xmltv_id": "KAET81.us"
+    },
+    "KAET82.us": {
+      "site_id": "25103",
+      "xmltv_id": "KAET82.us"
+    },
+    "KAET83.us": {
+      "site_id": "25104",
+      "xmltv_id": "KAET83.us"
+    },
+    "KAET84.us": {
+      "site_id": "58879",
+      "xmltv_id": "KAET84.us"
+    },
+    "KAHCLD431.us": {
+      "site_id": "115200",
+      "xmltv_id": "KAHCLD431.us"
+    },
+    "KAHCLD434.us": {
+      "site_id": "100253",
+      "xmltv_id": "KAHCLD434.us"
+    },
+    "KAHCLD435.us": {
+      "site_id": "100254",
+      "xmltv_id": "KAHCLD435.us"
+    },
+    "KAHCLD436.us": {
+      "site_id": "100255",
+      "xmltv_id": "KAHCLD436.us"
+    },
+    "KAHCLD437.us": {
+      "site_id": "102576",
+      "xmltv_id": "KAHCLD437.us"
+    },
+    "KAIL71.us": {
+      "site_id": "34443",
+      "xmltv_id": "KAIL71.us"
+    },
+    "KAIL72.us": {
+      "site_id": "59987",
+      "xmltv_id": "KAIL72.us"
+    },
+    "KAIL73.us": {
+      "site_id": "77607",
+      "xmltv_id": "KAIL73.us"
+    },
+    "KAKWDT622.us": {
+      "site_id": "65933",
+      "xmltv_id": "KAKWDT622.us"
+    },
+    "KAKZLD4.us": {
+      "site_id": "83295",
+      "xmltv_id": "KAKZLD4.us"
+    },
+    "KAKZLD42.us": {
+      "site_id": "83293",
+      "xmltv_id": "KAKZLD42.us"
+    },
+    "KAKZLD43.us": {
+      "site_id": "83294",
+      "xmltv_id": "KAKZLD43.us"
+    },
+    "KanalD.ro": {
+      "site_id": "73590",
+      "xmltv_id": "KanalD.ro"
+    },
+    "KARE111.us": {
+      "site_id": "20505",
+      "xmltv_id": "KARE111.us"
+    },
+    "KARE112.us": {
+      "site_id": "31041",
+      "xmltv_id": "KARE112.us"
+    },
+    "KARE113.us": {
+      "site_id": "91454",
+      "xmltv_id": "KARE113.us"
+    },
+    "KARE114.us": {
+      "site_id": "106937",
+      "xmltv_id": "KARE114.us"
+    },
+    "KARE235.us": {
+      "site_id": "114071",
+      "xmltv_id": "KARE235.us"
+    },
+    "KASW611.us": {
+      "site_id": "30818",
+      "xmltv_id": "KASW611.us"
+    },
+    "KASWDT2.us": {
+      "site_id": "97506",
+      "xmltv_id": "KASWDT2.us"
+    },
+    "KATHLD21.us": {
+      "site_id": "74625",
+      "xmltv_id": "KATHLD21.us"
+    },
+    "KAUUDT1.us": {
+      "site_id": "34807",
+      "xmltv_id": "KAUUDT1.us"
+    },
+    "KAXTCD682.us": {
+      "site_id": "67377",
+      "xmltv_id": "KAXTCD682.us"
+    },
+    "KAZATV542.us": {
+      "site_id": "66282",
+      "xmltv_id": "KAZATV542.us"
+    },
+    "KAZTCD72.us": {
+      "site_id": "63150",
+      "xmltv_id": "KAZTCD72.us"
+    },
+    "KAZTCD73.us": {
+      "site_id": "72529",
+      "xmltv_id": "KAZTCD73.us"
+    },
+    "KAZTCD74.us": {
+      "site_id": "105263",
+      "xmltv_id": "KAZTCD74.us"
+    },
+    "KAZTTV72.us": {
+      "site_id": "61548",
+      "xmltv_id": "KAZTTV72.us"
+    },
+    "KAZTTV73.us": {
+      "site_id": "72186",
+      "xmltv_id": "KAZTTV73.us"
+    },
+    "KAZTTV74.us": {
+      "site_id": "105262",
+      "xmltv_id": "KAZTTV74.us"
+    },
+    "KBCWDT1.us": {
+      "site_id": "19575",
+      "xmltv_id": "KBCWDT1.us"
+    },
+    "KBCWDT2.us": {
+      "site_id": "109090",
+      "xmltv_id": "KBCWDT2.us"
+    },
+    "KBCWDT3.us": {
+      "site_id": "110385",
+      "xmltv_id": "KBCWDT3.us"
+    },
+    "KBCWDT4.us": {
+      "site_id": "110386",
+      "xmltv_id": "KBCWDT4.us"
+    },
+    "KBCWDT5.us": {
+      "site_id": "113482",
+      "xmltv_id": "KBCWDT5.us"
+    },
+    "KBFDDT321.us": {
+      "site_id": "47156",
+      "xmltv_id": "KBFDDT321.us"
+    },
+    "KBFXCD292.us": {
+      "site_id": "70178",
+      "xmltv_id": "KBFXCD292.us"
+    },
+    "KBFXCD581.us": {
+      "site_id": "69718",
+      "xmltv_id": "KBFXCD581.us"
+    },
+    "KBFXCD583.us": {
+      "site_id": "97060",
+      "xmltv_id": "KBFXCD583.us"
+    },
+    "KBIDLP1.us": {
+      "site_id": "89921",
+      "xmltv_id": "KBIDLP1.us"
+    },
+    "KBIDLP2.us": {
+      "site_id": "89915",
+      "xmltv_id": "KBIDLP2.us"
+    },
+    "KBIDLP3.us": {
+      "site_id": "111013",
+      "xmltv_id": "KBIDLP3.us"
+    },
+    "KBIDLP4.us": {
+      "site_id": "89184",
+      "xmltv_id": "KBIDLP4.us"
+    },
+    "KBIDLP5.us": {
+      "site_id": "97413",
+      "xmltv_id": "KBIDLP5.us"
+    },
+    "KBIDLP7.us": {
+      "site_id": "89916",
+      "xmltv_id": "KBIDLP7.us"
+    },
+    "KBIDLP8.us": {
+      "site_id": "102804",
+      "xmltv_id": "KBIDLP8.us"
+    },
+    "KBNTCD171.us": {
+      "site_id": "68070",
+      "xmltv_id": "KBNTCD171.us"
+    },
+    "KBNTCD172.us": {
+      "site_id": "75511",
+      "xmltv_id": "KBNTCD172.us"
+    },
+    "KBNTCD3.us": {
+      "site_id": "107576",
+      "xmltv_id": "KBNTCD3.us"
+    },
+    "KBNTCD4.us": {
+      "site_id": "107577",
+      "xmltv_id": "KBNTCD4.us"
+    },
+    "KBOITV21.us": {
+      "site_id": "28026",
+      "xmltv_id": "KBOITV21.us"
+    },
+    "KBOITV22.us": {
+      "site_id": "64515",
+      "xmltv_id": "KBOITV22.us"
+    },
+    "KBTFCD311.us": {
+      "site_id": "65518",
+      "xmltv_id": "KBTFCD311.us"
+    },
+    "KBTFCD312.us": {
+      "site_id": "86445",
+      "xmltv_id": "KBTFCD312.us"
+    },
+    "KBTFCD313.us": {
+      "site_id": "90187",
+      "xmltv_id": "KBTFCD313.us"
+    },
+    "KBTVCD82.us": {
+      "site_id": "70628",
+      "xmltv_id": "KBTVCD82.us"
+    },
+    "KBTVCD83.us": {
+      "site_id": "87900",
+      "xmltv_id": "KBTVCD83.us"
+    },
+    "KBTVCD84.us": {
+      "site_id": "87904",
+      "xmltv_id": "KBTVCD84.us"
+    },
+    "KBTVCD85.us": {
+      "site_id": "87906",
+      "xmltv_id": "KBTVCD85.us"
+    },
+    "KBTVCD86.us": {
+      "site_id": "87908",
+      "xmltv_id": "KBTVCD86.us"
+    },
+    "KBTVCD87.us": {
+      "site_id": "91130",
+      "xmltv_id": "KBTVCD87.us"
+    },
+    "KBVU281.us": {
+      "site_id": "35315",
+      "xmltv_id": "KBVU281.us"
+    },
+    "KBVU282.us": {
+      "site_id": "62901",
+      "xmltv_id": "KBVU282.us"
+    },
+    "KBVU283.us": {
+      "site_id": "110230",
+      "xmltv_id": "KBVU283.us"
+    },
+    "KBVUDT4.us": {
+      "site_id": "110231",
+      "xmltv_id": "KBVUDT4.us"
+    },
+    "KCBA351.us": {
+      "site_id": "42820",
+      "xmltv_id": "KCBA351.us"
+    },
+    "KCBSTV23.us": {
+      "site_id": "112431",
+      "xmltv_id": "KCBSTV23.us"
+    },
+    "KCBSTV24.us": {
+      "site_id": "117036",
+      "xmltv_id": "KCBSTV24.us"
+    },
+    "KCBTLD341.us": {
+      "site_id": "73738",
+      "xmltv_id": "KCBTLD341.us"
+    },
+    "KCET581.us": {
+      "site_id": "24020",
+      "xmltv_id": "KCET581.us"
+    },
+    "KCET582.us": {
+      "site_id": "35413",
+      "xmltv_id": "KCET582.us"
+    },
+    "KCET583.us": {
+      "site_id": "55374",
+      "xmltv_id": "KCET583.us"
+    },
+    "KCNCTV41.us": {
+      "site_id": "21297",
+      "xmltv_id": "KCNCTV41.us"
+    },
+    "KCNS386.us": {
+      "site_id": "88559",
+      "xmltv_id": "KCNS386.us"
+    },
+    "KCNS501.us": {
+      "site_id": "31220",
+      "xmltv_id": "KCNS501.us"
+    },
+    "KCNS503.us": {
+      "site_id": "67071",
+      "xmltv_id": "KCNS503.us"
+    },
+    "KCNS504.us": {
+      "site_id": "73924",
+      "xmltv_id": "KCNS504.us"
+    },
+    "KCNS505.us": {
+      "site_id": "77041",
+      "xmltv_id": "KCNS505.us"
+    },
+    "KCNZCD281.us": {
+      "site_id": "64878",
+      "xmltv_id": "KCNZCD281.us"
+    },
+    "KCNZCD282.us": {
+      "site_id": "70483",
+      "xmltv_id": "KCNZCD282.us"
+    },
+    "KCNZCD286.us": {
+      "site_id": "106633",
+      "xmltv_id": "KCNZCD286.us"
+    },
+    "KCNZCD287.us": {
+      "site_id": "106634",
+      "xmltv_id": "KCNZCD287.us"
+    },
+    "KCOPDT2.us": {
+      "site_id": "81337",
+      "xmltv_id": "KCOPDT2.us"
+    },
+    "KCOPDT3.us": {
+      "site_id": "66849",
+      "xmltv_id": "KCOPDT3.us"
+    },
+    "KCOPDT4.us": {
+      "site_id": "97062",
+      "xmltv_id": "KCOPDT4.us"
+    },
+    "KCOPTV51.us": {
+      "site_id": "19653",
+      "xmltv_id": "KCOPTV51.us"
+    },
+    "KCOYTV121.us": {
+      "site_id": "42750",
+      "xmltv_id": "KCOYTV121.us"
+    },
+    "KCOYTV122.us": {
+      "site_id": "46223",
+      "xmltv_id": "KCOYTV122.us"
+    },
+    "KCOYTV123.us": {
+      "site_id": "108065",
+      "xmltv_id": "KCOYTV123.us"
+    },
+    "KCPQ131.us": {
+      "site_id": "21254",
+      "xmltv_id": "KCPQ131.us"
+    },
+    "KCPQ132.us": {
+      "site_id": "30904",
+      "xmltv_id": "KCPQ132.us"
+    },
+    "KCPQ134.us": {
+      "site_id": "108236",
+      "xmltv_id": "KCPQ134.us"
+    },
+    "KCPQ163.us": {
+      "site_id": "98013",
+      "xmltv_id": "KCPQ163.us"
+    },
+    "KCRATV581.us": {
+      "site_id": "20451",
+      "xmltv_id": "KCRATV581.us"
+    },
+    "KCRATV582.us": {
+      "site_id": "30815",
+      "xmltv_id": "KCRATV582.us"
+    },
+    "KCRGTV91.us": {
+      "site_id": "32514",
+      "xmltv_id": "KCRGTV91.us"
+    },
+    "KCSOLD2.us": {
+      "site_id": "72479",
+      "xmltv_id": "KCSOLD2.us"
+    },
+    "KCSOLD331.us": {
+      "site_id": "73759",
+      "xmltv_id": "KCSOLD331.us"
+    },
+    "KCSOLD333.us": {
+      "site_id": "82445",
+      "xmltv_id": "KCSOLD333.us"
+    },
+    "KCSOLD335.us": {
+      "site_id": "115843",
+      "xmltv_id": "KCSOLD335.us"
+    },
+    "KCVU201.us": {
+      "site_id": "34959",
+      "xmltv_id": "KCVU201.us"
+    },
+    "KCVU202.us": {
+      "site_id": "53244",
+      "xmltv_id": "KCVU202.us"
+    },
+    "KCVU203.us": {
+      "site_id": "110232",
+      "xmltv_id": "KCVU203.us"
+    },
+    "KCVU204.us": {
+      "site_id": "110233",
+      "xmltv_id": "KCVU204.us"
+    },
+    "KCVU205.us": {
+      "site_id": "113039",
+      "xmltv_id": "KCVU205.us"
+    },
+    "KCWQLD21.us": {
+      "site_id": "75317",
+      "xmltv_id": "KCWQLD21.us"
+    },
+    "KDAF331.us": {
+      "site_id": "26636",
+      "xmltv_id": "KDAF331.us"
+    },
+    "KDAF332.us": {
+      "site_id": "50465",
+      "xmltv_id": "KDAF332.us"
+    },
+    "KDAF333.us": {
+      "site_id": "70321",
+      "xmltv_id": "KDAF333.us"
+    },
+    "KDAF334.us": {
+      "site_id": "106888",
+      "xmltv_id": "KDAF334.us"
+    },
+    "KDBKLP2.us": {
+      "site_id": "104928",
+      "xmltv_id": "KDBKLP2.us"
+    },
+    "KDFW41.us": {
+      "site_id": "19616",
+      "xmltv_id": "KDFW41.us"
+    },
+    "KDFW42.us": {
+      "site_id": "49091",
+      "xmltv_id": "KDFW42.us"
+    },
+    "KDFW43.us": {
+      "site_id": "113579",
+      "xmltv_id": "KDFW43.us"
+    },
+    "KDFW44.us": {
+      "site_id": "115738",
+      "xmltv_id": "KDFW44.us"
+    },
+    "KDFXCD391.us": {
+      "site_id": "99865",
+      "xmltv_id": "KDFXCD391.us"
+    },
+    "KDINTV111.us": {
+      "site_id": "27422",
+      "xmltv_id": "KDINTV111.us"
+    },
+    "KDJTCD671.us": {
+      "site_id": "95983",
+      "xmltv_id": "KDJTCD671.us"
+    },
+    "KDKATV21.us": {
+      "site_id": "21248",
+      "xmltv_id": "KDKATV21.us"
+    },
+    "KDKATV22.us": {
+      "site_id": "92072",
+      "xmltv_id": "KDKATV22.us"
+    },
+    "KDKATV23.us": {
+      "site_id": "112326",
+      "xmltv_id": "KDKATV23.us"
+    },
+    "KDNLTV301.us": {
+      "site_id": "21237",
+      "xmltv_id": "KDNLTV301.us"
+    },
+    "KDNLTV302.us": {
+      "site_id": "69661",
+      "xmltv_id": "KDNLTV302.us"
+    },
+    "KDNLTV303.us": {
+      "site_id": "69987",
+      "xmltv_id": "KDNLTV303.us"
+    },
+    "KDNLTV304.us": {
+      "site_id": "105675",
+      "xmltv_id": "KDNLTV304.us"
+    },
+    "KDOCTV561.us": {
+      "site_id": "43284",
+      "xmltv_id": "KDOCTV561.us"
+    },
+    "KDOCTV562.us": {
+      "site_id": "60651",
+      "xmltv_id": "KDOCTV562.us"
+    },
+    "KDOCTV563.us": {
+      "site_id": "60864",
+      "xmltv_id": "KDOCTV563.us"
+    },
+    "KDOCTV564.us": {
+      "site_id": "72461",
+      "xmltv_id": "KDOCTV564.us"
+    },
+    "KDOCTV565.us": {
+      "site_id": "83053",
+      "xmltv_id": "KDOCTV565.us"
+    },
+    "KDOCTV566.us": {
+      "site_id": "99692",
+      "xmltv_id": "KDOCTV566.us"
+    },
+    "KDOCTV568.us": {
+      "site_id": "97556",
+      "xmltv_id": "KDOCTV568.us"
+    },
+    "KDPHLD482.us": {
+      "site_id": "18021",
+      "xmltv_id": "KDPHLD482.us"
+    },
+    "KDPHLD483.us": {
+      "site_id": "18022",
+      "xmltv_id": "KDPHLD483.us"
+    },
+    "KDSMTV81.us": {
+      "site_id": "30751",
+      "xmltv_id": "KDSMTV81.us"
+    },
+    "KDTFLD361.us": {
+      "site_id": "67983",
+      "xmltv_id": "KDTFLD361.us"
+    },
+    "KDTSLD521.us": {
+      "site_id": "32896",
+      "xmltv_id": "KDTSLD521.us"
+    },
+    "KDTVCD281.us": {
+      "site_id": "111733",
+      "xmltv_id": "KDTVCD281.us"
+    },
+    "KDTVCD282.us": {
+      "site_id": "111734",
+      "xmltv_id": "KDTVCD282.us"
+    },
+    "KDTVCD283.us": {
+      "site_id": "111735",
+      "xmltv_id": "KDTVCD283.us"
+    },
+    "KDTVCD284.us": {
+      "site_id": "111736",
+      "xmltv_id": "KDTVCD284.us"
+    },
+    "KDTVCD285.us": {
+      "site_id": "111737",
+      "xmltv_id": "KDTVCD285.us"
+    },
+    "KDTVDT144.us": {
+      "site_id": "90121",
+      "xmltv_id": "KDTVDT144.us"
+    },
+    "KDTVDT261.us": {
+      "site_id": "42617",
+      "xmltv_id": "KDTVDT261.us"
+    },
+    "KDTVDT263.us": {
+      "site_id": "86438",
+      "xmltv_id": "KDTVDT263.us"
+    },
+    "KDVR311.us": {
+      "site_id": "21319",
+      "xmltv_id": "KDVR311.us"
+    },
+    "KEBKLD472.us": {
+      "site_id": "104925",
+      "xmltv_id": "KEBKLD472.us"
+    },
+    "KECALD291.us": {
+      "site_id": "65618",
+      "xmltv_id": "KECALD291.us"
+    },
+    "KECALD292.us": {
+      "site_id": "67395",
+      "xmltv_id": "KECALD292.us"
+    },
+    "KECITV131.us": {
+      "site_id": "35298",
+      "xmltv_id": "KECITV131.us"
+    },
+    "KECYTV94.us": {
+      "site_id": "67466",
+      "xmltv_id": "KECYTV94.us"
+    },
+    "KEET131.us": {
+      "site_id": "35319",
+      "xmltv_id": "KEET131.us"
+    },
+    "KEETDT2.us": {
+      "site_id": "35321",
+      "xmltv_id": "KEETDT2.us"
+    },
+    "KEETDT3.us": {
+      "site_id": "67155",
+      "xmltv_id": "KEETDT3.us"
+    },
+    "KEETDT4.us": {
+      "site_id": "82461",
+      "xmltv_id": "KEETDT4.us"
+    },
+    "KEETDT5.us": {
+      "site_id": "106516",
+      "xmltv_id": "KEETDT5.us"
+    },
+    "KEJRLD2.us": {
+      "site_id": "18044",
+      "xmltv_id": "KEJRLD2.us"
+    },
+    "KERATV131.us": {
+      "site_id": "20372",
+      "xmltv_id": "KERATV131.us"
+    },
+    "KERATV132.us": {
+      "site_id": "65053",
+      "xmltv_id": "KERATV132.us"
+    },
+    "KERATV133.us": {
+      "site_id": "98168",
+      "xmltv_id": "KERATV133.us"
+    },
+    "KERATV134.us": {
+      "site_id": "119445",
+      "xmltv_id": "KERATV134.us"
+    },
+    "KEROTV231.us": {
+      "site_id": "34022",
+      "xmltv_id": "KEROTV231.us"
+    },
+    "KEROTV232.us": {
+      "site_id": "76916",
+      "xmltv_id": "KEROTV232.us"
+    },
+    "KEROTV233.us": {
+      "site_id": "76917",
+      "xmltv_id": "KEROTV233.us"
+    },
+    "KESQDT8.us": {
+      "site_id": "74853",
+      "xmltv_id": "KESQDT8.us"
+    },
+    "KESQTV421.us": {
+      "site_id": "75420",
+      "xmltv_id": "KESQTV421.us"
+    },
+    "KETC91.us": {
+      "site_id": "32057",
+      "xmltv_id": "KETC91.us"
+    },
+    "KETC92.us": {
+      "site_id": "32060",
+      "xmltv_id": "KETC92.us"
+    },
+    "KETC93.us": {
+      "site_id": "32065",
+      "xmltv_id": "KETC93.us"
+    },
+    "KETC94.us": {
+      "site_id": "49623",
+      "xmltv_id": "KETC94.us"
+    },
+    "KEUVLP1.us": {
+      "site_id": "114098",
+      "xmltv_id": "KEUVLP1.us"
+    },
+    "KEVCCD2.us": {
+      "site_id": "107475",
+      "xmltv_id": "KEVCCD2.us"
+    },
+    "KEVCCD3.us": {
+      "site_id": "107476",
+      "xmltv_id": "KEVCCD3.us"
+    },
+    "KEVCCD51.us": {
+      "site_id": "98379",
+      "xmltv_id": "KEVCCD51.us"
+    },
+    "KEXTCD1.us": {
+      "site_id": "96386",
+      "xmltv_id": "KEXTCD1.us"
+    },
+    "KEYTTV31.us": {
+      "site_id": "49568",
+      "xmltv_id": "KEYTTV31.us"
+    },
+    "KEYTTV32.us": {
+      "site_id": "55555",
+      "xmltv_id": "KEYTTV32.us"
+    },
+    "KEYTTV33.us": {
+      "site_id": "108226",
+      "xmltv_id": "KEYTTV33.us"
+    },
+    "KEZTCD231.us": {
+      "site_id": "95861",
+      "xmltv_id": "KEZTCD231.us"
+    },
+    "KFAZCA2.us": {
+      "site_id": "104357",
+      "xmltv_id": "KFAZCA2.us"
+    },
+    "KFLALD81.us": {
+      "site_id": "59632",
+      "xmltv_id": "KFLALD81.us"
+    },
+    "KFLALD82.us": {
+      "site_id": "59725",
+      "xmltv_id": "KFLALD82.us"
+    },
+    "KFLALD83.us": {
+      "site_id": "66976",
+      "xmltv_id": "KFLALD83.us"
+    },
+    "KFLALD84.us": {
+      "site_id": "66978",
+      "xmltv_id": "KFLALD84.us"
+    },
+    "KFLALD85.us": {
+      "site_id": "66979",
+      "xmltv_id": "KFLALD85.us"
+    },
+    "KFMBTV81.us": {
+      "site_id": "21212",
+      "xmltv_id": "KFMBTV81.us"
+    },
+    "KFMBTV82.us": {
+      "site_id": "73496",
+      "xmltv_id": "KFMBTV82.us"
+    },
+    "KFMBTV83.us": {
+      "site_id": "100093",
+      "xmltv_id": "KFMBTV83.us"
+    },
+    "KFMBTV84.us": {
+      "site_id": "114211",
+      "xmltv_id": "KFMBTV84.us"
+    },
+    "KFMBTV85.us": {
+      "site_id": "114213",
+      "xmltv_id": "KFMBTV85.us"
+    },
+    "KFMSLD471.us": {
+      "site_id": "106412",
+      "xmltv_id": "KFMSLD471.us"
+    },
+    "KFMSLD473.us": {
+      "site_id": "106413",
+      "xmltv_id": "KFMSLD473.us"
+    },
+    "KFMSLD474.us": {
+      "site_id": "106414",
+      "xmltv_id": "KFMSLD474.us"
+    },
+    "KFMSLD475.us": {
+      "site_id": "106415",
+      "xmltv_id": "KFMSLD475.us"
+    },
+    "KFMSLD476.us": {
+      "site_id": "106416",
+      "xmltv_id": "KFMSLD476.us"
+    },
+    "KFPBLD313.us": {
+      "site_id": "35116",
+      "xmltv_id": "KFPBLD313.us"
+    },
+    "KFPBLD316.us": {
+      "site_id": "16740",
+      "xmltv_id": "KFPBLD316.us"
+    },
+    "KFPBLD317.us": {
+      "site_id": "35118",
+      "xmltv_id": "KFPBLD317.us"
+    },
+    "KFPHCD3.us": {
+      "site_id": "16726",
+      "xmltv_id": "KFPHCD3.us"
+    },
+    "KFPHCD4.us": {
+      "site_id": "16727",
+      "xmltv_id": "KFPHCD4.us"
+    },
+    "KFREDT2.us": {
+      "site_id": "65540",
+      "xmltv_id": "KFREDT2.us"
+    },
+    "KFREDT3.us": {
+      "site_id": "76141",
+      "xmltv_id": "KFREDT3.us"
+    },
+    "KFRETV591.us": {
+      "site_id": "43050",
+      "xmltv_id": "KFRETV591.us"
+    },
+    "KFSFDT661.us": {
+      "site_id": "42586",
+      "xmltv_id": "KFSFDT661.us"
+    },
+    "KFSFDT662.us": {
+      "site_id": "55589",
+      "xmltv_id": "KFSFDT662.us"
+    },
+    "KFSFDT663.us": {
+      "site_id": "82578",
+      "xmltv_id": "KFSFDT663.us"
+    },
+    "KFSFDT664.us": {
+      "site_id": "90120",
+      "xmltv_id": "KFSFDT664.us"
+    },
+    "KFSFDT665.us": {
+      "site_id": "105668",
+      "xmltv_id": "KFSFDT665.us"
+    },
+    "KFSFDT666.us": {
+      "site_id": "118944",
+      "xmltv_id": "KFSFDT666.us"
+    },
+    "KFSNTV301.us": {
+      "site_id": "25120",
+      "xmltv_id": "KFSNTV301.us"
+    },
+    "KFSNTV302.us": {
+      "site_id": "40717",
+      "xmltv_id": "KFSNTV302.us"
+    },
+    "KFSNTV303.us": {
+      "site_id": "40718",
+      "xmltv_id": "KFSNTV303.us"
+    },
+    "KFTRDT461.us": {
+      "site_id": "53123",
+      "xmltv_id": "KFTRDT461.us"
+    },
+    "KFTRDT462.us": {
+      "site_id": "67461",
+      "xmltv_id": "KFTRDT462.us"
+    },
+    "KFTRDT463.us": {
+      "site_id": "90181",
+      "xmltv_id": "KFTRDT463.us"
+    },
+    "KFTRDT464.us": {
+      "site_id": "90182",
+      "xmltv_id": "KFTRDT464.us"
+    },
+    "KFTRDT465.us": {
+      "site_id": "107681",
+      "xmltv_id": "KFTRDT465.us"
+    },
+    "KFTUDT32.us": {
+      "site_id": "31457",
+      "xmltv_id": "KFTUDT32.us"
+    },
+    "KFTVDT211.us": {
+      "site_id": "33815",
+      "xmltv_id": "KFTVDT211.us"
+    },
+    "KFTVDT212.us": {
+      "site_id": "33817",
+      "xmltv_id": "KFTVDT212.us"
+    },
+    "KFTVDT213.us": {
+      "site_id": "90183",
+      "xmltv_id": "KFTVDT213.us"
+    },
+    "KFTVDT214.us": {
+      "site_id": "90186",
+      "xmltv_id": "KFTVDT214.us"
+    },
+    "KFULLD231.us": {
+      "site_id": "55225",
+      "xmltv_id": "KFULLD231.us"
+    },
+    "KGETTV171.us": {
+      "site_id": "42840",
+      "xmltv_id": "KGETTV171.us"
+    },
+    "KGETTV172.us": {
+      "site_id": "52444",
+      "xmltv_id": "KGETTV172.us"
+    },
+    "KGMB91.us": {
+      "site_id": "34331",
+      "xmltv_id": "KGMB91.us"
+    },
+    "KGMC431.us": {
+      "site_id": "61403",
+      "xmltv_id": "KGMC431.us"
+    },
+    "KGMC435.us": {
+      "site_id": "116666",
+      "xmltv_id": "KGMC435.us"
+    },
+    "KGMC436.us": {
+      "site_id": "116670",
+      "xmltv_id": "KGMC436.us"
+    },
+    "KGMCDT3.us": {
+      "site_id": "77069",
+      "xmltv_id": "KGMCDT3.us"
+    },
+    "KGMCDT4.us": {
+      "site_id": "114866",
+      "xmltv_id": "KGMCDT4.us"
+    },
+    "KGODT1.us": {
+      "site_id": "19574",
+      "xmltv_id": "KGODT1.us"
+    },
+    "KGODT2.us": {
+      "site_id": "30833",
+      "xmltv_id": "KGODT2.us"
+    },
+    "KGODT3.us": {
+      "site_id": "49937",
+      "xmltv_id": "KGODT3.us"
+    },
+    "KGODT4.us": {
+      "site_id": "120855",
+      "xmltv_id": "KGODT4.us"
+    },
+    "KGPE472.us": {
+      "site_id": "54704",
+      "xmltv_id": "KGPE472.us"
+    },
+    "KGPE591.us": {
+      "site_id": "36132",
+      "xmltv_id": "KGPE591.us"
+    },
+    "KGTV101.us": {
+      "site_id": "20377",
+      "xmltv_id": "KGTV101.us"
+    },
+    "KGTV102.us": {
+      "site_id": "40462",
+      "xmltv_id": "KGTV102.us"
+    },
+    "KGTV103.us": {
+      "site_id": "92396",
+      "xmltv_id": "KGTV103.us"
+    },
+    "KGTV104.us": {
+      "site_id": "106657",
+      "xmltv_id": "KGTV104.us"
+    },
+    "KGTV105.us": {
+      "site_id": "118806",
+      "xmltv_id": "KGTV105.us"
+    },
+    "KGTV106.us": {
+      "site_id": "121400",
+      "xmltv_id": "KGTV106.us"
+    },
+    "KGUNTV91.us": {
+      "site_id": "36184",
+      "xmltv_id": "KGUNTV91.us"
+    },
+    "KGWCTV141.us": {
+      "site_id": "56025",
+      "xmltv_id": "KGWCTV141.us"
+    },
+    "KGWCTV142.us": {
+      "site_id": "108496",
+      "xmltv_id": "KGWCTV142.us"
+    },
+    "KHDTLD3.us": {
+      "site_id": "15453",
+      "xmltv_id": "KHDTLD3.us"
+    },
+    "KHET111.us": {
+      "site_id": "49918",
+      "xmltv_id": "KHET111.us"
+    },
+    "KHIITV91.us": {
+      "site_id": "31532",
+      "xmltv_id": "KHIITV91.us"
+    },
+    "KHIZLD391.us": {
+      "site_id": "99756",
+      "xmltv_id": "KHIZLD391.us"
+    },
+    "KHIZLD392.us": {
+      "site_id": "101396",
+      "xmltv_id": "KHIZLD392.us"
+    },
+    "KHIZLD393.us": {
+      "site_id": "99757",
+      "xmltv_id": "KHIZLD393.us"
+    },
+    "KHIZLD394.us": {
+      "site_id": "101974",
+      "xmltv_id": "KHIZLD394.us"
+    },
+    "KHIZLD395.us": {
+      "site_id": "99758",
+      "xmltv_id": "KHIZLD395.us"
+    },
+    "KHIZLD396.us": {
+      "site_id": "99759",
+      "xmltv_id": "KHIZLD396.us"
+    },
+    "KHIZLD397.us": {
+      "site_id": "101397",
+      "xmltv_id": "KHIZLD397.us"
+    },
+    "KHNL131.us": {
+      "site_id": "31530",
+      "xmltv_id": "KHNL131.us"
+    },
+    "KHNL132.us": {
+      "site_id": "50417",
+      "xmltv_id": "KHNL132.us"
+    },
+    "KHONTV21.us": {
+      "site_id": "36130",
+      "xmltv_id": "KHONTV21.us"
+    },
+    "KHONTV22.us": {
+      "site_id": "54247",
+      "xmltv_id": "KHONTV22.us"
+    },
+    "KHOU111.us": {
+      "site_id": "19628",
+      "xmltv_id": "KHOU111.us"
+    },
+    "KHOU113.us": {
+      "site_id": "45598",
+      "xmltv_id": "KHOU113.us"
+    },
+    "KHOU115.us": {
+      "site_id": "114758",
+      "xmltv_id": "KHOU115.us"
+    },
+    "KHOU392.us": {
+      "site_id": "45597",
+      "xmltv_id": "KHOU392.us"
+    },
+    "KHOU394.us": {
+      "site_id": "106947",
+      "xmltv_id": "KHOU394.us"
+    },
+    "KHQDT1.us": {
+      "site_id": "33819",
+      "xmltv_id": "KHQDT1.us"
+    },
+    "KHQDT2.us": {
+      "site_id": "33843",
+      "xmltv_id": "KHQDT2.us"
+    },
+    "KHSCLD323.us": {
+      "site_id": "101748",
+      "xmltv_id": "KHSCLD323.us"
+    },
+    "KHSCLD354.us": {
+      "site_id": "101749",
+      "xmltv_id": "KHSCLD354.us"
+    },
+    "KHSCLD5.us": {
+      "site_id": "101750",
+      "xmltv_id": "KHSCLD5.us"
+    },
+    "KHSLTV121.us": {
+      "site_id": "45553",
+      "xmltv_id": "KHSLTV121.us"
+    },
+    "KHSLTV122.us": {
+      "site_id": "52417",
+      "xmltv_id": "KHSLTV122.us"
+    },
+    "KHTVCD61.us": {
+      "site_id": "75675",
+      "xmltv_id": "KHTVCD61.us"
+    },
+    "KIAH81.us": {
+      "site_id": "21657",
+      "xmltv_id": "KIAH81.us"
+    },
+    "KIAHDT2.us": {
+      "site_id": "42954",
+      "xmltv_id": "KIAHDT2.us"
+    },
+    "KIAHDT3.us": {
+      "site_id": "70504",
+      "xmltv_id": "KIAHDT3.us"
+    },
+    "KIAHDT4.us": {
+      "site_id": "106397",
+      "xmltv_id": "KIAHDT4.us"
+    },
+    "KIAHDT5.us": {
+      "site_id": "112507",
+      "xmltv_id": "KIAHDT5.us"
+    },
+    "KICUTV361.us": {
+      "site_id": "21650",
+      "xmltv_id": "KICUTV361.us"
+    },
+    "KICUTV363.us": {
+      "site_id": "67818",
+      "xmltv_id": "KICUTV363.us"
+    },
+    "KICUTV364.us": {
+      "site_id": "97794",
+      "xmltv_id": "KICUTV364.us"
+    },
+    "KICUTV365.us": {
+      "site_id": "105295",
+      "xmltv_id": "KICUTV365.us"
+    },
+    "KIEMTV31.us": {
+      "site_id": "34913",
+      "xmltv_id": "KIEMTV31.us"
+    },
+    "KIIOLD101.us": {
+      "site_id": "73580",
+      "xmltv_id": "KIIOLD101.us"
+    },
+    "KIKU201.us": {
+      "site_id": "43452",
+      "xmltv_id": "KIKU201.us"
+    },
+    "KILM641.us": {
+      "site_id": "12421",
+      "xmltv_id": "KILM641.us"
+    },
+    "KINGTV52.us": {
+      "site_id": "46081",
+      "xmltv_id": "KINGTV52.us"
+    },
+    "KINGTV53.us": {
+      "site_id": "106988",
+      "xmltv_id": "KINGTV53.us"
+    },
+    "KINGTV54.us": {
+      "site_id": "121196",
+      "xmltv_id": "KINGTV54.us"
+    },
+    "KIONTV462.us": {
+      "site_id": "52421",
+      "xmltv_id": "KIONTV462.us"
+    },
+    "KIONTV463.us": {
+      "site_id": "106723",
+      "xmltv_id": "KIONTV463.us"
+    },
+    "KIROTV71.us": {
+      "site_id": "20290",
+      "xmltv_id": "KIROTV71.us"
+    },
+    "KIROTV72.us": {
+      "site_id": "49928",
+      "xmltv_id": "KIROTV72.us"
+    },
+    "KIROTV73.us": {
+      "site_id": "59434",
+      "xmltv_id": "KIROTV73.us"
+    },
+    "KITV41.us": {
+      "site_id": "19590",
+      "xmltv_id": "KITV41.us"
+    },
+    "KITV42.us": {
+      "site_id": "55988",
+      "xmltv_id": "KITV42.us"
+    },
+    "KITV43.us": {
+      "site_id": "109140",
+      "xmltv_id": "KITV43.us"
+    },
+    "KIVITV61.us": {
+      "site_id": "28023",
+      "xmltv_id": "KIVITV61.us"
+    },
+    "KIXETV91.us": {
+      "site_id": "42680",
+      "xmltv_id": "KIXETV91.us"
+    },
+    "KIXETV92.us": {
+      "site_id": "46790",
+      "xmltv_id": "KIXETV92.us"
+    },
+    "KIXETV93.us": {
+      "site_id": "55603",
+      "xmltv_id": "KIXETV93.us"
+    },
+    "KJEOLD1.us": {
+      "site_id": "65779",
+      "xmltv_id": "KJEOLD1.us"
+    },
+    "KJEOLD326.us": {
+      "site_id": "71852",
+      "xmltv_id": "KJEOLD326.us"
+    },
+    "KJEOLD4.us": {
+      "site_id": "69084",
+      "xmltv_id": "KJEOLD4.us"
+    },
+    "KJHPLP1.us": {
+      "site_id": "82636",
+      "xmltv_id": "KJHPLP1.us"
+    },
+    "KJHPLP3.us": {
+      "site_id": "82641",
+      "xmltv_id": "KJHPLP3.us"
+    },
+    "KJHPLP4.us": {
+      "site_id": "82642",
+      "xmltv_id": "KJHPLP4.us"
+    },
+    "KJLA571.us": {
+      "site_id": "12476",
+      "xmltv_id": "KJLA571.us"
+    },
+    "KJLA576.us": {
+      "site_id": "64838",
+      "xmltv_id": "KJLA576.us"
+    },
+    "KJLA579.us": {
+      "site_id": "65628",
+      "xmltv_id": "KJLA579.us"
+    },
+    "KKAFCD2.us": {
+      "site_id": "31313",
+      "xmltv_id": "KKAFCD2.us"
+    },
+    "KKEYLP131.us": {
+      "site_id": "91869",
+      "xmltv_id": "KKEYLP131.us"
+    },
+    "KKFXCD241.us": {
+      "site_id": "50855",
+      "xmltv_id": "KKFXCD241.us"
+    },
+    "KKFXCD242.us": {
+      "site_id": "92226",
+      "xmltv_id": "KKFXCD242.us"
+    },
+    "KKPMCD281.us": {
+      "site_id": "74891",
+      "xmltv_id": "KKPMCD281.us"
+    },
+    "KKPMCD2810.us": {
+      "site_id": "99002",
+      "xmltv_id": "KKPMCD2810.us"
+    },
+    "KKPMCD282.us": {
+      "site_id": "74895",
+      "xmltv_id": "KKPMCD282.us"
+    },
+    "KKPMCD283.us": {
+      "site_id": "92484",
+      "xmltv_id": "KKPMCD283.us"
+    },
+    "KKPMCD284.us": {
+      "site_id": "92483",
+      "xmltv_id": "KKPMCD284.us"
+    },
+    "KKPMCD285.us": {
+      "site_id": "92486",
+      "xmltv_id": "KKPMCD285.us"
+    },
+    "KKPMCD286.us": {
+      "site_id": "92487",
+      "xmltv_id": "KKPMCD286.us"
+    },
+    "KKPXTV651.us": {
+      "site_id": "35375",
+      "xmltv_id": "KKPXTV651.us"
+    },
+    "KKPXTV652.us": {
+      "site_id": "50640",
+      "xmltv_id": "KKPXTV652.us"
+    },
+    "KKPXTV653.us": {
+      "site_id": "50678",
+      "xmltv_id": "KKPXTV653.us"
+    },
+    "KKPXTV654.us": {
+      "site_id": "50680",
+      "xmltv_id": "KKPXTV654.us"
+    },
+    "KKPXTV655.us": {
+      "site_id": "83533",
+      "xmltv_id": "KKPXTV655.us"
+    },
+    "KKPXTV656.us": {
+      "site_id": "89279",
+      "xmltv_id": "KKPXTV656.us"
+    },
+    "KKTFLD301.us": {
+      "site_id": "69262",
+      "xmltv_id": "KKTFLD301.us"
+    },
+    "KLCS581.us": {
+      "site_id": "43777",
+      "xmltv_id": "KLCS581.us"
+    },
+    "KLCS582.us": {
+      "site_id": "43779",
+      "xmltv_id": "KLCS582.us"
+    },
+    "KLFBLD221.us": {
+      "site_id": "78681",
+      "xmltv_id": "KLFBLD221.us"
+    },
+    "KLFBLD222.us": {
+      "site_id": "78682",
+      "xmltv_id": "KLFBLD222.us"
+    },
+    "KLFBLD223.us": {
+      "site_id": "78683",
+      "xmltv_id": "KLFBLD223.us"
+    },
+    "KLKN81.us": {
+      "site_id": "31652",
+      "xmltv_id": "KLKN81.us"
+    },
+    "KLPDLD72.us": {
+      "site_id": "15462",
+      "xmltv_id": "KLPDLD72.us"
+    },
+    "KLRACD204.us": {
+      "site_id": "36259",
+      "xmltv_id": "KLRACD204.us"
+    },
+    "KLRU181.us": {
+      "site_id": "35500",
+      "xmltv_id": "KLRU181.us"
+    },
+    "KLRU182.us": {
+      "site_id": "35502",
+      "xmltv_id": "KLRU182.us"
+    },
+    "KLRU183.us": {
+      "site_id": "35504",
+      "xmltv_id": "KLRU183.us"
+    },
+    "KLRU184.us": {
+      "site_id": "35506",
+      "xmltv_id": "KLRU184.us"
+    },
+    "KMAXTV311.us": {
+      "site_id": "43352",
+      "xmltv_id": "KMAXTV311.us"
+    },
+    "KMAXTV312.us": {
+      "site_id": "105599",
+      "xmltv_id": "KMAXTV312.us"
+    },
+    "KMAXTV313.us": {
+      "site_id": "109080",
+      "xmltv_id": "KMAXTV313.us"
+    },
+    "KMAXTV314.us": {
+      "site_id": "110234",
+      "xmltv_id": "KMAXTV314.us"
+    },
+    "KMAXTV315.us": {
+      "site_id": "113520",
+      "xmltv_id": "KMAXTV315.us"
+    },
+    "KMBYLD272.us": {
+      "site_id": "71861",
+      "xmltv_id": "KMBYLD272.us"
+    },
+    "KMBYLD273.us": {
+      "site_id": "82822",
+      "xmltv_id": "KMBYLD273.us"
+    },
+    "KMEXDT341.us": {
+      "site_id": "43048",
+      "xmltv_id": "KMEXDT341.us"
+    },
+    "KMEXDT342.us": {
+      "site_id": "44017",
+      "xmltv_id": "KMEXDT342.us"
+    },
+    "KMEXDT343.us": {
+      "site_id": "92056",
+      "xmltv_id": "KMEXDT343.us"
+    },
+    "KMEXDT344.us": {
+      "site_id": "100352",
+      "xmltv_id": "KMEXDT344.us"
+    },
+    "KMGHTV71.us": {
+      "site_id": "20293",
+      "xmltv_id": "KMGHTV71.us"
+    },
+    "KMIRDT3.us": {
+      "site_id": "103821",
+      "xmltv_id": "KMIRDT3.us"
+    },
+    "KMIRTV361.us": {
+      "site_id": "31073",
+      "xmltv_id": "KMIRTV361.us"
+    },
+    "KMIRTV362.us": {
+      "site_id": "70489",
+      "xmltv_id": "KMIRTV362.us"
+    },
+    "KMMCLD521.us": {
+      "site_id": "77782",
+      "xmltv_id": "KMMCLD521.us"
+    },
+    "KMMDCD391.us": {
+      "site_id": "69221",
+      "xmltv_id": "KMMDCD391.us"
+    },
+    "KMMDCD392.us": {
+      "site_id": "112700",
+      "xmltv_id": "KMMDCD392.us"
+    },
+    "KMMDCD393.us": {
+      "site_id": "107305",
+      "xmltv_id": "KMMDCD393.us"
+    },
+    "KMMDCD394.us": {
+      "site_id": "107334",
+      "xmltv_id": "KMMDCD394.us"
+    },
+    "KMMDCD395.us": {
+      "site_id": "107335",
+      "xmltv_id": "KMMDCD395.us"
+    },
+    "KMMDCD396.us": {
+      "site_id": "107336",
+      "xmltv_id": "KMMDCD396.us"
+    },
+    "KMMDCD397.us": {
+      "site_id": "112701",
+      "xmltv_id": "KMMDCD397.us"
+    },
+    "KMMWLD1.us": {
+      "site_id": "87098",
+      "xmltv_id": "KMMWLD1.us"
+    },
+    "KMOV41.us": {
+      "site_id": "20506",
+      "xmltv_id": "KMOV41.us"
+    },
+    "KMOV42.us": {
+      "site_id": "65617",
+      "xmltv_id": "KMOV42.us"
+    },
+    "KMOV43.us": {
+      "site_id": "80426",
+      "xmltv_id": "KMOV43.us"
+    },
+    "KMOV44.us": {
+      "site_id": "111191",
+      "xmltv_id": "KMOV44.us"
+    },
+    "KMOVDT5.us": {
+      "site_id": "113908",
+      "xmltv_id": "KMOVDT5.us"
+    },
+    "KMPHCD171.us": {
+      "site_id": "89258",
+      "xmltv_id": "KMPHCD171.us"
+    },
+    "KMPHTV261.us": {
+      "site_id": "32699",
+      "xmltv_id": "KMPHTV261.us"
+    },
+    "KMPHTV262.us": {
+      "site_id": "61505",
+      "xmltv_id": "KMPHTV262.us"
+    },
+    "KMPHTV593.us": {
+      "site_id": "101739",
+      "xmltv_id": "KMPHTV593.us"
+    },
+    "KMSGLD2.us": {
+      "site_id": "117021",
+      "xmltv_id": "KMSGLD2.us"
+    },
+    "KMSGLD393.us": {
+      "site_id": "101769",
+      "xmltv_id": "KMSGLD393.us"
+    },
+    "KMSGLD395.us": {
+      "site_id": "88548",
+      "xmltv_id": "KMSGLD395.us"
+    },
+    "KMTPTV501.us": {
+      "site_id": "47121",
+      "xmltv_id": "KMTPTV501.us"
+    },
+    "KMTPTV502.us": {
+      "site_id": "61386",
+      "xmltv_id": "KMTPTV502.us"
+    },
+    "KMTPTV504.us": {
+      "site_id": "61387",
+      "xmltv_id": "KMTPTV504.us"
+    },
+    "KMTPTV505.us": {
+      "site_id": "60834",
+      "xmltv_id": "KMTPTV505.us"
+    },
+    "KMUMCD331.us": {
+      "site_id": "100377",
+      "xmltv_id": "KMUMCD331.us"
+    },
+    "KMUVLP1.us": {
+      "site_id": "48743",
+      "xmltv_id": "KMUVLP1.us"
+    },
+    "KMYADT492.us": {
+      "site_id": "12465",
+      "xmltv_id": "KMYADT492.us"
+    },
+    "KNBC41.us": {
+      "site_id": "19568",
+      "xmltv_id": "KNBC41.us"
+    },
+    "KNBC42.us": {
+      "site_id": "45764",
+      "xmltv_id": "KNBC42.us"
+    },
+    "KNBC43.us": {
+      "site_id": "114892",
+      "xmltv_id": "KNBC43.us"
+    },
+    "KNETCD251.us": {
+      "site_id": "69575",
+      "xmltv_id": "KNETCD251.us"
+    },
+    "KNLACD203.us": {
+      "site_id": "68655",
+      "xmltv_id": "KNLACD203.us"
+    },
+    "KNLACD251.us": {
+      "site_id": "67967",
+      "xmltv_id": "KNLACD251.us"
+    },
+    "KNLC241.us": {
+      "site_id": "54439",
+      "xmltv_id": "KNLC241.us"
+    },
+    "KNLC242.us": {
+      "site_id": "64120",
+      "xmltv_id": "KNLC242.us"
+    },
+    "KNLC243.us": {
+      "site_id": "106839",
+      "xmltv_id": "KNLC243.us"
+    },
+    "KNLC244.us": {
+      "site_id": "106846",
+      "xmltv_id": "KNLC244.us"
+    },
+    "KNLC245.us": {
+      "site_id": "106847",
+      "xmltv_id": "KNLC245.us"
+    },
+    "KNLC246.us": {
+      "site_id": "109818",
+      "xmltv_id": "KNLC246.us"
+    },
+    "KNLC247.us": {
+      "site_id": "121156",
+      "xmltv_id": "KNLC247.us"
+    },
+    "KNSD481.us": {
+      "site_id": "21213",
+      "xmltv_id": "KNSD481.us"
+    },
+    "KNSD482.us": {
+      "site_id": "45740",
+      "xmltv_id": "KNSD482.us"
+    },
+    "KNSO511.us": {
+      "site_id": "31805",
+      "xmltv_id": "KNSO511.us"
+    },
+    "KNSO513.us": {
+      "site_id": "61749",
+      "xmltv_id": "KNSO513.us"
+    },
+    "KNSO592.us": {
+      "site_id": "61747",
+      "xmltv_id": "KNSO592.us"
+    },
+    "KNTV111.us": {
+      "site_id": "21785",
+      "xmltv_id": "KNTV111.us"
+    },
+    "KNTV115.us": {
+      "site_id": "114883",
+      "xmltv_id": "KNTV115.us"
+    },
+    "KNTV42.us": {
+      "site_id": "36151",
+      "xmltv_id": "KNTV42.us"
+    },
+    "KNTV483.us": {
+      "site_id": "61388",
+      "xmltv_id": "KNTV483.us"
+    },
+    "KNVN241.us": {
+      "site_id": "49643",
+      "xmltv_id": "KNVN241.us"
+    },
+    "KNVN242.us": {
+      "site_id": "80734",
+      "xmltv_id": "KNVN242.us"
+    },
+    "KNVN245.us": {
+      "site_id": "80736",
+      "xmltv_id": "KNVN245.us"
+    },
+    "KNXVDT4.us": {
+      "site_id": "111171",
+      "xmltv_id": "KNXVDT4.us"
+    },
+    "KNXVTV152.us": {
+      "site_id": "31039",
+      "xmltv_id": "KNXVTV152.us"
+    },
+    "KNXVTV153.us": {
+      "site_id": "92213",
+      "xmltv_id": "KNXVTV153.us"
+    },
+    "KNXVTV611.us": {
+      "site_id": "21210",
+      "xmltv_id": "KNXVTV611.us"
+    },
+    "KOCETV501.us": {
+      "site_id": "34544",
+      "xmltv_id": "KOCETV501.us"
+    },
+    "KOCETV502.us": {
+      "site_id": "46525",
+      "xmltv_id": "KOCETV502.us"
+    },
+    "KOCETV503.us": {
+      "site_id": "53201",
+      "xmltv_id": "KOCETV503.us"
+    },
+    "KOCETV504.us": {
+      "site_id": "58716",
+      "xmltv_id": "KOCETV504.us"
+    },
+    "KODGLP1.us": {
+      "site_id": "70795",
+      "xmltv_id": "KODGLP1.us"
+    },
+    "KOFYTV203.us": {
+      "site_id": "84450",
+      "xmltv_id": "KOFYTV203.us"
+    },
+    "KOFYTV282.us": {
+      "site_id": "50612",
+      "xmltv_id": "KOFYTV282.us"
+    },
+    "KOLOTV81.us": {
+      "site_id": "28025",
+      "xmltv_id": "KOLOTV81.us"
+    },
+    "KOMOTV42.us": {
+      "site_id": "63537",
+      "xmltv_id": "KOMOTV42.us"
+    },
+    "KOMOTV43.us": {
+      "site_id": "91578",
+      "xmltv_id": "KOMOTV43.us"
+    },
+    "KOMOTV511.us": {
+      "site_id": "19629",
+      "xmltv_id": "KOMOTV511.us"
+    },
+    "KOTRLD71.us": {
+      "site_id": "110858",
+      "xmltv_id": "KOTRLD71.us"
+    },
+    "KOVR131.us": {
+      "site_id": "21214",
+      "xmltv_id": "KOVR131.us"
+    },
+    "KOVR132.us": {
+      "site_id": "35423",
+      "xmltv_id": "KOVR132.us"
+    },
+    "KOVR133.us": {
+      "site_id": "112325",
+      "xmltv_id": "KOVR133.us"
+    },
+    "KOVR134.us": {
+      "site_id": "117083",
+      "xmltv_id": "KOVR134.us"
+    },
+    "KPAXTV81.us": {
+      "site_id": "34654",
+      "xmltv_id": "KPAXTV81.us"
+    },
+    "KPBS151.us": {
+      "site_id": "29024",
+      "xmltv_id": "KPBS151.us"
+    },
+    "KPBS152.us": {
+      "site_id": "30697",
+      "xmltv_id": "KPBS152.us"
+    },
+    "KPBS153.us": {
+      "site_id": "49377",
+      "xmltv_id": "KPBS153.us"
+    },
+    "KPBS154.us": {
+      "site_id": "101904",
+      "xmltv_id": "KPBS154.us"
+    },
+    "KPHELD445.us": {
+      "site_id": "35114",
+      "xmltv_id": "KPHELD445.us"
+    },
+    "KPHOTV51.us": {
+      "site_id": "21293",
+      "xmltv_id": "KPHOTV51.us"
+    },
+    "KPHOTV52.us": {
+      "site_id": "49881",
+      "xmltv_id": "KPHOTV52.us"
+    },
+    "KPHOTV53.us": {
+      "site_id": "112336",
+      "xmltv_id": "KPHOTV53.us"
+    },
+    "KPHOTV54.us": {
+      "site_id": "116901",
+      "xmltv_id": "KPHOTV54.us"
+    },
+    "KPIXTV51.us": {
+      "site_id": "19572",
+      "xmltv_id": "KPIXTV51.us"
+    },
+    "KPIXTV52.us": {
+      "site_id": "91800",
+      "xmltv_id": "KPIXTV52.us"
+    },
+    "KPIXTV53.us": {
+      "site_id": "112342",
+      "xmltv_id": "KPIXTV53.us"
+    },
+    "KPIXTV54.us": {
+      "site_id": "117034",
+      "xmltv_id": "KPIXTV54.us"
+    },
+    "KPJK604.us": {
+      "site_id": "109636",
+      "xmltv_id": "KPJK604.us"
+    },
+    "KPJK605.us": {
+      "site_id": "109637",
+      "xmltv_id": "KPJK605.us"
+    },
+    "KPLRDT2.us": {
+      "site_id": "50834",
+      "xmltv_id": "KPLRDT2.us"
+    },
+    "KPLRDT3.us": {
+      "site_id": "97969",
+      "xmltv_id": "KPLRDT3.us"
+    },
+    "KPLRDT4.us": {
+      "site_id": "111088",
+      "xmltv_id": "KPLRDT4.us"
+    },
+    "KPLRTV51.us": {
+      "site_id": "34808",
+      "xmltv_id": "KPLRTV51.us"
+    },
+    "KPMFLD267.us": {
+      "site_id": "31825",
+      "xmltv_id": "KPMFLD267.us"
+    },
+    "KPMR381.us": {
+      "site_id": "43021",
+      "xmltv_id": "KPMR381.us"
+    },
+    "KPMR383.us": {
+      "site_id": "65905",
+      "xmltv_id": "KPMR383.us"
+    },
+    "KPMRDT2.us": {
+      "site_id": "65903",
+      "xmltv_id": "KPMRDT2.us"
+    },
+    "KPNX121.us": {
+      "site_id": "20507",
+      "xmltv_id": "KPNX121.us"
+    },
+    "KPNX123.us": {
+      "site_id": "91543",
+      "xmltv_id": "KPNX123.us"
+    },
+    "KPNX124.us": {
+      "site_id": "107082",
+      "xmltv_id": "KPNX124.us"
+    },
+    "KPNX125.us": {
+      "site_id": "118820",
+      "xmltv_id": "KPNX125.us"
+    },
+    "KPNX612.us": {
+      "site_id": "49108",
+      "xmltv_id": "KPNX612.us"
+    },
+    "KPPXTV511.us": {
+      "site_id": "34834",
+      "xmltv_id": "KPPXTV511.us"
+    },
+    "KPPXTV512.us": {
+      "site_id": "50050",
+      "xmltv_id": "KPPXTV512.us"
+    },
+    "KPPXTV513.us": {
+      "site_id": "50049",
+      "xmltv_id": "KPPXTV513.us"
+    },
+    "KPPXTV514.us": {
+      "site_id": "50051",
+      "xmltv_id": "KPPXTV514.us"
+    },
+    "KPPXTV515.us": {
+      "site_id": "82678",
+      "xmltv_id": "KPPXTV515.us"
+    },
+    "KPPXTV516.us": {
+      "site_id": "83482",
+      "xmltv_id": "KPPXTV516.us"
+    },
+    "KPRCTV22.us": {
+      "site_id": "40465",
+      "xmltv_id": "KPRCTV22.us"
+    },
+    "KPRCTV23.us": {
+      "site_id": "40466",
+      "xmltv_id": "KPRCTV23.us"
+    },
+    "KPRCTV391.us": {
+      "site_id": "21250",
+      "xmltv_id": "KPRCTV391.us"
+    },
+    "KPSELD501.us": {
+      "site_id": "90891",
+      "xmltv_id": "KPSELD501.us"
+    },
+    "KPSELD502.us": {
+      "site_id": "108913",
+      "xmltv_id": "KPSELD502.us"
+    },
+    "KPSELD503.us": {
+      "site_id": "108920",
+      "xmltv_id": "KPSELD503.us"
+    },
+    "KPSNLD2.us": {
+      "site_id": "31466",
+      "xmltv_id": "KPSNLD2.us"
+    },
+    "KPSNLD3.us": {
+      "site_id": "31257",
+      "xmltv_id": "KPSNLD3.us"
+    },
+    "KPSPDT2.us": {
+      "site_id": "107654",
+      "xmltv_id": "KPSPDT2.us"
+    },
+    "KPXDTV681.us": {
+      "site_id": "34833",
+      "xmltv_id": "KPXDTV681.us"
+    },
+    "KPXNTV302.us": {
+      "site_id": "50512",
+      "xmltv_id": "KPXNTV302.us"
+    },
+    "KPXNTV303.us": {
+      "site_id": "49817",
+      "xmltv_id": "KPXNTV303.us"
+    },
+    "KPXNTV304.us": {
+      "site_id": "49819",
+      "xmltv_id": "KPXNTV304.us"
+    },
+    "KPXNTV305.us": {
+      "site_id": "84433",
+      "xmltv_id": "KPXNTV305.us"
+    },
+    "KPXNTV306.us": {
+      "site_id": "83481",
+      "xmltv_id": "KPXNTV306.us"
+    },
+    "KPXNTV641.us": {
+      "site_id": "49814",
+      "xmltv_id": "KPXNTV641.us"
+    },
+    "KQCA581.us": {
+      "site_id": "25509",
+      "xmltv_id": "KQCA581.us"
+    },
+    "KQCADT2.us": {
+      "site_id": "63012",
+      "xmltv_id": "KQCADT2.us"
+    },
+    "KQCADT3.us": {
+      "site_id": "93860",
+      "xmltv_id": "KQCADT3.us"
+    },
+    "KQED91.us": {
+      "site_id": "24344",
+      "xmltv_id": "KQED91.us"
+    },
+    "KQED92.us": {
+      "site_id": "30507",
+      "xmltv_id": "KQED92.us"
+    },
+    "KQED93.us": {
+      "site_id": "35278",
+      "xmltv_id": "KQED93.us"
+    },
+    "KQED94.us": {
+      "site_id": "34168",
+      "xmltv_id": "KQED94.us"
+    },
+    "KQEH541.us": {
+      "site_id": "44690",
+      "xmltv_id": "KQEH541.us"
+    },
+    "KQEH542.us": {
+      "site_id": "55312",
+      "xmltv_id": "KQEH542.us"
+    },
+    "KQEH543.us": {
+      "site_id": "55524",
+      "xmltv_id": "KQEH543.us"
+    },
+    "KQEH544.us": {
+      "site_id": "58519",
+      "xmltv_id": "KQEH544.us"
+    },
+    "KQET251.us": {
+      "site_id": "49856",
+      "xmltv_id": "KQET251.us"
+    },
+    "KQET252.us": {
+      "site_id": "55320",
+      "xmltv_id": "KQET252.us"
+    },
+    "KQET253.us": {
+      "site_id": "55541",
+      "xmltv_id": "KQET253.us"
+    },
+    "KQET254.us": {
+      "site_id": "55548",
+      "xmltv_id": "KQET254.us"
+    },
+    "KQMMCD291.us": {
+      "site_id": "68599",
+      "xmltv_id": "KQMMCD291.us"
+    },
+    "KQRMLD1.us": {
+      "site_id": "114341",
+      "xmltv_id": "KQRMLD1.us"
+    },
+    "KQROLD451.us": {
+      "site_id": "98229",
+      "xmltv_id": "KQROLD451.us"
+    },
+    "KQROLD453.us": {
+      "site_id": "98239",
+      "xmltv_id": "KQROLD453.us"
+    },
+    "KQROLD454.us": {
+      "site_id": "98267",
+      "xmltv_id": "KQROLD454.us"
+    },
+    "KQROLD455.us": {
+      "site_id": "98268",
+      "xmltv_id": "KQROLD455.us"
+    },
+    "KQROLD456.us": {
+      "site_id": "98269",
+      "xmltv_id": "KQROLD456.us"
+    },
+    "KQROLD9.us": {
+      "site_id": "115372",
+      "xmltv_id": "KQROLD9.us"
+    },
+    "KQSL81.us": {
+      "site_id": "43736",
+      "xmltv_id": "KQSL81.us"
+    },
+    "KRAHCD352.us": {
+      "site_id": "31315",
+      "xmltv_id": "KRAHCD352.us"
+    },
+    "KRCA71.us": {
+      "site_id": "35352",
+      "xmltv_id": "KRCA71.us"
+    },
+    "KRCA74.us": {
+      "site_id": "83303",
+      "xmltv_id": "KRCA74.us"
+    },
+    "KRCB221.us": {
+      "site_id": "35242",
+      "xmltv_id": "KRCB221.us"
+    },
+    "KRCB222.us": {
+      "site_id": "35244",
+      "xmltv_id": "KRCB222.us"
+    },
+    "KRCB223.us": {
+      "site_id": "35246",
+      "xmltv_id": "KRCB223.us"
+    },
+    "KRCRTV71.us": {
+      "site_id": "34474",
+      "xmltv_id": "KRCRTV71.us"
+    },
+    "KRCRTV72.us": {
+      "site_id": "34475",
+      "xmltv_id": "KRCRTV72.us"
+    },
+    "KRCRTV73.us": {
+      "site_id": "73174",
+      "xmltv_id": "KRCRTV73.us"
+    },
+    "KRETCD451.us": {
+      "site_id": "82507",
+      "xmltv_id": "KRETCD451.us"
+    },
+    "KRETCD452.us": {
+      "site_id": "102789",
+      "xmltv_id": "KRETCD452.us"
+    },
+    "KRETCD453.us": {
+      "site_id": "82816",
+      "xmltv_id": "KRETCD453.us"
+    },
+    "KRETCD454.us": {
+      "site_id": "102791",
+      "xmltv_id": "KRETCD454.us"
+    },
+    "KRIV261.us": {
+      "site_id": "21252",
+      "xmltv_id": "KRIV261.us"
+    },
+    "KRIV262.us": {
+      "site_id": "105340",
+      "xmltv_id": "KRIV262.us"
+    },
+    "KRONDT3.us": {
+      "site_id": "82660",
+      "xmltv_id": "KRONDT3.us"
+    },
+    "KRONDT4.us": {
+      "site_id": "106636",
+      "xmltv_id": "KRONDT4.us"
+    },
+    "KRONDT5.us": {
+      "site_id": "115446",
+      "xmltv_id": "KRONDT5.us"
+    },
+    "KRONTV71.us": {
+      "site_id": "19573",
+      "xmltv_id": "KRONTV71.us"
+    },
+    "KRVULD461.us": {
+      "site_id": "65306",
+      "xmltv_id": "KRVULD461.us"
+    },
+    "KSAOLD491.us": {
+      "site_id": "73746",
+      "xmltv_id": "KSAOLD491.us"
+    },
+    "KSAOLD492.us": {
+      "site_id": "73234",
+      "xmltv_id": "KSAOLD492.us"
+    },
+    "KSAOLD493.us": {
+      "site_id": "73494",
+      "xmltv_id": "KSAOLD493.us"
+    },
+    "KSAOLD495.us": {
+      "site_id": "77076",
+      "xmltv_id": "KSAOLD495.us"
+    },
+    "KSAOLD496.us": {
+      "site_id": "100414",
+      "xmltv_id": "KSAOLD496.us"
+    },
+    "KSAOLD497.us": {
+      "site_id": "100415",
+      "xmltv_id": "KSAOLD497.us"
+    },
+    "KSAZTV101.us": {
+      "site_id": "21209",
+      "xmltv_id": "KSAZTV101.us"
+    },
+    "KSAZTV103.us": {
+      "site_id": "44656",
+      "xmltv_id": "KSAZTV103.us"
+    },
+    "KSAZTV614.us": {
+      "site_id": "9750",
+      "xmltv_id": "KSAZTV614.us"
+    },
+    "KSBBCD171.us": {
+      "site_id": "96133",
+      "xmltv_id": "KSBBCD171.us"
+    },
+    "KSBOCD421.us": {
+      "site_id": "95900",
+      "xmltv_id": "KSBOCD421.us"
+    },
+    "KSBSCD103.us": {
+      "site_id": "35051",
+      "xmltv_id": "KSBSCD103.us"
+    },
+    "KSBSCD5.us": {
+      "site_id": "17516",
+      "xmltv_id": "KSBSCD5.us"
+    },
+    "KSBW81.us": {
+      "site_id": "33383",
+      "xmltv_id": "KSBW81.us"
+    },
+    "KSBW82.us": {
+      "site_id": "50702",
+      "xmltv_id": "KSBW82.us"
+    },
+    "KSBW83.us": {
+      "site_id": "99135",
+      "xmltv_id": "KSBW83.us"
+    },
+    "KSBY61.us": {
+      "site_id": "31623",
+      "xmltv_id": "KSBY61.us"
+    },
+    "KSBY62.us": {
+      "site_id": "52685",
+      "xmltv_id": "KSBY62.us"
+    },
+    "KSBY63.us": {
+      "site_id": "102009",
+      "xmltv_id": "KSBY63.us"
+    },
+    "KSBY64.us": {
+      "site_id": "111962",
+      "xmltv_id": "KSBY64.us"
+    },
+    "KSCI501.us": {
+      "site_id": "29035",
+      "xmltv_id": "KSCI501.us"
+    },
+    "KSCI502.us": {
+      "site_id": "37213",
+      "xmltv_id": "KSCI502.us"
+    },
+    "KSDILD1.us": {
+      "site_id": "32976",
+      "xmltv_id": "KSDILD1.us"
+    },
+    "KSDK51.us": {
+      "site_id": "20513",
+      "xmltv_id": "KSDK51.us"
+    },
+    "KSDK52.us": {
+      "site_id": "47735",
+      "xmltv_id": "KSDK52.us"
+    },
+    "KSDK53.us": {
+      "site_id": "91518",
+      "xmltv_id": "KSDK53.us"
+    },
+    "KSDK54.us": {
+      "site_id": "107218",
+      "xmltv_id": "KSDK54.us"
+    },
+    "KSDK55.us": {
+      "site_id": "118887",
+      "xmltv_id": "KSDK55.us"
+    },
+    "KSDK56.us": {
+      "site_id": "121438",
+      "xmltv_id": "KSDK56.us"
+    },
+    "KSDXLD91.us": {
+      "site_id": "71987",
+      "xmltv_id": "KSDXLD91.us"
+    },
+    "KSDYLD2.us": {
+      "site_id": "70475",
+      "xmltv_id": "KSDYLD2.us"
+    },
+    "KSDYLD501.us": {
+      "site_id": "70467",
+      "xmltv_id": "KSDYLD501.us"
+    },
+    "KSEE242.us": {
+      "site_id": "47887",
+      "xmltv_id": "KSEE242.us"
+    },
+    "KSEE243.us": {
+      "site_id": "57694",
+      "xmltv_id": "KSEE243.us"
+    },
+    "KSFVCD272.us": {
+      "site_id": "87005",
+      "xmltv_id": "KSFVCD272.us"
+    },
+    "KSFYTV131.us": {
+      "site_id": "20375",
+      "xmltv_id": "KSFYTV131.us"
+    },
+    "KSKJCD451.us": {
+      "site_id": "97134",
+      "xmltv_id": "KSKJCD451.us"
+    },
+    "KSKJCD452.us": {
+      "site_id": "97135",
+      "xmltv_id": "KSKJCD452.us"
+    },
+    "KSKJCD453.us": {
+      "site_id": "97173",
+      "xmltv_id": "KSKJCD453.us"
+    },
+    "KSKJCD455.us": {
+      "site_id": "97175",
+      "xmltv_id": "KSKJCD455.us"
+    },
+    "KSMSDT2.us": {
+      "site_id": "67536",
+      "xmltv_id": "KSMSDT2.us"
+    },
+    "KSMSTV671.us": {
+      "site_id": "63089",
+      "xmltv_id": "KSMSTV671.us"
+    },
+    "KSMSTV673.us": {
+      "site_id": "64165",
+      "xmltv_id": "KSMSTV673.us"
+    },
+    "KSMVLD313.us": {
+      "site_id": "78829",
+      "xmltv_id": "KSMVLD313.us"
+    },
+    "KSPXDT3.us": {
+      "site_id": "46561",
+      "xmltv_id": "KSPXDT3.us"
+    },
+    "KSPXTV291.us": {
+      "site_id": "46555",
+      "xmltv_id": "KSPXTV291.us"
+    },
+    "KSPXTV294.us": {
+      "site_id": "46563",
+      "xmltv_id": "KSPXTV294.us"
+    },
+    "KSPXTV295.us": {
+      "site_id": "82730",
+      "xmltv_id": "KSPXTV295.us"
+    },
+    "KSPXTV296.us": {
+      "site_id": "83529",
+      "xmltv_id": "KSPXTV296.us"
+    },
+    "KSPXTV299.us": {
+      "site_id": "99582",
+      "xmltv_id": "KSPXTV299.us"
+    },
+    "KSPXTV332.us": {
+      "site_id": "46559",
+      "xmltv_id": "KSPXTV332.us"
+    },
+    "KSTCTV52.us": {
+      "site_id": "32822",
+      "xmltv_id": "KSTCTV52.us"
+    },
+    "KSTCTV53.us": {
+      "site_id": "73502",
+      "xmltv_id": "KSTCTV53.us"
+    },
+    "KSTCTV54.us": {
+      "site_id": "35583",
+      "xmltv_id": "KSTCTV54.us"
+    },
+    "KSTPDT5.us": {
+      "site_id": "73508",
+      "xmltv_id": "KSTPDT5.us"
+    },
+    "KSTPTV51.us": {
+      "site_id": "21236",
+      "xmltv_id": "KSTPTV51.us"
+    },
+    "KSTPTV57.us": {
+      "site_id": "46095",
+      "xmltv_id": "KSTPTV57.us"
+    },
+    "KSTRDT491.us": {
+      "site_id": "27421",
+      "xmltv_id": "KSTRDT491.us"
+    },
+    "KSTS113.us": {
+      "site_id": "76876",
+      "xmltv_id": "KSTS113.us"
+    },
+    "KSTS114.us": {
+      "site_id": "113567",
+      "xmltv_id": "KSTS114.us"
+    },
+    "KSTS481.us": {
+      "site_id": "30460",
+      "xmltv_id": "KSTS481.us"
+    },
+    "KSTS482.us": {
+      "site_id": "43082",
+      "xmltv_id": "KSTS482.us"
+    },
+    "KSTS485.us": {
+      "site_id": "114882",
+      "xmltv_id": "KSTS485.us"
+    },
+    "KSTVLP1.us": {
+      "site_id": "32977",
+      "xmltv_id": "KSTVLP1.us"
+    },
+    "KSTW115.us": {
+      "site_id": "113562",
+      "xmltv_id": "KSTW115.us"
+    },
+    "KTAS331.us": {
+      "site_id": "31229",
+      "xmltv_id": "KTAS331.us"
+    },
+    "KTAVLD351.us": {
+      "site_id": "71396",
+      "xmltv_id": "KTAVLD351.us"
+    },
+    "KTAVLD352.us": {
+      "site_id": "71659",
+      "xmltv_id": "KTAVLD352.us"
+    },
+    "KTBNTV401.us": {
+      "site_id": "52307",
+      "xmltv_id": "KTBNTV401.us"
+    },
+    "KTBNTV402.us": {
+      "site_id": "53385",
+      "xmltv_id": "KTBNTV402.us"
+    },
+    "KTBNTV403.us": {
+      "site_id": "53389",
+      "xmltv_id": "KTBNTV403.us"
+    },
+    "KTBNTV404.us": {
+      "site_id": "53397",
+      "xmltv_id": "KTBNTV404.us"
+    },
+    "KTBNTV405.us": {
+      "site_id": "53399",
+      "xmltv_id": "KTBNTV405.us"
+    },
+    "KTCATV21.us": {
+      "site_id": "114142",
+      "xmltv_id": "KTCATV21.us"
+    },
+    "KTCATV24.us": {
+      "site_id": "31262",
+      "xmltv_id": "KTCATV24.us"
+    },
+    "KTFFDT611.us": {
+      "site_id": "35976",
+      "xmltv_id": "KTFFDT611.us"
+    },
+    "KTFFDT612.us": {
+      "site_id": "35978",
+      "xmltv_id": "KTFFDT612.us"
+    },
+    "KTFFDT613.us": {
+      "site_id": "108500",
+      "xmltv_id": "KTFFDT613.us"
+    },
+    "KTFFLD411.us": {
+      "site_id": "89544",
+      "xmltv_id": "KTFFLD411.us"
+    },
+    "KTFKDT641.us": {
+      "site_id": "52309",
+      "xmltv_id": "KTFKDT641.us"
+    },
+    "KTFKDT643.us": {
+      "site_id": "86443",
+      "xmltv_id": "KTFKDT643.us"
+    },
+    "KTFKDT644.us": {
+      "site_id": "90196",
+      "xmltv_id": "KTFKDT644.us"
+    },
+    "KTLA51.us": {
+      "site_id": "19515",
+      "xmltv_id": "KTLA51.us"
+    },
+    "KTLA52.us": {
+      "site_id": "63335",
+      "xmltv_id": "KTLA52.us"
+    },
+    "KTLA53.us": {
+      "site_id": "70319",
+      "xmltv_id": "KTLA53.us"
+    },
+    "KTLNTV681.us": {
+      "site_id": "36140",
+      "xmltv_id": "KTLNTV681.us"
+    },
+    "KTLNTV682.us": {
+      "site_id": "84496",
+      "xmltv_id": "KTLNTV682.us"
+    },
+    "KTLNTV683.us": {
+      "site_id": "84497",
+      "xmltv_id": "KTLNTV683.us"
+    },
+    "KTLNTV684.us": {
+      "site_id": "84493",
+      "xmltv_id": "KTLNTV684.us"
+    },
+    "KTMD471.us": {
+      "site_id": "35517",
+      "xmltv_id": "KTMD471.us"
+    },
+    "KTMD472.us": {
+      "site_id": "70961",
+      "xmltv_id": "KTMD472.us"
+    },
+    "KTMD473.us": {
+      "site_id": "70962",
+      "xmltv_id": "KTMD473.us"
+    },
+    "KTMD474.us": {
+      "site_id": "120369",
+      "xmltv_id": "KTMD474.us"
+    },
+    "KTMF231.us": {
+      "site_id": "54511",
+      "xmltv_id": "KTMF231.us"
+    },
+    "KTMF232.us": {
+      "site_id": "64586",
+      "xmltv_id": "KTMF232.us"
+    },
+    "KTNCTV501.us": {
+      "site_id": "34741",
+      "xmltv_id": "KTNCTV501.us"
+    },
+    "KTNCTV502.us": {
+      "site_id": "65819",
+      "xmltv_id": "KTNCTV502.us"
+    },
+    "KTNVTV331.us": {
+      "site_id": "30785",
+      "xmltv_id": "KTNVTV331.us"
+    },
+    "KTRKTV131.us": {
+      "site_id": "21251",
+      "xmltv_id": "KTRKTV131.us"
+    },
+    "KTRKTV132.us": {
+      "site_id": "43140",
+      "xmltv_id": "KTRKTV132.us"
+    },
+    "KTRKTV133.us": {
+      "site_id": "44109",
+      "xmltv_id": "KTRKTV133.us"
+    },
+    "KTRKTV204.us": {
+      "site_id": "120853",
+      "xmltv_id": "KTRKTV204.us"
+    },
+    "KTSBCD2.us": {
+      "site_id": "99061",
+      "xmltv_id": "KTSBCD2.us"
+    },
+    "KTSBCD3.us": {
+      "site_id": "99062",
+      "xmltv_id": "KTSBCD3.us"
+    },
+    "KTSBCD351.us": {
+      "site_id": "99060",
+      "xmltv_id": "KTSBCD351.us"
+    },
+    "KTSF261.us": {
+      "site_id": "31221",
+      "xmltv_id": "KTSF261.us"
+    },
+    "KTSF263.us": {
+      "site_id": "64712",
+      "xmltv_id": "KTSF263.us"
+    },
+    "KTSF265.us": {
+      "site_id": "70623",
+      "xmltv_id": "KTSF265.us"
+    },
+    "KTTV111.us": {
+      "site_id": "20450",
+      "xmltv_id": "KTTV111.us"
+    },
+    "KTTV113.us": {
+      "site_id": "68615",
+      "xmltv_id": "KTTV113.us"
+    },
+    "KTTV134.us": {
+      "site_id": "112522",
+      "xmltv_id": "KTTV134.us"
+    },
+    "KTVD201.us": {
+      "site_id": "37087",
+      "xmltv_id": "KTVD201.us"
+    },
+    "KTVI21.us": {
+      "site_id": "21300",
+      "xmltv_id": "KTVI21.us"
+    },
+    "KTVI22.us": {
+      "site_id": "70954",
+      "xmltv_id": "KTVI22.us"
+    },
+    "KTVI23.us": {
+      "site_id": "98169",
+      "xmltv_id": "KTVI23.us"
+    },
+    "KTVI24.us": {
+      "site_id": "112482",
+      "xmltv_id": "KTVI24.us"
+    },
+    "KTVMTV71.us": {
+      "site_id": "30608",
+      "xmltv_id": "KTVMTV71.us"
+    },
+    "KTVO31.us": {
+      "site_id": "34831",
+      "xmltv_id": "KTVO31.us"
+    },
+    "KTVPLD233.us": {
+      "site_id": "16718",
+      "xmltv_id": "KTVPLD233.us"
+    },
+    "KTVQ21.us": {
+      "site_id": "43406",
+      "xmltv_id": "KTVQ21.us"
+    },
+    "KTVQ22.us": {
+      "site_id": "51965",
+      "xmltv_id": "KTVQ22.us"
+    },
+    "KTVT111.us": {
+      "site_id": "20204",
+      "xmltv_id": "KTVT111.us"
+    },
+    "KTVT112.us": {
+      "site_id": "91694",
+      "xmltv_id": "KTVT112.us"
+    },
+    "KTVT113.us": {
+      "site_id": "112329",
+      "xmltv_id": "KTVT113.us"
+    },
+    "KTVT114.us": {
+      "site_id": "117086",
+      "xmltv_id": "KTVT114.us"
+    },
+    "KTVU22.us": {
+      "site_id": "50439",
+      "xmltv_id": "KTVU22.us"
+    },
+    "KTVU23.us": {
+      "site_id": "92206",
+      "xmltv_id": "KTVU23.us"
+    },
+    "KTVU24.us": {
+      "site_id": "94801",
+      "xmltv_id": "KTVU24.us"
+    },
+    "KTVU41.us": {
+      "site_id": "19571",
+      "xmltv_id": "KTVU41.us"
+    },
+    "KTVWDT5.us": {
+      "site_id": "36592",
+      "xmltv_id": "KTVWDT5.us"
+    },
+    "KTXH671.us": {
+      "site_id": "30977",
+      "xmltv_id": "KTXH671.us"
+    },
+    "KTXHDT2.us": {
+      "site_id": "81449",
+      "xmltv_id": "KTXHDT2.us"
+    },
+    "KTXHDT3.us": {
+      "site_id": "80620",
+      "xmltv_id": "KTXHDT3.us"
+    },
+    "KTXHDT4.us": {
+      "site_id": "95562",
+      "xmltv_id": "KTXHDT4.us"
+    },
+    "KTXL401.us": {
+      "site_id": "21211",
+      "xmltv_id": "KTXL401.us"
+    },
+    "KTXL402.us": {
+      "site_id": "35447",
+      "xmltv_id": "KTXL402.us"
+    },
+    "KTXL403.us": {
+      "site_id": "91360",
+      "xmltv_id": "KTXL403.us"
+    },
+    "KTXL404.us": {
+      "site_id": "108521",
+      "xmltv_id": "KTXL404.us"
+    },
+    "KUANLD481.us": {
+      "site_id": "107246",
+      "xmltv_id": "KUANLD481.us"
+    },
+    "KUANLD482.us": {
+      "site_id": "107247",
+      "xmltv_id": "KUANLD482.us"
+    },
+    "KUCOLP1.us": {
+      "site_id": "41891",
+      "xmltv_id": "KUCOLP1.us"
+    },
+    "KUFMTV111.us": {
+      "site_id": "35314",
+      "xmltv_id": "KUFMTV111.us"
+    },
+    "KUHT81.us": {
+      "site_id": "26193",
+      "xmltv_id": "KUHT81.us"
+    },
+    "KUHT82.us": {
+      "site_id": "45716",
+      "xmltv_id": "KUHT82.us"
+    },
+    "KUHT83.us": {
+      "site_id": "55345",
+      "xmltv_id": "KUHT83.us"
+    },
+    "KUHT84.us": {
+      "site_id": "70801",
+      "xmltv_id": "KUHT84.us"
+    },
+    "KUKRLD273.us": {
+      "site_id": "112122",
+      "xmltv_id": "KUKRLD273.us"
+    },
+    "KUNALP1.us": {
+      "site_id": "18094",
+      "xmltv_id": "KUNALP1.us"
+    },
+    "KUPU561.us": {
+      "site_id": "68601",
+      "xmltv_id": "KUPU561.us"
+    },
+    "KURKLD31.us": {
+      "site_id": "109749",
+      "xmltv_id": "KURKLD31.us"
+    },
+    "KURKLD33.us": {
+      "site_id": "109750",
+      "xmltv_id": "KURKLD33.us"
+    },
+    "KUSITV691.us": {
+      "site_id": "114110",
+      "xmltv_id": "KUSITV691.us"
+    },
+    "KUTP451.us": {
+      "site_id": "24345",
+      "xmltv_id": "KUTP451.us"
+    },
+    "KUTP452.us": {
+      "site_id": "81451",
+      "xmltv_id": "KUTP452.us"
+    },
+    "KUTP453.us": {
+      "site_id": "95625",
+      "xmltv_id": "KUTP453.us"
+    },
+    "KUTP454.us": {
+      "site_id": "112708",
+      "xmltv_id": "KUTP454.us"
+    },
+    "KUTP455.us": {
+      "site_id": "112713",
+      "xmltv_id": "KUTP455.us"
+    },
+    "KUVEDT464.us": {
+      "site_id": "18082",
+      "xmltv_id": "KUVEDT464.us"
+    },
+    "KUVIDT451.us": {
+      "site_id": "34718",
+      "xmltv_id": "KUVIDT451.us"
+    },
+    "KUVIDT452.us": {
+      "site_id": "91921",
+      "xmltv_id": "KUVIDT452.us"
+    },
+    "KUVIDT453.us": {
+      "site_id": "92139",
+      "xmltv_id": "KUVIDT453.us"
+    },
+    "KUVIDT455.us": {
+      "site_id": "111964",
+      "xmltv_id": "KUVIDT455.us"
+    },
+    "KUVNDT491.us": {
+      "site_id": "113569",
+      "xmltv_id": "KUVNDT491.us"
+    },
+    "KUVSDT191.us": {
+      "site_id": "34150",
+      "xmltv_id": "KUVSDT191.us"
+    },
+    "KUVSDT3.us": {
+      "site_id": "80155",
+      "xmltv_id": "KUVSDT3.us"
+    },
+    "KUVSDT642.us": {
+      "site_id": "34152",
+      "xmltv_id": "KUVSDT642.us"
+    },
+    "KVBCLP1.us": {
+      "site_id": "88397",
+      "xmltv_id": "KVBCLP1.us"
+    },
+    "KVBCLP2.us": {
+      "site_id": "88398",
+      "xmltv_id": "KVBCLP2.us"
+    },
+    "KVBCLP3.us": {
+      "site_id": "88399",
+      "xmltv_id": "KVBCLP3.us"
+    },
+    "KVBCLP4.us": {
+      "site_id": "88400",
+      "xmltv_id": "KVBCLP4.us"
+    },
+    "KVBCLP5.us": {
+      "site_id": "88401",
+      "xmltv_id": "KVBCLP5.us"
+    },
+    "KVBCLP6.us": {
+      "site_id": "88412",
+      "xmltv_id": "KVBCLP6.us"
+    },
+    "KVBCLP7.us": {
+      "site_id": "88402",
+      "xmltv_id": "KVBCLP7.us"
+    },
+    "KVCRDT241.us": {
+      "site_id": "44023",
+      "xmltv_id": "KVCRDT241.us"
+    },
+    "KVCRDT242.us": {
+      "site_id": "59972",
+      "xmltv_id": "KVCRDT242.us"
+    },
+    "KVCRDT243.us": {
+      "site_id": "59978",
+      "xmltv_id": "KVCRDT243.us"
+    },
+    "KVCRDT244.us": {
+      "site_id": "59974",
+      "xmltv_id": "KVCRDT244.us"
+    },
+    "KVEA521.us": {
+      "site_id": "42678",
+      "xmltv_id": "KVEA521.us"
+    },
+    "KVEADT2.us": {
+      "site_id": "64573",
+      "xmltv_id": "KVEADT2.us"
+    },
+    "KVESLD1.us": {
+      "site_id": "72568",
+      "xmltv_id": "KVESLD1.us"
+    },
+    "KVHDLD2.us": {
+      "site_id": "16175",
+      "xmltv_id": "KVHDLD2.us"
+    },
+    "KVHFLD41.us": {
+      "site_id": "89259",
+      "xmltv_id": "KVHFLD41.us"
+    },
+    "KVHFLD42.us": {
+      "site_id": "73845",
+      "xmltv_id": "KVHFLD42.us"
+    },
+    "KVHFLD44.us": {
+      "site_id": "73848",
+      "xmltv_id": "KVHFLD44.us"
+    },
+    "KVHFLD45.us": {
+      "site_id": "74203",
+      "xmltv_id": "KVHFLD45.us"
+    },
+    "KVHFLD46.us": {
+      "site_id": "73856",
+      "xmltv_id": "KVHFLD46.us"
+    },
+    "KVHFLD47.us": {
+      "site_id": "96966",
+      "xmltv_id": "KVHFLD47.us"
+    },
+    "KVIE61.us": {
+      "site_id": "34197",
+      "xmltv_id": "KVIE61.us"
+    },
+    "KVIE63.us": {
+      "site_id": "35916",
+      "xmltv_id": "KVIE63.us"
+    },
+    "KVIQLD171.us": {
+      "site_id": "107157",
+      "xmltv_id": "KVIQLD171.us"
+    },
+    "KVMD313.us": {
+      "site_id": "47200",
+      "xmltv_id": "KVMD313.us"
+    },
+    "KVMD315.us": {
+      "site_id": "67218",
+      "xmltv_id": "KVMD315.us"
+    },
+    "KVMD316.us": {
+      "site_id": "67224",
+      "xmltv_id": "KVMD316.us"
+    },
+    "KVMD351.us": {
+      "site_id": "34758",
+      "xmltv_id": "KVMD351.us"
+    },
+    "KVMD577.us": {
+      "site_id": "69724",
+      "xmltv_id": "KVMD577.us"
+    },
+    "KVMDDT10.us": {
+      "site_id": "67227",
+      "xmltv_id": "KVMDDT10.us"
+    },
+    "KVMDDT9.us": {
+      "site_id": "67225",
+      "xmltv_id": "KVMDDT9.us"
+    },
+    "KVMETV201.us": {
+      "site_id": "62830",
+      "xmltv_id": "KVMETV201.us"
+    },
+    "KVPALD422.us": {
+      "site_id": "35811",
+      "xmltv_id": "KVPALD422.us"
+    },
+    "KVPT181.us": {
+      "site_id": "45729",
+      "xmltv_id": "KVPT181.us"
+    },
+    "KVPT182.us": {
+      "site_id": "46249",
+      "xmltv_id": "KVPT182.us"
+    },
+    "KVPT183.us": {
+      "site_id": "55439",
+      "xmltv_id": "KVPT183.us"
+    },
+    "KVPT184.us": {
+      "site_id": "97775",
+      "xmltv_id": "KVPT184.us"
+    },
+    "KVUE241.us": {
+      "site_id": "33585",
+      "xmltv_id": "KVUE241.us"
+    },
+    "KWGNTV91.us": {
+      "site_id": "20370",
+      "xmltv_id": "KWGNTV91.us"
+    },
+    "KWHY631.us": {
+      "site_id": "24023",
+      "xmltv_id": "KWHY631.us"
+    },
+    "KWHY632.us": {
+      "site_id": "64575",
+      "xmltv_id": "KWHY632.us"
+    },
+    "KWHY633.us": {
+      "site_id": "87653",
+      "xmltv_id": "KWHY633.us"
+    },
+    "KWMOLD342.us": {
+      "site_id": "36260",
+      "xmltv_id": "KWMOLD342.us"
+    },
+    "KWYB181.us": {
+      "site_id": "62998",
+      "xmltv_id": "KWYB181.us"
+    },
+    "KXANTV361.us": {
+      "site_id": "25147",
+      "xmltv_id": "KXANTV361.us"
+    },
+    "KXASTV51.us": {
+      "site_id": "19627",
+      "xmltv_id": "KXASTV51.us"
+    },
+    "KXASTV52.us": {
+      "site_id": "45803",
+      "xmltv_id": "KXASTV52.us"
+    },
+    "KXASTV53.us": {
+      "site_id": "61401",
+      "xmltv_id": "KXASTV53.us"
+    },
+    "KXDFCD131.us": {
+      "site_id": "62887",
+      "xmltv_id": "KXDFCD131.us"
+    },
+    "KXLA447.us": {
+      "site_id": "64829",
+      "xmltv_id": "KXLA447.us"
+    },
+    "KXLA571.us": {
+      "site_id": "42829",
+      "xmltv_id": "KXLA571.us"
+    },
+    "KXLA5710.us": {
+      "site_id": "69858",
+      "xmltv_id": "KXLA5710.us"
+    },
+    "KXLA5712.us": {
+      "site_id": "95950",
+      "xmltv_id": "KXLA5712.us"
+    },
+    "KXLA572.us": {
+      "site_id": "42832",
+      "xmltv_id": "KXLA572.us"
+    },
+    "KXLA573.us": {
+      "site_id": "64656",
+      "xmltv_id": "KXLA573.us"
+    },
+    "KXLA576.us": {
+      "site_id": "64654",
+      "xmltv_id": "KXLA576.us"
+    },
+    "KXLNDT451.us": {
+      "site_id": "35653",
+      "xmltv_id": "KXLNDT451.us"
+    },
+    "KXLNDT452.us": {
+      "site_id": "67464",
+      "xmltv_id": "KXLNDT452.us"
+    },
+    "KXLNDT453.us": {
+      "site_id": "90227",
+      "xmltv_id": "KXLNDT453.us"
+    },
+    "KXTULD572.us": {
+      "site_id": "18310",
+      "xmltv_id": "KXTULD572.us"
+    },
+    "KXTULD573.us": {
+      "site_id": "32418",
+      "xmltv_id": "KXTULD573.us"
+    },
+    "KXTULD574.us": {
+      "site_id": "34684",
+      "xmltv_id": "KXTULD574.us"
+    },
+    "KXTV101.us": {
+      "site_id": "20775",
+      "xmltv_id": "KXTV101.us"
+    },
+    "KXTV102.us": {
+      "site_id": "35360",
+      "xmltv_id": "KXTV102.us"
+    },
+    "KXTV103.us": {
+      "site_id": "99563",
+      "xmltv_id": "KXTV103.us"
+    },
+    "KXTV104.us": {
+      "site_id": "107071",
+      "xmltv_id": "KXTV104.us"
+    },
+    "KXTV105.us": {
+      "site_id": "118846",
+      "xmltv_id": "KXTV105.us"
+    },
+    "KXTXTV391.us": {
+      "site_id": "20773",
+      "xmltv_id": "KXTXTV391.us"
+    },
+    "KXVULP1.us": {
+      "site_id": "114613",
+      "xmltv_id": "KXVULP1.us"
+    },
+    "KYAVLD1.us": {
+      "site_id": "80811",
+      "xmltv_id": "KYAVLD1.us"
+    },
+    "KYAZ511.us": {
+      "site_id": "43454",
+      "xmltv_id": "KYAZ511.us"
+    },
+    "KYAZ512.us": {
+      "site_id": "64146",
+      "xmltv_id": "KYAZ512.us"
+    },
+    "KYAZ513.us": {
+      "site_id": "72288",
+      "xmltv_id": "KYAZ513.us"
+    },
+    "KYMADT133.us": {
+      "site_id": "35541",
+      "xmltv_id": "KYMADT133.us"
+    },
+    "KYMBLD1.us": {
+      "site_id": "68640",
+      "xmltv_id": "KYMBLD1.us"
+    },
+    "KYMBLD2.us": {
+      "site_id": "68642",
+      "xmltv_id": "KYMBLD2.us"
+    },
+    "KYMBLD3.us": {
+      "site_id": "70849",
+      "xmltv_id": "KYMBLD3.us"
+    },
+    "KYMBLD4.us": {
+      "site_id": "68645",
+      "xmltv_id": "KYMBLD4.us"
+    },
+    "KYMBLD5.us": {
+      "site_id": "107655",
+      "xmltv_id": "KYMBLD5.us"
+    },
+    "KYMBLD6.us": {
+      "site_id": "107656",
+      "xmltv_id": "KYMBLD6.us"
+    },
+    "KYWDT1.us": {
+      "site_id": "19611",
+      "xmltv_id": "KYWDT1.us"
+    },
+    "KYWDT2.us": {
+      "site_id": "77056",
+      "xmltv_id": "KYWDT2.us"
+    },
+    "KYWDT3.us": {
+      "site_id": "112555",
+      "xmltv_id": "KYWDT3.us"
+    },
+    "KZDFLD81.us": {
+      "site_id": "50922",
+      "xmltv_id": "KZDFLD81.us"
+    },
+    "KZDNLD264.us": {
+      "site_id": "33943",
+      "xmltv_id": "KZDNLD264.us"
+    },
+    "KZGNLD211.us": {
+      "site_id": "89346",
+      "xmltv_id": "KZGNLD211.us"
+    },
+    "KZKCLP1.us": {
+      "site_id": "68704",
+      "xmltv_id": "KZKCLP1.us"
+    },
+    "KZMMCD222.us": {
+      "site_id": "93200",
+      "xmltv_id": "KZMMCD222.us"
+    },
+    "KZMMCD223.us": {
+      "site_id": "93203",
+      "xmltv_id": "KZMMCD223.us"
+    },
+    "KZSDLP1.us": {
+      "site_id": "35950",
+      "xmltv_id": "KZSDLP1.us"
+    },
+    "KZTCLP1.us": {
+      "site_id": "73702",
+      "xmltv_id": "KZTCLP1.us"
+    },
+    "KZVULD221.us": {
+      "site_id": "65308",
+      "xmltv_id": "KZVULD221.us"
+    },
+    "Laff.us": {
+      "site_id": "92091",
+      "xmltv_id": "Laff.us"
+    },
+    "LawCrime.us": {
+      "site_id": "109553",
+      "xmltv_id": "LawCrime.us"
+    },
+    "LCN.ca": {
+      "site_id": "67231",
+      "xmltv_id": "LCN.ca"
+    },
+    "LeafsNationNetwork.ca": {
+      "site_id": "60020",
+      "xmltv_id": "LeafsNationNetwork.ca"
+    },
+    "Lifetime.us": {
+      "site_id": "60150",
+      "xmltv_id": "Lifetime.us"
+    },
+    "LifetimeMovieNetwork.us": {
+      "site_id": "18480",
+      "xmltv_id": "LifetimeMovieNetwork.us"
+    },
+    "LifetimeMovies.us": {
+      "site_id": "18480",
+      "xmltv_id": "LifetimeMovies.us"
+    },
+    "LifetimeNetwork.us": {
+      "site_id": "60150",
+      "xmltv_id": "LifetimeNetwork.us"
+    },
+    "LifetimeRealWomen.us": {
+      "site_id": "29612",
+      "xmltv_id": "LifetimeRealWomen.us"
+    },
+    "LinkTV.us": {
+      "site_id": "21450",
+      "xmltv_id": "LinkTV.us"
+    },
+    "LiveNOWfromFOX.us": {
+      "site_id": "119219",
+      "xmltv_id": "LiveNOWfromFOX.us"
+    },
+    "LiveNOWfromFOX.us@SD": {
+      "site_id": "119219",
+      "xmltv_id": "LiveNOWfromFOX.us@SD"
+    },
+    "LivingFaithTV.us": {
+      "site_id": "58595",
+      "xmltv_id": "LivingFaithTV.us"
+    },
+    "LMN.us": {
+      "site_id": "18480",
+      "xmltv_id": "LMN.us"
+    },
+    "Logo.us": {
+      "site_id": "46762",
+      "xmltv_id": "Logo.us"
+    },
+    "LonghornNetwork.us": {
+      "site_id": "76219",
+      "xmltv_id": "LonghornNetwork.us"
+    },
+    "LoveNature.ca": {
+      "site_id": "52745",
+      "xmltv_id": "LoveNature.ca"
+    },
+    "LoveNature.ca@SD": {
+      "site_id": "52745",
+      "xmltv_id": "LoveNature.ca@SD"
+    },
+    "MagnoliaNetwork.us": {
+      "site_id": "67375",
+      "xmltv_id": "MagnoliaNetwork.us"
+    },
+    "Makeful.ca": {
+      "site_id": "46217",
+      "xmltv_id": "Makeful.ca"
+    },
+    "MarqueeSportsNetwork.us": {
+      "site_id": "113776",
+      "xmltv_id": "MarqueeSportsNetwork.us"
+    },
+    "MASN.us": {
+      "site_id": "46817",
+      "xmltv_id": "MASN.us"
+    },
+    "MASN2.us": {
+      "site_id": "55433",
+      "xmltv_id": "MASN2.us"
+    },
+    "MBCAmerica.us": {
+      "site_id": "50270",
+      "xmltv_id": "MBCAmerica.us"
+    },
+    "MCAETTV.us": {
+      "site_id": "12630",
+      "xmltv_id": "MCAETTV.us"
+    },
+    "MediasetItalia.it": {
+      "site_id": "69529",
+      "xmltv_id": "MediasetItalia.it"
+    },
+    "MegaTV.us": {
+      "site_id": "58698",
+      "xmltv_id": "MegaTV.us"
+    },
+    "MeTV.us": {
+      "site_id": "70436",
+      "xmltv_id": "MeTV.us"
+    },
+    "MezzoLive.fr": {
+      "site_id": "115902",
+      "xmltv_id": "MezzoLive.fr"
+    },
+    "MGMPlus.us": {
+      "site_id": "65669",
+      "xmltv_id": "MGMPlus.us"
+    },
+    "MGMPlusDriveIn.us": {
+      "site_id": "68409",
+      "xmltv_id": "MGMPlusDriveIn.us"
+    },
+    "MGMPlusHits.us": {
+      "site_id": "73075",
+      "xmltv_id": "MGMPlusHits.us"
+    },
+    "MGMPlusMarquee.us": {
+      "site_id": "74073",
+      "xmltv_id": "MGMPlusMarquee.us"
+    },
+    "MilitaryHistory.us": {
+      "site_id": "48999",
+      "xmltv_id": "MilitaryHistory.us"
+    },
+    "MLBExtraInnings1.us": {
+      "site_id": "75674",
+      "xmltv_id": "MLBExtraInnings1.us"
+    },
+    "MLBExtraInnings10.us": {
+      "site_id": "60887",
+      "xmltv_id": "MLBExtraInnings10.us"
+    },
+    "MLBExtraInnings2.us": {
+      "site_id": "60878",
+      "xmltv_id": "MLBExtraInnings2.us"
+    },
+    "MLBExtraInnings3.us": {
+      "site_id": "60879",
+      "xmltv_id": "MLBExtraInnings3.us"
+    },
+    "MLBExtraInnings4.us": {
+      "site_id": "60880",
+      "xmltv_id": "MLBExtraInnings4.us"
+    },
+    "MLBExtraInnings5.us": {
+      "site_id": "60881",
+      "xmltv_id": "MLBExtraInnings5.us"
+    },
+    "MLBExtraInnings6.us": {
+      "site_id": "60882",
+      "xmltv_id": "MLBExtraInnings6.us"
+    },
+    "MLBExtraInnings7.us": {
+      "site_id": "60883",
+      "xmltv_id": "MLBExtraInnings7.us"
+    },
+    "MLBExtraInnings8.us": {
+      "site_id": "60884",
+      "xmltv_id": "MLBExtraInnings8.us"
+    },
+    "MLBExtraInnings9.us": {
+      "site_id": "60885",
+      "xmltv_id": "MLBExtraInnings9.us"
+    },
+    "MLBNetwork.us": {
+      "site_id": "62079",
+      "xmltv_id": "MLBNetwork.us"
+    },
+    "MLBStrikeZone.us": {
+      "site_id": "80404",
+      "xmltv_id": "MLBStrikeZone.us"
+    },
+    "MNT.us": {
+      "site_id": "51307",
+      "xmltv_id": "MNT.us"
+    },
+    "MoreMax.us": {
+      "site_id": "10121",
+      "xmltv_id": "MoreMax.us"
+    },
+    "MovieMax.us": {
+      "site_id": "25621",
+      "xmltv_id": "MovieMax.us"
+    },
+    "MoviePlex.us": {
+      "site_id": "15295",
+      "xmltv_id": "MoviePlex.us"
+    },
+    "MSG.us": {
+      "site_id": "10979",
+      "xmltv_id": "MSG.us"
+    },
+    "MSGPlus.us": {
+      "site_id": "11105",
+      "xmltv_id": "MSGPlus.us"
+    },
+    "MSNBC.us": {
+      "site_id": "16300",
+      "xmltv_id": "MSNBC.us"
+    },
+    "MTV.us": {
+      "site_id": "10986",
+      "xmltv_id": "MTV.us"
+    },
+    "MTV2.us": {
+      "site_id": "16361",
+      "xmltv_id": "MTV2.us"
+    },
+    "MTVClassic.us": {
+      "site_id": "22561",
+      "xmltv_id": "MTVClassic.us"
+    },
+    "MTVLive.uk": {
+      "site_id": "66419",
+      "xmltv_id": "MTVLive.uk"
+    },
+    "MTVLive.us": {
+      "site_id": "49141",
+      "xmltv_id": "MTVLive.us"
+    },
+    "MTVTr3s.us": {
+      "site_id": "18715",
+      "xmltv_id": "MTVTr3s.us"
+    },
+    "MTVU.us": {
+      "site_id": "44228",
+      "xmltv_id": "MTVU.us"
+    },
+    "MusicChoice70s.us": {
+      "site_id": "19326",
+      "xmltv_id": "MusicChoice70s.us"
+    },
+    "MusicChoice80s.us": {
+      "site_id": "24405",
+      "xmltv_id": "MusicChoice80s.us"
+    },
+    "MusicChoice90s.us": {
+      "site_id": "19336",
+      "xmltv_id": "MusicChoice90s.us"
+    },
+    "MusicChoiceAlternative.us": {
+      "site_id": "19310",
+      "xmltv_id": "MusicChoiceAlternative.us"
+    },
+    "MusicChoiceClassicRock.us": {
+      "site_id": "19311",
+      "xmltv_id": "MusicChoiceClassicRock.us"
+    },
+    "MusicChoiceCountryHits.us": {
+      "site_id": "19342",
+      "xmltv_id": "MusicChoiceCountryHits.us"
+    },
+    "MusicChoiceDanceEDM.us": {
+      "site_id": "76302",
+      "xmltv_id": "MusicChoiceDanceEDM.us"
+    },
+    "MusicChoiceGospel.us": {
+      "site_id": "26229",
+      "xmltv_id": "MusicChoiceGospel.us"
+    },
+    "MusicChoiceHipHopandRB.us": {
+      "site_id": "26230",
+      "xmltv_id": "MusicChoiceHipHopandRB.us"
+    },
+    "MusicChoiceHitList.us": {
+      "site_id": "19313",
+      "xmltv_id": "MusicChoiceHitList.us"
+    },
+    "MusicChoiceIndie.us": {
+      "site_id": "19332",
+      "xmltv_id": "MusicChoiceIndie.us"
+    },
+    "MusicChoiceJazz.us": {
+      "site_id": "19357",
+      "xmltv_id": "MusicChoiceJazz.us"
+    },
+    "MusicChoiceKidzOnly.us": {
+      "site_id": "19330",
+      "xmltv_id": "MusicChoiceKidzOnly.us"
+    },
+    "MusicChoiceLoveSongs.us": {
+      "site_id": "19314",
+      "xmltv_id": "MusicChoiceLoveSongs.us"
+    },
+    "MusicChoiceMax.us": {
+      "site_id": "19346",
+      "xmltv_id": "MusicChoiceMax.us"
+    },
+    "MusicChoiceMetal.us": {
+      "site_id": "31030",
+      "xmltv_id": "MusicChoiceMetal.us"
+    },
+    "MusicChoiceMexicana.us": {
+      "site_id": "19320",
+      "xmltv_id": "MusicChoiceMexicana.us"
+    },
+    "MusicChoiceMusicUrbana.us": {
+      "site_id": "24382",
+      "xmltv_id": "MusicChoiceMusicUrbana.us"
+    },
+    "MusicChoicePopCountry.us": {
+      "site_id": "19325",
+      "xmltv_id": "MusicChoicePopCountry.us"
+    },
+    "MusicChoicePopHits.us": {
+      "site_id": "43335",
+      "xmltv_id": "MusicChoicePopHits.us"
+    },
+    "MusicChoicePopLatino.us": {
+      "site_id": "24380",
+      "xmltv_id": "MusicChoicePopLatino.us"
+    },
+    "MusicChoiceRap.us": {
+      "site_id": "24378",
+      "xmltv_id": "MusicChoiceRap.us"
+    },
+    "MusicChoiceRBClassics.us": {
+      "site_id": "19344",
+      "xmltv_id": "MusicChoiceRBClassics.us"
+    },
+    "MusicChoiceRBSoul.us": {
+      "site_id": "26250",
+      "xmltv_id": "MusicChoiceRBSoul.us"
+    },
+    "MusicChoiceReggae.us": {
+      "site_id": "26221",
+      "xmltv_id": "MusicChoiceReggae.us"
+    },
+    "MusicChoiceRock.us": {
+      "site_id": "19312",
+      "xmltv_id": "MusicChoiceRock.us"
+    },
+    "MusicChoiceSmoothJazz.us": {
+      "site_id": "19362",
+      "xmltv_id": "MusicChoiceSmoothJazz.us"
+    },
+    "MusicChoiceSoftRock.us": {
+      "site_id": "19315",
+      "xmltv_id": "MusicChoiceSoftRock.us"
+    },
+    "MusicChoiceTeenBeats.us": {
+      "site_id": "19327",
+      "xmltv_id": "MusicChoiceTeenBeats.us"
+    },
+    "MusicChoiceThrowbackJamz.us": {
+      "site_id": "26232",
+      "xmltv_id": "MusicChoiceThrowbackJamz.us"
+    },
+    "MusicChoiceTodaysCountry.us": {
+      "site_id": "26248",
+      "xmltv_id": "MusicChoiceTodaysCountry.us"
+    },
+    "MusicChoiceToddlerTunes.us": {
+      "site_id": "19329",
+      "xmltv_id": "MusicChoiceToddlerTunes.us"
+    },
+    "MusicChoiceTropicales.us": {
+      "site_id": "19335",
+      "xmltv_id": "MusicChoiceTropicales.us"
+    },
+    "MusicChoiceY2K.us": {
+      "site_id": "26228",
+      "xmltv_id": "MusicChoiceY2K.us"
+    },
+    "MyDestinationTV.us": {
+      "site_id": "71303",
+      "xmltv_id": "MyDestinationTV.us"
+    },
+    "MysteryScienceTheater3000.us": {
+      "site_id": "113781",
+      "xmltv_id": "MysteryScienceTheater3000.us"
+    },
+    "NASATV.us": {
+      "site_id": "12553",
+      "xmltv_id": "NASATV.us"
+    },
+    "NASATVUHD.us": {
+      "site_id": "34466",
+      "xmltv_id": "NASATVUHD.us"
+    },
+    "NatGeoMundo.us": {
+      "site_id": "117788",
+      "xmltv_id": "NatGeoMundo.us"
+    },
+    "NationalGeographic.us": {
+      "site_id": "49438",
+      "xmltv_id": "NationalGeographic.us"
+    },
+    "NationalGeographicWild.us": {
+      "site_id": "56425",
+      "xmltv_id": "NationalGeographicWild.us"
+    },
+    "NBALeaguePass1.us": {
+      "site_id": "20810",
+      "xmltv_id": "NBALeaguePass1.us"
+    },
+    "NBALeaguePass10.us": {
+      "site_id": "21115",
+      "xmltv_id": "NBALeaguePass10.us"
+    },
+    "NBALeaguePass2.us": {
+      "site_id": "20811",
+      "xmltv_id": "NBALeaguePass2.us"
+    },
+    "NBALeaguePass3.us": {
+      "site_id": "20812",
+      "xmltv_id": "NBALeaguePass3.us"
+    },
+    "NBALeaguePass4.us": {
+      "site_id": "21044",
+      "xmltv_id": "NBALeaguePass4.us"
+    },
+    "NBALeaguePass5.us": {
+      "site_id": "21045",
+      "xmltv_id": "NBALeaguePass5.us"
+    },
+    "NBALeaguePass6.us": {
+      "site_id": "21046",
+      "xmltv_id": "NBALeaguePass6.us"
+    },
+    "NBALeaguePass7.us": {
+      "site_id": "21047",
+      "xmltv_id": "NBALeaguePass7.us"
+    },
+    "NBALeaguePass8.us": {
+      "site_id": "21048",
+      "xmltv_id": "NBALeaguePass8.us"
+    },
+    "NBALeaguePass9.us": {
+      "site_id": "21049",
+      "xmltv_id": "NBALeaguePass9.us"
+    },
+    "NBATV.us": {
+      "site_id": "32281",
+      "xmltv_id": "NBATV.us"
+    },
+    "NBC.us": {
+      "site_id": "10991",
+      "xmltv_id": "NBC.us"
+    },
+    "NBCLX.us": {
+      "site_id": "114278",
+      "xmltv_id": "NBCLX.us"
+    },
+    "NBCNewsNOW.us": {
+      "site_id": "114174",
+      "xmltv_id": "NBCNewsNOW.us"
+    },
+    "NBCSportsBoston.us": {
+      "site_id": "11104",
+      "xmltv_id": "NBCSportsBoston.us"
+    },
+    "NBCSportsCalifornia.us": {
+      "site_id": "44917",
+      "xmltv_id": "NBCSportsCalifornia.us"
+    },
+    "NBCSportsChicago.us": {
+      "site_id": "44447",
+      "xmltv_id": "NBCSportsChicago.us"
+    },
+    "NBCSportsChicagoPlus.us": {
+      "site_id": "45948",
+      "xmltv_id": "NBCSportsChicagoPlus.us"
+    },
+    "NBCSportsChicagoPlus2.us": {
+      "site_id": "55875",
+      "xmltv_id": "NBCSportsChicagoPlus2.us"
+    },
+    "NBCSportsPhiladelphia.us": {
+      "site_id": "17596",
+      "xmltv_id": "NBCSportsPhiladelphia.us"
+    },
+    "NBCSportsWashington.us": {
+      "site_id": "10271",
+      "xmltv_id": "NBCSportsWashington.us"
+    },
+    "NBCUniverso.us": {
+      "site_id": "91588",
+      "xmltv_id": "NBCUniverso.us"
+    },
+    "NDTV24x7.in": {
+      "site_id": "48836",
+      "xmltv_id": "NDTV24x7.in"
+    },
+    "NDTVGoodTimes.in": {
+      "site_id": "63360",
+      "xmltv_id": "NDTVGoodTimes.in"
+    },
+    "NECN.us": {
+      "site_id": "11000",
+      "xmltv_id": "NECN.us"
+    },
+    "NESN.us": {
+      "site_id": "10996",
+      "xmltv_id": "NESN.us"
+    },
+    "NESNPlus.us": {
+      "site_id": "63516",
+      "xmltv_id": "NESNPlus.us"
+    },
+    "News12Bronx.us": {
+      "site_id": "18580",
+      "xmltv_id": "News12Bronx.us"
+    },
+    "News12Brooklyn.us": {
+      "site_id": "46292",
+      "xmltv_id": "News12Brooklyn.us"
+    },
+    "News12Conneticut.us": {
+      "site_id": "27512",
+      "xmltv_id": "News12Conneticut.us"
+    },
+    "News12HudsonValley.us": {
+      "site_id": "46640",
+      "xmltv_id": "News12HudsonValley.us"
+    },
+    "News12LongIsland.us": {
+      "site_id": "10999",
+      "xmltv_id": "News12LongIsland.us"
+    },
+    "News12NewJersey.us": {
+      "site_id": "16143",
+      "xmltv_id": "News12NewJersey.us"
+    },
+    "News12Westchester.us": {
+      "site_id": "12309",
+      "xmltv_id": "News12Westchester.us"
+    },
+    "NewsmaxTV.us": {
+      "site_id": "58320",
+      "xmltv_id": "NewsmaxTV.us"
+    },
+    "NewsNet.us": {
+      "site_id": "92205",
+      "xmltv_id": "NewsNet.us"
+    },
+    "Newsy.us": {
+      "site_id": "96827",
+      "xmltv_id": "Newsy.us"
+    },
+    "NFLNetwork.us": {
+      "site_id": "102790",
+      "xmltv_id": "NFLNetwork.us"
+    },
+    "NFLRedZone.us": {
+      "site_id": "89351",
+      "xmltv_id": "NFLRedZone.us"
+    },
+    "NHKWorldJapan.jp": {
+      "site_id": "59155",
+      "xmltv_id": "NHKWorldJapan.jp"
+    },
+    "NHLCenterIce1.us": {
+      "site_id": "50135",
+      "xmltv_id": "NHLCenterIce1.us"
+    },
+    "NHLCenterIce10.us": {
+      "site_id": "83060",
+      "xmltv_id": "NHLCenterIce10.us"
+    },
+    "NHLCenterIce2.us": {
+      "site_id": "50136",
+      "xmltv_id": "NHLCenterIce2.us"
+    },
+    "NHLCenterIce3.us": {
+      "site_id": "50137",
+      "xmltv_id": "NHLCenterIce3.us"
+    },
+    "NHLCenterIce4.us": {
+      "site_id": "50138",
+      "xmltv_id": "NHLCenterIce4.us"
+    },
+    "NHLCenterIce5.us": {
+      "site_id": "50139",
+      "xmltv_id": "NHLCenterIce5.us"
+    },
+    "NHLCenterIce6.us": {
+      "site_id": "50140",
+      "xmltv_id": "NHLCenterIce6.us"
+    },
+    "NHLCenterIce7.us": {
+      "site_id": "54348",
+      "xmltv_id": "NHLCenterIce7.us"
+    },
+    "NHLCenterIce8.us": {
+      "site_id": "54349",
+      "xmltv_id": "NHLCenterIce8.us"
+    },
+    "NHLCenterIce9.us": {
+      "site_id": "83059",
+      "xmltv_id": "NHLCenterIce9.us"
+    },
+    "NHLNetwork.us": {
+      "site_id": "58570",
+      "xmltv_id": "NHLNetwork.us"
+    },
+    "Nickelodeon.us": {
+      "site_id": "11006",
+      "xmltv_id": "Nickelodeon.us"
+    },
+    "NickJr.us": {
+      "site_id": "19211",
+      "xmltv_id": "NickJr.us"
+    },
+    "NickMusic.us": {
+      "site_id": "90209",
+      "xmltv_id": "NickMusic.us"
+    },
+    "Nicktoons.us": {
+      "site_id": "30420",
+      "xmltv_id": "Nicktoons.us"
+    },
+    "Noovo.ca": {
+      "site_id": "58688",
+      "xmltv_id": "Noovo.ca"
+    },
+    "NRBTV.us": {
+      "site_id": "49097",
+      "xmltv_id": "NRBTV.us"
+    },
+    "NTDTV.us": {
+      "site_id": "11253",
+      "xmltv_id": "NTDTV.us"
+    },
+    "NTV.bd": {
+      "site_id": "80160",
+      "xmltv_id": "NTV.bd"
+    },
+    "NuestraVision.us": {
+      "site_id": "106819",
+      "xmltv_id": "NuestraVision.us"
+    },
+    "OneAmericaNewsNetwork.us": {
+      "site_id": "82542",
+      "xmltv_id": "OneAmericaNewsNetwork.us"
+    },
+    "OneCaribbeanTelevision.us": {
+      "site_id": "20036",
+      "xmltv_id": "OneCaribbeanTelevision.us"
+    },
+    "OnTV4U.us": {
+      "site_id": "59576",
+      "xmltv_id": "OnTV4U.us"
+    },
+    "OSNYahala.ae": {
+      "site_id": "31538",
+      "xmltv_id": "OSNYahala.ae"
+    },
+    "OutdoorChannel.us": {
+      "site_id": "14776",
+      "xmltv_id": "OutdoorChannel.us"
+    },
+    "OuterMax.us": {
+      "site_id": "25622",
+      "xmltv_id": "OuterMax.us"
+    },
+    "Ovation.us": {
+      "site_id": "15807",
+      "xmltv_id": "Ovation.us"
+    },
+    "OWN.us": {
+      "site_id": "70387",
+      "xmltv_id": "OWN.us"
+    },
+    "Oxygen.us": {
+      "site_id": "21484",
+      "xmltv_id": "Oxygen.us"
+    },
+    "Pac12Arizona.us": {
+      "site_id": "76372",
+      "xmltv_id": "Pac12Arizona.us"
+    },
+    "Pac12BayArea.us": {
+      "site_id": "76370",
+      "xmltv_id": "Pac12BayArea.us"
+    },
+    "Pac12LosAngeles.us": {
+      "site_id": "76375",
+      "xmltv_id": "Pac12LosAngeles.us"
+    },
+    "Pac12Mountain.us": {
+      "site_id": "76374",
+      "xmltv_id": "Pac12Mountain.us"
+    },
+    "Pac12Networks.us": {
+      "site_id": "76366",
+      "xmltv_id": "Pac12Networks.us"
+    },
+    "Pac12Oregon.us": {
+      "site_id": "76371",
+      "xmltv_id": "Pac12Oregon.us"
+    },
+    "Pac12Washington.us": {
+      "site_id": "76373",
+      "xmltv_id": "Pac12Washington.us"
+    },
+    "ParamountNetwork.us": {
+      "site_id": "11163",
+      "xmltv_id": "ParamountNetwork.us"
+    },
+    "Pasiones.us": {
+      "site_id": "61776",
+      "xmltv_id": "Pasiones.us"
+    },
+    "PBS.us": {
+      "site_id": "33453",
+      "xmltv_id": "PBS.us"
+    },
+    "PBSKidsEasternCentral.us": {
+      "site_id": "101364",
+      "xmltv_id": "PBSKidsEasternCentral.us"
+    },
+    "PeopleTV.us": {
+      "site_id": "107584",
+      "xmltv_id": "PeopleTV.us"
+    },
+    "PeruMagico.pe": {
+      "site_id": "18869",
+      "xmltv_id": "PeruMagico.pe"
+    },
+    "PetsTV.us": {
+      "site_id": "71297",
+      "xmltv_id": "PetsTV.us"
+    },
+    "PixLTV.us": {
+      "site_id": "70113",
+      "xmltv_id": "PixLTV.us"
+    },
+    "PlayboyTVLatinAmerica.us": {
+      "site_id": "16788",
+      "xmltv_id": "PlayboyTVLatinAmerica.us"
+    },
+    "Pop.us": {
+      "site_id": "16715",
+      "xmltv_id": "Pop.us"
+    },
+    "PositivTV.us": {
+      "site_id": "34169",
+      "xmltv_id": "PositivTV.us"
+    },
+    "PrimeAsiaTV.ca": {
+      "site_id": "32677",
+      "xmltv_id": "PrimeAsiaTV.ca"
+    },
+    "PursuitChannel.us": {
+      "site_id": "60111",
+      "xmltv_id": "PursuitChannel.us"
+    },
+    "PursuitUP.us": {
+      "site_id": "112487",
+      "xmltv_id": "PursuitUP.us"
+    },
+    "QelloConcertsbyStingray.ca": {
+      "site_id": "113296",
+      "xmltv_id": "QelloConcertsbyStingray.ca"
+    },
+    "Quest.us": {
+      "site_id": "106838",
+      "xmltv_id": "Quest.us"
+    },
+    "QVC.us": {
+      "site_id": "11069",
+      "xmltv_id": "QVC.us"
+    },
+    "QVC2.us": {
+      "site_id": "82682",
+      "xmltv_id": "QVC2.us"
+    },
+    "QVC3.us": {
+      "site_id": "101260",
+      "xmltv_id": "QVC3.us"
+    },
+    "RaiNews24.it": {
+      "site_id": "78803",
+      "xmltv_id": "RaiNews24.it"
+    },
+    "Reelz.us": {
+      "site_id": "52199",
+      "xmltv_id": "Reelz.us"
+    },
+    "RetroPlex.us": {
+      "site_id": "49767",
+      "xmltv_id": "RetroPlex.us"
+    },
+    "RevenueFrontier.us": {
+      "site_id": "58799",
+      "xmltv_id": "RevenueFrontier.us"
+    },
+    "REVN.us": {
+      "site_id": "91119",
+      "xmltv_id": "REVN.us"
+    },
+    "Revolt.us": {
+      "site_id": "83097",
+      "xmltv_id": "Revolt.us"
+    },
+    "RFDTV.us": {
+      "site_id": "25148",
+      "xmltv_id": "RFDTV.us"
+    },
+    "RootSportsNorthwest.us": {
+      "site_id": "11062",
+      "xmltv_id": "RootSportsNorthwest.us"
+    },
+    "RotanaClassic.sa": {
+      "site_id": "31977",
+      "xmltv_id": "RotanaClassic.sa"
+    },
+    "RotanaKhalijia.sa": {
+      "site_id": "31973",
+      "xmltv_id": "RotanaKhalijia.sa"
+    },
+    "RTAmerica.us": {
+      "site_id": "58333",
+      "xmltv_id": "RTAmerica.us"
+    },
+    "RTRPlaneta.ru": {
+      "site_id": "43389",
+      "xmltv_id": "RTRPlaneta.ru"
+    },
+    "SaisonsCanada.ca": {
+      "site_id": "20046",
+      "xmltv_id": "SaisonsCanada.ca"
+    },
+    "SBNTV.us": {
+      "site_id": "67676",
+      "xmltv_id": "SBNTV.us"
+    },
+    "Science.us": {
+      "site_id": "16616",
+      "xmltv_id": "Science.us"
+    },
+    "ScreenPix.us": {
+      "site_id": "113001",
+      "xmltv_id": "ScreenPix.us"
+    },
+    "ScreenPixAction.us": {
+      "site_id": "113003",
+      "xmltv_id": "ScreenPixAction.us"
+    },
+    "ScreenPixVoices.us": {
+      "site_id": "113004",
+      "xmltv_id": "ScreenPixVoices.us"
+    },
+    "ScreenPixWesterns.us": {
+      "site_id": "113002",
+      "xmltv_id": "ScreenPixWesterns.us"
+    },
+    "SECNetwork.us": {
+      "site_id": "89535",
+      "xmltv_id": "SECNetwork.us"
+    },
+    "SETInternational.tw": {
+      "site_id": "54253",
+      "xmltv_id": "SETInternational.tw"
+    },
+    "ShawPayPerView1.ca": {
+      "site_id": "22016",
+      "xmltv_id": "ShawPayPerView1.ca"
+    },
+    "ShawPayPerView2.ca": {
+      "site_id": "22017",
+      "xmltv_id": "ShawPayPerView2.ca"
+    },
+    "ShawPayPerView3.ca": {
+      "site_id": "22018",
+      "xmltv_id": "ShawPayPerView3.ca"
+    },
+    "ShawPayPerView4.ca": {
+      "site_id": "22019",
+      "xmltv_id": "ShawPayPerView4.ca"
+    },
+    "ShawPayPerView5.ca": {
+      "site_id": "22020",
+      "xmltv_id": "ShawPayPerView5.ca"
+    },
+    "ShawPayPerView6.ca": {
+      "site_id": "22021",
+      "xmltv_id": "ShawPayPerView6.ca"
+    },
+    "ShawPayPerView7.ca": {
+      "site_id": "22022",
+      "xmltv_id": "ShawPayPerView7.ca"
+    },
+    "ShawPayPerView8.ca": {
+      "site_id": "22023",
+      "xmltv_id": "ShawPayPerView8.ca"
+    },
+    "ShepherdsChapel.us": {
+      "site_id": "32518",
+      "xmltv_id": "ShepherdsChapel.us"
+    },
+    "ShopHQ.us": {
+      "site_id": "14948",
+      "xmltv_id": "ShopHQ.us"
+    },
+    "ShopLC.us": {
+      "site_id": "56032",
+      "xmltv_id": "ShopLC.us"
+    },
+    "ShopTV.ph": {
+      "site_id": "11017",
+      "xmltv_id": "ShopTV.ph"
+    },
+    "ShoutFactoryTV.us": {
+      "site_id": "111132",
+      "xmltv_id": "ShoutFactoryTV.us"
+    },
+    "Showtime.us": {
+      "site_id": "11115",
+      "xmltv_id": "Showtime.us"
+    },
+    "Showtime2.us": {
+      "site_id": "11116",
+      "xmltv_id": "Showtime2.us"
+    },
+    "ShowtimeExtreme.us": {
+      "site_id": "18086",
+      "xmltv_id": "ShowtimeExtreme.us"
+    },
+    "ShowtimeFamilyZone.us": {
+      "site_id": "25274",
+      "xmltv_id": "ShowtimeFamilyZone.us"
+    },
+    "ShowtimeNext.us": {
+      "site_id": "25270",
+      "xmltv_id": "ShowtimeNext.us"
+    },
+    "ShowtimeShowcase.us": {
+      "site_id": "16153",
+      "xmltv_id": "ShowtimeShowcase.us"
+    },
+    "ShowtimeWomen.us": {
+      "site_id": "25272",
+      "xmltv_id": "ShowtimeWomen.us"
+    },
+    "ShoxBet.us": {
+      "site_id": "20622",
+      "xmltv_id": "ShoxBet.us"
+    },
+    "SkyLinkTV.us": {
+      "site_id": "49492",
+      "xmltv_id": "SkyLinkTV.us"
+    },
+    "SkyNewsArabia.ae": {
+      "site_id": "99085",
+      "xmltv_id": "SkyNewsArabia.ae"
+    },
+    "SkyNewsInternational.uk": {
+      "site_id": "114448",
+      "xmltv_id": "SkyNewsInternational.uk"
+    },
+    "SmartLifeStyleTV.us": {
+      "site_id": "88293",
+      "xmltv_id": "SmartLifeStyleTV.us"
+    },
+    "SmileTV.us": {
+      "site_id": "49208",
+      "xmltv_id": "SmileTV.us"
+    },
+    "SmithsonianChannel.us": {
+      "site_id": "58532",
+      "xmltv_id": "SmithsonianChannel.us"
+    },
+    "SonyMix.in": {
+      "site_id": "80171",
+      "xmltv_id": "SonyMix.in"
+    },
+    "SonyMovies.us": {
+      "site_id": "69091",
+      "xmltv_id": "SonyMovies.us"
+    },
+    "SonySABUSA.us": {
+      "site_id": "16030",
+      "xmltv_id": "SonySABUSA.us"
+    },
+    "SoYummy.us": {
+      "site_id": "115674",
+      "xmltv_id": "SoYummy.us"
+    },
+    "SpectrumOC16.us": {
+      "site_id": "9581",
+      "xmltv_id": "SpectrumOC16.us"
+    },
+    "SpectrumSportsNet.us": {
+      "site_id": "77375",
+      "xmltv_id": "SpectrumSportsNet.us"
+    },
+    "SpectrumSportsNetLA.us": {
+      "site_id": "87023",
+      "xmltv_id": "SpectrumSportsNetLA.us"
+    },
+    "SportsmanChannel.us": {
+      "site_id": "33930",
+      "xmltv_id": "SportsmanChannel.us"
+    },
+    "SportsmanChannelCanada.ca": {
+      "site_id": "32992",
+      "xmltv_id": "SportsmanChannelCanada.ca"
+    },
+    "Sportsnet.ca": {
+      "site_id": "70394",
+      "xmltv_id": "Sportsnet.ca"
+    },
+    "SportsNetNewYork.us": {
+      "site_id": "49603",
+      "xmltv_id": "SportsNetNewYork.us"
+    },
+    "SportsnetOne.ca": {
+      "site_id": "68859",
+      "xmltv_id": "SportsnetOne.ca"
+    },
+    "SportsnetWorld.ca": {
+      "site_id": "57735",
+      "xmltv_id": "SportsnetWorld.ca"
+    },
+    "Stadium.us": {
+      "site_id": "104950",
+      "xmltv_id": "Stadium.us"
+    },
+    "StadiumCollegeSports.us": {
+      "site_id": "26078",
+      "xmltv_id": "StadiumCollegeSports.us"
+    },
+    "StarBharat.in": {
+      "site_id": "44889",
+      "xmltv_id": "StarBharat.in"
+    },
+    "StartTV.us": {
+      "site_id": "109454",
+      "xmltv_id": "StartTV.us"
+    },
+    "Starz.us": {
+      "site_id": "12719",
+      "xmltv_id": "Starz.us"
+    },
+    "Starz1.ca": {
+      "site_id": "49338",
+      "xmltv_id": "Starz1.ca"
+    },
+    "Starz2.ca": {
+      "site_id": "77045",
+      "xmltv_id": "Starz2.ca"
+    },
+    "StarzCinema.us": {
+      "site_id": "19634",
+      "xmltv_id": "StarzCinema.us"
+    },
+    "StarzComedy.us": {
+      "site_id": "34901",
+      "xmltv_id": "StarzComedy.us"
+    },
+    "StarzEdge.us": {
+      "site_id": "16311",
+      "xmltv_id": "StarzEdge.us"
+    },
+    "StarzEncore.us": {
+      "site_id": "10178",
+      "xmltv_id": "StarzEncore.us"
+    },
+    "StarzEncoreAction.us": {
+      "site_id": "14871",
+      "xmltv_id": "StarzEncoreAction.us"
+    },
+    "StarzEncoreBlack.us": {
+      "site_id": "14870",
+      "xmltv_id": "StarzEncoreBlack.us"
+    },
+    "StarzEncoreClassic.us": {
+      "site_id": "14764",
+      "xmltv_id": "StarzEncoreClassic.us"
+    },
+    "StarzEncoreFamily.us": {
+      "site_id": "14886",
+      "xmltv_id": "StarzEncoreFamily.us"
+    },
+    "StarzEncoreSuspense.us": {
+      "site_id": "14766",
+      "xmltv_id": "StarzEncoreSuspense.us"
+    },
+    "StarzEncoreWesterns.us": {
+      "site_id": "14765",
+      "xmltv_id": "StarzEncoreWesterns.us"
+    },
+    "StarzInBlack.us": {
+      "site_id": "16833",
+      "xmltv_id": "StarzInBlack.us"
+    },
+    "StarzKidsFamily.us": {
+      "site_id": "50671",
+      "xmltv_id": "StarzKidsFamily.us"
+    },
+    "StingrayBroadway.ca": {
+      "site_id": "19050",
+      "xmltv_id": "StingrayBroadway.ca"
+    },
+    "StingrayClassicRB.ca": {
+      "site_id": "19047",
+      "xmltv_id": "StingrayClassicRB.ca"
+    },
+    "StingrayClassicRock.ca": {
+      "site_id": "67567",
+      "xmltv_id": "StingrayClassicRock.ca"
+    },
+    "StingrayEasyListening.ca": {
+      "site_id": "67573",
+      "xmltv_id": "StingrayEasyListening.ca"
+    },
+    "StingrayFestival4K.ca": {
+      "site_id": "34379",
+      "xmltv_id": "StingrayFestival4K.ca"
+    },
+    "StingrayFlashback70s.ca": {
+      "site_id": "67565",
+      "xmltv_id": "StingrayFlashback70s.ca"
+    },
+    "StingrayFrancoFetes.ca": {
+      "site_id": "17046",
+      "xmltv_id": "StingrayFrancoFetes.ca"
+    },
+    "StingrayGospel.ca": {
+      "site_id": "18845",
+      "xmltv_id": "StingrayGospel.ca"
+    },
+    "StingrayGreatestHits.ca": {
+      "site_id": "110433",
+      "xmltv_id": "StingrayGreatestHits.ca"
+    },
+    "StingrayHitList.ca": {
+      "site_id": "67555",
+      "xmltv_id": "StingrayHitList.ca"
+    },
+    "StingrayHotCountry.ca": {
+      "site_id": "67557",
+      "xmltv_id": "StingrayHotCountry.ca"
+    },
+    "StingrayKaraoke.ca": {
+      "site_id": "110657",
+      "xmltv_id": "StingrayKaraoke.ca"
+    },
+    "StingrayNaturescape.ca": {
+      "site_id": "90613",
+      "xmltv_id": "StingrayNaturescape.ca"
+    },
+    "StingrayNoFences.ca": {
+      "site_id": "18841",
+      "xmltv_id": "StingrayNoFences.ca"
+    },
+    "StingrayNothinBut90s.ca": {
+      "site_id": "68620",
+      "xmltv_id": "StingrayNothinBut90s.ca"
+    },
+    "StingrayPopAdult.ca": {
+      "site_id": "67558",
+      "xmltv_id": "StingrayPopAdult.ca"
+    },
+    "StingrayRememberthe80s.ca": {
+      "site_id": "67566",
+      "xmltv_id": "StingrayRememberthe80s.ca"
+    },
+    "StingrayRockAlternative.ca": {
+      "site_id": "67568",
+      "xmltv_id": "StingrayRockAlternative.ca"
+    },
+    "StingrayRomanceLatino.ca": {
+      "site_id": "19049",
+      "xmltv_id": "StingrayRomanceLatino.ca"
+    },
+    "StingraySmoothJazz.ca": {
+      "site_id": "67571",
+      "xmltv_id": "StingraySmoothJazz.ca"
+    },
+    "StingraySoulStorm.ca": {
+      "site_id": "67563",
+      "xmltv_id": "StingraySoulStorm.ca"
+    },
+    "StingrayTodaysLatinPop.ca": {
+      "site_id": "68639",
+      "xmltv_id": "StingrayTodaysLatinPop.ca"
+    },
+    "StingrayUrbanBeat.ca": {
+      "site_id": "67564",
+      "xmltv_id": "StingrayUrbanBeat.ca"
+    },
+    "Studiocanal.fr": {
+      "site_id": "35751",
+      "xmltv_id": "Studiocanal.fr"
+    },
+    "SundanceTV.us": {
+      "site_id": "71280",
+      "xmltv_id": "SundanceTV.us"
+    },
+    "SYFY.us": {
+      "site_id": "58623",
+      "xmltv_id": "SYFY.us"
+    },
+    "Syfy.us": {
+      "site_id": "58623",
+      "xmltv_id": "Syfy.us"
+    },
+    "Tastemade.us": {
+      "site_id": "107076",
+      "xmltv_id": "Tastemade.us"
+    },
+    "TBN.us": {
+      "site_id": "14767",
+      "xmltv_id": "TBN.us"
+    },
+    "TBNInspire.us": {
+      "site_id": "122276",
+      "xmltv_id": "TBNInspire.us"
+    },
+    "TBS.us": {
+      "site_id": "58515",
+      "xmltv_id": "TBS.us"
+    },
+    "TCM.us": {
+      "site_id": "12852",
+      "xmltv_id": "TCM.us"
+    },
+    "TeenNick.us": {
+      "site_id": "59036",
+      "xmltv_id": "TeenNick.us"
+    },
+    "Telebimbi.ca": {
+      "site_id": "19655",
+      "xmltv_id": "Telebimbi.ca"
+    },
+    "TeleHit.mx": {
+      "site_id": "34394",
+      "xmltv_id": "TeleHit.mx"
+    },
+    "Telemundo.us": {
+      "site_id": "73245",
+      "xmltv_id": "Telemundo.us"
+    },
+    "TeleOnce.pr": {
+      "site_id": "12569",
+      "xmltv_id": "TeleOnce.pr"
+    },
+    "TelevisionDominicana.us": {
+      "site_id": "14996",
+      "xmltv_id": "TelevisionDominicana.us"
+    },
+    "TeleXitos.us": {
+      "site_id": "74299",
+      "xmltv_id": "TeleXitos.us"
+    },
+    "TennisChannel.us": {
+      "site_id": "33395",
+      "xmltv_id": "TennisChannel.us"
+    },
+    "TennisChannel.us@SD": {
+      "site_id": "33395",
+      "xmltv_id": "TennisChannel.us@SD"
+    },
+    "TheAfricaChannel.us": {
+      "site_id": "47472",
+      "xmltv_id": "TheAfricaChannel.us"
+    },
+    "TheCarolBurnettShow.us": {
+      "site_id": "122609",
+      "xmltv_id": "TheCarolBurnettShow.us"
+    },
+    "TheCountryNetwork.us": {
+      "site_id": "69639",
+      "xmltv_id": "TheCountryNetwork.us"
+    },
+    "TheCowboyChannel.us": {
+      "site_id": "80597",
+      "xmltv_id": "TheCowboyChannel.us"
+    },
+    "TheCWPlus.us": {
+      "site_id": "18983",
+      "xmltv_id": "TheCWPlus.us"
+    },
+    "TheFamilyChannel.us": {
+      "site_id": "11156",
+      "xmltv_id": "TheFamilyChannel.us"
+    },
+    "TheFirstTV.us": {
+      "site_id": "114934",
+      "xmltv_id": "TheFirstTV.us"
+    },
+    "TheFirstTV.us@SD": {
+      "site_id": "114934",
+      "xmltv_id": "TheFirstTV.us@SD"
+    },
+    "TheGrioTV.us": {
+      "site_id": "101752",
+      "xmltv_id": "TheGrioTV.us"
+    },
+    "TheIsraeliNetwork.il": {
+      "site_id": "27549",
+      "xmltv_id": "TheIsraeliNetwork.il"
+    },
+    "TheMovieChannel.us": {
+      "site_id": "11160",
+      "xmltv_id": "TheMovieChannel.us"
+    },
+    "TheMovieChannelXtra.us": {
+      "site_id": "17663",
+      "xmltv_id": "TheMovieChannelXtra.us"
+    },
+    "TheWeatherChannel.us": {
+      "site_id": "11187",
+      "xmltv_id": "TheWeatherChannel.us"
+    },
+    "TheWordNetwork.us": {
+      "site_id": "21781",
+      "xmltv_id": "TheWordNetwork.us"
+    },
+    "ThisTV.us": {
+      "site_id": "61775",
+      "xmltv_id": "ThisTV.us"
+    },
+    "ThisTVNetwork.us": {
+      "site_id": "61775",
+      "xmltv_id": "ThisTVNetwork.us"
+    },
+    "ThrillerMax.us": {
+      "site_id": "18435",
+      "xmltv_id": "ThrillerMax.us"
+    },
+    "TLC.us": {
+      "site_id": "11158",
+      "xmltv_id": "TLC.us"
+    },
+    "TNT.us": {
+      "site_id": "42642",
+      "xmltv_id": "TNT.us"
+    },
+    "Toku.us": {
+      "site_id": "50914",
+      "xmltv_id": "Toku.us"
+    },
+    "TravelChannel.us": {
+      "site_id": "59303",
+      "xmltv_id": "TravelChannel.us"
+    },
+    "TrueCrimeNetwork.us": {
+      "site_id": "91496",
+      "xmltv_id": "TrueCrimeNetwork.us"
+    },
+    "truTV.us": {
+      "site_id": "10153",
+      "xmltv_id": "truTV.us"
+    },
+    "TSN1.ca": {
+      "site_id": "11182",
+      "xmltv_id": "TSN1.ca"
+    },
+    "TSN2.ca": {
+      "site_id": "18990",
+      "xmltv_id": "TSN2.ca"
+    },
+    "TSN3.ca": {
+      "site_id": "90119",
+      "xmltv_id": "TSN3.ca"
+    },
+    "TSN4.ca": {
+      "site_id": "90122",
+      "xmltv_id": "TSN4.ca"
+    },
+    "TSN5.ca": {
+      "site_id": "90125",
+      "xmltv_id": "TSN5.ca"
+    },
+    "TUDN.us": {
+      "site_id": "77033",
+      "xmltv_id": "TUDN.us"
+    },
+    "TVASports3.ca": {
+      "site_id": "14946",
+      "xmltv_id": "TVASports3.ca"
+    },
+    "TVEInternacionalAmerica.es": {
+      "site_id": "33227",
+      "xmltv_id": "TVEInternacionalAmerica.es"
+    },
+    "TVGuide.us": {
+      "site_id": "14781",
+      "xmltv_id": "TVGuide.us"
+    },
+    "TVJapan.jp": {
+      "site_id": "12324",
+      "xmltv_id": "TVJapan.jp"
+    },
+    "tvK2.us": {
+      "site_id": "66157",
+      "xmltv_id": "tvK2.us"
+    },
+    "TVLand.us": {
+      "site_id": "16123",
+      "xmltv_id": "TVLand.us"
+    },
+    "TVOne.us": {
+      "site_id": "35513",
+      "xmltv_id": "TVOne.us"
+    },
+    "TVPPolonia.pl": {
+      "site_id": "19134",
+      "xmltv_id": "TVPPolonia.pl"
+    },
+    "TyCSports.ar": {
+      "site_id": "16275",
+      "xmltv_id": "TyCSports.ar"
+    },
+    "TYTNetwork.us": {
+      "site_id": "107478",
+      "xmltv_id": "TYTNetwork.us"
+    },
+    "UltraFamilia.us": {
+      "site_id": "80149",
+      "xmltv_id": "UltraFamilia.us"
+    },
+    "UniMas.us": {
+      "site_id": "29058",
+      "xmltv_id": "UniMas.us"
+    },
+    "UniversalKids.us": {
+      "site_id": "47540",
+      "xmltv_id": "UniversalKids.us"
+    },
+    "Univision.us": {
+      "site_id": "68049",
+      "xmltv_id": "Univision.us"
+    },
+    "UnivisionTlnovelas.us": {
+      "site_id": "74550",
+      "xmltv_id": "UnivisionTlnovelas.us"
+    },
+    "UpTV.us": {
+      "site_id": "44940",
+      "xmltv_id": "UpTV.us"
+    },
+    "USANetwork.us": {
+      "site_id": "11207",
+      "xmltv_id": "USANetwork.us"
+    },
+    "VePlus.ve": {
+      "site_id": "34296",
+      "xmltv_id": "VePlus.ve"
+    },
+    "VH1.us": {
+      "site_id": "11218",
+      "xmltv_id": "VH1.us"
+    },
+    "VICETV.us": {
+      "site_id": "18822",
+      "xmltv_id": "VICETV.us"
+    },
+    "ViendoMovies.us": {
+      "site_id": "52208",
+      "xmltv_id": "ViendoMovies.us"
+    },
+    "VisionTV.ca": {
+      "site_id": "31607",
+      "xmltv_id": "VisionTV.ca"
+    },
+    "VmeKids.us": {
+      "site_id": "70830",
+      "xmltv_id": "VmeKids.us"
+    },
+    "VSiN.us": {
+      "site_id": "108970",
+      "xmltv_id": "VSiN.us"
+    },
+    "W31FMD512.us": {
+      "site_id": "15612",
+      "xmltv_id": "W31FMD512.us"
+    },
+    "W31FMD513.us": {
+      "site_id": "15613",
+      "xmltv_id": "W31FMD513.us"
+    },
+    "W31FMD514.us": {
+      "site_id": "17557",
+      "xmltv_id": "W31FMD514.us"
+    },
+    "W31FMD515.us": {
+      "site_id": "17558",
+      "xmltv_id": "W31FMD515.us"
+    },
+    "W34EYD383.us": {
+      "site_id": "36308",
+      "xmltv_id": "W34EYD383.us"
+    },
+    "W34EYD386.us": {
+      "site_id": "36311",
+      "xmltv_id": "W34EYD386.us"
+    },
+    "WABCTV71.us": {
+      "site_id": "20453",
+      "xmltv_id": "WABCTV71.us"
+    },
+    "WABCTV72.us": {
+      "site_id": "35230",
+      "xmltv_id": "WABCTV72.us"
+    },
+    "WABCTV73.us": {
+      "site_id": "50276",
+      "xmltv_id": "WABCTV73.us"
+    },
+    "WABCTV74.us": {
+      "site_id": "119697",
+      "xmltv_id": "WABCTV74.us"
+    },
+    "WACP41.us": {
+      "site_id": "75909",
+      "xmltv_id": "WACP41.us"
+    },
+    "WACP42.us": {
+      "site_id": "90647",
+      "xmltv_id": "WACP42.us"
+    },
+    "WACP43.us": {
+      "site_id": "98301",
+      "xmltv_id": "WACP43.us"
+    },
+    "WACP45.us": {
+      "site_id": "98303",
+      "xmltv_id": "WACP45.us"
+    },
+    "WACP46.us": {
+      "site_id": "103862",
+      "xmltv_id": "WACP46.us"
+    },
+    "WACP47.us": {
+      "site_id": "106014",
+      "xmltv_id": "WACP47.us"
+    },
+    "WACPDT4.us": {
+      "site_id": "98302",
+      "xmltv_id": "WACPDT4.us"
+    },
+    "WADL381.us": {
+      "site_id": "32511",
+      "xmltv_id": "WADL381.us"
+    },
+    "WAGATV51.us": {
+      "site_id": "20430",
+      "xmltv_id": "WAGATV51.us"
+    },
+    "WAGATV52.us": {
+      "site_id": "81314",
+      "xmltv_id": "WAGATV52.us"
+    },
+    "WAGATV53.us": {
+      "site_id": "94962",
+      "xmltv_id": "WAGATV53.us"
+    },
+    "WAGATV54.us": {
+      "site_id": "104952",
+      "xmltv_id": "WAGATV54.us"
+    },
+    "WAGATV55.us": {
+      "site_id": "112717",
+      "xmltv_id": "WAGATV55.us"
+    },
+    "WALELD172.us": {
+      "site_id": "31265",
+      "xmltv_id": "WALELD172.us"
+    },
+    "WALELD4.us": {
+      "site_id": "31252",
+      "xmltv_id": "WALELD4.us"
+    },
+    "WAPATV41.pr": {
+      "site_id": "44322",
+      "xmltv_id": "WAPATV41.pr"
+    },
+    "WAPATV42.pr": {
+      "site_id": "63739",
+      "xmltv_id": "WAPATV42.pr"
+    },
+    "WASALD421.us": {
+      "site_id": "75011",
+      "xmltv_id": "WASALD421.us"
+    },
+    "WaterTelevisionNetwork.ca": {
+      "site_id": "35844",
+      "xmltv_id": "WaterTelevisionNetwork.ca"
+    },
+    "WATETV61.us": {
+      "site_id": "11286",
+      "xmltv_id": "WATETV61.us"
+    },
+    "WATL361.us": {
+      "site_id": "31621",
+      "xmltv_id": "WATL361.us"
+    },
+    "WATL362.us": {
+      "site_id": "70568",
+      "xmltv_id": "WATL362.us"
+    },
+    "WATMTV231.us": {
+      "site_id": "32495",
+      "xmltv_id": "WATMTV231.us"
+    },
+    "WATMTV232.us": {
+      "site_id": "58804",
+      "xmltv_id": "WATMTV232.us"
+    },
+    "WATMTV233.us": {
+      "site_id": "58806",
+      "xmltv_id": "WATMTV233.us"
+    },
+    "WAXNTV91.us": {
+      "site_id": "30908",
+      "xmltv_id": "WAXNTV91.us"
+    },
+    "WBALTV111.us": {
+      "site_id": "21231",
+      "xmltv_id": "WBALTV111.us"
+    },
+    "WBALTV112.us": {
+      "site_id": "48570",
+      "xmltv_id": "WBALTV112.us"
+    },
+    "WBAYTV21.us": {
+      "site_id": "29025",
+      "xmltv_id": "WBAYTV21.us"
+    },
+    "WBBMDT2.us": {
+      "site_id": "91649",
+      "xmltv_id": "WBBMDT2.us"
+    },
+    "WBBMDT3.us": {
+      "site_id": "112504",
+      "xmltv_id": "WBBMDT3.us"
+    },
+    "WBBMTV91.us": {
+      "site_id": "20454",
+      "xmltv_id": "WBBMTV91.us"
+    },
+    "WBBZTV671.us": {
+      "site_id": "63992",
+      "xmltv_id": "WBBZTV671.us"
+    },
+    "WBCFLD2.us": {
+      "site_id": "31473",
+      "xmltv_id": "WBCFLD2.us"
+    },
+    "WBFF451.us": {
+      "site_id": "21233",
+      "xmltv_id": "WBFF451.us"
+    },
+    "WBFF452.us": {
+      "site_id": "50339",
+      "xmltv_id": "WBFF452.us"
+    },
+    "WBGTCD465.us": {
+      "site_id": "33298",
+      "xmltv_id": "WBGTCD465.us"
+    },
+    "WBGTCD467.us": {
+      "site_id": "33299",
+      "xmltv_id": "WBGTCD467.us"
+    },
+    "WBGUTV271.us": {
+      "site_id": "35058",
+      "xmltv_id": "WBGUTV271.us"
+    },
+    "WBIRTV101.us": {
+      "site_id": "11305",
+      "xmltv_id": "WBIRTV101.us"
+    },
+    "WBNXTV551.us": {
+      "site_id": "55926",
+      "xmltv_id": "WBNXTV551.us"
+    },
+    "WBONLD91.us": {
+      "site_id": "77242",
+      "xmltv_id": "WBONLD91.us"
+    },
+    "WBONLD92.us": {
+      "site_id": "84234",
+      "xmltv_id": "WBONLD92.us"
+    },
+    "WBONLD93.us": {
+      "site_id": "84235",
+      "xmltv_id": "WBONLD93.us"
+    },
+    "WBONLD94.us": {
+      "site_id": "115204",
+      "xmltv_id": "WBONLD94.us"
+    },
+    "WBRZTV21.us": {
+      "site_id": "30436",
+      "xmltv_id": "WBRZTV21.us"
+    },
+    "WBSF661.us": {
+      "site_id": "63898",
+      "xmltv_id": "WBSF661.us"
+    },
+    "WBTSCD442.us": {
+      "site_id": "91447",
+      "xmltv_id": "WBTSCD442.us"
+    },
+    "WBTW132.us": {
+      "site_id": "52756",
+      "xmltv_id": "WBTW132.us"
+    },
+    "WBTW211.us": {
+      "site_id": "30155",
+      "xmltv_id": "WBTW211.us"
+    },
+    "WBUP101.us": {
+      "site_id": "63903",
+      "xmltv_id": "WBUP101.us"
+    },
+    "WBXZLP11.us": {
+      "site_id": "34242",
+      "xmltv_id": "WBXZLP11.us"
+    },
+    "WBXZLP12.us": {
+      "site_id": "34243",
+      "xmltv_id": "WBXZLP12.us"
+    },
+    "WBXZLP3.us": {
+      "site_id": "18174",
+      "xmltv_id": "WBXZLP3.us"
+    },
+    "WBXZLP7.us": {
+      "site_id": "34240",
+      "xmltv_id": "WBXZLP7.us"
+    },
+    "WBZDT1.us": {
+      "site_id": "20431",
+      "xmltv_id": "WBZDT1.us"
+    },
+    "WBZDT2.us": {
+      "site_id": "91906",
+      "xmltv_id": "WBZDT2.us"
+    },
+    "WBZDT3.us": {
+      "site_id": "112382",
+      "xmltv_id": "WBZDT3.us"
+    },
+    "WCAU103.us": {
+      "site_id": "62804",
+      "xmltv_id": "WCAU103.us"
+    },
+    "WCAU621.us": {
+      "site_id": "19613",
+      "xmltv_id": "WCAU621.us"
+    },
+    "WCAU622.us": {
+      "site_id": "45807",
+      "xmltv_id": "WCAU622.us"
+    },
+    "WCBSTV21.us": {
+      "site_id": "16689",
+      "xmltv_id": "WCBSTV21.us"
+    },
+    "WCBSTV212.us": {
+      "site_id": "74916",
+      "xmltv_id": "WCBSTV212.us"
+    },
+    "WCBSTV23.us": {
+      "site_id": "112501",
+      "xmltv_id": "WCBSTV23.us"
+    },
+    "WCBSTV24.us": {
+      "site_id": "117203",
+      "xmltv_id": "WCBSTV24.us"
+    },
+    "WCCOTV41.us": {
+      "site_id": "21234",
+      "xmltv_id": "WCCOTV41.us"
+    },
+    "WCCOTV42.us": {
+      "site_id": "92038",
+      "xmltv_id": "WCCOTV42.us"
+    },
+    "WCCOTV43.us": {
+      "site_id": "112335",
+      "xmltv_id": "WCCOTV43.us"
+    },
+    "WCCOTV44.us": {
+      "site_id": "117140",
+      "xmltv_id": "WCCOTV44.us"
+    },
+    "WCCTDT2.us": {
+      "site_id": "50903",
+      "xmltv_id": "WCCTDT2.us"
+    },
+    "WCCTDT3.us": {
+      "site_id": "97979",
+      "xmltv_id": "WCCTDT3.us"
+    },
+    "WCCTDT4.us": {
+      "site_id": "106478",
+      "xmltv_id": "WCCTDT4.us"
+    },
+    "WCCTTV81.us": {
+      "site_id": "32516",
+      "xmltv_id": "WCCTTV81.us"
+    },
+    "WCIUTV261.us": {
+      "site_id": "36099",
+      "xmltv_id": "WCIUTV261.us"
+    },
+    "WCIUTV262.us": {
+      "site_id": "36101",
+      "xmltv_id": "WCIUTV262.us"
+    },
+    "WCIUTV263.us": {
+      "site_id": "59687",
+      "xmltv_id": "WCIUTV263.us"
+    },
+    "WCIUTV264.us": {
+      "site_id": "61780",
+      "xmltv_id": "WCIUTV264.us"
+    },
+    "WCIUTV265.us": {
+      "site_id": "70376",
+      "xmltv_id": "WCIUTV265.us"
+    },
+    "WCIUTV266.us": {
+      "site_id": "59674",
+      "xmltv_id": "WCIUTV266.us"
+    },
+    "WCMUTV141.us": {
+      "site_id": "66291",
+      "xmltv_id": "WCMUTV141.us"
+    },
+    "WCNYTV241.us": {
+      "site_id": "32074",
+      "xmltv_id": "WCNYTV241.us"
+    },
+    "WCTITV121.us": {
+      "site_id": "31042",
+      "xmltv_id": "WCTITV121.us"
+    },
+    "WCTV61.us": {
+      "site_id": "44739",
+      "xmltv_id": "WCTV61.us"
+    },
+    "WCTV62.us": {
+      "site_id": "46285",
+      "xmltv_id": "WCTV62.us"
+    },
+    "WCTV63.us": {
+      "site_id": "109194",
+      "xmltv_id": "WCTV63.us"
+    },
+    "WCTV64.us": {
+      "site_id": "113519",
+      "xmltv_id": "WCTV64.us"
+    },
+    "WCTV65.us": {
+      "site_id": "118313",
+      "xmltv_id": "WCTV65.us"
+    },
+    "WCTX81.us": {
+      "site_id": "35469",
+      "xmltv_id": "WCTX81.us"
+    },
+    "WCTX82.us": {
+      "site_id": "59401",
+      "xmltv_id": "WCTX82.us"
+    },
+    "WCVBTV501.us": {
+      "site_id": "19596",
+      "xmltv_id": "WCVBTV501.us"
+    },
+    "WCVBTV52.us": {
+      "site_id": "35356",
+      "xmltv_id": "WCVBTV52.us"
+    },
+    "WCVETV231.us": {
+      "site_id": "43782",
+      "xmltv_id": "WCVETV231.us"
+    },
+    "WCVETV232.us": {
+      "site_id": "58837",
+      "xmltv_id": "WCVETV232.us"
+    },
+    "WCVETV233.us": {
+      "site_id": "58918",
+      "xmltv_id": "WCVETV233.us"
+    },
+    "WCVETV234.us": {
+      "site_id": "108690",
+      "xmltv_id": "WCVETV234.us"
+    },
+    "WCWN61.us": {
+      "site_id": "34986",
+      "xmltv_id": "WCWN61.us"
+    },
+    "WDCA51.us": {
+      "site_id": "34427",
+      "xmltv_id": "WDCA51.us"
+    },
+    "WDCA52.us": {
+      "site_id": "77760",
+      "xmltv_id": "WDCA52.us"
+    },
+    "WDCA53.us": {
+      "site_id": "81318",
+      "xmltv_id": "WDCA53.us"
+    },
+    "WDCQTV191.us": {
+      "site_id": "35728",
+      "xmltv_id": "WDCQTV191.us"
+    },
+    "WDCW501.us": {
+      "site_id": "32744",
+      "xmltv_id": "WDCW501.us"
+    },
+    "WDIODT101.us": {
+      "site_id": "34583",
+      "xmltv_id": "WDIODT101.us"
+    },
+    "WDIVTV41.us": {
+      "site_id": "20359",
+      "xmltv_id": "WDIVTV41.us"
+    },
+    "WDNICD191.us": {
+      "site_id": "68610",
+      "xmltv_id": "WDNICD191.us"
+    },
+    "WDPNTV21.us": {
+      "site_id": "64010",
+      "xmltv_id": "WDPNTV21.us"
+    },
+    "WDPNTV22.us": {
+      "site_id": "76927",
+      "xmltv_id": "WDPNTV22.us"
+    },
+    "WDPNTV23.us": {
+      "site_id": "90140",
+      "xmltv_id": "WDPNTV23.us"
+    },
+    "WDPNTV24.us": {
+      "site_id": "91607",
+      "xmltv_id": "WDPNTV24.us"
+    },
+    "WDPNTV25.us": {
+      "site_id": "106849",
+      "xmltv_id": "WDPNTV25.us"
+    },
+    "WeatherNation.us": {
+      "site_id": "72413",
+      "xmltv_id": "WeatherNation.us"
+    },
+    "WeatherNation.us@SD": {
+      "site_id": "72413",
+      "xmltv_id": "WeatherNation.us@SD"
+    },
+    "WECT61.us": {
+      "site_id": "42834",
+      "xmltv_id": "WECT61.us"
+    },
+    "WEDH651.us": {
+      "site_id": "53126",
+      "xmltv_id": "WEDH651.us"
+    },
+    "WEDH652.us": {
+      "site_id": "63442",
+      "xmltv_id": "WEDH652.us"
+    },
+    "WEDHDT3.us": {
+      "site_id": "69134",
+      "xmltv_id": "WEDHDT3.us"
+    },
+    "WEFS681.us": {
+      "site_id": "42521",
+      "xmltv_id": "WEFS681.us"
+    },
+    "WESH241.us": {
+      "site_id": "21647",
+      "xmltv_id": "WESH241.us"
+    },
+    "WESHDT2.us": {
+      "site_id": "77535",
+      "xmltv_id": "WESHDT2.us"
+    },
+    "WETATV261.us": {
+      "site_id": "19581",
+      "xmltv_id": "WETATV261.us"
+    },
+    "WETATV262.us": {
+      "site_id": "21526",
+      "xmltv_id": "WETATV262.us"
+    },
+    "WETATV263.us": {
+      "site_id": "32050",
+      "xmltv_id": "WETATV263.us"
+    },
+    "WETATV264.us": {
+      "site_id": "32052",
+      "xmltv_id": "WETATV264.us"
+    },
+    "WeTV.us": {
+      "site_id": "16409",
+      "xmltv_id": "WeTV.us"
+    },
+    "WEWSTV51.us": {
+      "site_id": "21101",
+      "xmltv_id": "WEWSTV51.us"
+    },
+    "WEWSTV52.us": {
+      "site_id": "72901",
+      "xmltv_id": "WEWSTV52.us"
+    },
+    "WEWSTV53.us": {
+      "site_id": "92188",
+      "xmltv_id": "WEWSTV53.us"
+    },
+    "WEWSTV55.us": {
+      "site_id": "118455",
+      "xmltv_id": "WEWSTV55.us"
+    },
+    "WEYITV461.us": {
+      "site_id": "35655",
+      "xmltv_id": "WEYITV461.us"
+    },
+    "WFAA81.us": {
+      "site_id": "19626",
+      "xmltv_id": "WFAA81.us"
+    },
+    "WFAA82.us": {
+      "site_id": "35357",
+      "xmltv_id": "WFAA82.us"
+    },
+    "WFAA83.us": {
+      "site_id": "52785",
+      "xmltv_id": "WFAA83.us"
+    },
+    "WFAA84.us": {
+      "site_id": "107044",
+      "xmltv_id": "WFAA84.us"
+    },
+    "WFLD322.us": {
+      "site_id": "108535",
+      "xmltv_id": "WFLD322.us"
+    },
+    "WFLD324.us": {
+      "site_id": "108537",
+      "xmltv_id": "WFLD324.us"
+    },
+    "WFLD501.us": {
+      "site_id": "20361",
+      "xmltv_id": "WFLD501.us"
+    },
+    "WFMZTV691.us": {
+      "site_id": "20289",
+      "xmltv_id": "WFMZTV691.us"
+    },
+    "WFMZTV692.us": {
+      "site_id": "35859",
+      "xmltv_id": "WFMZTV692.us"
+    },
+    "WFMZTV693.us": {
+      "site_id": "73877",
+      "xmltv_id": "WFMZTV693.us"
+    },
+    "WFORTV41.us": {
+      "site_id": "21218",
+      "xmltv_id": "WFORTV41.us"
+    },
+    "WFORTV42.us": {
+      "site_id": "92064",
+      "xmltv_id": "WFORTV42.us"
+    },
+    "WFORTV43.us": {
+      "site_id": "112327",
+      "xmltv_id": "WFORTV43.us"
+    },
+    "WFORTV44.us": {
+      "site_id": "117054",
+      "xmltv_id": "WFORTV44.us"
+    },
+    "WFPACD281.us": {
+      "site_id": "95894",
+      "xmltv_id": "WFPACD281.us"
+    },
+    "WFQXTV321.us": {
+      "site_id": "34603",
+      "xmltv_id": "WFQXTV321.us"
+    },
+    "WFQXTV322.us": {
+      "site_id": "63348",
+      "xmltv_id": "WFQXTV322.us"
+    },
+    "WFSB31.us": {
+      "site_id": "21215",
+      "xmltv_id": "WFSB31.us"
+    },
+    "WFSB32.us": {
+      "site_id": "42901",
+      "xmltv_id": "WFSB32.us"
+    },
+    "WFSB33.us": {
+      "site_id": "30323",
+      "xmltv_id": "WFSB33.us"
+    },
+    "WFSUTV111.us": {
+      "site_id": "35387",
+      "xmltv_id": "WFSUTV111.us"
+    },
+    "WFSUTV112.us": {
+      "site_id": "35389",
+      "xmltv_id": "WFSUTV112.us"
+    },
+    "WFSUTV113.us": {
+      "site_id": "35391",
+      "xmltv_id": "WFSUTV113.us"
+    },
+    "WFSUTV114.us": {
+      "site_id": "35393",
+      "xmltv_id": "WFSUTV114.us"
+    },
+    "WFTV91.us": {
+      "site_id": "20491",
+      "xmltv_id": "WFTV91.us"
+    },
+    "WFUTDT681.us": {
+      "site_id": "35364",
+      "xmltv_id": "WFUTDT681.us"
+    },
+    "WFUTDT682.us": {
+      "site_id": "67228",
+      "xmltv_id": "WFUTDT682.us"
+    },
+    "WFUTDT683.us": {
+      "site_id": "85948",
+      "xmltv_id": "WFUTDT683.us"
+    },
+    "WFXB431.us": {
+      "site_id": "34536",
+      "xmltv_id": "WFXB431.us"
+    },
+    "WFXT251.us": {
+      "site_id": "20362",
+      "xmltv_id": "WFXT251.us"
+    },
+    "WFXT662.us": {
+      "site_id": "81295",
+      "xmltv_id": "WFXT662.us"
+    },
+    "WFXT663.us": {
+      "site_id": "92241",
+      "xmltv_id": "WFXT663.us"
+    },
+    "WFYI201.us": {
+      "site_id": "33787",
+      "xmltv_id": "WFYI201.us"
+    },
+    "WFYI203.us": {
+      "site_id": "44032",
+      "xmltv_id": "WFYI203.us"
+    },
+    "WGBODT661.us": {
+      "site_id": "42635",
+      "xmltv_id": "WGBODT661.us"
+    },
+    "WGBODT662.us": {
+      "site_id": "86446",
+      "xmltv_id": "WGBODT662.us"
+    },
+    "WGBODT663.us": {
+      "site_id": "90168",
+      "xmltv_id": "WGBODT663.us"
+    },
+    "WGBODT664.us": {
+      "site_id": "105328",
+      "xmltv_id": "WGBODT664.us"
+    },
+    "WGBODT665.us": {
+      "site_id": "106735",
+      "xmltv_id": "WGBODT665.us"
+    },
+    "WGCECD62.us": {
+      "site_id": "35766",
+      "xmltv_id": "WGCECD62.us"
+    },
+    "WGCECD65.us": {
+      "site_id": "35774",
+      "xmltv_id": "WGCECD65.us"
+    },
+    "WGCLDT1.us": {
+      "site_id": "24505",
+      "xmltv_id": "WGCLDT1.us"
+    },
+    "WGCLDT3.us": {
+      "site_id": "46099",
+      "xmltv_id": "WGCLDT3.us"
+    },
+    "WGNDT1.us": {
+      "site_id": "20455",
+      "xmltv_id": "WGNDT1.us"
+    },
+    "WGNDT2.us": {
+      "site_id": "31044",
+      "xmltv_id": "WGNDT2.us"
+    },
+    "WGNDT3.us": {
+      "site_id": "83118",
+      "xmltv_id": "WGNDT3.us"
+    },
+    "WGNDT4.us": {
+      "site_id": "106422",
+      "xmltv_id": "WGNDT4.us"
+    },
+    "WGNDT5.us": {
+      "site_id": "120897",
+      "xmltv_id": "WGNDT5.us"
+    },
+    "WGRZ21.us": {
+      "site_id": "31507",
+      "xmltv_id": "WGRZ21.us"
+    },
+    "WGRZ22.us": {
+      "site_id": "47796",
+      "xmltv_id": "WGRZ22.us"
+    },
+    "WGRZ24.us": {
+      "site_id": "106948",
+      "xmltv_id": "WGRZ24.us"
+    },
+    "WGRZ25.us": {
+      "site_id": "119032",
+      "xmltv_id": "WGRZ25.us"
+    },
+    "WGRZ493.us": {
+      "site_id": "64270",
+      "xmltv_id": "WGRZ493.us"
+    },
+    "WGTETV301.us": {
+      "site_id": "36205",
+      "xmltv_id": "WGTETV301.us"
+    },
+    "WGTU291.us": {
+      "site_id": "53206",
+      "xmltv_id": "WGTU291.us"
+    },
+    "WGTV81.us": {
+      "site_id": "59210",
+      "xmltv_id": "WGTV81.us"
+    },
+    "WGTV82.us": {
+      "site_id": "61543",
+      "xmltv_id": "WGTV82.us"
+    },
+    "WGTV83.us": {
+      "site_id": "61567",
+      "xmltv_id": "WGTV83.us"
+    },
+    "WGTV84.us": {
+      "site_id": "102035",
+      "xmltv_id": "WGTV84.us"
+    },
+    "WGVUTV351.us": {
+      "site_id": "43708",
+      "xmltv_id": "WGVUTV351.us"
+    },
+    "WHCTLD351.us": {
+      "site_id": "115216",
+      "xmltv_id": "WHCTLD351.us"
+    },
+    "WHCTLD352.us": {
+      "site_id": "116361",
+      "xmltv_id": "WHCTLD352.us"
+    },
+    "WHCTLD353.us": {
+      "site_id": "116362",
+      "xmltv_id": "WHCTLD353.us"
+    },
+    "WHCTLD354.us": {
+      "site_id": "116363",
+      "xmltv_id": "WHCTLD354.us"
+    },
+    "WHCTLD355.us": {
+      "site_id": "116365",
+      "xmltv_id": "WHCTLD355.us"
+    },
+    "WHNELD39.us": {
+      "site_id": "110711",
+      "xmltv_id": "WHNELD39.us"
+    },
+    "WHPSCD152.us": {
+      "site_id": "99581",
+      "xmltv_id": "WHPSCD152.us"
+    },
+    "WHPXTV261.us": {
+      "site_id": "57562",
+      "xmltv_id": "WHPXTV261.us"
+    },
+    "WHPXTV262.us": {
+      "site_id": "34605",
+      "xmltv_id": "WHPXTV262.us"
+    },
+    "WHPXTV263.us": {
+      "site_id": "55329",
+      "xmltv_id": "WHPXTV263.us"
+    },
+    "WHPXTV264.us": {
+      "site_id": "57495",
+      "xmltv_id": "WHPXTV264.us"
+    },
+    "WHPXTV265.us": {
+      "site_id": "82749",
+      "xmltv_id": "WHPXTV265.us"
+    },
+    "WHSVTV31.us": {
+      "site_id": "34805",
+      "xmltv_id": "WHSVTV31.us"
+    },
+    "WHUTTV91.us": {
+      "site_id": "59160",
+      "xmltv_id": "WHUTTV91.us"
+    },
+    "WHVLLD291.us": {
+      "site_id": "65494",
+      "xmltv_id": "WHVLLD291.us"
+    },
+    "WHVLLD292.us": {
+      "site_id": "65495",
+      "xmltv_id": "WHVLLD292.us"
+    },
+    "WHYYTV441.us": {
+      "site_id": "24114",
+      "xmltv_id": "WHYYTV441.us"
+    },
+    "WHYYTV442.us": {
+      "site_id": "45913",
+      "xmltv_id": "WHYYTV442.us"
+    },
+    "WHYYTV443.us": {
+      "site_id": "51000",
+      "xmltv_id": "WHYYTV443.us"
+    },
+    "WildBrainTV.ca": {
+      "site_id": "10176",
+      "xmltv_id": "WildBrainTV.ca"
+    },
+    "Willow.us": {
+      "site_id": "68605",
+      "xmltv_id": "Willow.us"
+    },
+    "WILMLD101.us": {
+      "site_id": "48638",
+      "xmltv_id": "WILMLD101.us"
+    },
+    "WINPTV161.us": {
+      "site_id": "45992",
+      "xmltv_id": "WINPTV161.us"
+    },
+    "WINPTV162.us": {
+      "site_id": "72113",
+      "xmltv_id": "WINPTV162.us"
+    },
+    "WINPTV163.us": {
+      "site_id": "72115",
+      "xmltv_id": "WINPTV163.us"
+    },
+    "WINPTV164.us": {
+      "site_id": "72117",
+      "xmltv_id": "WINPTV164.us"
+    },
+    "WINPTV165.us": {
+      "site_id": "83523",
+      "xmltv_id": "WINPTV165.us"
+    },
+    "WINPTV166.us": {
+      "site_id": "90854",
+      "xmltv_id": "WINPTV166.us"
+    },
+    "WINPTV167.us": {
+      "site_id": "121394",
+      "xmltv_id": "WINPTV167.us"
+    },
+    "WIPRTV61.pr": {
+      "site_id": "15603",
+      "xmltv_id": "WIPRTV61.pr"
+    },
+    "WISHTV81.us": {
+      "site_id": "19592",
+      "xmltv_id": "WISHTV81.us"
+    },
+    "WISHTV82.us": {
+      "site_id": "25526",
+      "xmltv_id": "WISHTV82.us"
+    },
+    "WISHTV83.us": {
+      "site_id": "25527",
+      "xmltv_id": "WISHTV83.us"
+    },
+    "WISNTV121.us": {
+      "site_id": "32367",
+      "xmltv_id": "WISNTV121.us"
+    },
+    "WIVBTV41.us": {
+      "site_id": "24051",
+      "xmltv_id": "WIVBTV41.us"
+    },
+    "WJACTV61.us": {
+      "site_id": "34429",
+      "xmltv_id": "WJACTV61.us"
+    },
+    "WJACTV62.us": {
+      "site_id": "49028",
+      "xmltv_id": "WJACTV62.us"
+    },
+    "WJACTV63.us": {
+      "site_id": "91485",
+      "xmltv_id": "WJACTV63.us"
+    },
+    "WJACTV64.us": {
+      "site_id": "98160",
+      "xmltv_id": "WJACTV64.us"
+    },
+    "WJBF61.us": {
+      "site_id": "35066",
+      "xmltv_id": "WJBF61.us"
+    },
+    "WJBK21.us": {
+      "site_id": "19600",
+      "xmltv_id": "WJBK21.us"
+    },
+    "WJLATV71.us": {
+      "site_id": "19579",
+      "xmltv_id": "WJLATV71.us"
+    },
+    "WJLP332.us": {
+      "site_id": "92098",
+      "xmltv_id": "WJLP332.us"
+    },
+    "WJLP333.us": {
+      "site_id": "99162",
+      "xmltv_id": "WJLP333.us"
+    },
+    "WJLP334.us": {
+      "site_id": "99163",
+      "xmltv_id": "WJLP334.us"
+    },
+    "WJLP336.us": {
+      "site_id": "115891",
+      "xmltv_id": "WJLP336.us"
+    },
+    "WJLP337.us": {
+      "site_id": "120389",
+      "xmltv_id": "WJLP337.us"
+    },
+    "WJLP338.us": {
+      "site_id": "112951",
+      "xmltv_id": "WJLP338.us"
+    },
+    "WJLP371.us": {
+      "site_id": "75523",
+      "xmltv_id": "WJLP371.us"
+    },
+    "WJLPDT5.us": {
+      "site_id": "111255",
+      "xmltv_id": "WJLPDT5.us"
+    },
+    "WJRTTV121.us": {
+      "site_id": "30978",
+      "xmltv_id": "WJRTTV121.us"
+    },
+    "WJWDT1.us": {
+      "site_id": "21247",
+      "xmltv_id": "WJWDT1.us"
+    },
+    "WJWDT2.us": {
+      "site_id": "70518",
+      "xmltv_id": "WJWDT2.us"
+    },
+    "WJWDT3.us": {
+      "site_id": "106509",
+      "xmltv_id": "WJWDT3.us"
+    },
+    "WJWDT4.us": {
+      "site_id": "106510",
+      "xmltv_id": "WJWDT4.us"
+    },
+    "WJZDT1.us": {
+      "site_id": "21232",
+      "xmltv_id": "WJZDT1.us"
+    },
+    "WKAQTV21.pr": {
+      "site_id": "12468",
+      "xmltv_id": "WKAQTV21.pr"
+    },
+    "WKAQTV22.pr": {
+      "site_id": "69285",
+      "xmltv_id": "WKAQTV22.pr"
+    },
+    "WKARTV231.us": {
+      "site_id": "42529",
+      "xmltv_id": "WKARTV231.us"
+    },
+    "WKBDTV501.us": {
+      "site_id": "25126",
+      "xmltv_id": "WKBDTV501.us"
+    },
+    "WKBWTV71.us": {
+      "site_id": "24052",
+      "xmltv_id": "WKBWTV71.us"
+    },
+    "WKBWTV72.us": {
+      "site_id": "56328",
+      "xmltv_id": "WKBWTV72.us"
+    },
+    "WKBWTV73.us": {
+      "site_id": "59301",
+      "xmltv_id": "WKBWTV73.us"
+    },
+    "WKBWTV74.us": {
+      "site_id": "104784",
+      "xmltv_id": "WKBWTV74.us"
+    },
+    "WKBWTV75.us": {
+      "site_id": "118884",
+      "xmltv_id": "WKBWTV75.us"
+    },
+    "WKCF21.us": {
+      "site_id": "26588",
+      "xmltv_id": "WKCF21.us"
+    },
+    "WKMGTV61.us": {
+      "site_id": "21299",
+      "xmltv_id": "WKMGTV61.us"
+    },
+    "WKOBLD421.us": {
+      "site_id": "68621",
+      "xmltv_id": "WKOBLD421.us"
+    },
+    "WKOBLD422.us": {
+      "site_id": "70833",
+      "xmltv_id": "WKOBLD422.us"
+    },
+    "WKOBLD5.us": {
+      "site_id": "81776",
+      "xmltv_id": "WKOBLD5.us"
+    },
+    "WKOBLD6.us": {
+      "site_id": "81777",
+      "xmltv_id": "WKOBLD6.us"
+    },
+    "WKOBLD7.us": {
+      "site_id": "113863",
+      "xmltv_id": "WKOBLD7.us"
+    },
+    "WKOBLD8.us": {
+      "site_id": "113864",
+      "xmltv_id": "WKOBLD8.us"
+    },
+    "WKOIDT3.us": {
+      "site_id": "50102",
+      "xmltv_id": "WKOIDT3.us"
+    },
+    "WKOIDT5.us": {
+      "site_id": "50106",
+      "xmltv_id": "WKOIDT5.us"
+    },
+    "WKOITV262.us": {
+      "site_id": "50100",
+      "xmltv_id": "WKOITV262.us"
+    },
+    "WKOITV431.us": {
+      "site_id": "34609",
+      "xmltv_id": "WKOITV431.us"
+    },
+    "WKOITV454.us": {
+      "site_id": "50104",
+      "xmltv_id": "WKOITV454.us"
+    },
+    "WKRNTV301.us": {
+      "site_id": "20465",
+      "xmltv_id": "WKRNTV301.us"
+    },
+    "WKYC31.us": {
+      "site_id": "20492",
+      "xmltv_id": "WKYC31.us"
+    },
+    "WKYC32.us": {
+      "site_id": "42697",
+      "xmltv_id": "WKYC32.us"
+    },
+    "WKYC33.us": {
+      "site_id": "42700",
+      "xmltv_id": "WKYC33.us"
+    },
+    "WKYC34.us": {
+      "site_id": "107047",
+      "xmltv_id": "WKYC34.us"
+    },
+    "WKYC35.us": {
+      "site_id": "118839",
+      "xmltv_id": "WKYC35.us"
+    },
+    "WKYC36.us": {
+      "site_id": "122046",
+      "xmltv_id": "WKYC36.us"
+    },
+    "WLIW471.us": {
+      "site_id": "34325",
+      "xmltv_id": "WLIW471.us"
+    },
+    "WLIWDT2.us": {
+      "site_id": "34135",
+      "xmltv_id": "WLIWDT2.us"
+    },
+    "WLIWDT3.us": {
+      "site_id": "44147",
+      "xmltv_id": "WLIWDT3.us"
+    },
+    "WLIWDT4.us": {
+      "site_id": "55296",
+      "xmltv_id": "WLIWDT4.us"
+    },
+    "WLNYTV551.us": {
+      "site_id": "31225",
+      "xmltv_id": "WLNYTV551.us"
+    },
+    "WLNYTV552.us": {
+      "site_id": "110142",
+      "xmltv_id": "WLNYTV552.us"
+    },
+    "WLNYTV553.us": {
+      "site_id": "110888",
+      "xmltv_id": "WLNYTV553.us"
+    },
+    "WLNYTV554.us": {
+      "site_id": "113297",
+      "xmltv_id": "WLNYTV554.us"
+    },
+    "WLNYTV555.us": {
+      "site_id": "114225",
+      "xmltv_id": "WLNYTV555.us"
+    },
+    "WLSDT1.us": {
+      "site_id": "20456",
+      "xmltv_id": "WLSDT1.us"
+    },
+    "WLSDT2.us": {
+      "site_id": "35892",
+      "xmltv_id": "WLSDT2.us"
+    },
+    "WLSDT3.us": {
+      "site_id": "46236",
+      "xmltv_id": "WLSDT3.us"
+    },
+    "WLUCTV61.us": {
+      "site_id": "42644",
+      "xmltv_id": "WLUCTV61.us"
+    },
+    "WLUCTV62.us": {
+      "site_id": "49212",
+      "xmltv_id": "WLUCTV62.us"
+    },
+    "WLVI71.us": {
+      "site_id": "32633",
+      "xmltv_id": "WLVI71.us"
+    },
+    "WLVI72.us": {
+      "site_id": "50830",
+      "xmltv_id": "WLVI72.us"
+    },
+    "WLVTTV691.us": {
+      "site_id": "24783",
+      "xmltv_id": "WLVTTV691.us"
+    },
+    "WLVTTV692.us": {
+      "site_id": "45790",
+      "xmltv_id": "WLVTTV692.us"
+    },
+    "WLVTTV693.us": {
+      "site_id": "45792",
+      "xmltv_id": "WLVTTV693.us"
+    },
+    "WLWT641.us": {
+      "site_id": "46811",
+      "xmltv_id": "WLWT641.us"
+    },
+    "WMAQTV51.us": {
+      "site_id": "20452",
+      "xmltv_id": "WMAQTV51.us"
+    },
+    "WMAQTV52.us": {
+      "site_id": "45805",
+      "xmltv_id": "WMAQTV52.us"
+    },
+    "WMARTV21.us": {
+      "site_id": "21230",
+      "xmltv_id": "WMARTV21.us"
+    },
+    "WMARTV23.us": {
+      "site_id": "43981",
+      "xmltv_id": "WMARTV23.us"
+    },
+    "WMARTV24.us": {
+      "site_id": "106560",
+      "xmltv_id": "WMARTV24.us"
+    },
+    "WMARTV25.us": {
+      "site_id": "111220",
+      "xmltv_id": "WMARTV25.us"
+    },
+    "WMARTV542.us": {
+      "site_id": "43979",
+      "xmltv_id": "WMARTV542.us"
+    },
+    "WMBB131.us": {
+      "site_id": "30594",
+      "xmltv_id": "WMBB131.us"
+    },
+    "WMBCDT3.us": {
+      "site_id": "55772",
+      "xmltv_id": "WMBCDT3.us"
+    },
+    "WMBCTV631.us": {
+      "site_id": "35911",
+      "xmltv_id": "WMBCTV631.us"
+    },
+    "WMBCTV632.us": {
+      "site_id": "55810",
+      "xmltv_id": "WMBCTV632.us"
+    },
+    "WMBCTV634.us": {
+      "site_id": "55773",
+      "xmltv_id": "WMBCTV634.us"
+    },
+    "WMBCTV635.us": {
+      "site_id": "62811",
+      "xmltv_id": "WMBCTV635.us"
+    },
+    "WMBCTV637.us": {
+      "site_id": "78580",
+      "xmltv_id": "WMBCTV637.us"
+    },
+    "WMBFTV321.us": {
+      "site_id": "59517",
+      "xmltv_id": "WMBFTV321.us"
+    },
+    "WMBQCD471.us": {
+      "site_id": "76311",
+      "xmltv_id": "WMBQCD471.us"
+    },
+    "WMCNTV441.us": {
+      "site_id": "11976",
+      "xmltv_id": "WMCNTV441.us"
+    },
+    "WMEUCD481.us": {
+      "site_id": "67657",
+      "xmltv_id": "WMEUCD481.us"
+    },
+    "WMGMTV481.us": {
+      "site_id": "44920",
+      "xmltv_id": "WMGMTV481.us"
+    },
+    "WMJNLD4.us": {
+      "site_id": "34929",
+      "xmltv_id": "WMJNLD4.us"
+    },
+    "WMNNLD261.us": {
+      "site_id": "71678",
+      "xmltv_id": "WMNNLD261.us"
+    },
+    "WMNTCD481.us": {
+      "site_id": "83457",
+      "xmltv_id": "WMNTCD481.us"
+    },
+    "WNBC471.us": {
+      "site_id": "20459",
+      "xmltv_id": "WNBC471.us"
+    },
+    "WNBC472.us": {
+      "site_id": "44936",
+      "xmltv_id": "WNBC472.us"
+    },
+    "WNDTCD211.us": {
+      "site_id": "82818",
+      "xmltv_id": "WNDTCD211.us"
+    },
+    "WNEDTV171.us": {
+      "site_id": "34915",
+      "xmltv_id": "WNEDTV171.us"
+    },
+    "WNEDTV172.us": {
+      "site_id": "34918",
+      "xmltv_id": "WNEDTV172.us"
+    },
+    "WNEDTV173.us": {
+      "site_id": "34921",
+      "xmltv_id": "WNEDTV173.us"
+    },
+    "WNET132.us": {
+      "site_id": "31780",
+      "xmltv_id": "WNET132.us"
+    },
+    "WNET211.us": {
+      "site_id": "26182",
+      "xmltv_id": "WNET211.us"
+    },
+    "WNJB581.us": {
+      "site_id": "11721",
+      "xmltv_id": "WNJB581.us"
+    },
+    "WNJN581.us": {
+      "site_id": "11723",
+      "xmltv_id": "WNJN581.us"
+    },
+    "WNJN582.us": {
+      "site_id": "29140",
+      "xmltv_id": "WNJN582.us"
+    },
+    "WNJS521.us": {
+      "site_id": "11724",
+      "xmltv_id": "WNJS521.us"
+    },
+    "WNJS522.us": {
+      "site_id": "43940",
+      "xmltv_id": "WNJS522.us"
+    },
+    "WNJT521.us": {
+      "site_id": "11725",
+      "xmltv_id": "WNJT521.us"
+    },
+    "WNJU471.us": {
+      "site_id": "54437",
+      "xmltv_id": "WNJU471.us"
+    },
+    "WNJU472.us": {
+      "site_id": "74578",
+      "xmltv_id": "WNJU472.us"
+    },
+    "WNLO41.us": {
+      "site_id": "43430",
+      "xmltv_id": "WNLO41.us"
+    },
+    "WNLO42.us": {
+      "site_id": "43432",
+      "xmltv_id": "WNLO42.us"
+    },
+    "WNMU131.us": {
+      "site_id": "44220",
+      "xmltv_id": "WNMU131.us"
+    },
+    "WNPIDT182.us": {
+      "site_id": "11365",
+      "xmltv_id": "WNPIDT182.us"
+    },
+    "WNWOTV241.us": {
+      "site_id": "31226",
+      "xmltv_id": "WNWOTV241.us"
+    },
+    "WNWTLD371.us": {
+      "site_id": "81896",
+      "xmltv_id": "WNWTLD371.us"
+    },
+    "WNXYLD2.us": {
+      "site_id": "16457",
+      "xmltv_id": "WNXYLD2.us"
+    },
+    "WNXYLD3.us": {
+      "site_id": "16458",
+      "xmltv_id": "WNXYLD3.us"
+    },
+    "WNYETV251.us": {
+      "site_id": "26196",
+      "xmltv_id": "WNYETV251.us"
+    },
+    "WNYETV252.us": {
+      "site_id": "28270",
+      "xmltv_id": "WNYETV252.us"
+    },
+    "WNYETV253.us": {
+      "site_id": "28271",
+      "xmltv_id": "WNYETV253.us"
+    },
+    "WNYJLD221.us": {
+      "site_id": "114802",
+      "xmltv_id": "WNYJLD221.us"
+    },
+    "WNYW51.us": {
+      "site_id": "20360",
+      "xmltv_id": "WNYW51.us"
+    },
+    "WNYW52.us": {
+      "site_id": "30763",
+      "xmltv_id": "WNYW52.us"
+    },
+    "WNYW53.us": {
+      "site_id": "81334",
+      "xmltv_id": "WNYW53.us"
+    },
+    "WNYW54.us": {
+      "site_id": "97965",
+      "xmltv_id": "WNYW54.us"
+    },
+    "WNYW55.us": {
+      "site_id": "112941",
+      "xmltv_id": "WNYW55.us"
+    },
+    "WNYXLD5.us": {
+      "site_id": "17849",
+      "xmltv_id": "WNYXLD5.us"
+    },
+    "WOFL651.us": {
+      "site_id": "21221",
+      "xmltv_id": "WOFL651.us"
+    },
+    "WOIO194.us": {
+      "site_id": "121077",
+      "xmltv_id": "WOIO194.us"
+    },
+    "WOIO431.us": {
+      "site_id": "21320",
+      "xmltv_id": "WOIO431.us"
+    },
+    "WOIO432.us": {
+      "site_id": "54702",
+      "xmltv_id": "WOIO432.us"
+    },
+    "WOIO433.us": {
+      "site_id": "114149",
+      "xmltv_id": "WOIO433.us"
+    },
+    "WOODTV81.us": {
+      "site_id": "20457",
+      "xmltv_id": "WOODTV81.us"
+    },
+    "WOODTV82.us": {
+      "site_id": "20729",
+      "xmltv_id": "WOODTV82.us"
+    },
+    "WOODTV83.us": {
+      "site_id": "20730",
+      "xmltv_id": "WOODTV83.us"
+    },
+    "WorldHarvestTV.us": {
+      "site_id": "11514",
+      "xmltv_id": "WorldHarvestTV.us"
+    },
+    "WorldPokerTour.us": {
+      "site_id": "113372",
+      "xmltv_id": "WorldPokerTour.us"
+    },
+    "WorldPokerTour.us@US": {
+      "site_id": "113372",
+      "xmltv_id": "WorldPokerTour.us@US"
+    },
+    "WOTV411.us": {
+      "site_id": "34524",
+      "xmltv_id": "WOTV411.us"
+    },
+    "WPBNTV71.us": {
+      "site_id": "43706",
+      "xmltv_id": "WPBNTV71.us"
+    },
+    "WPBNTV72.us": {
+      "site_id": "47834",
+      "xmltv_id": "WPBNTV72.us"
+    },
+    "WPBSTV164.us": {
+      "site_id": "31734",
+      "xmltv_id": "WPBSTV164.us"
+    },
+    "WPBT22.us": {
+      "site_id": "32576",
+      "xmltv_id": "WPBT22.us"
+    },
+    "WPBT23.us": {
+      "site_id": "32577",
+      "xmltv_id": "WPBT23.us"
+    },
+    "WPBT24.us": {
+      "site_id": "43178",
+      "xmltv_id": "WPBT24.us"
+    },
+    "WPBT421.us": {
+      "site_id": "26192",
+      "xmltv_id": "WPBT421.us"
+    },
+    "WPCWDT1.us": {
+      "site_id": "64020",
+      "xmltv_id": "WPCWDT1.us"
+    },
+    "WPCWDT2.us": {
+      "site_id": "100908",
+      "xmltv_id": "WPCWDT2.us"
+    },
+    "WPCWDT3.us": {
+      "site_id": "104896",
+      "xmltv_id": "WPCWDT3.us"
+    },
+    "WPCWDT4.us": {
+      "site_id": "109241",
+      "xmltv_id": "WPCWDT4.us"
+    },
+    "WPDETV151.us": {
+      "site_id": "34557",
+      "xmltv_id": "WPDETV151.us"
+    },
+    "WPDETV154.us": {
+      "site_id": "103850",
+      "xmltv_id": "WPDETV154.us"
+    },
+    "WPDETV212.us": {
+      "site_id": "66446",
+      "xmltv_id": "WPDETV212.us"
+    },
+    "WPGHTV531.us": {
+      "site_id": "21249",
+      "xmltv_id": "WPGHTV531.us"
+    },
+    "WPGHTV532.us": {
+      "site_id": "46027",
+      "xmltv_id": "WPGHTV532.us"
+    },
+    "WPGHTV533.us": {
+      "site_id": "91490",
+      "xmltv_id": "WPGHTV533.us"
+    },
+    "WPHLTV652.us": {
+      "site_id": "50876",
+      "xmltv_id": "WPHLTV652.us"
+    },
+    "WPHLTV653.us": {
+      "site_id": "70278",
+      "xmltv_id": "WPHLTV653.us"
+    },
+    "WPIX112.us": {
+      "site_id": "50777",
+      "xmltv_id": "WPIX112.us"
+    },
+    "WPIX114.us": {
+      "site_id": "70260",
+      "xmltv_id": "WPIX114.us"
+    },
+    "WPIX71.us": {
+      "site_id": "20373",
+      "xmltv_id": "WPIX71.us"
+    },
+    "WPIXDT3.us": {
+      "site_id": "65092",
+      "xmltv_id": "WPIXDT3.us"
+    },
+    "WPLG101.us": {
+      "site_id": "20493",
+      "xmltv_id": "WPLG101.us"
+    },
+    "WPLG102.us": {
+      "site_id": "55971",
+      "xmltv_id": "WPLG102.us"
+    },
+    "WPLG103.us": {
+      "site_id": "80549",
+      "xmltv_id": "WPLG103.us"
+    },
+    "WPPXTV611.us": {
+      "site_id": "43971",
+      "xmltv_id": "WPPXTV611.us"
+    },
+    "WPPXTV612.us": {
+      "site_id": "43973",
+      "xmltv_id": "WPPXTV612.us"
+    },
+    "WPPXTV613.us": {
+      "site_id": "43975",
+      "xmltv_id": "WPPXTV613.us"
+    },
+    "WPPXTV614.us": {
+      "site_id": "43977",
+      "xmltv_id": "WPPXTV614.us"
+    },
+    "WPPXTV615.us": {
+      "site_id": "82712",
+      "xmltv_id": "WPPXTV615.us"
+    },
+    "WPPXTV616.us": {
+      "site_id": "83522",
+      "xmltv_id": "WPPXTV616.us"
+    },
+    "WPSG651.us": {
+      "site_id": "34628",
+      "xmltv_id": "WPSG651.us"
+    },
+    "WPSGDT2.us": {
+      "site_id": "109469",
+      "xmltv_id": "WPSGDT2.us"
+    },
+    "WPSGDT3.us": {
+      "site_id": "109470",
+      "xmltv_id": "WPSGDT3.us"
+    },
+    "WPSGDT4.us": {
+      "site_id": "110654",
+      "xmltv_id": "WPSGDT4.us"
+    },
+    "WPSGDT5.us": {
+      "site_id": "113745",
+      "xmltv_id": "WPSGDT5.us"
+    },
+    "WPSUTV31.us": {
+      "site_id": "45799",
+      "xmltv_id": "WPSUTV31.us"
+    },
+    "WPSUTV32.us": {
+      "site_id": "49153",
+      "xmltv_id": "WPSUTV32.us"
+    },
+    "WPSUTV33.us": {
+      "site_id": "49155",
+      "xmltv_id": "WPSUTV33.us"
+    },
+    "WPSUTV34.us": {
+      "site_id": "101660",
+      "xmltv_id": "WPSUTV34.us"
+    },
+    "WPVITV61.us": {
+      "site_id": "19612",
+      "xmltv_id": "WPVITV61.us"
+    },
+    "WPVITV62.us": {
+      "site_id": "43156",
+      "xmltv_id": "WPVITV62.us"
+    },
+    "WPVITV63.us": {
+      "site_id": "43139",
+      "xmltv_id": "WPVITV63.us"
+    },
+    "WPWRTV501.us": {
+      "site_id": "34662",
+      "xmltv_id": "WPWRTV501.us"
+    },
+    "WPXI111.us": {
+      "site_id": "20369",
+      "xmltv_id": "WPXI111.us"
+    },
+    "WPXI112.us": {
+      "site_id": "46798",
+      "xmltv_id": "WPXI112.us"
+    },
+    "WPXI113.us": {
+      "site_id": "58746",
+      "xmltv_id": "WPXI113.us"
+    },
+    "WPXNTV311.us": {
+      "site_id": "43818",
+      "xmltv_id": "WPXNTV311.us"
+    },
+    "WPXNTV312.us": {
+      "site_id": "54618",
+      "xmltv_id": "WPXNTV312.us"
+    },
+    "WPXNTV313.us": {
+      "site_id": "55285",
+      "xmltv_id": "WPXNTV313.us"
+    },
+    "WPXNTV314.us": {
+      "site_id": "55347",
+      "xmltv_id": "WPXNTV314.us"
+    },
+    "WPXNTV315.us": {
+      "site_id": "82708",
+      "xmltv_id": "WPXNTV315.us"
+    },
+    "WPXNTV316.us": {
+      "site_id": "83518",
+      "xmltv_id": "WPXNTV316.us"
+    },
+    "WPXNTV317.us": {
+      "site_id": "121325",
+      "xmltv_id": "WPXNTV317.us"
+    },
+    "WPXOLD1.us": {
+      "site_id": "64144",
+      "xmltv_id": "WPXOLD1.us"
+    },
+    "WQED131.us": {
+      "site_id": "51809",
+      "xmltv_id": "WQED131.us"
+    },
+    "WQED132.us": {
+      "site_id": "46273",
+      "xmltv_id": "WQED132.us"
+    },
+    "WQED133.us": {
+      "site_id": "34555",
+      "xmltv_id": "WQED133.us"
+    },
+    "WQED134.us": {
+      "site_id": "73776",
+      "xmltv_id": "WQED134.us"
+    },
+    "WQED135.us": {
+      "site_id": "101971",
+      "xmltv_id": "WQED135.us"
+    },
+    "WRBW91.us": {
+      "site_id": "26191",
+      "xmltv_id": "WRBW91.us"
+    },
+    "WRCDT1.us": {
+      "site_id": "19578",
+      "xmltv_id": "WRCDT1.us"
+    },
+    "WRCDT2.us": {
+      "site_id": "45736",
+      "xmltv_id": "WRCDT2.us"
+    },
+    "WRCDT3.us": {
+      "site_id": "114820",
+      "xmltv_id": "WRCDT3.us"
+    },
+    "WRCDT4.us": {
+      "site_id": "106502",
+      "xmltv_id": "WRCDT4.us"
+    },
+    "WRCFCD291.us": {
+      "site_id": "83296",
+      "xmltv_id": "WRCFCD291.us"
+    },
+    "WRDQ271.us": {
+      "site_id": "31505",
+      "xmltv_id": "WRDQ271.us"
+    },
+    "WRICTV81.us": {
+      "site_id": "20458",
+      "xmltv_id": "WRICTV81.us"
+    },
+    "WRICTV82.us": {
+      "site_id": "71490",
+      "xmltv_id": "WRICTV82.us"
+    },
+    "WRICTV83.us": {
+      "site_id": "98442",
+      "xmltv_id": "WRICTV83.us"
+    },
+    "WRLHTV351.us": {
+      "site_id": "34674",
+      "xmltv_id": "WRLHTV351.us"
+    },
+    "WRLHTV352.us": {
+      "site_id": "52724",
+      "xmltv_id": "WRLHTV352.us"
+    },
+    "WRLHTV354.us": {
+      "site_id": "102233",
+      "xmltv_id": "WRLHTV354.us"
+    },
+    "WRLHTV355.us": {
+      "site_id": "112986",
+      "xmltv_id": "WRLHTV355.us"
+    },
+    "WRLHTV653.us": {
+      "site_id": "69969",
+      "xmltv_id": "WRLHTV653.us"
+    },
+    "WRLKTV351.us": {
+      "site_id": "21896",
+      "xmltv_id": "WRLKTV351.us"
+    },
+    "WRLKTV352.us": {
+      "site_id": "24095",
+      "xmltv_id": "WRLKTV352.us"
+    },
+    "WRLKTV353.us": {
+      "site_id": "33854",
+      "xmltv_id": "WRLKTV353.us"
+    },
+    "WRNNTV482.us": {
+      "site_id": "55565",
+      "xmltv_id": "WRNNTV482.us"
+    },
+    "WRNNTV91.us": {
+      "site_id": "101453",
+      "xmltv_id": "WRNNTV91.us"
+    },
+    "WRNNTV93.us": {
+      "site_id": "55567",
+      "xmltv_id": "WRNNTV93.us"
+    },
+    "WRNNTV94.us": {
+      "site_id": "75533",
+      "xmltv_id": "WRNNTV94.us"
+    },
+    "WRTDLD3.us": {
+      "site_id": "11895",
+      "xmltv_id": "WRTDLD3.us"
+    },
+    "WRTDLD5.us": {
+      "site_id": "15611",
+      "xmltv_id": "WRTDLD5.us"
+    },
+    "WRTV61.us": {
+      "site_id": "21102",
+      "xmltv_id": "WRTV61.us"
+    },
+    "WRTV62.us": {
+      "site_id": "48923",
+      "xmltv_id": "WRTV62.us"
+    },
+    "WRTV63.us": {
+      "site_id": "73364",
+      "xmltv_id": "WRTV63.us"
+    },
+    "WRTV64.us": {
+      "site_id": "95139",
+      "xmltv_id": "WRTV64.us"
+    },
+    "WSBDT1.us": {
+      "site_id": "19586",
+      "xmltv_id": "WSBDT1.us"
+    },
+    "WSBDT2.us": {
+      "site_id": "59472",
+      "xmltv_id": "WSBDT2.us"
+    },
+    "WSBDT3.us": {
+      "site_id": "92262",
+      "xmltv_id": "WSBDT3.us"
+    },
+    "WSBKTV381.us": {
+      "site_id": "32723",
+      "xmltv_id": "WSBKTV381.us"
+    },
+    "WSBKTV382.us": {
+      "site_id": "101068",
+      "xmltv_id": "WSBKTV382.us"
+    },
+    "WSBKTV383.us": {
+      "site_id": "109499",
+      "xmltv_id": "WSBKTV383.us"
+    },
+    "WSBKTV664.us": {
+      "site_id": "110531",
+      "xmltv_id": "WSBKTV664.us"
+    },
+    "WSCV514.us": {
+      "site_id": "79548",
+      "xmltv_id": "WSCV514.us"
+    },
+    "WSCV61.us": {
+      "site_id": "34734",
+      "xmltv_id": "WSCV61.us"
+    },
+    "WSCV62.us": {
+      "site_id": "75502",
+      "xmltv_id": "WSCV62.us"
+    },
+    "WSFLTV391.us": {
+      "site_id": "30304",
+      "xmltv_id": "WSFLTV391.us"
+    },
+    "WSFLTV392.us": {
+      "site_id": "51525",
+      "xmltv_id": "WSFLTV392.us"
+    },
+    "WSFLTV393.us": {
+      "site_id": "68675",
+      "xmltv_id": "WSFLTV393.us"
+    },
+    "WSFLTV394.us": {
+      "site_id": "70585",
+      "xmltv_id": "WSFLTV394.us"
+    },
+    "WSFXTV261.us": {
+      "site_id": "35487",
+      "xmltv_id": "WSFXTV261.us"
+    },
+    "WSMH661.us": {
+      "site_id": "52618",
+      "xmltv_id": "WSMH661.us"
+    },
+    "WSNSTV51.us": {
+      "site_id": "24521",
+      "xmltv_id": "WSNSTV51.us"
+    },
+    "WSNSTV52.us": {
+      "site_id": "67535",
+      "xmltv_id": "WSNSTV52.us"
+    },
+    "WSOCTV91.us": {
+      "site_id": "20494",
+      "xmltv_id": "WSOCTV91.us"
+    },
+    "WSOCTV92.us": {
+      "site_id": "45250",
+      "xmltv_id": "WSOCTV92.us"
+    },
+    "WSSFLD512.us": {
+      "site_id": "15616",
+      "xmltv_id": "WSSFLD512.us"
+    },
+    "WSSFLD513.us": {
+      "site_id": "15614",
+      "xmltv_id": "WSSFLD513.us"
+    },
+    "WSSFLD516.us": {
+      "site_id": "15618",
+      "xmltv_id": "WSSFLD516.us"
+    },
+    "WSTMDT2.us": {
+      "site_id": "46286",
+      "xmltv_id": "WSTMDT2.us"
+    },
+    "WSTMTV91.us": {
+      "site_id": "32129",
+      "xmltv_id": "WSTMTV91.us"
+    },
+    "WSVN71.us": {
+      "site_id": "21220",
+      "xmltv_id": "WSVN71.us"
+    },
+    "WSVN72.us": {
+      "site_id": "61999",
+      "xmltv_id": "WSVN72.us"
+    },
+    "WSYRTV91.us": {
+      "site_id": "35712",
+      "xmltv_id": "WSYRTV91.us"
+    },
+    "WSYT681.us": {
+      "site_id": "32777",
+      "xmltv_id": "WSYT681.us"
+    },
+    "WSYX61.us": {
+      "site_id": "32635",
+      "xmltv_id": "WSYX61.us"
+    },
+    "WTAETV41.us": {
+      "site_id": "19615",
+      "xmltv_id": "WTAETV41.us"
+    },
+    "WTAETV42.us": {
+      "site_id": "55776",
+      "xmltv_id": "WTAETV42.us"
+    },
+    "WTAJTV101.us": {
+      "site_id": "32823",
+      "xmltv_id": "WTAJTV101.us"
+    },
+    "WTAJTV102.us": {
+      "site_id": "100645",
+      "xmltv_id": "WTAJTV102.us"
+    },
+    "WTAJTV103.us": {
+      "site_id": "100646",
+      "xmltv_id": "WTAJTV103.us"
+    },
+    "WTAJTV104.us": {
+      "site_id": "106291",
+      "xmltv_id": "WTAJTV104.us"
+    },
+    "WTEN451.us": {
+      "site_id": "32470",
+      "xmltv_id": "WTEN451.us"
+    },
+    "WTHR131.us": {
+      "site_id": "19593",
+      "xmltv_id": "WTHR131.us"
+    },
+    "WTHR132.us": {
+      "site_id": "30411",
+      "xmltv_id": "WTHR132.us"
+    },
+    "WTHR133.us": {
+      "site_id": "62985",
+      "xmltv_id": "WTHR133.us"
+    },
+    "WTHR134.us": {
+      "site_id": "116940",
+      "xmltv_id": "WTHR134.us"
+    },
+    "WTHR135.us": {
+      "site_id": "113175",
+      "xmltv_id": "WTHR135.us"
+    },
+    "WTHR136.us": {
+      "site_id": "114151",
+      "xmltv_id": "WTHR136.us"
+    },
+    "WTICTV611.us": {
+      "site_id": "21216",
+      "xmltv_id": "WTICTV611.us"
+    },
+    "WTICTV612.us": {
+      "site_id": "70297",
+      "xmltv_id": "WTICTV612.us"
+    },
+    "WTLF242.us": {
+      "site_id": "97223",
+      "xmltv_id": "WTLF242.us"
+    },
+    "WTLF243.us": {
+      "site_id": "102330",
+      "xmltv_id": "WTLF243.us"
+    },
+    "WTLWDT2.us": {
+      "site_id": "61124",
+      "xmltv_id": "WTLWDT2.us"
+    },
+    "WTMOCD311.us": {
+      "site_id": "78613",
+      "xmltv_id": "WTMOCD311.us"
+    },
+    "WTNZ431.us": {
+      "site_id": "11602",
+      "xmltv_id": "WTNZ431.us"
+    },
+    "WTOKTV111.us": {
+      "site_id": "43182",
+      "xmltv_id": "WTOKTV111.us"
+    },
+    "WTOL111.us": {
+      "site_id": "30754",
+      "xmltv_id": "WTOL111.us"
+    },
+    "WTTG52.us": {
+      "site_id": "94963",
+      "xmltv_id": "WTTG52.us"
+    },
+    "WTTG53.us": {
+      "site_id": "102968",
+      "xmltv_id": "WTTG53.us"
+    },
+    "WTTV41.us": {
+      "site_id": "35595",
+      "xmltv_id": "WTTV41.us"
+    },
+    "WTTV42.us": {
+      "site_id": "50839",
+      "xmltv_id": "WTTV42.us"
+    },
+    "WTTV43.us": {
+      "site_id": "70497",
+      "xmltv_id": "WTTV43.us"
+    },
+    "WTTW111.us": {
+      "site_id": "30415",
+      "xmltv_id": "WTTW111.us"
+    },
+    "WTTW112.us": {
+      "site_id": "36111",
+      "xmltv_id": "WTTW112.us"
+    },
+    "WTTW113.us": {
+      "site_id": "49346",
+      "xmltv_id": "WTTW113.us"
+    },
+    "WTVD111.us": {
+      "site_id": "21103",
+      "xmltv_id": "WTVD111.us"
+    },
+    "WTVE511.us": {
+      "site_id": "34796",
+      "xmltv_id": "WTVE511.us"
+    },
+    "WTVE512.us": {
+      "site_id": "78908",
+      "xmltv_id": "WTVE512.us"
+    },
+    "WTVF581.us": {
+      "site_id": "28659",
+      "xmltv_id": "WTVF581.us"
+    },
+    "WTVF582.us": {
+      "site_id": "31244",
+      "xmltv_id": "WTVF582.us"
+    },
+    "WTVG131.us": {
+      "site_id": "31709",
+      "xmltv_id": "WTVG131.us"
+    },
+    "WTVG132.us": {
+      "site_id": "31711",
+      "xmltv_id": "WTVG132.us"
+    },
+    "WTVH51.us": {
+      "site_id": "42578",
+      "xmltv_id": "WTVH51.us"
+    },
+    "WTVJ61.us": {
+      "site_id": "21219",
+      "xmltv_id": "WTVJ61.us"
+    },
+    "WTVJDT2.us": {
+      "site_id": "45543",
+      "xmltv_id": "WTVJDT2.us"
+    },
+    "WTVJDT3.us": {
+      "site_id": "63644",
+      "xmltv_id": "WTVJDT3.us"
+    },
+    "WTVRTV61.us": {
+      "site_id": "36075",
+      "xmltv_id": "WTVRTV61.us"
+    },
+    "WTVRTV64.us": {
+      "site_id": "47679",
+      "xmltv_id": "WTVRTV64.us"
+    },
+    "WTVRTV652.us": {
+      "site_id": "46787",
+      "xmltv_id": "WTVRTV652.us"
+    },
+    "WTVS561.us": {
+      "site_id": "25512",
+      "xmltv_id": "WTVS561.us"
+    },
+    "WTVS565.us": {
+      "site_id": "117254",
+      "xmltv_id": "WTVS565.us"
+    },
+    "WTVUCD223.us": {
+      "site_id": "35645",
+      "xmltv_id": "WTVUCD223.us"
+    },
+    "WTVUCD225.us": {
+      "site_id": "35647",
+      "xmltv_id": "WTVUCD225.us"
+    },
+    "WTVUCD226.us": {
+      "site_id": "35648",
+      "xmltv_id": "WTVUCD226.us"
+    },
+    "WTWCTV401.us": {
+      "site_id": "36063",
+      "xmltv_id": "WTWCTV401.us"
+    },
+    "WTWCTV402.us": {
+      "site_id": "50901",
+      "xmltv_id": "WTWCTV402.us"
+    },
+    "WTXFTV291.us": {
+      "site_id": "19614",
+      "xmltv_id": "WTXFTV291.us"
+    },
+    "WTXFTV572.us": {
+      "site_id": "82027",
+      "xmltv_id": "WTXFTV572.us"
+    },
+    "WTXFTV573.us": {
+      "site_id": "82029",
+      "xmltv_id": "WTXFTV573.us"
+    },
+    "WTXLTV271.us": {
+      "site_id": "43832",
+      "xmltv_id": "WTXLTV271.us"
+    },
+    "WTXLTV272.us": {
+      "site_id": "53061",
+      "xmltv_id": "WTXLTV272.us"
+    },
+    "WTXLTV273.us": {
+      "site_id": "74751",
+      "xmltv_id": "WTXLTV273.us"
+    },
+    "WTXLTV274.us": {
+      "site_id": "97554",
+      "xmltv_id": "WTXLTV274.us"
+    },
+    "WTXLTV275.us": {
+      "site_id": "111254",
+      "xmltv_id": "WTXLTV275.us"
+    },
+    "WUAB431.us": {
+      "site_id": "34516",
+      "xmltv_id": "WUAB431.us"
+    },
+    "WUAB432.us": {
+      "site_id": "46950",
+      "xmltv_id": "WUAB432.us"
+    },
+    "WUAB433.us": {
+      "site_id": "74183",
+      "xmltv_id": "WUAB433.us"
+    },
+    "WUCBLD324.us": {
+      "site_id": "17444",
+      "xmltv_id": "WUCBLD324.us"
+    },
+    "WUCW91.us": {
+      "site_id": "34425",
+      "xmltv_id": "WUCW91.us"
+    },
+    "WUCWDT2.us": {
+      "site_id": "52331",
+      "xmltv_id": "WUCWDT2.us"
+    },
+    "WUCWDT3.us": {
+      "site_id": "69640",
+      "xmltv_id": "WUCWDT3.us"
+    },
+    "WUCWDT4.us": {
+      "site_id": "99041",
+      "xmltv_id": "WUCWDT4.us"
+    },
+    "WUCWDT5.us": {
+      "site_id": "120698",
+      "xmltv_id": "WUCWDT5.us"
+    },
+    "WUNCTV41.us": {
+      "site_id": "30645",
+      "xmltv_id": "WUNCTV41.us"
+    },
+    "WUNCTV43.us": {
+      "site_id": "30647",
+      "xmltv_id": "WUNCTV43.us"
+    },
+    "WUNCTV44.us": {
+      "site_id": "30648",
+      "xmltv_id": "WUNCTV44.us"
+    },
+    "WUOALD463.us": {
+      "site_id": "19913",
+      "xmltv_id": "WUOALD463.us"
+    },
+    "WUOALD464.us": {
+      "site_id": "31752",
+      "xmltv_id": "WUOALD464.us"
+    },
+    "WUOALD465.us": {
+      "site_id": "31753",
+      "xmltv_id": "WUOALD465.us"
+    },
+    "WUOALD466.us": {
+      "site_id": "31754",
+      "xmltv_id": "WUOALD466.us"
+    },
+    "WUOALD467.us": {
+      "site_id": "31760",
+      "xmltv_id": "WUOALD467.us"
+    },
+    "WUPA691.us": {
+      "site_id": "32793",
+      "xmltv_id": "WUPA691.us"
+    },
+    "WUPA692.us": {
+      "site_id": "92417",
+      "xmltv_id": "WUPA692.us"
+    },
+    "WUPA693.us": {
+      "site_id": "109126",
+      "xmltv_id": "WUPA693.us"
+    },
+    "WUPA694.us": {
+      "site_id": "110189",
+      "xmltv_id": "WUPA694.us"
+    },
+    "WUPA695.us": {
+      "site_id": "112373",
+      "xmltv_id": "WUPA695.us"
+    },
+    "WUPW361.us": {
+      "site_id": "42599",
+      "xmltv_id": "WUPW361.us"
+    },
+    "WUSA91.us": {
+      "site_id": "19580",
+      "xmltv_id": "WUSA91.us"
+    },
+    "WUSA92.us": {
+      "site_id": "47155",
+      "xmltv_id": "WUSA92.us"
+    },
+    "WUSA94.us": {
+      "site_id": "118858",
+      "xmltv_id": "WUSA94.us"
+    },
+    "WUTV292.us": {
+      "site_id": "42947",
+      "xmltv_id": "WUTV292.us"
+    },
+    "WUTV293.us": {
+      "site_id": "91397",
+      "xmltv_id": "WUTV293.us"
+    },
+    "WUTV491.us": {
+      "site_id": "42945",
+      "xmltv_id": "WUTV491.us"
+    },
+    "WUVN471.us": {
+      "site_id": "54447",
+      "xmltv_id": "WUVN471.us"
+    },
+    "WUVNDT2.us": {
+      "site_id": "70525",
+      "xmltv_id": "WUVNDT2.us"
+    },
+    "WVENTV431.us": {
+      "site_id": "34579",
+      "xmltv_id": "WVENTV431.us"
+    },
+    "WVIT301.us": {
+      "site_id": "21217",
+      "xmltv_id": "WVIT301.us"
+    },
+    "WVIT302.us": {
+      "site_id": "45761",
+      "xmltv_id": "WVIT302.us"
+    },
+    "WVIZ251.us": {
+      "site_id": "44366",
+      "xmltv_id": "WVIZ251.us"
+    },
+    "WVIZ252.us": {
+      "site_id": "46488",
+      "xmltv_id": "WVIZ252.us"
+    },
+    "WVIZ254.us": {
+      "site_id": "57703",
+      "xmltv_id": "WVIZ254.us"
+    },
+    "WVIZ255.us": {
+      "site_id": "102096",
+      "xmltv_id": "WVIZ255.us"
+    },
+    "WVIZDT3.us": {
+      "site_id": "57737",
+      "xmltv_id": "WVIZDT3.us"
+    },
+    "WVLTTV81.us": {
+      "site_id": "11627",
+      "xmltv_id": "WVLTTV81.us"
+    },
+    "WVTTCD344.us": {
+      "site_id": "36323",
+      "xmltv_id": "WVTTCD344.us"
+    },
+    "WVVCLD402.us": {
+      "site_id": "17385",
+      "xmltv_id": "WVVCLD402.us"
+    },
+    "WWAY31.us": {
+      "site_id": "43730",
+      "xmltv_id": "WWAY31.us"
+    },
+    "WWAY32.us": {
+      "site_id": "43989",
+      "xmltv_id": "WWAY32.us"
+    },
+    "WWAY33.us": {
+      "site_id": "46992",
+      "xmltv_id": "WWAY33.us"
+    },
+    "WWBT122.us": {
+      "site_id": "30674",
+      "xmltv_id": "WWBT122.us"
+    },
+    "WWBT123.us": {
+      "site_id": "30675",
+      "xmltv_id": "WWBT123.us"
+    },
+    "WWBT124.us": {
+      "site_id": "113527",
+      "xmltv_id": "WWBT124.us"
+    },
+    "WWBT125.us": {
+      "site_id": "114161",
+      "xmltv_id": "WWBT125.us"
+    },
+    "WWBT651.us": {
+      "site_id": "30305",
+      "xmltv_id": "WWBT651.us"
+    },
+    "WWENetwork.ca": {
+      "site_id": "90143",
+      "xmltv_id": "WWENetwork.ca"
+    },
+    "WWJDT1.us": {
+      "site_id": "20376",
+      "xmltv_id": "WWJDT1.us"
+    },
+    "WWJDT2.us": {
+      "site_id": "42610",
+      "xmltv_id": "WWJDT2.us"
+    },
+    "WWJDT3.us": {
+      "site_id": "42611",
+      "xmltv_id": "WWJDT3.us"
+    },
+    "WWJDT4.us": {
+      "site_id": "42612",
+      "xmltv_id": "WWJDT4.us"
+    },
+    "WWMT31.us": {
+      "site_id": "34884",
+      "xmltv_id": "WWMT31.us"
+    },
+    "WWMT32.us": {
+      "site_id": "34910",
+      "xmltv_id": "WWMT32.us"
+    },
+    "WWORTV91.us": {
+      "site_id": "26566",
+      "xmltv_id": "WWORTV91.us"
+    },
+    "WWORTV93.us": {
+      "site_id": "75009",
+      "xmltv_id": "WWORTV93.us"
+    },
+    "WWSI621.us": {
+      "site_id": "25371",
+      "xmltv_id": "WWSI621.us"
+    },
+    "WWTV91.us": {
+      "site_id": "28679",
+      "xmltv_id": "WWTV91.us"
+    },
+    "WXIATV111.us": {
+      "site_id": "19587",
+      "xmltv_id": "WXIATV111.us"
+    },
+    "WXIATV114.us": {
+      "site_id": "107026",
+      "xmltv_id": "WXIATV114.us"
+    },
+    "WXMI171.us": {
+      "site_id": "31707",
+      "xmltv_id": "WXMI171.us"
+    },
+    "WXMI172.us": {
+      "site_id": "50772",
+      "xmltv_id": "WXMI172.us"
+    },
+    "WXMI173.us": {
+      "site_id": "70381",
+      "xmltv_id": "WXMI173.us"
+    },
+    "WXMI174.us": {
+      "site_id": "107639",
+      "xmltv_id": "WXMI174.us"
+    },
+    "WXNYLD322.us": {
+      "site_id": "16443",
+      "xmltv_id": "WXNYLD322.us"
+    },
+    "WXNYLD4.us": {
+      "site_id": "16446",
+      "xmltv_id": "WXNYLD4.us"
+    },
+    "WXNYLD5.us": {
+      "site_id": "17346",
+      "xmltv_id": "WXNYLD5.us"
+    },
+    "WXSPCD81.us": {
+      "site_id": "68648",
+      "xmltv_id": "WXSPCD81.us"
+    },
+    "WXTVDT681.us": {
+      "site_id": "35361",
+      "xmltv_id": "WXTVDT681.us"
+    },
+    "WXTVDT682.us": {
+      "site_id": "82183",
+      "xmltv_id": "WXTVDT682.us"
+    },
+    "WXTVDT683.us": {
+      "site_id": "91913",
+      "xmltv_id": "WXTVDT683.us"
+    },
+    "WXXATV234.us": {
+      "site_id": "34871",
+      "xmltv_id": "WXXATV234.us"
+    },
+    "WXYZTV71.us": {
+      "site_id": "19601",
+      "xmltv_id": "WXYZTV71.us"
+    },
+    "WXYZTV72.us": {
+      "site_id": "35140",
+      "xmltv_id": "WXYZTV72.us"
+    },
+    "WXYZTV73.us": {
+      "site_id": "35425",
+      "xmltv_id": "WXYZTV73.us"
+    },
+    "WXYZTV74.us": {
+      "site_id": "111146",
+      "xmltv_id": "WXYZTV74.us"
+    },
+    "WYAMLD512.us": {
+      "site_id": "17341",
+      "xmltv_id": "WYAMLD512.us"
+    },
+    "WYBNLD142.us": {
+      "site_id": "11906",
+      "xmltv_id": "WYBNLD142.us"
+    },
+    "WYBNLD143.us": {
+      "site_id": "17335",
+      "xmltv_id": "WYBNLD143.us"
+    },
+    "WYBNLD147.us": {
+      "site_id": "17339",
+      "xmltv_id": "WYBNLD147.us"
+    },
+    "WYBNLD148.us": {
+      "site_id": "17340",
+      "xmltv_id": "WYBNLD148.us"
+    },
+    "WZDCCD441.us": {
+      "site_id": "76363",
+      "xmltv_id": "WZDCCD441.us"
+    },
+    "WZME432.us": {
+      "site_id": "74322",
+      "xmltv_id": "WZME432.us"
+    },
+    "WZME491.us": {
+      "site_id": "64008",
+      "xmltv_id": "WZME491.us"
+    },
+    "WZTDLD451.us": {
+      "site_id": "78805",
+      "xmltv_id": "WZTDLD451.us"
+    },
+    "WZZM131.us": {
+      "site_id": "31482",
+      "xmltv_id": "WZZM131.us"
+    },
+    "XHASDT2.us": {
+      "site_id": "74026",
+      "xmltv_id": "XHASDT2.us"
+    },
+    "YES2Overflow.us": {
+      "site_id": "17279",
+      "xmltv_id": "YES2Overflow.us"
+    },
+    "YesNetwork.us": {
+      "site_id": "30017",
+      "xmltv_id": "YesNetwork.us"
+    },
+    "YourTVMilton.ca": {
+      "site_id": "35589",
+      "xmltv_id": "YourTVMilton.ca"
+    },
+    "YurViewCalifornia.us": {
+      "site_id": "10078",
+      "xmltv_id": "YurViewCalifornia.us"
+    },
+    "ZeeBangla.in": {
+      "site_id": "100075",
+      "xmltv_id": "ZeeBangla.in"
+    },
+    "ZeeMarathi.in": {
+      "site_id": "72738",
+      "xmltv_id": "ZeeMarathi.in"
+    },
+    "ZeeSalaam.in": {
+      "site_id": "89707",
+      "xmltv_id": "ZeeSalaam.in"
+    },
+    "ZeeTamil.in": {
+      "site_id": "90286",
+      "xmltv_id": "ZeeTamil.in"
+    },
+    "ZeeTVUSA.us": {
+      "site_id": "33377",
+      "xmltv_id": "ZeeTVUSA.us"
+    },
+    "ZeeZest.in": {
+      "site_id": "32345",
+      "xmltv_id": "ZeeZest.in"
+    }
+  }
+}

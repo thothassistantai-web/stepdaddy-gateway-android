@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit
 class LightEpgBuilder(
     private val store: EpgStore,
     private val idBridge: EpgShareIdBridge? = null,
+    private val tvtvFetcher: TvtvUsEpgFetcher? = null,
     private val httpClient: OkHttpClient = defaultClient(),
 ) {
   fun build(
@@ -94,6 +95,43 @@ class LightEpgBuilder(
               programmeCountRef = { programmeCount = it },
               getChannelCount = { channelCount },
               getProgrammeCount = { programmeCount },
+          )
+        }
+      }
+
+      val tvtvGapIds = (
+          tvgIds.filter { it !in idsWithProgrammes } +
+              supplementTvgIds.filter { it !in idsWithProgrammes } +
+              sportsTvgIds.filter { it !in idsWithProgrammes } +
+              fastEpgTvgIds.filter { it !in idsWithProgrammes }
+          ).toSet()
+      val tvtvBridgeIds = tvtvFetcher?.let { fetcher ->
+          val bridged = tvtvGapIds.filter { fetcher.bridgeEntry(it) != null }
+          val prioritized = buildList {
+              addAll(tvgIds.filter { it in bridged })
+              addAll(bridged.filter { it !in tvgIds })
+          }.distinct().take(TvtvUsEpgConfig.MAX_CHANNELS_PER_BUILD)
+          prioritized
+      }.orEmpty()
+      if (tvtvFetcher != null && tvtvBridgeIds.isNotEmpty()) {
+        val beforeProgrammes = programmeCount
+        tvtvFetcher.mergeGapFill(
+            writer = writer,
+            playlistIds = tvtvBridgeIds,
+            channelNamesByTvgId = channelNamesByTvgId,
+            writtenChannelIds = writtenChannelIds,
+            idsWithProgrammes = idsWithProgrammes,
+            windowStart = windowStart,
+            windowEnd = windowEnd,
+            channelCountRef = { channelCount = it },
+            programmeCountRef = { programmeCount = it },
+            getChannelCount = { channelCount },
+            getProgrammeCount = { programmeCount },
+        )
+        if (programmeCount > beforeProgrammes) {
+          android.util.Log.i(
+              "LightEpgBuilder",
+              "tvtv.us EPG: +${programmeCount - beforeProgrammes} programmes for ${tvtvBridgeIds.size} cable ids",
           )
         }
       }
