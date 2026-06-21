@@ -3,6 +3,7 @@ package com.thothassistant.stepdaddy.gateway
 import android.content.Context
 import android.content.SharedPreferences
 import com.thothassistant.stepdaddy.gateway.network.NetworkAccessMode
+import com.thothassistant.stepdaddy.gateway.upstream.PlaylistTitleStyle
 import com.thothassistant.stepdaddy.gateway.upstream.SupplementImportMode
 import java.security.SecureRandom
 import java.util.Base64
@@ -103,6 +104,16 @@ class GatewayEnvironment(context: Context) {
         get() = prefs.getBoolean(KEY_TIVIMATE_WATCH, true)
         set(value) {
             prefs.edit().putBoolean(KEY_TIVIMATE_WATCH, value).apply()
+        }
+
+    /**
+     * TiviMate playlist display names: [PlaylistTitleStyle.XTREAM_CATEGORY] uses `US: NAME HD`
+     * with category [GroupTitleResolver] groups; [PlaylistTitleStyle.LEGACY] uses flag suffixes.
+     */
+    var playlistTitleStyle: PlaylistTitleStyle
+        get() = PlaylistTitleStyle.fromPref(prefs.getString(KEY_PLAYLIST_TITLE_STYLE, null))
+        set(value) {
+            prefs.edit().putString(KEY_PLAYLIST_TITLE_STYLE, value.name).apply()
         }
 
     var serverRunning: Boolean
@@ -380,6 +391,7 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_AUTO_START_ON_LAUNCH = "auto_start_on_launch"
         private const val KEY_LAUNCH_TIVIMATE_ON_READY = "launch_tivimate_on_ready"
         private const val KEY_TIVIMATE_WATCH = "tivimate_watch"
+        private const val KEY_PLAYLIST_TITLE_STYLE = "playlist_title_style"
         private const val KEY_SERVER_RUNNING = "server_running"
         private const val KEY_READY_BANNER_SHOWN = "ready_banner_shown"
         private const val KEY_LAST_SERVICE_START_MS = "last_service_start_ms"

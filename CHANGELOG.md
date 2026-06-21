@@ -7,6 +7,18 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.24] - 2026-06-21
+
+### Added
+
+- **Playlist title style setting** — Xtream-style `US: CHANNEL HD` / `ᴿᴬᵂ` FAST titles (default) or legacy flag-suffix titles
+- **`XtreamCategoryTitleFormatter`** — cable vs FAST display formatting without changing `group-title` categories
+
+### Changed
+
+- **TiviMate group sidebar order** — Entertainment → Movies → Local Channels → News → Sports → Kids → Documentary → Music → Extra 24/7 → International → En Español → XXX Adult; playlist emitted by group order then `tvg-chno`
+- **Group sort aliases** — `Locals`, `Premium`, Adult Swim marathon, iptv-org, and TheTvApp sports map into canonical slots
+
 ## [1.0.23] - 2026-06-21
 
 ### Fixed

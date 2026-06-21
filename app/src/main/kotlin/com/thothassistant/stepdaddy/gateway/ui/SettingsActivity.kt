@@ -108,6 +108,8 @@ class SettingsActivity : AppCompatActivity() {
         binding.switchLaunchTivimate.isChecked = environment.launchTivimateOnReady
         binding.switchBoot.isChecked = environment.startOnBoot
         binding.switchTivimateWatch.isChecked = environment.tivimateWatchEnabled
+        binding.switchXtreamPlaylistTitles.isChecked =
+            environment.playlistTitleStyle == com.thothassistant.stepdaddy.gateway.upstream.PlaylistTitleStyle.XTREAM_CATEGORY
         binding.switchAutoCheckUpdates.isChecked = environment.autoCheckUpdates
         binding.switchAutoDownloadUpdates.isChecked = environment.autoDownloadUpdates
         binding.editUpdateManifestUrl.setText(environment.updateManifestUrlOverride)
@@ -160,6 +162,12 @@ class SettingsActivity : AppCompatActivity() {
         environment.launchTivimateOnReady = binding.switchLaunchTivimate.isChecked
         environment.startOnBoot = binding.switchBoot.isChecked
         environment.tivimateWatchEnabled = binding.switchTivimateWatch.isChecked
+        environment.playlistTitleStyle = if (binding.switchXtreamPlaylistTitles.isChecked) {
+            com.thothassistant.stepdaddy.gateway.upstream.PlaylistTitleStyle.XTREAM_CATEGORY
+        } else {
+            com.thothassistant.stepdaddy.gateway.upstream.PlaylistTitleStyle.LEGACY
+        }
+        (application as GatewayApp).playlistCache.invalidate()
         environment.autoCheckUpdates = binding.switchAutoCheckUpdates.isChecked
         environment.autoDownloadUpdates = binding.switchAutoDownloadUpdates.isChecked
         environment.setUpdateManifestUrlOverride(binding.editUpdateManifestUrl.text?.toString().orEmpty())

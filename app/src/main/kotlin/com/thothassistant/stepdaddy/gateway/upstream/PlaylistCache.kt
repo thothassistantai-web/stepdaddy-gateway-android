@@ -40,12 +40,14 @@ class PlaylistCache {
         supplementSyncedAtMs: Long,
         channelRevision: Int,
         logoDbLoaded: Boolean,
+        playlistTitleStyle: PlaylistTitleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
     ): Long {
         var key = channelCount.toLong()
         key = key * 31 + supplementCount
         key = key * 31 + supplementSyncedAtMs
         key = key * 31 + channelRevision
         key = key * 31 + if (logoDbLoaded) 1 else 0
+        key = key * 31 + playlistTitleStyle.ordinal
         key = key * 31 + PLAYLIST_SORT_REVISION
         return key
     }
@@ -124,6 +126,6 @@ class PlaylistCache {
     companion object {
         private const val TAG = "PlaylistCache"
         /** Bump when playlist ordering logic changes so in-memory cache rebuilds. */
-        private const val PLAYLIST_SORT_REVISION = 8
+        private const val PLAYLIST_SORT_REVISION = 9
     }
 }

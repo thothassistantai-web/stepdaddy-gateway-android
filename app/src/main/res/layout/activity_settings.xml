@@ -462,6 +462,23 @@
             android:text="@string/label_tivimate_watch"
             android:textColor="@color/on_background" />
 
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchXtreamPlaylistTitles"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:minHeight="48dp"
+            android:text="@string/label_xtream_playlist_titles"
+            android:textColor="@color/on_background" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/label_xtream_playlist_titles_hint"
+            android:textColor="@color/on_background_muted"
+            android:textSize="12sp" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

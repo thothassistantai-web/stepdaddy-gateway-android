@@ -14,6 +14,10 @@ object GroupTitleResolver {
     const val INTERNATIONAL = "International"
     const val EN_ESPANOL = "En Español"
     const val ADULT = "XXX Adult"
+    const val EXTRA_247 = "📡 | Extra | 24/7"
+
+    /** Default sort slot for unknown / legacy group-title labels. */
+    const val DEFAULT_GROUP_SORT_ORDER = 50
 
     data class Resolution(
         val groupTitle: String,
@@ -24,8 +28,38 @@ object GroupTitleResolver {
         val appendCountrySuffix: Boolean,
     ) {
         val sortBucket: Int get() = if (isAdult) 2 else 0
-        val categoryOrder: Int get() = GROUP_ORDER[categoryLabel] ?: 50
+        val categoryOrder: Int get() = groupSortOrder(categoryLabel)
     }
+
+    /** TiviMate sidebar order when playlist groups are sorted by playlist order. */
+    fun groupSortOrder(groupTitle: String): Int {
+        val key = groupTitle.trim()
+        GROUP_ORDER[key]?.let { return it }
+        GROUP_TITLE_ALIASES[key]?.let { alias -> GROUP_ORDER[alias]?.let { return it } }
+        return when {
+            key.equals("Locals", ignoreCase = true) -> GROUP_ORDER.getValue(LOCAL_CHANNELS)
+            key.equals("Premium", ignoreCase = true) -> GROUP_ORDER.getValue(MOVIES)
+            key.startsWith("🌐 | iptv-org") -> GROUP_ORDER.getValue(INTERNATIONAL)
+            key.startsWith("🏈 | Sports") -> GROUP_ORDER.getValue(SPORTS)
+            else -> DEFAULT_GROUP_SORT_ORDER
+        }
+    }
+
+    /** Canonical playlist / sidebar group sequence. */
+    val PLAYLIST_GROUP_SEQUENCE: List<String> = listOf(
+        ENTERTAINMENT,
+        MOVIES,
+        LOCAL_CHANNELS,
+        NEWS,
+        SPORTS,
+        KIDS,
+        DOCUMENTARY,
+        MUSIC,
+        EXTRA_247,
+        INTERNATIONAL,
+        EN_ESPANOL,
+        ADULT,
+    )
 
     private val FLAG_TO_CODE = mapOf(
         "🇺🇸" to "US",
@@ -83,17 +117,23 @@ object GroupTitleResolver {
 
     /** TiviMate sidebar order when playlist groups are sorted by playlist order. */
     private val GROUP_ORDER = mapOf(
-        LOCAL_CHANNELS to 0,
-        SPORTS to 1,
-        ENTERTAINMENT to 2,
-        MOVIES to 3,
-        NEWS to 4,
-        DOCUMENTARY to 5,
-        MUSIC to 6,
-        KIDS to 7,
-        INTERNATIONAL to 8,
-        EN_ESPANOL to 9,
-        ADULT to 10,
+        ENTERTAINMENT to 0,
+        MOVIES to 1,
+        LOCAL_CHANNELS to 2,
+        NEWS to 3,
+        SPORTS to 4,
+        KIDS to 5,
+        DOCUMENTARY to 6,
+        MUSIC to 7,
+        EXTRA_247 to 8,
+        INTERNATIONAL to 9,
+        EN_ESPANOL to 10,
+        ADULT to 11,
+    )
+
+    /** Supplement / legacy group-title labels that share a canonical sort slot. */
+    private val GROUP_TITLE_ALIASES = mapOf(
+        "🎬 | Adult Swim | Marathon" to EXTRA_247,
     )
 
     private val SPORT_TAGS = setOf(

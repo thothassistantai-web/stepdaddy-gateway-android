@@ -58,19 +58,22 @@ Example: `ACC Network USA 🇺🇸 US`
 
 Set TiviMate → Playlists → Manage Groups → **Groups sorting: By order in playlist**.
 
-Playlist emits channels in this group order:
+Playlist emits channels in this group order (then `tvg-chno` within each group):
 
-1. Local Channels
-2. Sports
-3. Entertainment
-4. Movies
-5. News
-6. Documentary
-7. Music
-8. Kids
-9. International
-10. En Español
-11. XXX Adult (last)
+1. Entertainment
+2. Movies
+3. Local Channels
+4. News
+5. Sports
+6. Kids
+7. Documentary
+8. Music
+9. 📡 | Extra | 24/7 (incl. Adult Swim marathon)
+10. International
+11. En Español
+12. XXX Adult
+
+Legacy labels `Locals` → Local Channels slot; `Premium` → Movies slot.
 
 Within each group: US → CA → other countries A→Z, then channel name.
 

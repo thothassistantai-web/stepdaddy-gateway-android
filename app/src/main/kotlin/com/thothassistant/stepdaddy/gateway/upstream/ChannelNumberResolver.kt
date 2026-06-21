@@ -5,7 +5,7 @@ import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 
 /**
  * Assigns `tvg-chno` values per group-title category.
- * Local, Sports, Entertainment, and Movies are fully bulk-sorted
+ * Local, Movies, Entertainment, and Sports are fully bulk-sorted
  * (US → CA → UK → rest, network families, no pin exceptions).
  * Other categories keep FiOS/Spectrum-inspired pins and sequential fill.
  */
@@ -14,26 +14,14 @@ object ChannelNumberResolver {
     private val multiSpaceRe = Regex("\\s+")
 
     /** Playlist fill order — matches [GroupTitleResolver] sidebar sequence. */
-    private val GROUP_FILL_ORDER = listOf(
-        GroupTitleResolver.LOCAL_CHANNELS,
-        GroupTitleResolver.SPORTS,
-        GroupTitleResolver.ENTERTAINMENT,
-        GroupTitleResolver.MOVIES,
-        GroupTitleResolver.NEWS,
-        GroupTitleResolver.DOCUMENTARY,
-        GroupTitleResolver.MUSIC,
-        GroupTitleResolver.KIDS,
-        GroupTitleResolver.INTERNATIONAL,
-        GroupTitleResolver.EN_ESPANOL,
-        GroupTitleResolver.ADULT,
-    )
+    private val GROUP_FILL_ORDER = GroupTitleResolver.PLAYLIST_GROUP_SEQUENCE
 
     /** Bulk-sorted categories — skipped during pin + sequential passes. */
     private val BULK_SORT_GROUPS = listOf(
-        GroupTitleResolver.LOCAL_CHANNELS,
-        GroupTitleResolver.SPORTS,
         GroupTitleResolver.ENTERTAINMENT,
         GroupTitleResolver.MOVIES,
+        GroupTitleResolver.LOCAL_CHANNELS,
+        GroupTitleResolver.SPORTS,
     )
 
     /** Numeric bands per group-title (FiOS/Spectrum NYC hybrid). */

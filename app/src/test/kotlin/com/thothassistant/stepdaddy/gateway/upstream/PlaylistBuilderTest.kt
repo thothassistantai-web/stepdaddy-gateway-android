@@ -15,12 +15,13 @@ class PlaylistBuilderTest {
     ) = Channel(id = id, name = name, tags = tags, tvgId = tvgId)
 
     @Test
-    fun `tivimate playlist emits channels in ascending tvg-chno order`() {
+    fun `tivimate playlist emits groups in sidebar order then ascending tvg-chno`() {
         val channels = listOf(
             ch("espn", "ESPN USA", listOf("🇺🇸", "#sports")),
             ch("cbs", "CBS USA", listOf("🇺🇸", "#local")),
             ch("cnn", "CNN USA", listOf("🇺🇸", "#news")),
-            ch("nbc", "NBC USA", listOf("🇺🇸", "#local")),
+            ch("hbo", "HBO USA", listOf("🇺🇸", "#movies", "#premium")),
+            ch("fx", "FX USA", listOf("🇺🇸", "#entertainment")),
         )
 
         val playlist = PlaylistBuilder.tivimatePlaylist(
@@ -29,15 +30,16 @@ class PlaylistBuilderTest {
             dlhdOrigin = "https://daddylive.org",
         )
 
-        val chnos = Regex("""tvg-chno="(\d+)"""")
+        val rows = Regex("""group-title="([^"]+)".*?tvg-chno="(\d+)"""")
             .findAll(playlist)
-            .map { it.groupValues[1].toInt() }
+            .map { GroupTitleResolver.groupSortOrder(it.groupValues[1]) to it.groupValues[2].toInt() }
             .toList()
 
-        assertTrue(chnos.containsAll(listOf(100)))
-        assertTrue(chnos.filter { it in 1..499 }.size >= 2)
-        assertTrue(chnos.any { it == 70 || it in 500..1599 })
-        assertTrue(chnos.zipWithNext().all { (left, right) -> left <= right })
+        assertTrue(rows.isNotEmpty())
+        assertTrue(rows.zipWithNext().all { (left, right) ->
+            left.first < right.first || (left.first == right.first && left.second <= right.second)
+        })
+        assertEquals(0, rows.first().first)
     }
 
     @Test
@@ -61,6 +63,7 @@ class PlaylistBuilderTest {
             baseUrl = "http://127.0.0.1:3000",
             dlhdOrigin = "https://daddylive.org",
             supplements = supplements,
+            titleStyle = PlaylistTitleStyle.LEGACY,
         )
 
         assertTrue(playlist.contains("group-title=\"Music\""))
@@ -145,6 +148,38 @@ class PlaylistBuilderTest {
     }
 
     @Test
+    fun `xtream category style formats cable and fast supplements`() {
+        val channels = listOf(
+            ch("fox", "Fox News Channel", listOf("🇺🇸", "#news"), tvgId = "FoxNews.us"),
+        )
+        val supplements = listOf(
+            SupplementChannel(
+                id = "iptv:as1",
+                name = "Adult Swim Marathon (1080p)",
+                groupTitle = GroupTitleResolver.ENTERTAINMENT,
+                streamUrl = "https://example.com/as.m3u8",
+                tags = listOf("🇺🇸", "#entertainment", "#animation"),
+                providerTag = "Samsung",
+                tvgId = "adultswim.marathon.us",
+            ),
+        )
+
+        val playlist = PlaylistBuilder.tivimatePlaylist(
+            channels = channels,
+            baseUrl = "http://127.0.0.1:3000",
+            dlhdOrigin = "https://daddylive.org",
+            supplements = supplements,
+            titleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
+        )
+
+        assertTrue(playlist.contains("group-title=\"News\""))
+        assertTrue(playlist.contains("US: FOX NEWS CHANNEL HD"))
+        assertTrue(playlist.contains("tvg-name=\"US: FOX NEWS CHANNEL HD\""))
+        assertTrue(playlist.contains("group-title=\"Entertainment\""))
+        assertTrue(playlist.contains("US: ADULT SWIM MARATHON ᴿᴬᵂ"))
+    }
+
+    @Test
     fun `ntv supplement uses gateway stream route with referer`() {
         val supplements = listOf(
             SupplementChannel(
@@ -166,6 +201,6 @@ class PlaylistBuilderTest {
         )
         assertTrue(playlist.contains("http://127.0.0.1:3000/ntv-stream/abc123.m3u8"))
         assertTrue(playlist.contains("Referer=${NtvCxCdnLiveConfig.REFERER}"))
-        assertTrue(playlist.contains("ESPN CDN"))
+        assertTrue(playlist.contains("INT: ESPN ᴿᴬᵂ"))
     }
 }

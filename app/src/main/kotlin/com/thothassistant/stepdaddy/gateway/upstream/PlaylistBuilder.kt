@@ -17,6 +17,7 @@ object PlaylistBuilder {
         logoResolver: LogoResolver? = null,
         channelMetaStore: ChannelMetaStore? = null,
         supplements: List<SupplementChannel> = emptyList(),
+        titleStyle: PlaylistTitleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
     ): String = GroupTitleResolver.withResolveCache {
         buildTivimatePlaylist(
             channels = channels,
@@ -25,6 +26,7 @@ object PlaylistBuilder {
             logoResolver = logoResolver,
             channelMetaStore = channelMetaStore,
             supplements = supplements,
+            titleStyle = titleStyle,
         )
     }
 
@@ -35,6 +37,7 @@ object PlaylistBuilder {
         logoResolver: LogoResolver? = null,
         channelMetaStore: ChannelMetaStore? = null,
         supplements: List<SupplementChannel> = emptyList(),
+        titleStyle: PlaylistTitleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
     ): String {
         val base = baseUrl.trimEnd('/')
         val (channelNumbers, supplementNumbers) = ChannelNumberResolver.assignPlaylist(channels, supplements)
@@ -43,24 +46,33 @@ object PlaylistBuilder {
         channels.forEach { channel ->
             val chno = channelNumbers[channel.id] ?: return@forEach
             val resolution = GroupTitleResolver.resolve(channel.name, channel.tags, channel.id)
-            val title = ChannelTitleNormalizer.displayTitle(channel.name, resolution)
+            val title = ChannelTitleNormalizer.displayTitle(
+                channelName = channel.name,
+                resolution = resolution,
+                style = titleStyle,
+                source = if (resolution.isAdult) PlaylistTitleSource.ADULT else PlaylistTitleSource.CABLE,
+            )
             rows += PlaylistRow(
+                groupOrder = GroupTitleResolver.groupSortOrder(resolution.groupTitle),
                 chno = chno,
-                extinf = "#EXTINF:-1 ${extinfAttrs(channel, base, logoResolver, channelMetaStore, resolution, chno)},$title",
+                extinf = "#EXTINF:-1 ${extinfAttrs(channel, base, logoResolver, channelMetaStore, resolution, chno, title, titleStyle)},$title",
                 stream = tivimateStreamLine(base, channel.id, dlhdOrigin),
             )
         }
 
         supplements.forEach { supplement ->
             val chno = supplementNumbers[supplement.id] ?: return@forEach
+            val title = supplementDisplayTitle(supplement, titleStyle)
+            val groupTitle = supplementPlaylistGroupTitle(supplement)
             rows += PlaylistRow(
+                groupOrder = GroupTitleResolver.groupSortOrder(groupTitle),
                 chno = chno,
-                extinf = "#EXTINF:-1 ${supplementExtinfAttrs(supplement, base, logoResolver, chno)},${supplementDisplayTitle(supplement)}",
+                extinf = "#EXTINF:-1 ${supplementExtinfAttrs(supplement, base, logoResolver, chno, title, titleStyle)},$title",
                 stream = supplementStreamLine(supplement, base),
             )
         }
 
-        rows.sortBy { it.chno }
+        rows.sortWith(compareBy({ it.groupOrder }, { it.chno }))
 
         val estimatedBytes = rows.size * 420 + 128
         val out = StringBuilder(estimatedBytes.coerceAtMost(8 * 1024 * 1024))
@@ -73,6 +85,7 @@ object PlaylistBuilder {
     }
 
     private data class PlaylistRow(
+        val groupOrder: Int,
         val chno: Int,
         val extinf: String,
         val stream: String,
@@ -85,11 +98,14 @@ object PlaylistBuilder {
         channelMetaStore: ChannelMetaStore?,
         resolution: GroupTitleResolver.Resolution,
         channelNumber: Int,
+        displayTitle: String,
+        titleStyle: PlaylistTitleStyle,
     ): String {
         val attrs = mutableListOf<String>()
         channel.tvgId?.let {
             attrs += """tvg-id="${escape(it)}""""
-            attrs += """tvg-name="${escape(channel.name)}""""
+            val tvgName = if (titleStyle == PlaylistTitleStyle.XTREAM_CATEGORY) displayTitle else channel.name
+            attrs += """tvg-name="${escape(tvgName)}""""
         }
         val metaLogo = channelMetaStore?.logoFor(channel.name)
         val logo = logoResolver?.resolvePlaylistLogoUrl(
@@ -106,34 +122,42 @@ object PlaylistBuilder {
         return attrs.joinToString(" ")
     }
 
-    private fun supplementDisplayTitle(supplement: SupplementChannel): String {
+    private fun supplementDisplayTitle(
+        supplement: SupplementChannel,
+        titleStyle: PlaylistTitleStyle,
+    ): String {
         val resolution = supplementResolution(supplement)
-        return         if (supplement.id.startsWith("iptv:") || supplement.id.startsWith("ntv:") ||
-            supplement.id.startsWith("adultswim:")
+        val source = supplementTitleSource(supplement, resolution)
+        return if (supplement.id.startsWith("iptv:") || supplement.id.startsWith("ntv:") ||
+            supplement.id.startsWith("adultswim:") || titleStyle == PlaylistTitleStyle.XTREAM_CATEGORY
         ) {
             ChannelTitleNormalizer.supplementDisplayTitle(
-                supplement.name,
-                resolution,
-                supplement.providerTag,
+                channelName = supplement.name,
+                resolution = resolution,
+                providerTag = supplement.providerTag,
+                style = titleStyle,
+                source = source,
             )
         } else {
             escape(supplement.name)
         }
     }
 
+    private fun supplementTitleSource(
+        supplement: SupplementChannel,
+        resolution: GroupTitleResolver.Resolution,
+    ): PlaylistTitleSource = when {
+        resolution.isAdult -> PlaylistTitleSource.ADULT
+        supplement.id.startsWith("iptv:") ||
+            supplement.id.startsWith("ntv:") ||
+            supplement.id.startsWith("adultswim:") -> PlaylistTitleSource.FAST
+        supplement.id.startsWith("sport:") -> PlaylistTitleSource.SIDECAR
+        else -> PlaylistTitleSource.SIDECAR
+    }
+
     private fun supplementResolution(supplement: SupplementChannel): GroupTitleResolver.Resolution {
-        if (supplement.id.startsWith("iptv:") && supplement.tags.isNotEmpty()) {
-            return GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id)
-        }
         if (supplement.id.startsWith("iptv:")) {
-            return GroupTitleResolver.Resolution(
-                groupTitle = supplement.groupTitle,
-                categoryLabel = supplement.groupTitle,
-                countryCode = "",
-                flagEmoji = null,
-                isAdult = false,
-                appendCountrySuffix = false,
-            )
+            return GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id)
         }
         return GroupTitleResolver.Resolution(
             groupTitle = supplement.groupTitle,
@@ -171,17 +195,16 @@ object PlaylistBuilder {
         base: String,
         logoResolver: LogoResolver?,
         channelNumber: Int,
+        displayTitle: String,
+        titleStyle: PlaylistTitleStyle,
     ): String {
         val resolution = supplementResolution(supplement)
-        val groupTitle = if (supplement.id.startsWith("iptv:")) {
-            resolution.groupTitle
-        } else {
-            supplement.groupTitle
-        }
+        val groupTitle = supplementPlaylistGroupTitle(supplement, resolution)
         val attrs = mutableListOf<String>()
         supplement.tvgId?.let {
             attrs += """tvg-id="${escape(it)}""""
-            attrs += """tvg-name="${escape(supplement.name)}""""
+            val tvgName = if (titleStyle == PlaylistTitleStyle.XTREAM_CATEGORY) displayTitle else supplement.name
+            attrs += """tvg-name="${escape(tvgName)}""""
         }
         val logo = logoResolver?.resolvePlaylistLogoUrl(
             apiBase = base,
@@ -195,6 +218,16 @@ object PlaylistBuilder {
         attrs += """tvg-chno="$channelNumber""""
         return attrs.joinToString(" ")
     }
+
+    private fun supplementPlaylistGroupTitle(
+        supplement: SupplementChannel,
+        resolution: GroupTitleResolver.Resolution = supplementResolution(supplement),
+    ): String =
+        if (supplement.id.startsWith("iptv:")) {
+            resolution.groupTitle
+        } else {
+            supplement.groupTitle
+        }
 
     private fun escape(value: String): String =
         value

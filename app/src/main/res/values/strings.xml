@@ -137,6 +137,8 @@
     <string name="label_start_on_boot_short">Start on Boot</string>
     <string name="label_start_on_boot_hint">Start gateway automatically after device reboot.</string>
     <string name="label_tivimate_watch">Keep alive for TiviMate</string>
+    <string name="label_xtream_playlist_titles">Xtream-style channel names</string>
+    <string name="label_xtream_playlist_titles_hint">Category groups stay the same; names become US: FOX NEWS HD (cable) or US: NAME ᴿᴬᵂ (FAST).</string>
     <string name="label_keep_gateway_alive">Keep Gateway Alive</string>
     <string name="label_tivimate_watch_hint">Restart gateway if Android suspends background processes.</string>
     <string name="status_running">Server running at %1$s</string>

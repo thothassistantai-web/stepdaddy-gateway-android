@@ -49,6 +49,7 @@ class PlaylistRoutes(
             supplementSyncedAtMs = supplementSource.lastSyncedAtMs(),
             channelRevision = client.channelRevision(),
             logoDbLoaded = logoResolver.isLoaded(),
+            playlistTitleStyle = environment.playlistTitleStyle,
         )
         playlistCache.schedulePrewarm(cacheKey) {
             buildPlaylistBodySync(channels, supplements)
@@ -64,6 +65,7 @@ class PlaylistRoutes(
             supplementSyncedAtMs = supplementSource.lastSyncedAtMs(),
             channelRevision = client.channelRevision(),
             logoDbLoaded = logoResolver.isLoaded(),
+            playlistTitleStyle = environment.playlistTitleStyle,
         )
         playlistCache.getOrBuild(cacheKey) {
             buildPlaylistBodySync(channels, supplements)
@@ -84,6 +86,7 @@ class PlaylistRoutes(
             logoResolver = logoResolver,
             channelMetaStore = channelMetaStore,
             supplements = supplements,
+            titleStyle = environment.playlistTitleStyle,
         )
     }
 }

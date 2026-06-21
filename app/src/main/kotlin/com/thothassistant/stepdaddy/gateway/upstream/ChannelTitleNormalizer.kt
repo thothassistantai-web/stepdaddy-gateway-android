@@ -1,7 +1,7 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
 /**
- * Normalizes TiviMate display titles: strip legacy suffixes, fix spelling, append flag + ISO code.
+ * Normalizes TiviMate display titles: legacy flag suffix or Xtream-style category names.
  */
 object ChannelTitleNormalizer {
     private val categorySuffixRe = Regex(" \\[[^\\]]+\\]$")
@@ -13,7 +13,35 @@ object ChannelTitleNormalizer {
         "espanol" to "español",
     )
 
-    fun displayTitle(channelName: String, resolution: GroupTitleResolver.Resolution): String {
+    fun displayTitle(
+        channelName: String,
+        resolution: GroupTitleResolver.Resolution,
+        style: PlaylistTitleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
+        source: PlaylistTitleSource = PlaylistTitleSource.CABLE,
+    ): String {
+        if (style == PlaylistTitleStyle.XTREAM_CATEGORY) {
+            return XtreamCategoryTitleFormatter.format(channelName, resolution, source)
+        }
+        return legacyDisplayTitle(channelName, resolution)
+    }
+
+    fun supplementDisplayTitle(
+        channelName: String,
+        resolution: GroupTitleResolver.Resolution,
+        providerTag: String?,
+        style: PlaylistTitleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
+        source: PlaylistTitleSource = PlaylistTitleSource.FAST,
+    ): String {
+        if (style == PlaylistTitleStyle.LEGACY) {
+            val base = legacyDisplayTitle(channelName, resolution)
+            val tag = providerTag?.trim().orEmpty()
+            if (tag.isEmpty() || base.endsWith(tag, ignoreCase = true)) return base
+            return "$base $tag"
+        }
+        return XtreamCategoryTitleFormatter.format(channelName, resolution, source)
+    }
+
+    private fun legacyDisplayTitle(channelName: String, resolution: GroupTitleResolver.Resolution): String {
         var title = channelName.replace("\"", "'").trim()
         title = categorySuffixRe.replace(title, "").trim()
         title = applySpellingFixes(title)
@@ -27,17 +55,6 @@ object ChannelTitleNormalizer {
         val suffix = "$flag ${resolution.countryCode}"
         if (title.endsWith(suffix, ignoreCase = false)) return title
         return "$title $suffix".trim()
-    }
-
-    fun supplementDisplayTitle(
-        channelName: String,
-        resolution: GroupTitleResolver.Resolution,
-        providerTag: String?,
-    ): String {
-        val base = displayTitle(channelName, resolution)
-        val tag = providerTag?.trim().orEmpty()
-        if (tag.isEmpty() || base.endsWith(tag, ignoreCase = true)) return base
-        return "$base $tag"
     }
 
     private fun stripDuplicateCountrySuffix(title: String, countryCode: String, flagEmoji: String?): String {

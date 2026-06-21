@@ -5,6 +5,15 @@ import org.junit.Test
 
 class GroupTitleResolverTest {
   @Test
+  fun `group sort order matches approved sidebar sequence`() {
+    GroupTitleResolver.PLAYLIST_GROUP_SEQUENCE.forEachIndexed { index, group ->
+      assertEquals(index, GroupTitleResolver.groupSortOrder(group))
+    }
+    assertEquals(2, GroupTitleResolver.groupSortOrder("Locals"))
+    assertEquals(1, GroupTitleResolver.groupSortOrder("Premium"))
+    assertEquals(8, GroupTitleResolver.groupSortOrder("🎬 | Adult Swim | Marathon"))
+  }
+  @Test
   fun `ACC Network USA resolves to Sports with US suffix`() {
     val resolution = GroupTitleResolver.resolve(
       "ACC Network USA",
