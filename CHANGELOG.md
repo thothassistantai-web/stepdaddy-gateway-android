@@ -7,6 +7,28 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.27] - 2026-06-22
+
+### Added
+
+- **Gateway EPG toggle** — disable on-device XMLTV merge and pass external epgshare feeds to TiviMate via playlist `url-tvg` (multi-URL, comma-separated)
+- **Settings → EPG** — pre-filled US2 / US_SPORTS1 / US_LOCALS1 defaults; multiline external feed editor
+- **`/sports-epg.xml`** — loopback Special Events guide when gateway EPG is off
+- **`EpgPlaylistUrlResolver`** — single source for playlist header, dashboard, QR, and health EPG URLs
+
+### Changed
+
+- **EPG cold boot** — two-phase build skips slow tvtv.us gap-fill on first pass for faster initial guide
+- **XmltvParser** — growable stream buffer reduces GC during gzip feed scans
+- **Supplement sync** — skips sidecar/FAST/iptv-org EPG downloads when gateway EPG disabled
+- **Health / status** — reports external EPG mode instead of “Building EPG…” when gateway merge is off
+
+### Fixed
+
+- **Special Events EPG** — finished events removed from playlist; real event titles instead of “Live programming” placeholders
+- **Guide schedule** — category guides sit above events; improved bitmap/HTML renderer and lifecycle filtering
+- **Dashboard / QR** — EPG copy and QR codes no longer point at disabled `/epg.xml`
+
 ## [1.0.26] - 2026-06-22
 
 ### Added
