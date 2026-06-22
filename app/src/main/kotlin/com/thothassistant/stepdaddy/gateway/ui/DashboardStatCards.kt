@@ -1,6 +1,7 @@
 package com.thothassistant.stepdaddy.gateway.ui
 
 import android.content.Intent
+import android.view.KeyEvent
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.thothassistant.stepdaddy.gateway.GatewayApp
@@ -95,6 +96,34 @@ class DashboardStatCards(
         programsCard.root.setOnClickListener { openDetail(DashboardStatType.PROGRAMS) }
         statusCard.root.setOnClickListener { openDetail(DashboardStatType.STATUS) }
         sourcesCard.root.setOnClickListener { openDetail(DashboardStatType.SOURCES) }
+    }
+
+    fun wireFocus() {
+        val cards = listOf(channelsCard.root, programsCard.root, statusCard.root, sourcesCard.root)
+        channelsCard.root.nextFocusRightId = R.id.statCardPrograms
+        programsCard.root.apply {
+            nextFocusLeftId = R.id.statCardChannels
+            nextFocusRightId = R.id.statCardStatus
+        }
+        statusCard.root.apply {
+            nextFocusLeftId = R.id.statCardPrograms
+            nextFocusRightId = R.id.statCardSources
+        }
+        sourcesCard.root.nextFocusLeftId = R.id.statCardStatus
+        cards.forEach { card ->
+            card.nextFocusDownId = R.id.buttonToggleServer
+            card.isFocusableInTouchMode = true
+            card.setOnKeyListener { view, keyCode, event ->
+                if (event.action == KeyEvent.ACTION_DOWN &&
+                    (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)
+                ) {
+                    view.performClick()
+                    true
+                } else {
+                    false
+                }
+            }
+        }
     }
 
     private fun openDetail(type: DashboardStatType) {

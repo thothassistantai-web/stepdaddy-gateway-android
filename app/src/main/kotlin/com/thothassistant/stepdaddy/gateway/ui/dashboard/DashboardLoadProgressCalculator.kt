@@ -5,6 +5,7 @@ import com.thothassistant.stepdaddy.gateway.epg.EpgMeta
 import com.thothassistant.stepdaddy.gateway.model.DashboardLoadProgress
 import com.thothassistant.stepdaddy.gateway.model.HealthResponse
 import com.thothassistant.stepdaddy.gateway.model.LoadProgress
+import com.thothassistant.stepdaddy.gateway.model.SupplementStatus
 import kotlin.math.max
 import kotlin.math.min
 
@@ -125,38 +126,117 @@ internal object DashboardLoadProgressCalculator {
         val providers = health.providers
         val supplement = health.supplement
         if (providers == null) {
-            return LoadProgress(phase = "loading", percent = 5, etaSeconds = 120L, detail = "Waiting for providers…")
+            return LoadProgress(
+                phase = "loading",
+                percent = 5,
+                etaSeconds = 120L,
+                detail = "Waiting for provider stats…",
+            )
         }
+
         val slots = buildList {
-            add("DaddyLive" to providers.daddylive)
-            if (supplement?.sidecarEnabled == true) add("MoveOnJoy" to providers.moveOnJoy)
-            if (supplement?.sportsEnabled == true) add("Sports" to providers.sports)
-            if (supplement?.iptvOrgEnabled == true) add("IPTV-org" to providers.iptvOrg)
-            if (supplement?.ntvCxEnabled == true) add("NTV.cx" to providers.ntvCx)
-            if (supplement?.adultSwimEnabled == true) add("Adult Swim" to providers.adultSwim)
+            add(sourceSlot("DaddyLive", daddylivePercent(providers.daddylive, health)))
+            if (supplement?.sidecarEnabled == true) {
+                add(sourceSlot("MoveOnJoy", sidecarPercent(providers.moveOnJoy, supplement)))
+            }
+            if (supplement?.sportsEnabled == true) {
+                add(sourceSlot("Sports", sportsPercent(providers.sports, supplement)))
+            }
+            if (supplement?.iptvOrgEnabled == true) {
+                add(sourceSlot("IPTV-org", iptvOrgPercent(providers.iptvOrg, supplement)))
+            }
+            if (supplement?.ntvCxEnabled == true) {
+                add(sourceSlot("NTV.cx", ntvCxPercent(providers.ntvCx, supplement)))
+            }
+            if (supplement?.adultSwimEnabled == true) {
+                add(sourceSlot("Adult Swim", adultSwimPercent(providers.adultSwim, supplement)))
+            }
         }
+
         if (slots.isEmpty()) {
             return LoadProgress(phase = "ready", percent = 100, etaSeconds = 0L, detail = "DaddyLive only")
         }
-        val ready = slots.count { it.second > 0 }
-        val total = slots.size
-        if (ready >= total && providers.total > 0) {
+
+        val avgPercent = slots.map { it.percent }.average().toInt().coerceIn(0, 100)
+        val allReady = slots.all { it.percent >= 100 }
+        if (allReady) {
             return LoadProgress(
                 phase = "ready",
                 percent = 100,
                 etaSeconds = 0L,
-                detail = "$ready of $total supplement sources active",
+                detail = "${slots.size} sources synced · ${providers.total} channels",
             )
         }
-        val percent = min(95, max(8, ready * 100 / total))
-        val pending = slots.filter { it.second <= 0 }.joinToString(", ") { it.first }
+
+        val pending = slots.filter { it.percent < 100 }.joinToString(", ") { it.label }
+        val syncing = slots.filter { it.percent in 1..99 }
+        val detail = when {
+            syncing.isNotEmpty() -> syncing.joinToString(" · ") { "${it.label} ${it.percent}%" }
+            pending.isNotEmpty() -> "Syncing: $pending"
+            else -> "Refreshing supplement catalogs…"
+        }
+        val remaining = slots.count { it.percent < 100 }
         return LoadProgress(
             phase = "loading",
-            percent = percent,
-            etaSeconds = max(30L, (total - ready) * 45L),
-            detail = "Syncing: $pending",
+            percent = max(8, avgPercent),
+            etaSeconds = max(15L, remaining * 25L),
+            detail = detail,
         )
     }
+
+    private data class SourceSlot(val label: String, val percent: Int)
+
+    private fun sourceSlot(label: String, percent: Int) = SourceSlot(label, percent.coerceIn(0, 100))
+
+    private fun daddylivePercent(count: Int, health: HealthResponse): Int = when {
+        count > 0 -> 100
+        health.starting -> 12
+        health.ok -> 55
+        else -> 5
+    }
+
+    private fun sidecarPercent(count: Int, supplement: SupplementStatus): Int =
+        when {
+            count > 0 -> 100
+            supplement.moveOnJoyChannels > 0 -> 100
+            supplement.supplementSyncInFlight -> 45
+            else -> 15
+        }
+
+    private fun sportsPercent(count: Int, supplement: SupplementStatus): Int =
+        when {
+            count > 0 -> 100
+            supplement.sportsEventsScanned > 0 -> 100
+            supplement.supplementSyncInFlight -> 50
+            else -> 12
+        }
+
+    private fun iptvOrgPercent(count: Int, supplement: SupplementStatus): Int =
+        when {
+            count > 0 -> 100
+            supplement.iptvOrgPlaylistsFetched > 0 ->
+                min(100, 40 + supplement.iptvOrgPlaylistsFetched * 20)
+            supplement.supplementSyncInFlight -> 35
+            else -> 10
+        }
+
+    private fun ntvCxPercent(count: Int, supplement: SupplementStatus): Int =
+        when {
+            count > 0 -> 100
+            supplement.ntvCxResolveProbeOk -> 100
+            supplement.supplementSyncInFlight -> 40
+            else -> 10
+        }
+
+    private fun adultSwimPercent(count: Int, supplement: SupplementStatus): Int =
+        when {
+            count > 0 -> 100
+            supplement.adultSwimProbed > 0 && supplement.adultSwimProbeOk >= supplement.adultSwimProbed -> 100
+            supplement.adultSwimProbed > 0 ->
+                min(95, 35 + (supplement.adultSwimProbeOk * 65 / supplement.adultSwimProbed))
+            supplement.supplementSyncInFlight -> 35
+            else -> 10
+        }
 
     fun statusProgress(
         health: HealthResponse,

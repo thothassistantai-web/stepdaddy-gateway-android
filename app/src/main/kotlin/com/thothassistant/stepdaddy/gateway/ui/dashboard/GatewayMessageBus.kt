@@ -12,7 +12,16 @@ data class GatewayMessage(
 ) {
     fun formatLine(): String {
         val time = TIME_FORMAT.format(Date(timestampMs))
-        return "[$time] $text"
+        val tag = when (level.uppercase(Locale.US)) {
+            "ERROR" -> "ERR"
+            "WARN" -> "WRN"
+            "BOOT" -> "BOOT"
+            "READY" -> "RDY"
+            "STATUS" -> "STS"
+            "INSTALL" -> "INS"
+            else -> "INF"
+        }
+        return "[$time] [$tag] $text"
     }
 
     companion object {
@@ -22,26 +31,30 @@ data class GatewayMessage(
 
 object GatewayMessageBus {
     private const val MAX_MESSAGES = 500
+    private const val DUPLICATE_SUPPRESS_MS = 4_000L
     private val buffer = ArrayDeque<GatewayMessage>(MAX_MESSAGES)
     private val listeners = CopyOnWriteArrayList<(List<GatewayMessage>) -> Unit>()
     private var lastPostKey: String? = null
+    private var lastPostAtMs: Long = 0L
 
     @Synchronized
     fun post(text: String, level: String = "INFO") {
         val key = "$level:$text"
-        if (key == lastPostKey) return
+        val now = System.currentTimeMillis()
+        if (key == lastPostKey && now - lastPostAtMs < DUPLICATE_SUPPRESS_MS) return
         lastPostKey = key
-        append(GatewayMessage(System.currentTimeMillis(), level, text))
+        lastPostAtMs = now
+        append(GatewayMessage(now, level, text))
     }
 
     @Synchronized
     fun postBoot(source: String) {
-        post("Boot event: $source", "BOOT")
+        post("Boot: $source", "BOOT")
     }
 
     @Synchronized
     fun postReady(baseUrl: String) {
-        post("Gateway ready at $baseUrl", "READY")
+        post("Gateway ready · $baseUrl", "READY")
     }
 
     @Synchronized

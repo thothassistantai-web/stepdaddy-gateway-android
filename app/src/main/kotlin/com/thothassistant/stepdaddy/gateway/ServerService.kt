@@ -166,6 +166,27 @@ class ServerService : LifecycleService() {
                     )
                     gatewayServer = server
                     app.supplementSource.onRefreshComplete = {
+                        val sync = app.supplementSource.syncSnapshot()
+                        GatewayDiagnostics.info(
+                            TAG,
+                            buildString {
+                                append("Supplement sync done")
+                                append(" · MOJ ${sync.moveOnJoyChannels}")
+                                append(" · sports ${sync.sportsChannels}")
+                                if (sync.sportsEventsScanned > 0) {
+                                    append(" (${sync.sportsEventsScanned} events scanned)")
+                                }
+                                append(" · IPTV-org ${sync.iptvOrgChannels}")
+                                if (sync.iptvOrgPlaylistsFetched > 0) {
+                                    append(" (${sync.iptvOrgPlaylistsFetched} playlists)")
+                                }
+                                append(" · NTV ${sync.ntvCxChannels}")
+                                append(" · Adult Swim ${sync.adultSwimChannels}")
+                                if (sync.adultSwimProbed > 0) {
+                                    append(" (${sync.adultSwimProbeOk}/${sync.adultSwimProbed} probes ok)")
+                                }
+                            },
+                        )
                         server.prewarmPlaylist()
                         epgManager.scheduleRefresh(client.channels, force = true)
                         scheduleLogoBackfill()

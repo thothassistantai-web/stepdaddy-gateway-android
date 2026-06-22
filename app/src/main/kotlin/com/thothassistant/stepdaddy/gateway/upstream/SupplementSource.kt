@@ -132,6 +132,8 @@ class SupplementSource(
 
     fun syncSnapshot(): SyncSnapshot = lastSync
 
+    fun syncInFlight(): Boolean = refreshInFlight
+
     fun epgXmlFile(): File? = store.epgFile()
 
     fun fastEpgFeedFiles(): List<File> {

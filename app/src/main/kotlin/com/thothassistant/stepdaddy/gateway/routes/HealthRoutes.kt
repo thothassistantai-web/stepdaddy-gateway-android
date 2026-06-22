@@ -61,6 +61,8 @@ class HealthRoutes(
                 channels = supplementSource.channelCount(),
                 moveOnJoyChannels = supplementSource.moveOnJoyCount(),
                 sportsChannels = supplementSource.sportsCount(),
+                sportsEventsScanned = sync.sportsEventsScanned,
+                supplementSyncInFlight = supplementSource.syncInFlight(),
                 iptvOrgChannels = supplementSource.iptvOrgCount(),
                 ntvCxChannels = supplementSource.ntvCxCount(),
                 adultSwimChannels = supplementSource.adultSwimCount(),

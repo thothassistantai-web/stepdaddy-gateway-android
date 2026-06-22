@@ -7,6 +7,17 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.31] - 2026-06-22
+
+### Fixed
+
+- **Sources stat card** — weighted per-source sync progress (sports/IPTV-org/NTV/Adult Swim milestones) so the bar advances instead of sticking at ~80% when a source has zero channels
+- **D-pad stat cards** — focus chain from header through all four tiles to server controls; focus highlight and Enter opens drill-down
+
+### Changed
+
+- **Messages log** — level tags (`INF`, `STS`, `WRN`, etc.), richer dashboard status lines on load phase changes, supplement sync summaries
+
 ## [1.0.30] - 2026-06-22
 
 ### Added

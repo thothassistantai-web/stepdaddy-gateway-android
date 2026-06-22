@@ -64,9 +64,10 @@ class DashboardStatCardView(cardRoot: View) {
             )
             progressFill.backgroundTintList = ContextCompat.getColorStateList(context, fillColor)
             val etaText = formatEta(context, progress)
-            if (etaText != null) {
+            val detail = progress?.detail?.takeIf { it.isNotBlank() }
+            if (etaText != null || detail != null) {
                 eta.visibility = View.VISIBLE
-                eta.text = etaText
+                eta.text = listOfNotNull(etaText, detail).joinToString(" · ")
             } else {
                 eta.visibility = View.GONE
             }

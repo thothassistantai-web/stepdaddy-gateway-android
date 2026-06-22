@@ -25,6 +25,7 @@ import com.thothassistant.stepdaddy.gateway.ServerService
 import com.thothassistant.stepdaddy.gateway.TiviMateLauncher
 import com.thothassistant.stepdaddy.gateway.databinding.ActivityMainBinding
 import com.thothassistant.stepdaddy.gateway.ui.dashboard.DashboardBottomPanel
+import com.thothassistant.stepdaddy.gateway.ui.dashboard.DashboardStatusReporter
 import com.thothassistant.stepdaddy.gateway.ui.dashboard.GatewayMessageBus
 import com.thothassistant.stepdaddy.gateway.install.ApkInstallManager
 import com.thothassistant.stepdaddy.gateway.install.InstallAppsCatalogRepository
@@ -99,9 +100,10 @@ class MainActivity : AppCompatActivity() {
         bindActions()
         statCards = DashboardStatCards(this, binding.root)
         statCards.wireClicks()
+        statCards.wireFocus()
         bottomPanel = DashboardBottomPanel(this, binding.root, environment, lifecycleScope)
         bottomPanel.attach()
-        GatewayMessageBus.post("Dashboard opened")
+        GatewayMessageBus.post("Dashboard opened — health polling will begin when server starts")
         scrollDashboardToTop()
         hydrateDashboardFromCache()
         updateStatus()
@@ -420,7 +422,7 @@ class MainActivity : AppCompatActivity() {
         updateStatus()
         updateEpgStatus()
         Toast.makeText(this, R.string.toast_server_starting, Toast.LENGTH_SHORT).show()
-        GatewayMessageBus.post("Starting gateway server")
+        GatewayMessageBus.post("Starting gateway foreground service and HTTP listener…")
         updateCoordinator.deferPrompts()
     }
 
@@ -435,14 +437,15 @@ class MainActivity : AppCompatActivity() {
         updateEpgStatus()
         renderDashboard(null)
         Toast.makeText(this, R.string.toast_server_stopped, Toast.LENGTH_SHORT).show()
-        GatewayMessageBus.post("Gateway server stopped", "WARN")
+        DashboardStatusReporter.reset()
+        GatewayMessageBus.post("Gateway server stopped — dashboard showing last known stats", "WARN")
     }
 
     private fun restartServer() {
         if (restartJob?.isActive == true) return
         restartJob = lifecycleScope.launch {
             Toast.makeText(this@MainActivity, R.string.toast_server_restarting, Toast.LENGTH_SHORT).show()
-            GatewayMessageBus.post("Restarting gateway server")
+            GatewayMessageBus.post("Restarting gateway — stopping then starting service…")
             if (ServerService.isServiceActive) {
                 stopServer()
                 delay(RESTART_DELAY_MS)
@@ -635,6 +638,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         statCards.bind(health, online, true)
+        DashboardStatusReporter.onHealthUpdate(health)
         updateFooterOnline(online)
         pendingUpdateInfo = updateCoordinator.currentUpdate()
         updateFooterUpdateVisibility(pendingUpdateInfo)

@@ -5,7 +5,7 @@ import android.util.Log
 object GatewayDiagnostics {
     fun info(tag: String, message: String) {
         Log.i(tag, message)
-        GatewayMessageBus.post("[$tag] $message")
+        GatewayMessageBus.post("$tag · $message")
     }
 
     fun warn(tag: String, message: String, throwable: Throwable? = null) {
@@ -15,7 +15,7 @@ object GatewayDiagnostics {
             Log.w(tag, message)
         }
         GatewayLogRing.append("WARN", tag, message)
-        GatewayMessageBus.post("[$tag] $message", "WARN")
+        GatewayMessageBus.post("$tag · $message", "WARN")
     }
 
     fun error(tag: String, message: String, throwable: Throwable? = null) {
@@ -25,6 +25,11 @@ object GatewayDiagnostics {
             Log.e(tag, message)
         }
         GatewayLogRing.append("ERROR", tag, message)
-        GatewayMessageBus.post("[$tag] $message", "ERROR")
+        val detail = if (throwable != null) {
+            "$message (${throwable.javaClass.simpleName})"
+        } else {
+            message
+        }
+        GatewayMessageBus.post("$tag · $detail", "ERROR")
     }
 }
