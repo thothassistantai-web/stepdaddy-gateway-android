@@ -1,7 +1,10 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
+import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
+
 /**
  * Orders live event rows in [GroupTitleResolver.SPECIAL_EVENTS] by sport/league type.
+ * Guide channels are kept directly above their category's stream rows.
  */
 object SpecialEventSort {
     private val LEAGUE_PRIORITY = listOf(
@@ -53,6 +56,54 @@ object SpecialEventSort {
     }
 
     fun sortKey(providerTag: String?, channelName: String, eventUrl: String? = null): Int {
+        val leagueIndex = leagueSortIndex(providerTag, channelName, eventUrl)
+        return leagueIndex * 10_000 + channelName.lowercase().hashCode().and(0xFFF)
+    }
+
+    /** Sort key for a DaddyLive schedule category block (guide + its streams). */
+    fun categoryBlockSortKey(categoryName: String, providerTag: String? = null): Int =
+        leagueSortIndex(providerTag, categoryName, eventUrl = null)
+
+    fun dlhdCategorySlug(supplement: SupplementChannel): String? = when {
+        supplement.id.startsWith("dlhd-guide:") -> supplement.id.removePrefix("dlhd-guide:")
+        supplement.id.startsWith("dlhd-event:") -> {
+            val raw = supplement.eventSourceUrl?.substringBefore('|')?.trim().orEmpty()
+            if (raw.isEmpty()) null else SpecialEventsMerger.slugify(raw)
+        }
+        else -> null
+    }
+
+    fun dlhdCategoryName(supplement: SupplementChannel): String? = when {
+        supplement.id.startsWith("dlhd-guide:") -> supplement.name.removeSuffix(" Schedule").trim()
+        supplement.id.startsWith("dlhd-event:") -> supplement.eventSourceUrl?.substringBefore('|')?.trim()
+        else -> null
+    }
+
+    /**
+     * Playlist / channel-number order within [GroupTitleResolver.SPECIAL_EVENTS].
+     * Each guide row is immediately followed by stream rows from the same schedule category.
+     */
+    fun supplementPlaylistOrder(supplement: SupplementChannel): Int {
+        if (!supplement.id.startsWith("dlhd-guide:") &&
+            !supplement.id.startsWith("dlhd-event:") &&
+            !supplement.id.startsWith("sport:")
+        ) {
+            return 0
+        }
+        dlhdCategorySlug(supplement)?.let { _ ->
+            val categoryName = dlhdCategoryName(supplement).orEmpty()
+            val block = categoryBlockSortKey(categoryName, supplement.providerTag)
+            val slot = when {
+                supplement.id.startsWith("dlhd-guide:") -> 0
+                else -> 1 + supplement.name.lowercase().hashCode().and(0x3FF)
+            }
+            return block * 10_000 + slot
+        }
+        return 1_000_000 +
+            sortKey(supplement.providerTag, supplement.name, supplement.eventSourceUrl)
+    }
+
+    private fun leagueSortIndex(providerTag: String?, channelName: String, eventUrl: String?): Int {
         val league = normalizeLeague(
             providerTag?.trim().orEmpty().ifEmpty {
                 eventUrl?.let { leagueFromEventUrl(it) }.orEmpty()
@@ -60,10 +111,9 @@ object SpecialEventSort {
                 guessLeagueFromName(channelName)
             },
         )
-        val leagueIndex = LEAGUE_PRIORITY.indexOf(league).let { index ->
+        return LEAGUE_PRIORITY.indexOf(league).let { index ->
             if (index < 0) LEAGUE_PRIORITY.lastIndex else index
         }
-        return leagueIndex * 10_000 + channelName.lowercase().hashCode().and(0xFFF)
     }
 
     private fun guessLeagueFromName(channelName: String): String {

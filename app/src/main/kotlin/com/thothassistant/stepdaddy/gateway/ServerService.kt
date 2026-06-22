@@ -322,7 +322,11 @@ class ServerService : LifecycleService() {
                 }
             }
             runCatching {
-                app.supplementSource.refresh(daddyLiveClient.channels, force = true)
+                app.supplementSource.refresh(
+                    daddyLiveClient.channels,
+                    force = true,
+                    dlhdScheduleBaseUrl = daddyLiveClient.activeBaseUrl,
+                )
             }.onFailure { exc ->
                 Log.w(TAG, "Boot supplement refresh failed", exc)
             }

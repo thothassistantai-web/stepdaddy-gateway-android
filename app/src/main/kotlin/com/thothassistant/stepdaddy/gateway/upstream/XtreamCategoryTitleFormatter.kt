@@ -67,14 +67,16 @@ object XtreamCategoryTitleFormatter {
     }
 
     fun formatGuideSchedule(category: String, league: String?): String {
-        val core = sanitizeCore(category).ifEmpty { category.trim() }
+        val core = sanitizeCore(SpecialEventCategoryEmoji.stripLeadingEmoji(category))
+            .ifEmpty { category.trim() }
+        val emoji = SpecialEventCategoryEmoji.forCategory(core, league)
         val leagueLabel = league?.trim()?.uppercase().orEmpty()
         val prefix = if (leagueLabel.isNotEmpty() && !core.uppercase().contains(leagueLabel)) {
             "$leagueLabel "
         } else {
             ""
         }
-        return "US: ${prefix}${core.uppercase()} SCHEDULE ᴸᴵⱽᴱ"
+        return "US: $emoji ${prefix}${core.uppercase()} SCHEDULE ᴸᴵⱽᴱ"
     }
 
     private fun formatAdult(channelName: String): String {

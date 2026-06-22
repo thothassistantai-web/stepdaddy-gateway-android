@@ -43,7 +43,9 @@ object ChannelTitleNormalizer {
             return XtreamCategoryTitleFormatter.formatAdultSwimMarathon(channelName)
         }
         if (source == PlaylistTitleSource.SPECIAL_EVENT_GUIDE) {
-            val category = channelName.removeSuffix(" Schedule").trim()
+            val category = SpecialEventCategoryEmoji.stripLeadingEmoji(
+                channelName.removeSuffix(" Schedule").trim(),
+            )
             return XtreamCategoryTitleFormatter.formatGuideSchedule(category, providerTag)
         }
         if (source == PlaylistTitleSource.SPECIAL_EVENT) {

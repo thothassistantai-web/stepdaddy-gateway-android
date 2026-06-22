@@ -3,6 +3,8 @@ package com.thothassistant.stepdaddy.gateway.upstream
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import java.security.MessageDigest
 
+import kotlinx.serialization.Serializable
+
 /**
  * Merges DaddyLive schedule feeds and TheTvApp live events into one Special Events supplement set.
  */
@@ -13,6 +15,7 @@ object SpecialEventsMerger {
         val theTvAppCount: Int = 0,
     )
 
+    @Serializable
     data class GuideEventRow(
         val title: String,
         val startMs: Long,
@@ -46,7 +49,8 @@ object SpecialEventsMerger {
         val group = GroupTitleResolver.SPECIAL_EVENTS
         val guideProgrammes = linkedMapOf<String, MutableList<GuideEventRow>>()
         val guides = linkedMapOf<String, SupplementChannel>()
-        val streamChannels = mutableListOf<SupplementChannel>()
+        val streamsByCategory = linkedMapOf<String, MutableList<SupplementChannel>>()
+        val theTvAppStreams = mutableListOf<SupplementChannel>()
         val occupiedStreamKeys = linkedSetOf<String>()
         val occupiedTitleKeys = mutableSetOf<String>()
 
@@ -54,9 +58,10 @@ object SpecialEventsMerger {
             val guideSlug = slugify(event.category)
             val guideId = "dlhd-guide:$guideSlug"
             if (guideId !in guides) {
+                val emoji = SpecialEventCategoryEmoji.forCategory(event.category, event.league)
                 guides[guideId] = SupplementChannel(
                     id = guideId,
-                    name = "${event.category} Schedule",
+                    name = "$emoji ${event.category} Schedule",
                     tvgId = "DLHD.Guide.$guideSlug",
                     groupTitle = group,
                     streamUrl = "",
@@ -82,7 +87,7 @@ object SpecialEventsMerger {
 
                 val id = "dlhd-event:${shortHash(streamKey)}"
                 val displayName = buildStreamName(event.title, stream.label, linkIndex)
-                streamChannels += SupplementChannel(
+                streamsByCategory.getOrPut(guideSlug) { mutableListOf() } += SupplementChannel(
                     id = id,
                     name = displayName,
                     tvgId = "DLHD.Event.${shortHash("$titleKey|$streamKey")}",
@@ -100,29 +105,65 @@ object SpecialEventsMerger {
             val titleKey = normalizeTitleKey(channel.name)
             if (titleKey in occupiedTitleKeys) return@forEach
             occupiedTitleKeys += titleKey
-            streamChannels += channel.copy(groupTitle = group)
+            theTvAppStreams += channel.copy(groupTitle = group)
         }
 
-        val sortedStreams = streamChannels
-            .sortedWith(
+        return EpgBundle(
+            channels = interleaveGuidesAndStreams(
+                guides = guides,
+                streamsByCategory = streamsByCategory,
+                theTvAppStreams = theTvAppStreams,
+                maxStreams = maxStreams,
+            ),
+            guideProgrammes = guideProgrammes,
+        )
+    }
+
+    /** Guide channel first, then that category's live streams; repeats per schedule category. */
+    private fun interleaveGuidesAndStreams(
+        guides: Map<String, SupplementChannel>,
+        streamsByCategory: Map<String, List<SupplementChannel>>,
+        theTvAppStreams: List<SupplementChannel>,
+        maxStreams: Int,
+    ): List<SupplementChannel> {
+        val orderedGuides = guides.values.sortedWith(
+            compareBy(
+                {
+                    SpecialEventSort.categoryBlockSortKey(
+                        it.name.removeSuffix(" Schedule"),
+                        it.providerTag,
+                    )
+                },
+                { it.name.lowercase() },
+            ),
+        )
+        val result = mutableListOf<SupplementChannel>()
+        var streamCount = 0
+        for (guide in orderedGuides) {
+            result += guide
+            if (streamCount >= maxStreams) continue
+            val slug = guide.id.removePrefix("dlhd-guide:")
+            val streams = streamsByCategory[slug].orEmpty().sortedBy { it.name.lowercase() }
+            for (stream in streams) {
+                if (streamCount >= maxStreams) break
+                result += stream
+                streamCount++
+            }
+        }
+        if (streamCount < maxStreams) {
+            val orphans = theTvAppStreams.sortedWith(
                 compareBy(
                     { SpecialEventSort.sortKey(it.providerTag, it.name, it.eventSourceUrl) },
                     { it.name.lowercase() },
                 ),
             )
-            .take(maxStreams)
-
-        val sortedGuides = guides.values.sortedWith(
-            compareBy(
-                { SpecialEventSort.sortKey(it.providerTag, it.name) },
-                { it.name.lowercase() },
-            ),
-        )
-
-        return EpgBundle(
-            channels = sortedGuides + sortedStreams,
-            guideProgrammes = guideProgrammes,
-        )
+            for (stream in orphans) {
+                if (streamCount >= maxStreams) break
+                result += stream
+                streamCount++
+            }
+        }
+        return result
     }
 
     private fun buildStreamName(eventTitle: String, linkLabel: String, linkIndex: Int): String {

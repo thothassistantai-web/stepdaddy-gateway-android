@@ -165,7 +165,7 @@ object ChannelNumberResolver {
                 .filter {
                     it.id !in supplementResult && supplementGroup(it) == group
                 }
-                .sortedWith(supplementCountryNameComparator())
+                .sortedWith(specialEventsSupplementComparator(group))
             allocateSupplementSequential(groupSupplements, ranges, occupied, supplementResult)
         }
 
@@ -373,6 +373,16 @@ object ChannelNumberResolver {
             { ChannelCountrySort.prioritySortKey(supplementCountryCode(it)) },
             { it.name.lowercase() },
         )
+
+    private fun specialEventsSupplementComparator(group: String): Comparator<SupplementChannel> =
+        if (group == GroupTitleResolver.SPECIAL_EVENTS) {
+            compareBy(
+                { SpecialEventSort.supplementPlaylistOrder(it) },
+                { it.name.lowercase() },
+            )
+        } else {
+            supplementCountryNameComparator()
+        }
 
     private fun supplementCountryCode(supplement: SupplementChannel): String {
         val resolution = GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id)

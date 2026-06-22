@@ -47,11 +47,12 @@ class GatewayServer(
     private val playlistCache: PlaylistCache,
     private val adminActions: GatewayAdminActions? = null,
 ) {
-    private val uiRoutes = UiRoutes(context.applicationContext, logoResolver)
+    private val appContext = context.applicationContext
+    private val uiRoutes = UiRoutes(appContext, logoResolver)
     private var playlistRoutes: PlaylistRoutes? = null
     private val fallbackSvg: ByteArray =
-        context.assets.open("ui/default-channel.svg").use { it.readBytes() }
-    private val logoRoutes = LogoRoutes(File(context.filesDir, "logo-cache"), fallbackSvg)
+        appContext.assets.open("ui/default-channel.svg").use { it.readBytes() }
+    private val logoRoutes = LogoRoutes(File(appContext.filesDir, "logo-cache"), fallbackSvg)
     @Volatile
     private var engine: ApplicationEngine? = null
 
@@ -71,7 +72,7 @@ class GatewayServer(
         )
         playlistRoutes = routes
         val streamRoutes = StreamRoutes(environment, client)
-        val dlhdEventStreamRoutes = DlhdEventStreamRoutes(environment, supplementSource)
+        val dlhdEventStreamRoutes = DlhdEventStreamRoutes(appContext, environment, supplementSource)
         val ntvStreamRoutes = NtvStreamRoutes(
             environment,
             supplementSource,
@@ -121,9 +122,21 @@ class GatewayServer(
                     get { dlhdEventStreamRoutes.eventStream(call, call.parameters["token"].orEmpty()) }
                     head { dlhdEventStreamRoutes.eventStream(call, call.parameters["token"].orEmpty()) }
                 }
+                route("/dlhd-event-guide/{slug}.html") {
+                    get { dlhdEventStreamRoutes.guidePage(call, call.parameters["slug"].orEmpty()) }
+                    head { dlhdEventStreamRoutes.guidePage(call, call.parameters["slug"].orEmpty()) }
+                }
+                route("/dlhd-event-guide/{slug}.m3u8") {
+                    get { dlhdEventStreamRoutes.guideStream(call, call.parameters["slug"].orEmpty()) }
+                    head { dlhdEventStreamRoutes.guideStream(call, call.parameters["slug"].orEmpty()) }
+                }
+                route("/dlhd-event-guide/{slug}.mp4") {
+                    get { dlhdEventStreamRoutes.guideMp4(call, call.parameters["slug"].orEmpty()) }
+                    head { dlhdEventStreamRoutes.guideMp4(call, call.parameters["slug"].orEmpty()) }
+                }
                 route("/dlhd-event-guide/slate.m3u8") {
-                    get { dlhdEventStreamRoutes.guideStream(call) }
-                    head { dlhdEventStreamRoutes.guideStream(call) }
+                    get { dlhdEventStreamRoutes.guideStreamLegacy(call) }
+                    head { dlhdEventStreamRoutes.guideStreamLegacy(call) }
                 }
                 route("/stream/{channelId}.m3u8") {
                     get { streamRoutes.genericStream(call, call.parameters["channelId"].orEmpty()) }

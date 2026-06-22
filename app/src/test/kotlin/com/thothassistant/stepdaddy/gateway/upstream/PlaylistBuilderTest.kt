@@ -223,6 +223,64 @@ class PlaylistBuilderTest {
     }
 
     @Test
+    fun `special events guide precedes streams in same category`() {
+        val supplements = listOf(
+            SupplementChannel(
+                id = "dlhd-event:swim1",
+                name = "Final Heat",
+                groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+                streamUrl = "",
+                providerTag = "SWIMMING",
+                eventSourceUrl = "Swimming|Sunday|14:00|Swimming : Final Heat",
+                dlhdEventStreamKey = "tv|201",
+            ),
+            SupplementChannel(
+                id = "dlhd-guide:swimming",
+                name = "🏊 Swimming Schedule",
+                groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+                streamUrl = "",
+                providerTag = "SWIMMING",
+                tags = listOf("#events", "#guide"),
+            ),
+            SupplementChannel(
+                id = "dlhd-event:golf1",
+                name = "Round 1",
+                groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+                streamUrl = "",
+                providerTag = "GOLF",
+                eventSourceUrl = "Golf|Sunday|15:00|Golf : Round 1",
+                dlhdEventStreamKey = "tv|202",
+            ),
+            SupplementChannel(
+                id = "dlhd-guide:golf",
+                name = "⛳ Golf Schedule",
+                groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+                streamUrl = "",
+                providerTag = "GOLF",
+                tags = listOf("#events", "#guide"),
+            ),
+        )
+
+        val playlist = PlaylistBuilder.tivimatePlaylist(
+            channels = emptyList(),
+            baseUrl = "http://127.0.0.1:3000",
+            dlhdOrigin = "https://daddylive.org",
+            supplements = supplements,
+            titleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
+        )
+
+        val golfGuide = playlist.indexOf("GOLF SCHEDULE")
+        val golfEvent = playlist.indexOf("ROUND 1")
+        val swimGuide = playlist.indexOf("SWIMMING SCHEDULE")
+        val swimEvent = playlist.indexOf("FINAL HEAT")
+        assertTrue(playlist.contains("dlhd-event-guide/golf.mp4"))
+        assertTrue(playlist.contains("dlhd-event-guide/swimming.mp4"))
+        assertTrue(golfGuide >= 0 && golfEvent > golfGuide)
+        assertTrue(swimGuide >= 0 && swimEvent > swimGuide)
+        assertTrue(golfGuide < swimGuide)
+    }
+
+    @Test
     fun `ntv supplement uses gateway stream route with referer`() {
         val supplements = listOf(
             SupplementChannel(

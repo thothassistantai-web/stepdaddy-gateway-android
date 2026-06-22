@@ -7,6 +7,27 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.26] - 2026-06-22
+
+### Added
+
+- **Guide schedule video** — on-device 1280×720 H.264 MP4 cards for Special Events guide channels (TiviMate-compatible direct `.mp4` URLs)
+- **Guide HTML schedule pages** — `/dlhd-event-guide/{slug}.html` with event times and empty/upcoming states
+- **Category emoji prefixes** — guide titles use sport/category emoji (⚾ Baseball, ⛳ Golf, 🏊 Swimming, etc.)
+- **`guide_fallback.mp4`** — asset fallback when schedule bitmap encode fails
+
+### Changed
+
+- **Special Events ordering** — each category guide channel sits directly above its event streams (Golf Schedule → Golf events, etc.)
+- **Guide stream URLs** — playlist uses direct `.mp4` instead of HTML/HLS wrappers for IPTV players
+- **Supplement mirror fallback** — Special Events merge retries alternate mirrors when primary fetch fails
+- **Playlist sort revision** — bumped to 16 for guide/event interleave order
+
+### Fixed
+
+- **TiviMate guide playback** — ExoPlayer `UnexpectedLoaderException` / `UnrecognizedInputFormatException` on guide channels
+- **Guide EPG** — placeholder programmes when no events; extended visibility for upcoming schedules
+
 ## [1.0.25] - 2026-06-21
 
 ### Added
@@ -227,7 +248,8 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 - Upstream DaddyLive / resportz availability is third-party dependent
 - Full web UI / mapping editor remains in Linux `stepdaddy-web` only
 
-[Unreleased]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/compare/v1.0.18...HEAD
+[Unreleased]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/compare/v1.0.26...HEAD
+[1.0.26]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.26
 [1.0.18]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.18
 [1.0.17]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.17
 [1.0.16]: https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/tag/v1.0.16

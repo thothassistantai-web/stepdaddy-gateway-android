@@ -30,16 +30,15 @@ object SpecialEventsEpgGenerator {
         channels.forEach { channel ->
             when {
                 channel.id.startsWith("dlhd-guide:") -> {
-                    guideProgrammes[channel.id]?.forEach { row ->
-                        val tvgId = channel.tvgId?.trim().orEmpty()
-                        if (tvgId.isEmpty()) return@forEach
-                        out += EventProgramme(
-                            channelId = tvgId,
-                            displayName = channel.name,
-                            title = row.title,
-                            start = Instant.ofEpochMilli(row.startMs),
-                            stop = Instant.ofEpochMilli(row.stopMs),
-                        )
+                    val tvgId = channel.tvgId?.trim().orEmpty()
+                    if (tvgId.isEmpty()) return@forEach
+                    val rows = guideProgrammes[channel.id].orEmpty()
+                    if (rows.isEmpty()) {
+                        out += placeholderGuideProgramme(tvgId, channel.name, "No scheduled events")
+                    } else {
+                        rows.forEach { row ->
+                            out += guideProgramme(tvgId, channel.name, row)
+                        }
                     }
                 }
                 channel.id.startsWith("dlhd-event:") -> {
@@ -51,6 +50,41 @@ object SpecialEventsEpgGenerator {
             }
         }
         return out
+    }
+
+    private fun guideProgramme(
+        tvgId: String,
+        displayName: String,
+        row: SpecialEventsMerger.GuideEventRow,
+    ): EventProgramme {
+        val start = Instant.ofEpochMilli(row.startMs)
+        var stop = Instant.ofEpochMilli(row.stopMs)
+        val now = Instant.now()
+        if (!stop.isAfter(now)) {
+            stop = now.plus(30, ChronoUnit.MINUTES)
+        }
+        return EventProgramme(
+            channelId = tvgId,
+            displayName = displayName,
+            title = row.title,
+            start = start,
+            stop = stop,
+        )
+    }
+
+    private fun placeholderGuideProgramme(
+        tvgId: String,
+        displayName: String,
+        title: String,
+    ): EventProgramme {
+        val now = Instant.now().truncatedTo(ChronoUnit.MINUTES)
+        return EventProgramme(
+            channelId = tvgId,
+            displayName = displayName,
+            title = title,
+            start = now,
+            stop = now.plus(LIVE_EVENT_HOURS, ChronoUnit.HOURS),
+        )
     }
 
     private fun programmeForStream(channel: SupplementChannel): EventProgramme? {

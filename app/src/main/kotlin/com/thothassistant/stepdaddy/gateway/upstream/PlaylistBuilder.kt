@@ -160,19 +160,8 @@ object PlaylistBuilder {
         else -> PlaylistTitleSource.SIDECAR
     }
 
-    private fun supplementIntraGroupOrder(supplement: SupplementChannel): Int {
-        val leagueKey = SpecialEventSort.sortKey(
-            providerTag = supplement.providerTag,
-            channelName = supplement.name,
-            eventUrl = supplement.eventSourceUrl,
-        )
-        return when {
-            supplement.id.startsWith("dlhd-guide:") -> leagueKey * 1_000
-            supplement.id.startsWith("sport:") || supplement.id.startsWith("dlhd-event:") ->
-                leagueKey * 1_000 + 500 + supplement.name.lowercase().hashCode().and(0xFF)
-            else -> 0
-        }
-    }
+    private fun supplementIntraGroupOrder(supplement: SupplementChannel): Int =
+        SpecialEventSort.supplementPlaylistOrder(supplement)
 
     private fun supplementResolution(supplement: SupplementChannel): GroupTitleResolver.Resolution {
         if (supplement.id.startsWith("iptv:")) {
@@ -223,7 +212,9 @@ object PlaylistBuilder {
         dlhdOrigin: String,
     ): String {
         if (supplement.id.startsWith("dlhd-guide:")) {
-            return "${base.trimEnd('/')}/dlhd-event-guide/slate.m3u8|User-Agent=$TIVIMATE_USER_AGENT"
+            val slug = supplement.id.removePrefix("dlhd-guide:")
+            // TiviMate/ExoPlayer plays progressive MP4 directly; HLS→MP4 wrappers fail with UnexpectedLoaderException.
+            return "${base.trimEnd('/')}/dlhd-event-guide/$slug.mp4|User-Agent=$TIVIMATE_USER_AGENT"
         }
         if (supplement.id.startsWith("dlhd-event:")) {
             val key = supplement.dlhdEventStreamKey?.trim().orEmpty()

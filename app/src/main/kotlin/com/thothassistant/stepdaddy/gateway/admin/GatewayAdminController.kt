@@ -134,7 +134,11 @@ class GatewayAdminController(
     }
 
     override suspend fun refreshSupplements(force: Boolean): AdminActionResult {
-        app.supplementSource.refresh(client.channels, force = force)
+        app.supplementSource.refresh(
+            client.channels,
+            force = force,
+            dlhdScheduleBaseUrl = client.activeBaseUrl,
+        )
         prewarmPlaylist()
         epgManager.scheduleRefresh(client.channels, force = true)
         return AdminActionResult(

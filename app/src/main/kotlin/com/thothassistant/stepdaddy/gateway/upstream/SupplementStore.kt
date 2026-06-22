@@ -13,12 +13,19 @@ private data class SupplementCache(
     val syncedAtMs: Long = 0L,
 )
 
+@Serializable
+private data class GuideScheduleCache(
+    val guides: Map<String, List<SpecialEventsMerger.GuideEventRow>> = emptyMap(),
+    val syncedAtMs: Long = 0L,
+)
+
 class SupplementStore(context: Context) {
     private val dir = File(context.filesDir, "supplement").also { it.mkdirs() }
     private val channelsFile = File(dir, "channels.json")
     val epgGzipFile = File(dir, "epg.xml.gz")
     val epgPlainFile = File(dir, "epg.xml")
     val sportsEpgFile = File(dir, "sports_epg.xml")
+    private val guideSchedulesFile = File(dir, "guide_schedules.json")
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
     fun epgFile(): File? {
@@ -51,4 +58,20 @@ class SupplementStore(context: Context) {
         runCatching {
             json.decodeFromString<SupplementCache>(channelsFile.readText()).syncedAtMs
         }.getOrDefault(0L)
+
+    fun readGuideSchedules(): Map<String, List<SpecialEventsMerger.GuideEventRow>> {
+        if (!guideSchedulesFile.exists()) return emptyMap()
+        return runCatching {
+            json.decodeFromString<GuideScheduleCache>(guideSchedulesFile.readText()).guides
+        }.getOrDefault(emptyMap())
+    }
+
+    fun writeGuideSchedules(guides: Map<String, List<SpecialEventsMerger.GuideEventRow>>) {
+        val payload = GuideScheduleCache(guides = guides, syncedAtMs = System.currentTimeMillis())
+        guideSchedulesFile.writeText(json.encodeToString(payload))
+    }
+
+    fun clearGuideSchedules() {
+        guideSchedulesFile.delete()
+    }
 }
