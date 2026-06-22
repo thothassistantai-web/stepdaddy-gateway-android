@@ -17,12 +17,6 @@ class MainDashboardViews(root: View) {
     val buttonHeaderSettings: ImageButton = root.findViewById(R.id.buttonHeaderSettings)
     val buttonHeaderUpdate: ImageButton = root.findViewById(R.id.buttonHeaderUpdate)
 
-    val statChannelsValue: TextView = root.findViewById(R.id.statChannelsValue)
-    val statProgramsValue: TextView = root.findViewById(R.id.statProgramsValue)
-    val statStatusValue: TextView = root.findViewById(R.id.statStatusValue)
-    val statStatusIcon: ImageView = root.findViewById(R.id.statStatusIcon)
-    val statSourcesValue: TextView = root.findViewById(R.id.statSourcesValue)
-
     val buttonToggleServer: MaterialButton = root.findViewById(R.id.buttonToggleServer)
     val buttonRestart: MaterialButton = root.findViewById(R.id.buttonRestart)
     val textStatus: TextView = root.findViewById(R.id.textStatus)

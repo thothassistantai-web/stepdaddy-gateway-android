@@ -78,6 +78,12 @@
             android:theme="@style/Theme.StepDaddyGateway.Fullscreen" />
 
         <activity
+            android:name=".ui.DashboardStatDetailActivity"
+            android:exported="false"
+            android:label="@string/dashboard_stat_detail_title"
+            android:parentActivityName=".ui.MainActivity" />
+
+        <activity
             android:name=".ui.MainActivity"
             android:banner="@drawable/tv_banner"
             android:exported="true"

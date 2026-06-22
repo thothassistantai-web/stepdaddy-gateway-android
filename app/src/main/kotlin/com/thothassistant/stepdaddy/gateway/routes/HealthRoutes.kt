@@ -15,6 +15,7 @@ import com.thothassistant.stepdaddy.gateway.model.TivimateSetup
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
 import com.thothassistant.stepdaddy.gateway.upstream.GroupTitleResolver
 import com.thothassistant.stepdaddy.gateway.upstream.SupplementSource
+import com.thothassistant.stepdaddy.gateway.ui.dashboard.DashboardLoadProgressCalculator
 import io.ktor.http.ContentType
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respondText
@@ -44,41 +45,13 @@ class HealthRoutes(
             .take(8)
             .map { CategoryCount(it.key, it.value) }
         val supplementCount = supplementSource.channelCount()
+        val totalChannels = channelCount + supplementCount
         val gatewayEpgOn = environment.gatewayEpgEnabled
         val playlistEpgUrls = EpgPlaylistUrlResolver.resolvePlaylistEpgUrls(
             environment,
             supplementSource.sportsEpgXmlFile(),
         )
-        val payload = HealthResponse(
-            ok = true,
-            starting = channelCount == 0 && !environment.serverRunning,
-            version = BuildConfig.VERSION_NAME,
-            channels = channelCount,
-            port = environment.port,
-            baseUrl = environment.loopbackBase(),
-            upstreamBaseUrl = client.activeBaseUrl,
-            gatewayEpgEnabled = gatewayEpgOn,
-            epgExternal = !gatewayEpgOn,
-            epgSourceCount = playlistEpgUrls.size,
-            epgReady = if (gatewayEpgOn) epgManager.epgReady() else playlistEpgUrls.isNotEmpty(),
-            epgProgrammeCount = if (gatewayEpgOn) {
-                epgManager.programmeCount()
-            } else {
-                playlistEpgUrls.size
-            },
-            epgAgeSeconds = if (gatewayEpgOn) epgManager.ageSeconds() else null,
-            epgCoverage = if (gatewayEpgOn) {
-                EpgCoverageCalculator.snapshot(
-                    channels = client.channels,
-                    supplementSource = supplementSource,
-                    meta = epgManager.meta,
-                )
-            } else {
-                null
-            },
-            supplementEnabled = supplementSource.enabled(),
-            supplementChannels = supplementCount,
-            supplement = SupplementStatus(
+        val supplementStatus = SupplementStatus(
                 enabled = supplementSource.enabled(),
                 sidecarEnabled = supplementSource.sidecarEnabled(),
                 sportsEnabled = supplementSource.sportsEnabled(),
@@ -104,8 +77,8 @@ class HealthRoutes(
                 blockedTheTvApp = sync.blockedTheTvApp,
                 blockedTvPass = sync.blockedTvPass,
                 blockedTokenProxy = sync.blockedTokenProxy,
-            ),
-            providers = ProviderStats(
+            )
+        val providerStats = ProviderStats(
                 daddylive = channelCount,
                 moveOnJoy = supplementSource.moveOnJoyCount(),
                 iptvOrg = supplementSource.iptvOrgCount(),
@@ -113,8 +86,40 @@ class HealthRoutes(
                 ntvCx = supplementSource.ntvCxCount(),
                 adultSwim = supplementSource.adultSwimCount(),
                 adult = adultCount,
-                total = channelCount + supplementCount,
-            ),
+                total = totalChannels,
+            )
+        val epgReady = if (gatewayEpgOn) epgManager.epgReady() else playlistEpgUrls.isNotEmpty()
+        val basePayload = HealthResponse(
+            ok = true,
+            starting = totalChannels == 0,
+            version = BuildConfig.VERSION_NAME,
+            channels = channelCount,
+            port = environment.port,
+            baseUrl = environment.loopbackBase(),
+            upstreamBaseUrl = client.activeBaseUrl,
+            gatewayEpgEnabled = gatewayEpgOn,
+            epgExternal = !gatewayEpgOn,
+            epgSourceCount = playlistEpgUrls.size,
+            epgReady = epgReady,
+            epgProgrammeCount = if (gatewayEpgOn) {
+                epgManager.programmeCount()
+            } else {
+                playlistEpgUrls.size
+            },
+            epgAgeSeconds = if (gatewayEpgOn) epgManager.ageSeconds() else null,
+            epgCoverage = if (gatewayEpgOn) {
+                EpgCoverageCalculator.snapshot(
+                    channels = client.channels,
+                    supplementSource = supplementSource,
+                    meta = epgManager.meta,
+                )
+            } else {
+                null
+            },
+            supplementEnabled = supplementSource.enabled(),
+            supplementChannels = supplementCount,
+            supplement = supplementStatus,
+            providers = providerStats,
             topCategories = topCategories,
             healing = HealingStatus(
                 lastAction = healing.lastAction,
@@ -137,6 +142,16 @@ class HealthRoutes(
                     lastProbeMs = healing.canary.lastProbeMs,
                 ),
                 recentActions = healing.recentActions.takeLast(5),
+            ),
+        )
+        val gatewayOnline = totalChannels > 0 && !basePayload.starting &&
+            (!gatewayEpgOn || epgReady || !epgManager.isBuilding())
+        val payload = basePayload.copy(
+            loadProgress = DashboardLoadProgressCalculator.snapshot(
+                health = basePayload,
+                epgManager = epgManager,
+                gatewayOnline = gatewayOnline,
+                serviceActive = true,
             ),
         )
         call.respondText(

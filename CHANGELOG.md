@@ -7,6 +7,20 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.30] - 2026-06-22
+
+### Added
+
+- **Dashboard stat cards** — progress bars with % and ETA while channels, EPG, sources, or gateway are loading
+- **Stat card drill-down** — tap any of the four tiles for detailed stats, actions (refresh EPG/channels/supplements), and settings links
+- **`/health` loadProgress** — per-tile phase, percent, and etaSeconds for dashboard UI
+
+### Fixed
+
+- **Dashboard flicker** — keep last good health when a poll fails instead of blanking tiles to Starting
+- **`health.starting`** — based on empty combined catalog, not `serverRunning` flag
+- **EPG invalidate** — full meta reset on mapping fix (no stale programme counts in coverage)
+
 ## [1.0.29] - 2026-06-22
 
 ### Fixed

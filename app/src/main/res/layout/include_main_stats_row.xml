@@ -5,179 +5,35 @@
     android:orientation="horizontal"
     android:weightSum="4">
 
-    <LinearLayout
+    <include
+        android:id="@+id/statCardChannels"
+        layout="@layout/include_dashboard_stat_card"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_weight="1"
-        android:background="@drawable/bg_card"
-        android:gravity="center_vertical"
-        android:minHeight="72dp"
-        android:orientation="horizontal"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="12dp">
+        android:layout_marginEnd="6dp"
+        android:layout_weight="1" />
 
-        <ImageView
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:contentDescription="@string/stat_channels"
-            android:src="@drawable/ic_channels" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/statChannelsValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="—"
-                android:textColor="@color/on_background"
-                android:textSize="24sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="@string/stat_channels"
-                android:textColor="@color/on_background_muted"
-                android:textSize="11sp" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
+    <include
+        android:id="@+id/statCardPrograms"
+        layout="@layout/include_dashboard_stat_card"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="8dp"
-        android:layout_weight="1"
-        android:background="@drawable/bg_card"
-        android:gravity="center_vertical"
-        android:minHeight="72dp"
-        android:orientation="horizontal"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="12dp">
+        android:layout_marginHorizontal="6dp"
+        android:layout_weight="1" />
 
-        <ImageView
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:contentDescription="@string/stat_programs"
-            android:src="@drawable/ic_programs" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/statProgramsValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="—"
-                android:textColor="@color/on_background"
-                android:textSize="24sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="@string/stat_programs"
-                android:textColor="@color/on_background_muted"
-                android:textSize="11sp" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
+    <include
+        android:id="@+id/statCardStatus"
+        layout="@layout/include_dashboard_stat_card"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="8dp"
-        android:layout_weight="1"
-        android:background="@drawable/bg_card"
-        android:gravity="center_vertical"
-        android:minHeight="72dp"
-        android:orientation="horizontal"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="12dp">
+        android:layout_marginHorizontal="6dp"
+        android:layout_weight="1" />
 
-        <ImageView
-            android:id="@+id/statStatusIcon"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:contentDescription="@string/stat_status"
-            android:src="@drawable/ic_status_check" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/statStatusValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:minWidth="88dp"
-                android:text="@string/status_offline"
-                android:textColor="@color/on_background"
-                android:textSize="24sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="@string/stat_status"
-                android:textColor="@color/on_background_muted"
-                android:textSize="11sp" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
+    <include
+        android:id="@+id/statCardSources"
+        layout="@layout/include_dashboard_stat_card"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_weight="1"
-        android:background="@drawable/bg_card"
-        android:gravity="center_vertical"
-        android:minHeight="72dp"
-        android:orientation="horizontal"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="12dp">
-
-        <ImageView
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:contentDescription="@string/stat_sources"
-            android:src="@drawable/ic_sources" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/statSourcesValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="—"
-                android:textColor="@color/on_background"
-                android:textSize="24sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="@string/stat_sources"
-                android:textColor="@color/on_background_muted"
-                android:textSize="11sp" />
-        </LinearLayout>
-    </LinearLayout>
+        android:layout_marginStart="6dp"
+        android:layout_weight="1" />
 </LinearLayout>

@@ -66,6 +66,8 @@ class MainActivity : AppCompatActivity() {
     private var lastGatewayOnline = false
     private val tivimateInstallMutex = Mutex()
     private lateinit var bottomPanel: DashboardBottomPanel
+    private lateinit var statCards: DashboardStatCards
+    private var lastGoodHealth: HealthResponse? = null
     private val numberFormat = NumberFormat.getIntegerInstance(Locale.US)
     private val clockFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
@@ -95,6 +97,8 @@ class MainActivity : AppCompatActivity() {
         bindNetworkMode()
         bindToggles()
         bindActions()
+        statCards = DashboardStatCards(this, binding.root)
+        statCards.wireClicks()
         bottomPanel = DashboardBottomPanel(this, binding.root, environment, lifecycleScope)
         bottomPanel.attach()
         GatewayMessageBus.post("Dashboard opened")
@@ -275,8 +279,18 @@ class MainActivity : AppCompatActivity() {
         if (!ServerService.isServiceActive) return
         val cached = GatewayStatusMonitor.lastCachedStatus ?: return
         if (cached.health != null) {
+            lastGoodHealth = cached.health
             renderDashboard(cached)
         }
+    }
+
+    private fun healthForDisplay(live: GatewayLiveStatus?): HealthResponse? {
+        live?.health?.let { return it }
+        if (live?.fetchError != null) {
+            lastGoodHealth?.let { return it }
+            GatewayStatusMonitor.lastCachedStatus?.health?.let { return it }
+        }
+        return null
     }
 
     private fun openSettings() {
@@ -449,13 +463,16 @@ class MainActivity : AppCompatActivity() {
         updateServerToggleButton(active)
         views.buttonRestart.isEnabled = active
         val cached = GatewayStatusMonitor.lastCachedStatus?.takeIf { it.health != null }
-        if (cached != null && active) {
-            val health = cached.health!!
-            val online = cached.fetchError == null && health.ok &&
-                (!health.starting || health.channels > 0 || (health.providers?.total ?: 0) > 0)
-            updateSummaryStatus(online, true, health)
+        val health = cached?.health ?: lastGoodHealth
+        if (health != null && active) {
+            val online = cached?.let { live ->
+                live.fetchError == null && live.health?.let { h ->
+                    h.ok && (!h.starting || h.channels > 0 || (h.providers?.total ?: 0) > 0)
+                } == true
+            } ?: lastGatewayOnline
+            statCards.bind(health, online, true)
         } else {
-            updateSummaryStatus(false, active, null)
+            statCards.bind(null, false, active)
         }
         if (!active) {
             updateFooterOnline(false)
@@ -529,28 +546,34 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun renderDashboard(live: GatewayLiveStatus?) {
-        if (live == null || live.health == null) {
+        val health = healthForDisplay(live)
+        if (health == null) {
             views.textHealthStatus.text = getString(R.string.status_offline_upper)
             views.textHealthStatus.setTextColor(ContextCompat.getColor(this, R.color.status_neutral))
-            views.textHealthSubtitle.text = getString(R.string.dashboard_health_offline_detail)
+            views.textHealthSubtitle.text = live?.fetchError ?: getString(R.string.dashboard_health_offline_detail)
             views.imageHealthBadge.setColorFilter(ContextCompat.getColor(this, R.color.status_neutral))
             views.textActivity.text = getString(R.string.dashboard_activity_idle)
-            views.textErrors.visibility = View.GONE
+            views.textErrors.visibility = if (live?.fetchError != null) View.VISIBLE else View.GONE
+            views.textErrors.text = live?.fetchError.orEmpty()
             DashboardBarRenderer.renderProviders(this, views.containerProviderBars, null)
             views.textProvidersTotal.text = ""
             DashboardBarRenderer.renderCategories(this, views.containerCategoryBars, emptyList())
-            updateSummaryStatus(false, ServerService.isServiceActive, null)
+            statCards.bind(lastGoodHealth, false, ServerService.isServiceActive)
             return
         }
 
-        val health = live.health
-        val online = live.fetchError == null && health.ok && (!health.starting || health.channels > 0 || (health.providers?.total ?: 0) > 0)
+        if (live?.health != null) {
+            lastGoodHealth = live.health
+        }
+        val fetchError = live?.fetchError
+        val online = health.ok &&
+            (!health.starting || health.channels > 0 || (health.providers?.total ?: 0) > 0)
         if (online && !lastGatewayOnline) {
             updateCoordinator.deferPrompts()
         }
         lastGatewayOnline = online
         views.textHealthStatus.text = when {
-            live.fetchError != null -> getString(R.string.status_offline_upper)
+            fetchError != null -> getString(R.string.status_offline_upper)
             health.channels == 0 && (health.providers?.total ?: 0) == 0 && health.ok ->
                 getString(R.string.status_loading_short).uppercase(Locale.US)
             health.starting -> getString(R.string.status_loading_short).uppercase(Locale.US)
@@ -558,14 +581,14 @@ class MainActivity : AppCompatActivity() {
             else -> getString(R.string.status_offline_upper)
         }
         val healthColor = when {
-            live.fetchError != null || !health.ok -> R.color.status_error
+            fetchError != null || !health.ok -> R.color.status_error
             health.starting -> R.color.status_warn
             else -> R.color.status_ok
         }
         views.textHealthStatus.setTextColor(ContextCompat.getColor(this, healthColor))
         views.imageHealthBadge.setColorFilter(ContextCompat.getColor(this, healthColor))
         views.textHealthSubtitle.text = when {
-            live.fetchError != null -> live.fetchError
+            fetchError != null -> fetchError
             health.channels == 0 && (health.providers?.total ?: 0) == 0 && health.ok ->
                 getString(R.string.dashboard_health_starting)
             health.ok && !health.starting -> getString(R.string.dashboard_health_ok_detail)
@@ -573,7 +596,7 @@ class MainActivity : AppCompatActivity() {
         }
         views.textActivity.text = getString(
             R.string.dashboard_activity_line,
-            live.activityLabel,
+            live?.activityLabel ?: GatewayLiveStatus().activityLabel,
             health.upstreamBaseUrl,
         )
 
@@ -602,7 +625,7 @@ class MainActivity : AppCompatActivity() {
                     ),
                 )
             }
-            live.fetchError?.let { add(it) }
+            fetchError?.let { add(it) }
         }
         if (errors.isEmpty()) {
             views.textErrors.visibility = View.GONE
@@ -611,57 +634,10 @@ class MainActivity : AppCompatActivity() {
             views.textErrors.text = errors.joinToString("\n")
         }
 
-        updateSummaryStatus(online, true, health)
+        statCards.bind(health, online, true)
         updateFooterOnline(online)
         pendingUpdateInfo = updateCoordinator.currentUpdate()
         updateFooterUpdateVisibility(pendingUpdateInfo)
-    }
-
-    private fun updateSummaryStatus(online: Boolean, active: Boolean, health: HealthResponse?) {
-        views.statChannelsValue.text = health?.let { numberFormat.format(it.providers?.total ?: it.channels) } ?: "—"
-        views.statProgramsValue.text = health?.let { numberFormat.format(it.epgProgrammeCount) } ?: "—"
-        views.statStatusValue.text = when {
-            online -> getString(R.string.status_online)
-            active && health != null && health.ok -> getString(R.string.status_loading_short)
-            active -> getString(R.string.status_starting_short)
-            else -> getString(R.string.status_offline)
-        }
-        views.statStatusValue.setTextColor(
-            ContextCompat.getColor(
-                this,
-                when {
-                    online -> R.color.status_ok
-                    active -> R.color.status_warn
-                    else -> R.color.status_neutral
-                },
-            ),
-        )
-        views.statStatusIcon.setColorFilter(
-            ContextCompat.getColor(
-                this,
-                when {
-                    online -> R.color.status_ok
-                    active -> R.color.status_warn
-                    else -> R.color.status_neutral
-                },
-            ),
-        )
-        views.statSourcesValue.text = health?.let { numberFormat.format(countActiveSources(it)) } ?: "—"
-    }
-
-    private fun countActiveSources(health: HealthResponse): Int {
-        var count = 1
-        val supplement = health.supplement
-        if (supplement != null) {
-            if (supplement.sidecarEnabled) count++
-            if (supplement.sportsEnabled) count++
-            if (supplement.iptvOrgEnabled) count++
-            if (supplement.ntvCxEnabled) count++
-            if (supplement.adultSwimEnabled) count++
-        } else if (health.supplementEnabled) {
-            count++
-        }
-        return count
     }
 
     private fun updateFooterOnline(online: Boolean) {

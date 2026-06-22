@@ -141,12 +141,7 @@ class EpgStore(context: Context) {
 
   /** Drop served guide so the next refresh rebuilds with corrected channel mappings. */
   fun invalidateBuild() {
-    meta = meta.copy(
-        builtAtMs = 0L,
-        programmeCount = 0,
-        state = "pending",
-        lastError = null,
-    )
+    meta = EpgMeta(state = "pending", lastError = null)
     saveMeta()
     if (servedXml.isFile) servedXml.delete()
   }

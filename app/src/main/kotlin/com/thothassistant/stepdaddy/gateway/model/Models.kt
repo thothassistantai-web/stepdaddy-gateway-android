@@ -135,6 +135,7 @@ data class HealthResponse(
     val providers: ProviderStats? = null,
     val topCategories: List<CategoryCount> = emptyList(),
     val healing: HealingStatus? = null,
+    val loadProgress: DashboardLoadProgress? = null,
 )
 
 @Serializable

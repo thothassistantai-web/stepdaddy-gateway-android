@@ -30,6 +30,9 @@ class EpgManager(
   private var buildInFlight = false
   @Volatile
   private var tvtvFollowUpScheduled = false
+  @Volatile
+  var buildStartedAtMs: Long = 0L
+    private set
 
   val meta: EpgMeta
     get() = store.meta
@@ -97,6 +100,9 @@ class EpgManager(
           store.servedXml.exists() && store.meta.programmeCount > 0
       ) return
       buildInFlight = true
+      if (buildStartedAtMs <= 0L || store.meta.state != "building") {
+        buildStartedAtMs = System.currentTimeMillis()
+      }
       store.updateState("building")
       val started = System.currentTimeMillis()
       val useTvtvGapFill = tvtvGapFill && (force || epgReady() || store.servedXml.exists())
@@ -160,6 +166,7 @@ class EpgManager(
                 "${result.placeholderProgrammeCount} placeholder), ${result.channelCount} channels in ${elapsed}s" +
                 if (!useTvtvGapFill) " [fast pass, tvtv deferred]" else "",
         )
+        buildStartedAtMs = 0L
         if (!useTvtvGapFill && tvtvFetcher != null && result.programmeCount > 0) {
           scheduleTvtvFollowUp(channels)
         }
