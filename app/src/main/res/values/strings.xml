@@ -182,6 +182,12 @@
     <string name="toast_server_running">Gateway running on port 3000</string>
     <string name="toast_server_failed">Gateway failed to start</string>
     <string name="toast_server_stopped">Gateway stopped</string>
+    <string name="hud_starting">Starting gateway…</string>
+    <string name="hud_ready">Ready for TiviMate — %1$d channels</string>
+    <string name="hud_ready_loading">Gateway listening — loading channels…</string>
+    <string name="hud_catalog_updated">%1$d channels loaded</string>
+    <string name="hud_catalog_updated_log">Catalog updated — %1$d channels</string>
+    <string name="hud_failed">Gateway failed: %1$s</string>
     <string name="toast_copied">Copied to clipboard</string>
     <string name="dashboard_health_offline">Health: offline</string>
     <string name="dashboard_health_ok">Health: OK · %1$d DaddyLive channels</string>

@@ -354,10 +354,17 @@ class GatewayEnvironment(context: Context) {
         }
 
     /** Survives process death within the same boot session. Cleared on BOOT_COMPLETED. */
-    var readyBannerShownThisBoot: Boolean
+    var readyHudShownThisBoot: Boolean
         get() = prefs.getBoolean(KEY_READY_BANNER_SHOWN, false)
         set(value) {
             prefs.edit().putBoolean(KEY_READY_BANNER_SHOWN, value).apply()
+        }
+
+    /** @deprecated use [readyHudShownThisBoot] */
+    var readyBannerShownThisBoot: Boolean
+        get() = readyHudShownThisBoot
+        set(value) {
+            readyHudShownThisBoot = value
         }
 
     fun clearReadyBannerForNewBoot() {

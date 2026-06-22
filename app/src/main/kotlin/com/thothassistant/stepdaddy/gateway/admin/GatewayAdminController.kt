@@ -25,7 +25,6 @@ import com.thothassistant.stepdaddy.gateway.model.CategoryAuditEntry
 import com.thothassistant.stepdaddy.gateway.model.CategoryAuditResult
 import com.thothassistant.stepdaddy.gateway.model.ResolveStreamResult
 import com.thothassistant.stepdaddy.gateway.model.StreamProbeResult
-import com.thothassistant.stepdaddy.gateway.upstream.LogoBackfillService
 import com.thothassistant.stepdaddy.gateway.upstream.LogoResolver
 import kotlinx.coroutines.CompletableDeferred
 import com.thothassistant.stepdaddy.gateway.upstream.PremiumMovieChannelMatcher
@@ -41,7 +40,6 @@ class GatewayAdminController(
     private val app: GatewayApp,
     private val logoResolver: LogoResolver,
     private val prewarmPlaylist: () -> Unit,
-    private val runLogoBackfill: suspend () -> LogoBackfillService.Result,
     private val stopGatewayAction: () -> Unit,
     private val restartHttpAction: () -> Unit,
     private val restartFullAction: () -> Unit,
@@ -176,15 +174,16 @@ class GatewayAdminController(
     }
 
     override suspend fun refreshLogos(): AdminActionResult {
-        logoResolver.awaitLoaded()
-        val result = runLogoBackfill()
+        runCatching { logoResolver.awaitLoaded(120_000L) }
+        val channelResult = client.reEnrichLogos()
+        val supplementResult = app.supplementSource.reEnrichLogos()
         prewarmPlaylist()
         return AdminActionResult(
             ok = true,
             action = "refresh-logos",
-            message = "Logo backfill complete",
-            assigned = result.assigned,
-            scanned = result.scanned,
+            message = "Logo enrich complete",
+            assigned = channelResult.assigned + supplementResult.assigned,
+            scanned = channelResult.scanned + supplementResult.scanned,
         )
     }
 

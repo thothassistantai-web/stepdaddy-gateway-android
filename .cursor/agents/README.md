@@ -31,6 +31,7 @@ Use android-debug-orchestrator to run a full debug sweep on FUSA2541006925.
 | [`gateway-channel-upstream-debugger`](gateway-channel-upstream-debugger.md) | 0 channels, stale list, DaddyLive mirror errors |
 | [`gateway-playlist-debugger`](gateway-playlist-debugger.md) | TiviMate "update all playlists" fails, playlist timeout, `PlaylistCache` slow |
 | [`gateway-supplement-debugger`](gateway-supplement-debugger.md) | Supplement count 0, sidecar/sports sync failures |
+| [`special-events-guide-debugger`](special-events-guide-debugger.md) | Special Events guide channels missing (`dlhd-guide:*`), wrong order, guide MP4 won't play |
 | [`gateway-iptv-org-debugger`](gateway-iptv-org-debugger.md) | iptv-org missing, wrong category, provider tags |
 | [`gateway-stream-debugger`](gateway-stream-debugger.md) | Stream manifest 502/504, resportz/CDN failures |
 | [`gateway-epg-debugger`](gateway-epg-debugger.md) | EPG empty, stale, `epgProgrammeCount` 0 |
@@ -77,6 +78,7 @@ Use android-debug-orchestrator to run a full debug sweep on FUSA2541006925.
 | Won't play / spinner | `fusa-tivimate-debugger` → `gateway-stream-debugger` |
 | Gateway won't start | `gateway-boot-lifecycle-debugger` → `fusa-boot-verifier` |
 | Missing iptv-org channels | `gateway-iptv-org-debugger` → `gateway-supplement-debugger` |
+| Missing Special Events guides (PPV/Tennis Schedule) | `special-events-guide-debugger` → `gateway-supplement-debugger` |
 | Wrong groups / HBO in wrong category | `gateway-iptv-org-debugger` |
 | 0 DaddyLive channels | `gateway-channel-upstream-debugger` |
 | EPG blank | `gateway-epg-debugger` → `epg-mapping-auditor` |
@@ -93,6 +95,8 @@ Use android-debug-orchestrator for a full sweep after the playlist cache fix.
 
 Use gateway-playlist-debugger — TiviMate update all playlists still failing.
 
+Use special-events-guide-debugger — PPV/Tennis/Golf Schedule rows missing from Special Events.
+
 Use fusa-tivimate-debugger and gateway-stream-debugger for channel 51 spinner.
 
 Use gateway-build-deploy-debugger, then gateway-performance-profiler on FUSA.
@@ -107,7 +111,7 @@ Use gateway-build-deploy-debugger, then gateway-performance-profiler on FUSA.
 | HTTP server | `GatewayServer.kt`, `routes/` |
 | Playlist | `PlaylistRoutes.kt`, `PlaylistCache.kt`, `PlaylistBuilder.kt` |
 | Channels | `DaddyLiveClient.kt` |
-| Supplements | `SupplementSource.kt`, `IptvOrgStreamsSource.kt` |
+| Supplements | `SupplementSource.kt`, `SpecialEventsMerger.kt`, `IptvOrgStreamsSource.kt` |
 | Streams | `StreamRoutes.kt`, `ResportzParser.kt`, `M3u8Rewriter.kt` |
 | EPG | `epg/EpgManager.kt` |
 | Boot / FGS | `ServerService.kt`, `GatewayStartHelper.kt` |

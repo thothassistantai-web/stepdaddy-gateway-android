@@ -59,6 +59,8 @@ data class SupplementStatus(
     val channels: Int = 0,
     val moveOnJoyChannels: Int = 0,
     val sportsChannels: Int = 0,
+    val specialEventGuides: Int = 0,
+    val dlhdEventStreams: Int = 0,
     val sportsEventsScanned: Int = 0,
     val supplementSyncInFlight: Boolean = false,
     val iptvOrgChannels: Int = 0,

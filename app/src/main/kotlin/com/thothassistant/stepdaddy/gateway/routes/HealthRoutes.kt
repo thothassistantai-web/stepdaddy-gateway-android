@@ -34,6 +34,12 @@ class HealthRoutes(
         val healing = client.healingSnapshot()
         val channelCount = client.channels.size
         val sync = supplementSource.syncSnapshot()
+        val specialEventGuides = sync.specialEventGuides
+            .takeIf { it > 0 }
+            ?: supplementSource.specialEventGuideCount()
+        val dlhdEventStreams = sync.dlhdEventStreams
+            .takeIf { it > 0 }
+            ?: supplementSource.dlhdEventStreamCount()
         val adultCount = client.channels.count { channel ->
             GroupTitleResolver.resolve(channel.name, channel.tags).groupTitle == GroupTitleResolver.ADULT
         }
@@ -61,6 +67,8 @@ class HealthRoutes(
                 channels = supplementSource.channelCount(),
                 moveOnJoyChannels = supplementSource.moveOnJoyCount(),
                 sportsChannels = supplementSource.sportsCount(),
+                specialEventGuides = specialEventGuides,
+                dlhdEventStreams = dlhdEventStreams,
                 sportsEventsScanned = sync.sportsEventsScanned,
                 supplementSyncInFlight = supplementSource.syncInFlight(),
                 iptvOrgChannels = supplementSource.iptvOrgCount(),

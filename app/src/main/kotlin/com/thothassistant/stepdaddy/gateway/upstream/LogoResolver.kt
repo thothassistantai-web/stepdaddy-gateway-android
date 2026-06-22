@@ -12,6 +12,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.File
 import org.json.JSONObject
 import java.util.Locale
 import java.util.concurrent.TimeUnit
@@ -138,6 +139,35 @@ class LogoResolver(context: Context) {
     fun findBackfillLogo(channelName: String, tvgId: String?, metaLogo: String? = null): String? =
         resolveRemoteLogo(channelName, tvgId, metaLogo)
 
+    /**
+     * Best remote logo URL for catalog ingest (meta → exact DB → upstream → fuzzy when loaded).
+     * Returns null when only a generated placeholder would apply at playlist build time.
+     */
+    fun resolveIngestRemoteLogo(
+        channelName: String,
+        tvgId: String?,
+        metaLogo: String? = null,
+        existingLogo: String? = null,
+    ): String? {
+        metaLogo?.trim()?.takeIf { it.startsWith("http://") || it.startsWith("https://") }?.let { return it }
+        if (loaded) {
+            resolveRemoteLogoExact(channelName, tvgId)?.let { return it }
+        }
+        existingLogo?.trim()?.takeIf { isRemoteLogoUrl(it) }?.let { return it }
+        if (loaded) {
+            return findBackfillLogo(channelName, tvgId, metaLogo)
+        }
+        return null
+    }
+
+    fun isPersistedRemoteLogo(url: String): Boolean = isRemoteLogoUrl(url)
+
+    private fun isRemoteLogoUrl(url: String): Boolean {
+        if (!url.startsWith("http://") && !url.startsWith("https://")) return false
+        if (url.contains("/ui/channel/") || url.contains("/ui/default-channel")) return false
+        return true
+    }
+
     fun removeRuntimeOverride(channelName: String): Boolean {
         val stripped = stripCategorySuffix(channelName.trim())
         synchronized(overridesByName) {
@@ -156,7 +186,7 @@ class LogoResolver(context: Context) {
     }
 
     fun saveRuntimeOverrides(context: Context) {
-        val file = LogoBackfillService.runtimeOverridesFile(context)
+        val file = Companion.runtimeOverridesFile(context)
         file.parentFile?.mkdirs()
         val snapshot = synchronized(overridesByName) { overridesByName.toMap() }
         val bundled = loadBundledOverrideNames(context)
@@ -176,7 +206,7 @@ class LogoResolver(context: Context) {
     }
 
     private fun loadRuntimeOverrides(context: Context) {
-        val file = LogoBackfillService.runtimeOverridesFile(context)
+        val file = Companion.runtimeOverridesFile(context)
         if (!file.isFile) return
         runCatching {
             val root = JSONObject(file.readText())
@@ -514,9 +544,14 @@ class LogoResolver(context: Context) {
 
     companion object {
         private const val TAG = "LogoResolver"
+        private const val RUNTIME_OVERRIDES_FILE = "logos/runtime_overrides.json"
         private const val FUZZY_CUTOFF = 0.85
         private const val TOKEN_FUZZY_CUTOFF = 0.72
         private val LOGO_CSV_KEYS = listOf("channel", "feed", "in_use", "tags", "width", "height", "format", "url")
+
+        fun runtimeOverridesFile(context: Context): File =
+            File(context.filesDir, RUNTIME_OVERRIDES_FILE)
+
         private val httpClient = OkHttpClient.Builder()
             .connectTimeout(8, TimeUnit.SECONDS)
             .readTimeout(15, TimeUnit.SECONDS)

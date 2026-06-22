@@ -5,7 +5,7 @@ import com.thothassistant.stepdaddy.gateway.epg.DaddyliveEpgResearchStore
 import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.model.AdminImportResult
 import com.thothassistant.stepdaddy.gateway.upstream.CategoryOverrideStore
-import com.thothassistant.stepdaddy.gateway.upstream.LogoBackfillService
+import com.thothassistant.stepdaddy.gateway.upstream.LogoResolver
 import org.json.JSONObject
 import java.io.File
 
@@ -184,7 +184,7 @@ class AdminAssetManager(private val context: Context) {
             AssetType.EPG_NAME -> {
                 File(context.filesDir, EpgChannelMapper.RUNTIME_NAME_OVERRIDES_FILE).delete()
             }
-            AssetType.LOGO -> LogoBackfillService.runtimeOverridesFile(context).delete()
+            AssetType.LOGO -> LogoResolver.runtimeOverridesFile(context).delete()
             AssetType.EPG_ID -> File(context.filesDir, "epg/channel_epg_map.json").delete()
             AssetType.EPG_RESEARCH -> DaddyliveEpgResearchStore.runtimeResearchFile(context).delete()
             AssetType.CATEGORY -> CategoryOverrideStore.clearRuntime(context)
@@ -203,7 +203,7 @@ class AdminAssetManager(private val context: Context) {
 
     private fun exportLogo(layer: String): Map<String, String> {
         val bundled = loadBundledJson(AssetType.LOGO.bundledAsset!!)
-        val runtime = loadRuntimeJson(LogoBackfillService.runtimeOverridesFile(context))
+        val runtime = loadRuntimeJson(LogoResolver.runtimeOverridesFile(context))
         return when (layer.lowercase()) {
             "bundled" -> bundled
             "runtime" -> runtime

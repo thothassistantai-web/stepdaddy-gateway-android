@@ -14,7 +14,7 @@ object GuideScheduleMp4Encoder {
     private const val MIME = MediaFormat.MIMETYPE_VIDEO_AVC
     private const val FRAME_RATE = 2
     private const val BITRATE = 1_500_000
-    private const val DURATION_SEC = 30
+    private const val DURATION_SEC = 120
 
     fun encode(bitmap: Bitmap, output: File): Boolean = runCatching {
         val width = bitmap.width and -2

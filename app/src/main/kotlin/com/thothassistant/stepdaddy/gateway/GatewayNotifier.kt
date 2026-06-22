@@ -12,8 +12,8 @@ import androidx.core.app.NotificationCompat
 import com.thothassistant.stepdaddy.gateway.ui.MainActivity
 
 /**
- * Centralizes the low-key FGS notification (id 3000) and high-priority cross-app alerts (3001+).
- * Alerts use [CHANNEL_ALERTS] so heads-up banners fire separately from the ongoing service notification.
+ * Foreground service notification (id 3000) and failure alerts (3002).
+ * Ephemeral success feedback is handled by [GatewayHud].
  */
 object GatewayNotifier {
     const val NOTIFICATION_ID_ONGOING = 3000
@@ -112,38 +112,9 @@ object GatewayNotifier {
             .build()
     }
 
-    fun showServerStartedAlert(context: Context, channelCount: Int) {
-        if (!canPost(context)) {
-            Log.w(TAG, "Skipping started alert — notification permission missing")
-            return
-        }
-        val appContext = context.applicationContext
-        val body = GatewayOverlay.readyBodyText(appContext, channelCount)
-        val builder = NotificationCompat.Builder(appContext, CHANNEL_ALERTS)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(appContext.getString(R.string.alert_server_running_title))
-            .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
-            .setContentIntent(openAppPendingIntent(appContext))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setDefaults(Notification.DEFAULT_ALL)
-            .setCategory(NotificationCompat.CATEGORY_STATUS)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setAutoCancel(true)
-            .setTimeoutAfter(ALERT_DISMISS_MS)
-            .setGroup(GROUP_ALERTS)
-            .setGroupSummary(false)
-            .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_ALL)
-            .setOnlyAlertOnce(false)
-            .addAction(0, appContext.getString(R.string.action_open), openAppPendingIntent(appContext))
-        if (shouldUseFullScreenStartedAlert(appContext)) {
-            builder.setFullScreenIntent(serverReadyPendingIntent(appContext, channelCount), true)
-        }
-        appContext.getSystemService(NotificationManager::class.java)
-            .notify(NOTIFICATION_ID_ALERT_STARTED, builder.build())
-        Log.i(TAG, "Posted started alert (id=$NOTIFICATION_ID_ALERT_STARTED, channels=$channelCount)")
-    }
-
+    /**
+     * High-priority failure alert. Success paths use [GatewayHud] instead.
+     */
     fun showServerFailedAlert(context: Context, errorMessage: String) {
         if (!canPost(context)) return
         val appContext = context.applicationContext
@@ -186,35 +157,5 @@ object GatewayNotifier {
         )
     }
 
-    private fun serverReadyPendingIntent(context: Context, channelCount: Int): PendingIntent {
-        val intent = Intent(context, ServerReadyActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra(ServerReadyActivity.EXTRA_CHANNEL_COUNT, channelCount)
-        }
-        return PendingIntent.getActivity(
-            context,
-            2,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-    }
-
-    /** Full-screen alert when overlay cannot draw; overlay owns the visual when it can. */
-    fun shouldUseFullScreenStartedAlert(context: Context): Boolean {
-        val appContext = context.applicationContext
-        return canPost(appContext) &&
-            !MainActivity.isInForeground &&
-            canUseFullScreenIntent(appContext) &&
-            !GatewayOverlay.canDraw(appContext)
-    }
-
-    private fun canUseFullScreenIntent(context: Context): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return true
-        val manager = context.getSystemService(NotificationManager::class.java)
-        return manager.canUseFullScreenIntent()
-    }
-
     private fun canPost(context: Context): Boolean = PermissionHelper.hasNotificationPermission(context)
-
-    private const val TAG = "GatewayNotifier"
 }

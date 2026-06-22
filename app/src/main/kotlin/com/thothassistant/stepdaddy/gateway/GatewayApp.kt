@@ -133,6 +133,8 @@ class GatewayApp : Application() {
                     gatewayEnvironment,
                     nameIndex = _iptvOrgNameIndex!!,
                     epgChannelMapper = _epgChannelMapper!!,
+                    logoResolver = _logoResolver!!,
+                    channelMetaStore = _channelMetaStore!!,
                 )
                 val tvtvFetcher = TvtvUsEpgFetcher(this@GatewayApp, store)
                 _epgManager = EpgManager(

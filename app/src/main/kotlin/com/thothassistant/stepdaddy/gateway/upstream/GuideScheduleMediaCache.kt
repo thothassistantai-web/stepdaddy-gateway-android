@@ -50,7 +50,7 @@ class GuideScheduleMediaCache(context: Context) {
         private const val TAG = "GuideScheduleMediaCache"
 
         /** Bump when guide slate layout/theme changes so cached MP4s regenerate. */
-        private const val RENDER_REVISION = 3
+        private const val RENDER_REVISION = 4
 
         fun contentKey(events: List<SpecialEventsMerger.GuideEventRow>, syncedAtMs: Long): String {
             val digest = MessageDigest.getInstance("SHA-256")

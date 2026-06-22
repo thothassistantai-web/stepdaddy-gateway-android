@@ -6,6 +6,12 @@ object SupplementConfig {
     /** Max playable event streams (DaddyLive + TheTvApp combined). */
     const val MAX_SPECIAL_EVENT_STREAMS = 60
 
+    /** Re-fetch DaddyLive schedule + TheTvApp embeds for Special Events only. */
+    const val SPECIAL_EVENTS_SYNC_INTERVAL_MS = 15 * 60_000L
+
+    /** Drop finished events and stale guide rows between upstream syncs. */
+    const val SPECIAL_EVENTS_PRUNE_INTERVAL_MS = 2 * 60_000L
+
     /** @deprecated Use [MAX_SPECIAL_EVENT_STREAMS]. */
     const val MAX_SPORTS_EVENTS = MAX_SPECIAL_EVENT_STREAMS
 

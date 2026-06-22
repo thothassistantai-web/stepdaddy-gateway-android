@@ -1,25 +1,19 @@
 package com.thothassistant.stepdaddy.gateway
 
-import android.app.PendingIntent
-import android.app.ActivityOptions
 import android.content.Intent
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.thothassistant.stepdaddy.gateway.sidecar.EmbeddedSidecarRepository
 import com.thothassistant.stepdaddy.gateway.sidecar.EmbeddedSidecarServer
-import com.thothassistant.stepdaddy.gateway.ui.MainActivity
+import com.thothassistant.stepdaddy.gateway.admin.GatewayAdminController
 import com.thothassistant.stepdaddy.gateway.ui.dashboard.GatewayDiagnostics
 import com.thothassistant.stepdaddy.gateway.ui.dashboard.GatewayMessageBus
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
-import com.thothassistant.stepdaddy.gateway.admin.GatewayAdminController
-import com.thothassistant.stepdaddy.gateway.upstream.LogoBackfillService
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -36,14 +30,8 @@ class ServerService : LifecycleService() {
     private val mainHandler = Handler(Looper.getMainLooper())
     @Volatile
     private var startInFlight = false
-    @Volatile
-    private var readyBannerShown = false
-    @Volatile
-    private var tivimateLaunchedThisBoot = false
-    private var skipBannerForCrashRecovery = false
     private var httpHealthCheckPosted = false
     private var tiviMateWatchPosted = false
-    private var logoBackfillJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -61,9 +49,8 @@ class ServerService : LifecycleService() {
                 environment.loopbackBase(),
             ),
         )
-        skipBannerForCrashRecovery = environment.isRecentCrashRecovery()
         environment.recordServiceStart()
-        readyBannerShown = environment.readyBannerShownThisBoot
+        GatewayHud.initForService(environment)
         GatewayStartHelper.cancelBootFallbacks(this)
         GatewayStartHelper.resetFallbacksScheduled()
         ScreenWakeRegistrar.register(this)
@@ -95,10 +82,10 @@ class ServerService : LifecycleService() {
             updateRunningNotification()
             return
         }
-        startGateway(skipReadyBanner = true)
+        startGateway(skipReadySurface = true)
     }
 
-    private fun startGateway(skipReadyBanner: Boolean = false) {
+    private fun startGateway(skipReadySurface: Boolean = false) {
         if (gatewayServer?.isRunning == true) {
             environment.serverRunning = true
             updateRunningNotification()
@@ -139,7 +126,6 @@ class ServerService : LifecycleService() {
                         app = app,
                         logoResolver = app.logoResolver,
                         prewarmPlaylist = { gatewayServer?.prewarmPlaylist() },
-                        runLogoBackfill = { runLogoBackfillNow() },
                         stopGatewayAction = { stopGateway() },
                         restartHttpAction = { restartGatewayAfterFailure() },
                         restartFullAction = {
@@ -149,7 +135,7 @@ class ServerService : LifecycleService() {
                                     gatewayServer = null
                                 }
                                 delay(500L)
-                                startGateway(skipReadyBanner = true)
+                                startGateway(skipReadySurface = true)
                             }
                         },
                     )
@@ -173,7 +159,10 @@ class ServerService : LifecycleService() {
                                 append("Supplement sync done")
                                 append(" · MOJ ${sync.moveOnJoyChannels}")
                                 append(" · sports ${sync.sportsChannels}")
-                                if (sync.sportsEventsScanned > 0) {
+                                if (sync.specialEventGuides > 0) {
+                                    append(" (${sync.specialEventGuides} guides")
+                                    append(", ${sync.dlhdEventStreams} dlhd)")
+                                } else if (sync.sportsEventsScanned > 0) {
                                     append(" (${sync.sportsEventsScanned} events scanned)")
                                 }
                                 append(" · IPTV-org ${sync.iptvOrgChannels}")
@@ -189,7 +178,10 @@ class ServerService : LifecycleService() {
                         )
                         server.prewarmPlaylist()
                         epgManager.scheduleRefresh(client.channels, force = true)
-                        scheduleLogoBackfill()
+                    }
+                    app.supplementSource.onSpecialEventsChanged = {
+                        server.prewarmPlaylist()
+                        epgManager.scheduleRefresh(client.channels, force = true)
                     }
                     server.start()
                     server.prewarmPlaylist()
@@ -202,13 +194,11 @@ class ServerService : LifecycleService() {
                     ).also { it.start() }
                     client.reportHealthyStart()
                     val channelCount = client.channels.size
-                    if (!skipReadyBanner) {
-                        mainHandler.post { showServerReadyIfBackground(channelCount) }
+                    mainHandler.post {
+                        GatewayHud.onHttpListening(this@ServerService, channelCount, skipReadySurface)
                     }
                     updateRunningNotification()
                     GatewayStartHelper.schedulePeriodicEnsureAlive(this@ServerService)
-                    notifyForegroundIfVisible(R.string.toast_server_running)
-                    GatewayMessageBus.postReady(environment.loopbackBase())
                     GatewayDiagnostics.info(TAG, "Gateway listening on ${environment.loopbackBase()} ($channelCount channels)")
                     scheduleEmbeddedSidecarRefreshIfEmpty(app)
                     if (client.channels.isEmpty()) {
@@ -225,8 +215,10 @@ class ServerService : LifecycleService() {
                         )
                     }
                     app.supplementSource.schedulePeriodicRefresh { daddyLiveClient.channels }
-                    scheduleLogoBackfill(deferMs = 8_000L)
-                    scheduleDeferredBootChannelRefresh(skipReadyBanner)
+                    app.supplementSource.schedulePeriodicSpecialEventsMaintenance {
+                        daddyLiveClient.activeBaseUrl
+                    }
+                    scheduleDeferredBootChannelRefresh(skipReadySurface)
                 } catch (exc: Exception) {
                     GatewayDiagnostics.error(TAG, "Failed to start gateway on port ${environment.port}", exc)
                     gatewayServer = null
@@ -241,47 +233,14 @@ class ServerService : LifecycleService() {
                             errorMessage = message,
                         ),
                     )
-                    GatewayNotifier.showServerFailedAlert(this@ServerService, message)
-                    notifyForegroundIfVisible(R.string.toast_server_failed)
+                    mainHandler.post {
+                        GatewayHud.onFailed(this@ServerService, message)
+                    }
                 } finally {
                     startInFlight = false
                 }
             }
         }
-    }
-
-    /** Debounced fuzzy logo backfill — smallest playlist category first. */
-    private fun scheduleLogoBackfill(deferMs: Long = 3_000L) {
-        logoBackfillJob?.cancel()
-        logoBackfillJob = lifecycleScope.launch(Dispatchers.IO) {
-            delay(deferMs)
-            if (!isServiceActive || !::daddyLiveClient.isInitialized) return@launch
-            runCatching { runLogoBackfillNow() }
-                .onFailure { exc -> GatewayDiagnostics.error(TAG, "Logo backfill failed", exc) }
-        }
-    }
-
-    private suspend fun runLogoBackfillNow(): LogoBackfillService.Result {
-        val app = application as GatewayApp
-        app.logoResolver.awaitLoaded()
-        val result = LogoBackfillService(
-            this@ServerService,
-            app.logoResolver,
-            app.channelMetaStore,
-            environment.loopbackBase(),
-        ).run(
-            daddyLiveClient.channels,
-            app.supplementSource.channels(),
-        )
-        if (result.assigned > 0) {
-            GatewayDiagnostics.info(
-                TAG,
-                "Logo backfill assigned ${result.assigned}/${result.scanned} " +
-                    "across ${result.groupsProcessed} groups",
-            )
-            gatewayServer?.prewarmPlaylist()
-        }
-        return result
     }
 
     private suspend fun startEmbeddedSidecar(app: GatewayApp) {
@@ -319,7 +278,7 @@ class ServerService : LifecycleService() {
      * Serve disk-cached channels first; defer upstream refresh so boot-time CPU/network
      * stays available for HTTP listen + first playlist/stream requests.
      */
-    private fun scheduleDeferredBootChannelRefresh(skipReadyBanner: Boolean) {
+    private fun scheduleDeferredBootChannelRefresh(skipReadySurface: Boolean) {
         lifecycleScope.launch(Dispatchers.IO) {
             val deferMs =
                 if (::daddyLiveClient.isInitialized && daddyLiveClient.channels.isEmpty()) {
@@ -338,12 +297,18 @@ class ServerService : LifecycleService() {
                     app.epgChannelMapper,
                     daddyLiveClient.channels,
                 )
-                scheduleLogoBackfill(deferMs = 2_000L)
                 app.logoResolver.schedulePrewarm(
                     daddyLiveClient.channels.map { it.name to it.tvgId },
                 )
-                if (!skipReadyBanner && !MainActivity.isInForeground) {
-                    showReadyBanner(daddyLiveClient.channels.size)
+                if (!skipReadySurface) {
+                    mainHandler.post {
+                        GatewayHud.onCatalogReady(
+                            this@ServerService,
+                            daddyLiveClient.channels.size,
+                            environment,
+                            launchTivimate = false,
+                        )
+                    }
                 }
             }
             runCatching {
@@ -411,89 +376,6 @@ class ServerService : LifecycleService() {
 
     override fun onBind(intent: Intent): IBinder? = super.onBind(intent)
 
-    private fun notifyForegroundIfVisible(messageRes: Int) {
-        if (!MainActivity.isInForeground) return
-        mainHandler.post {
-            Toast.makeText(applicationContext, messageRes, Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun showServerReadyIfBackground(channelCount: Int) {
-        if (MainActivity.isInForeground) return
-        lastKnownChannelCount = channelCount
-        showReadyBanner(channelCount)
-    }
-
-    private fun showReadyBanner(channelCount: Int) {
-        synchronized(this) {
-            if (skipBannerForCrashRecovery || readyBannerShown || environment.readyBannerShownThisBoot) {
-                return
-            }
-            readyBannerShown = true
-            environment.readyBannerShownThisBoot = true
-        }
-        Log.i(TAG, "Showing ready banner (channels=$channelCount)")
-        mainHandler.postDelayed({
-            if (GatewayOverlay.canDraw(this)) {
-                GatewayOverlay.showServerReady(this, channelCount)
-                return@postDelayed
-            }
-            if (GatewayNotifier.shouldUseFullScreenStartedAlert(this)) {
-                GatewayNotifier.showServerStartedAlert(this, channelCount)
-                return@postDelayed
-            }
-            launchServerReadyActivity(channelCount)
-        }, LAUNCHER_SETTLE_MS)
-        maybeLaunchTivimate()
-    }
-
-    private fun maybeLaunchTivimate() {
-        if (!environment.launchTivimateOnReady || tivimateLaunchedThisBoot) return
-        if (!TiviMateLauncher.isInstalled(this)) {
-            Log.i(TAG, "Launch TiviMate skipped — not installed")
-            return
-        }
-        tivimateLaunchedThisBoot = true
-        mainHandler.postDelayed({
-            TiviMateLauncher.launch(this@ServerService)
-        }, LAUNCHER_SETTLE_MS)
-    }
-
-    private fun launchServerReadyActivity(channelCount: Int) {
-        val readyIntent = Intent(this, ServerReadyActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            putExtra(ServerReadyActivity.EXTRA_CHANNEL_COUNT, channelCount)
-        }
-        runCatching {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                val pendingIntent = PendingIntent.getActivity(
-                    this,
-                    REQUEST_CODE_SERVER_READY,
-                    readyIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                )
-                val options = ActivityOptions.makeBasic().apply {
-                    pendingIntentBackgroundActivityStartMode =
-                        ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
-                }
-                pendingIntent.send(
-                    this,
-                    0,
-                    null,
-                    null,
-                    null,
-                    null,
-                    options.toBundle(),
-                )
-            } else {
-                startActivity(readyIntent)
-            }
-            Log.i(TAG, "Launched server-ready activity (channels=$channelCount)")
-        }.onFailure { exc ->
-            Log.w(TAG, "Server-ready activity launch failed: ${exc.message}")
-        }
-    }
-
     /** When TiviMate watch is on, nudge gateway if TiviMate becomes active while we're up. */
     private fun scheduleTiviMateResumeWatch() {
         if (tiviMateWatchPosted) return
@@ -527,7 +409,7 @@ class ServerService : LifecycleService() {
                 }
                 if (gatewayServer?.isRunning != true && !startInFlight) {
                     Log.w(TAG, "HTTP server not listening; restarting gateway block")
-                    startGateway(skipReadyBanner = true)
+                    startGateway(skipReadySurface = true)
                 }
                 mainHandler.postDelayed(this, HTTP_HEALTH_CHECK_MS)
             }
@@ -551,13 +433,12 @@ class ServerService : LifecycleService() {
                     daddyLiveClient.scheduleChannelRefresh(force = true)
                 }
             }
-            startGateway(skipReadyBanner = true)
+            startGateway(skipReadySurface = true)
         }
     }
 
     companion object {
         private const val TAG = "ServerService"
-        private const val LAUNCHER_SETTLE_MS = 2_000L
         @Volatile
         var isServiceActive: Boolean = false
             private set
@@ -570,6 +451,5 @@ class ServerService : LifecycleService() {
         private const val HTTP_HEALTH_CHECK_MS = 90_000L
         private const val TIVIMATE_WATCH_MS = 60_000L
         private const val BOOT_CHANNEL_REFRESH_DEFER_MS = 45_000L
-        private const val REQUEST_CODE_SERVER_READY = 30_200
     }
 }

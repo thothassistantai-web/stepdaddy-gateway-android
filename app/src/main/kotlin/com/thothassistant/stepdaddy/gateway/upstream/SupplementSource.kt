@@ -30,6 +30,8 @@ class SupplementSource(
     private val environment: GatewayEnvironment,
     private val nameIndex: IptvOrgNameIndex = IptvOrgNameIndex(context),
     private val epgChannelMapper: EpgChannelMapper? = null,
+    private val logoResolver: LogoResolver? = null,
+    private val channelMetaStore: ChannelMetaStore? = null,
     private val httpClient: OkHttpClient = defaultClient(),
     private val sportsResolver: TheTvAppSportsResolver = TheTvAppSportsResolver(httpClient),
     private val iptvOrgEpgRepository: IptvOrgEpgRepository = IptvOrgEpgRepository(context, httpClient),
@@ -77,8 +79,11 @@ class SupplementSource(
     private val store = SupplementStore(context)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val refreshMutex = Mutex()
+    private val specialEventsMutex = Mutex()
     @Volatile
     private var refreshInFlight = false
+    @Volatile
+    private var lastSpecialEventsSyncMs = 0L
     @Volatile
     private var cached: List<SupplementChannel> = store.readChannels()
     @Volatile
@@ -88,6 +93,9 @@ class SupplementSource(
 
     @Volatile
     var onRefreshComplete: (() -> Unit)? = null
+
+    @Volatile
+    var onSpecialEventsChanged: (() -> Unit)? = null
 
     fun enabled(): Boolean =
         environment.supplementBaseUrl.isNotBlank() ||
@@ -119,7 +127,15 @@ class SupplementSource(
 
     fun moveOnJoyCount(): Int = cached.count { it.id.startsWith("sup:") }
 
-    fun sportsCount(): Int = cached.count { it.id.startsWith("sport:") }
+    fun sportsCount(): Int = cached.count {
+        it.id.startsWith("sport:") ||
+            it.id.startsWith("dlhd-guide:") ||
+            it.id.startsWith("dlhd-event:")
+    }
+
+    fun specialEventGuideCount(): Int = cached.count { it.id.startsWith("dlhd-guide:") }
+
+    fun dlhdEventStreamCount(): Int = cached.count { it.id.startsWith("dlhd-event:") }
 
     fun iptvOrgCount(): Int = cached.count { it.id.startsWith("iptv:") }
 
@@ -262,6 +278,26 @@ class SupplementSource(
 
     fun lastSyncedAtMs(): Long = store.lastSyncedAtMs()
 
+    suspend fun reEnrichLogos(): CatalogLogoEnricher.Result {
+        val enricher = catalogLogoEnricher() ?: return CatalogLogoEnricher.Result(0, 0, 0)
+        val (enriched, result) = enricher.enrichSupplements(cached)
+        if (result.assigned > 0) {
+            cached = enriched
+            store.writeChannels(enriched)
+        }
+        return result
+    }
+
+    private fun enrichSupplementLogos(supplements: List<SupplementChannel>): List<SupplementChannel> {
+        val enricher = catalogLogoEnricher() ?: return supplements
+        return enricher.enrichSupplements(supplements).first
+    }
+
+    private fun catalogLogoEnricher(): CatalogLogoEnricher? {
+        if (logoResolver == null) return null
+        return CatalogLogoEnricher(logoResolver, channelMetaStore)
+    }
+
     fun scheduleRefresh(daddyChannels: List<Channel>, force: Boolean = false) {
         if (!enabled()) {
             if (cached.isNotEmpty()) {
@@ -292,6 +328,94 @@ class SupplementSource(
         }
     }
 
+    fun schedulePeriodicSpecialEventsMaintenance(
+        dlhdBaseProvider: () -> String,
+    ) {
+        scope.launch {
+            delay(30_000)
+            while (isActive) {
+                if (sportsEnabled()) {
+                    val pruned = pruneExpiredSpecialEvents()
+                    val age = System.currentTimeMillis() - lastSpecialEventsSyncMs
+                    if (age >= SupplementConfig.SPECIAL_EVENTS_SYNC_INTERVAL_MS) {
+                        refreshSpecialEventsOnly(dlhdBaseProvider())
+                    } else if (pruned) {
+                        onSpecialEventsChanged?.invoke()
+                    }
+                }
+                delay(SupplementConfig.SPECIAL_EVENTS_PRUNE_INTERVAL_MS)
+            }
+        }
+    }
+
+    fun pruneExpiredSpecialEvents(): Boolean {
+        if (!sportsEnabled() || refreshInFlight) return false
+        if (!specialEventsMutex.tryLock()) return false
+        return try {
+            val result = SpecialEventCatalogMaintainer.prune(cached, guideSchedules)
+            if (!result.changed) return false
+            cached = result.channels
+            guideSchedules = result.guideSchedules
+            store.writeChannels(cached)
+            if (result.guideSchedules.isEmpty()) {
+                store.clearGuideSchedules()
+            } else {
+                store.writeGuideSchedules(result.guideSchedules)
+            }
+            rewriteSportsEpg()
+            lastSync = lastSync.copy(
+                sportsChannels = sportsCount(),
+                specialEventGuides = specialEventGuideCount(),
+                dlhdEventStreams = dlhdEventStreamCount(),
+            )
+            Log.i(
+                TAG,
+                "Special Events prune: -${result.removedStreams} streams, " +
+                    "-${result.removedGuides} guides, -${result.removedScheduleRows} schedule rows",
+            )
+            true
+        } finally {
+            specialEventsMutex.unlock()
+        }
+    }
+
+    fun scheduleSpecialEventsRefresh(dlhdScheduleBaseUrl: String) {
+        if (!sportsEnabled() || refreshInFlight) return
+        scope.launch {
+            refreshSpecialEventsOnly(dlhdScheduleBaseUrl)
+        }
+    }
+
+    suspend fun refreshSpecialEventsOnly(dlhdScheduleBaseUrl: String?): Boolean {
+        if (!sportsEnabled() || refreshInFlight) return false
+        return specialEventsMutex.withLock {
+            if (refreshInFlight) return false
+            try {
+                val scheduleBase = dlhdScheduleBaseUrl?.trim()?.trimEnd('/').orEmpty()
+                    .ifEmpty { environment.dlhdBaseUrl.trimEnd('/') }
+                val (tvAppStats, bundle) = fetchSpecialEventsBundle(scheduleBase)
+                val nonSpecial = cached.filter {
+                    !SpecialEventCatalogMaintainer.isSpecialEventChannel(it.id)
+                }
+                val enriched = enrichSupplementLogos(bundle.channels)
+                cached = nonSpecial + enriched
+                store.writeChannels(cached)
+                applySpecialEventsBundle(bundle, tvAppStats.eventsScanned)
+                lastSpecialEventsSyncMs = System.currentTimeMillis()
+                Log.i(
+                    TAG,
+                    "Special Events refresh: guides=${specialEventGuideCount()} " +
+                        "streams=${dlhdEventStreamCount()} (tvApp scanned=${tvAppStats.eventsScanned})",
+                )
+                onSpecialEventsChanged?.invoke()
+                true
+            } catch (exc: Exception) {
+                Log.w(TAG, "Special Events refresh failed", exc)
+                false
+            }
+        }
+    }
+
     suspend fun refresh(
         daddyChannels: List<Channel>,
         force: Boolean = false,
@@ -303,9 +427,10 @@ class SupplementSource(
             if (!force && !store.isStale() && cached.isNotEmpty()) return
             refreshInFlight = true
             try {
-                val supplements = withContext(Dispatchers.IO) {
+                val merged = withContext(Dispatchers.IO) {
                     mergeSupplements(daddyChannels, dlhdScheduleBaseUrl)
                 }
+                val supplements = enrichSupplementLogos(merged)
                 cached = supplements
                 store.writeChannels(supplements)
                 applyNameEpgOverrides()
@@ -367,43 +492,13 @@ class SupplementSource(
         var specialEventGuides = 0
         var dlhdEventStreams = 0
         val specialEvents = if (sportsEnabled()) {
-            val theTvApp = runCatching { sportsResolver.resolveFromNetwork() }
-                .getOrElse { exc ->
-                    Log.w(TAG, "TheTvApp sports resolver failed", exc)
-                    emptyList<SupplementChannel>() to TheTvAppSportsResolver.ResolveStats()
-                }
-            val (tvAppChannels, tvAppStats) = theTvApp
-            tvAppEventsScanned = tvAppStats.eventsScanned
             val scheduleBase = dlhdScheduleBaseUrl?.trim()?.trimEnd('/').orEmpty()
                 .ifEmpty { environment.dlhdBaseUrl.trimEnd('/') }
-            val bundle = runCatching {
-                mergeSpecialEvents(scheduleBase, tvAppChannels)
-            }.getOrElse { exc ->
-                Log.w(TAG, "Special Events merge failed (base=$scheduleBase)", exc)
-                SpecialEventsMerger.EpgBundle(
-                    channels = tvAppChannels.map { it.copy(groupTitle = GroupTitleResolver.SPECIAL_EVENTS) },
-                )
-            }
-            specialEventGuides = bundle.channels.count { it.id.startsWith("dlhd-guide:") }
-            dlhdEventStreams = bundle.channels.count { it.id.startsWith("dlhd-event:") }
-            if (bundle.channels.isNotEmpty()) {
-                guideSchedules = bundle.guideProgrammes.mapValues { (_, rows) -> rows.toList() }
-                store.writeGuideSchedules(guideSchedules)
-                runCatching {
-                    SpecialEventsEpgGenerator.writeXml(
-                        SpecialEventsEpgGenerator.programmesForBundle(
-                            bundle.channels,
-                            bundle.guideProgrammes,
-                        ),
-                        store.sportsEpgFile,
-                    )
-                }.onFailure { exc ->
-                    Log.w(TAG, "Special Events EPG write failed", exc)
-                }
-            } else {
-                guideSchedules = emptyMap()
-                store.clearGuideSchedules()
-            }
+            val (tvAppStats, bundle) = fetchSpecialEventsBundle(scheduleBase)
+            tvAppEventsScanned = tvAppStats.eventsScanned
+            applySpecialEventsBundle(bundle, tvAppEventsScanned)
+            specialEventGuides = specialEventGuideCount()
+            dlhdEventStreams = dlhdEventStreamCount()
             bundle.channels
         } else {
             emptyList()
@@ -515,19 +610,91 @@ class SupplementSource(
         sidecar + specialEvents + iptvOrg + ntvCx + adultSwim
     }
 
+    private suspend fun fetchSpecialEventsBundle(
+        scheduleBase: String,
+    ): Pair<TheTvAppSportsResolver.ResolveStats, SpecialEventsMerger.EpgBundle> = coroutineScope {
+        val tvAppDeferred = async {
+            runCatching { sportsResolver.resolveFromNetwork() }
+                .getOrElse { exc ->
+                    Log.w(TAG, "TheTvApp sports resolver failed", exc)
+                    emptyList<SupplementChannel>() to TheTvAppSportsResolver.ResolveStats()
+                }
+        }
+        val dlhdDeferred = async {
+            runCatching {
+                resolveDlhdScheduleEvents(scheduleBase)
+            }.getOrElse { exc ->
+                Log.w(TAG, "DLHD schedule resolve failed (base=$scheduleBase)", exc)
+                emptyList<DaddyLiveEventResolver.ParsedEvent>() to DaddyLiveEventResolver.ResolveStats()
+            }
+        }
+        val (tvChannels, tvStats) = tvAppDeferred.await()
+        val (dlhdEvents, dlhdStats) = dlhdDeferred.await()
+        val bundle = if (dlhdEvents.isEmpty()) {
+            SpecialEventsMerger.EpgBundle(
+                channels = tvChannels.map { it.copy(groupTitle = GroupTitleResolver.SPECIAL_EVENTS) },
+            )
+        } else {
+            SpecialEventsMerger.buildFromParsed(
+                dlhdEvents = dlhdEvents,
+                dlhdStats = dlhdStats,
+                theTvAppChannels = tvChannels,
+                maxStreams = SupplementConfig.MAX_SPECIAL_EVENT_STREAMS,
+            )
+        }
+        tvStats to bundle
+    }
+
+    private fun applySpecialEventsBundle(
+        bundle: SpecialEventsMerger.EpgBundle,
+        tvAppEventsScanned: Int,
+    ) {
+        guideSchedules = bundle.guideProgrammes.mapValues { (_, rows) -> rows.toList() }
+        if (bundle.channels.isNotEmpty()) {
+            store.writeGuideSchedules(guideSchedules)
+        } else {
+            guideSchedules = emptyMap()
+            store.clearGuideSchedules()
+        }
+        rewriteSportsEpg(bundle.channels, bundle.guideProgrammes)
+        lastSpecialEventsSyncMs = System.currentTimeMillis()
+        lastSync = lastSync.copy(
+            sportsEventsScanned = tvAppEventsScanned,
+            sportsChannels = bundle.channels.size,
+            specialEventGuides = bundle.channels.count { it.id.startsWith("dlhd-guide:") },
+            dlhdEventStreams = bundle.channels.count { it.id.startsWith("dlhd-event:") },
+        )
+    }
+
+    private fun rewriteSportsEpg(
+        channels: List<SupplementChannel> = cached.filter {
+            SpecialEventCatalogMaintainer.isSpecialEventChannel(it.id)
+        },
+        programmes: Map<String, List<SpecialEventsMerger.GuideEventRow>> = guideSchedules,
+    ) {
+        if (channels.isEmpty()) {
+            store.sportsEpgFile.delete()
+            return
+        }
+        runCatching {
+            SpecialEventsEpgGenerator.writeXml(
+                SpecialEventsEpgGenerator.programmesForBundle(channels, programmes),
+                store.sportsEpgFile,
+            )
+        }.onFailure { exc ->
+            Log.w(TAG, "Special Events EPG write failed", exc)
+        }
+    }
+
     /** Tries active mirror then configured mirrors until schedule JSON returns events. */
-    private fun mergeSpecialEvents(
+    private fun resolveDlhdScheduleEvents(
         primaryBase: String,
-        theTvAppChannels: List<SupplementChannel>,
-    ): SpecialEventsMerger.EpgBundle {
+    ): Pair<List<DaddyLiveEventResolver.ParsedEvent>, DaddyLiveEventResolver.ResolveStats> {
         val mirrorBases = linkedSetOf<String>()
         mirrorBases += primaryBase.trimEnd('/')
         mirrorBases += environment.dlhdBaseUrl.trimEnd('/')
         environment.mirrorUrls.forEach { mirrorBases += it.trimEnd('/') }
 
-        var lastBundle = SpecialEventsMerger.EpgBundle(
-            channels = theTvAppChannels.map { it.copy(groupTitle = GroupTitleResolver.SPECIAL_EVENTS) },
-        )
         for (base in mirrorBases) {
             if (base.isEmpty()) continue
             val (events, stats) = dlhdEventResolver.resolveFromNetwork(base)
@@ -539,14 +706,9 @@ class SupplementSource(
                 TAG,
                 "DLHD schedule from $base: tv=${stats.tvEvents} tv2=${stats.tv2Events} links=${stats.streamLinks}",
             )
-            return SpecialEventsMerger.buildFromParsed(
-                dlhdEvents = events,
-                dlhdStats = stats,
-                theTvAppChannels = theTvAppChannels,
-                maxStreams = SupplementConfig.MAX_SPECIAL_EVENT_STREAMS,
-            )
+            return events to stats
         }
-        return lastBundle
+        return emptyList<DaddyLiveEventResolver.ParsedEvent>() to DaddyLiveEventResolver.ResolveStats()
     }
 
     private fun downloadEpg(base: String) {

@@ -5,6 +5,8 @@ import android.app.ActivityManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -18,6 +20,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.thothassistant.stepdaddy.gateway.BuildConfig
 import com.thothassistant.stepdaddy.gateway.GatewayApp
+import com.thothassistant.stepdaddy.gateway.GatewayHud
 import com.thothassistant.stepdaddy.gateway.GatewayStartHelper
 import com.thothassistant.stepdaddy.gateway.PermissionHelper
 import com.thothassistant.stepdaddy.gateway.R
@@ -71,6 +74,17 @@ class MainActivity : AppCompatActivity() {
     private var lastGoodHealth: HealthResponse? = null
     private val numberFormat = NumberFormat.getIntegerInstance(Locale.US)
     private val clockFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+    private val hudHandler = Handler(Looper.getMainLooper())
+    private var hudDismissRunnable: Runnable? = null
+    private val gatewayHudHost = object : GatewayHud.Host {
+        override fun show(message: String, durationMs: Long) {
+            showInAppHud(message, durationMs)
+        }
+
+        override fun dismiss() {
+            hideInAppHud()
+        }
+    }
 
     private val installPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -121,6 +135,7 @@ class MainActivity : AppCompatActivity() {
             updateCoordinator.flushPendingPrompts(this)
         }
         bottomPanel.onResume()
+        GatewayHud.attachHost(gatewayHudHost)
         hydrateDashboardFromCache()
         updateStatus()
         bindNetworkMode()
@@ -149,6 +164,8 @@ class MainActivity : AppCompatActivity() {
         clockJob?.cancel()
         peerScanJob?.cancel()
         bottomPanel.onPause()
+        GatewayHud.detachHost(gatewayHudHost)
+        hideInAppHud()
         isInForeground = false
         super.onPause()
     }
@@ -421,7 +438,6 @@ class MainActivity : AppCompatActivity() {
         environment.serverRunning = true
         updateStatus()
         updateEpgStatus()
-        Toast.makeText(this, R.string.toast_server_starting, Toast.LENGTH_SHORT).show()
         GatewayMessageBus.post("Starting gateway foreground service and HTTP listener…")
         updateCoordinator.deferPrompts()
     }
@@ -686,6 +702,32 @@ class MainActivity : AppCompatActivity() {
         val minutes = TimeUnit.MILLISECONDS.toMinutes(elapsedMs) % 60
         val seconds = TimeUnit.MILLISECONDS.toSeconds(elapsedMs) % 60
         return String.format(Locale.US, "%02d:%02d:%02d", hours, minutes, seconds)
+    }
+
+    private fun showInAppHud(message: String, durationMs: Long) {
+        if (!::views.isInitialized) return
+        runOnUiThread {
+            hudDismissRunnable?.let { hudHandler.removeCallbacks(it) }
+            views.textGatewayHud.text = message
+            views.textGatewayHud.visibility = View.VISIBLE
+            views.textGatewayHud.alpha = 0f
+            views.textGatewayHud.animate().alpha(1f).setDuration(150).start()
+            val dismiss = Runnable { hideInAppHud() }
+            hudDismissRunnable = dismiss
+            hudHandler.postDelayed(dismiss, durationMs)
+        }
+    }
+
+    private fun hideInAppHud() {
+        if (!::views.isInitialized) return
+        runOnUiThread {
+            hudDismissRunnable?.let { hudHandler.removeCallbacks(it) }
+            hudDismissRunnable = null
+            if (views.textGatewayHud.visibility != View.VISIBLE) return@runOnUiThread
+            views.textGatewayHud.animate().alpha(0f).setDuration(150).withEndAction {
+                views.textGatewayHud.visibility = View.GONE
+            }.start()
+        }
     }
 
     private fun copyUrl(url: String) {

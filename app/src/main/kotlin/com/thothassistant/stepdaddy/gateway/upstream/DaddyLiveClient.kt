@@ -99,7 +99,41 @@ class DaddyLiveClient(
             loadDiskCache()
             initialLoadGate.complete(Unit)
             staleGoodCacheStore.purgeExpired(GatewayConfig.STALE_DISK_TTL_MS)
+            runCatching {
+                logoResolver?.awaitLoaded(120_000L)
+                enrichCachedChannelsQuietly()
+            }.onFailure { exc ->
+                Log.d(TAG, "Deferred logo enrich skipped: ${exc.message}")
+            }
         }
+    }
+
+    suspend fun reEnrichLogos(): CatalogLogoEnricher.Result {
+        loadMutex.withLock {
+            val enricher = catalogLogoEnricher() ?: return CatalogLogoEnricher.Result(0, 0, 0)
+            val (enriched, result) = enricher.enrichChannels(channels)
+            if (result.assigned > 0) {
+                channels = enriched
+                channelRevision++
+                saveDiskCache()
+            }
+            return result
+        }
+    }
+
+    private fun enrichCachedChannelsQuietly() {
+        val enricher = catalogLogoEnricher() ?: return
+        val (enriched, result) = enricher.enrichChannels(channels)
+        if (result.assigned > 0) {
+            channels = enriched
+            channelRevision++
+            saveDiskCache()
+        }
+    }
+
+    private fun catalogLogoEnricher(): CatalogLogoEnricher? {
+        if (logoResolver == null) return null
+        return CatalogLogoEnricher(logoResolver, channelMetaStore)
     }
 
     fun streamFetchTimeoutMs(): Long =
@@ -163,7 +197,12 @@ class DaddyLiveClient(
             }
             val loaded = loadChannelsFromUpstream()
             if (loaded.isNotEmpty()) {
-                channels = loaded
+                val enricher = catalogLogoEnricher()
+                channels = if (enricher != null) {
+                    enricher.enrichChannels(loaded).first
+                } else {
+                    loaded
+                }
                 channelRevision++
                 lastChannelRefreshMs = System.currentTimeMillis()
                 saveDiskCache()
@@ -787,8 +826,9 @@ class DaddyLiveClient(
                     val name = row.optString("name")
                     val tvgId = row.optString("tvg_id").takeIf { it.isNotBlank() }
                         ?: epgChannelMapper?.tvgIdFor(id, name)
+                    val cachedLogo = row.optString("logo").takeIf { it.isNotBlank() }
                     if (id.isNotBlank() && name.isNotBlank()) {
-                        add(channelFromRow(id, name, tvgId, fastPath = true))
+                        add(channelFromRow(id, name, tvgId, cachedLogo, fastPath = true))
                     }
                 }
             }
@@ -807,6 +847,7 @@ class DaddyLiveClient(
         channelId: String,
         channelName: String,
         cachedTvgId: String? = null,
+        cachedLogo: String? = null,
         fastPath: Boolean = false,
     ): Channel {
         val id = channelId.trim()
@@ -819,14 +860,7 @@ class DaddyLiveClient(
         val tvgId = mappedId?.takeIf { it.isNotBlank() }
             ?: cachedTvgId?.takeIf { it.isNotBlank() }
             ?: if (fastPath) null else tvgIdResolver?.resolve(name, groupTitle = tags.firstOrNull())?.tvgId
-        val metaLogo = channelMetaStore?.logoFor(upstreamName)
-            ?: channelMetaStore?.logoFor(name)
-        val apiBase = environment.loopbackBase()
-        val logo = if (fastPath) {
-            logoResolver?.resolvePlaylistLogoUrl(apiBase, name, tvgId, metaLogo)
-        } else {
-            logoResolver?.resolveLogoUrlBlocking(apiBase, name, tvgId, metaLogo)
-        }
+        val logo = cachedLogo?.takeIf { logoResolver?.isPersistedRemoteLogo(it) == true }
         return Channel(
             id = id,
             name = name,
@@ -840,12 +874,12 @@ class DaddyLiveClient(
         if (channels.isEmpty()) return
         val channelsArray = org.json.JSONArray()
         channels.forEach { channel ->
-            channelsArray.put(
-                JSONObject()
-                    .put("id", channel.id)
-                    .put("name", channel.name)
-                    .put("tvg_id", channel.tvgId),
-            )
+            val row = JSONObject()
+                .put("id", channel.id)
+                .put("name", channel.name)
+                .put("tvg_id", channel.tvgId)
+            channel.logo?.takeIf { it.isNotBlank() }?.let { row.put("logo", it) }
+            channelsArray.put(row)
         }
         val payload = JSONObject()
             .put("saved_at", System.currentTimeMillis())

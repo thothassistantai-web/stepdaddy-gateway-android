@@ -7,6 +7,25 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.33] - 2026-06-22
+
+### Added
+
+- **Dynamic Special Events** — prune finished events every 2 minutes; re-fetch DaddyLive + TheTvApp schedule every 15 minutes without waiting for full 6h supplement sync; playlist + EPG rebuild on each change
+
+### Fixed
+
+- **Special Events health** — `sportsChannels` counts `dlhd-guide` / `dlhd-event` rows; health exposes `specialEventGuides` and `dlhdEventStreams`
+- **Supplement sync** — DaddyLive schedule fetch runs in parallel with TheTvApp resolver
+- **Guide schedule video** — 120s MP4 slate for longer on-screen schedule cards
+
+## [1.0.32] - 2026-06-22
+
+### Changed
+
+- **Logo catalog enrich** — resolve remote logos when DaddyLive/supplement catalogs refresh; persist on channel records; remove scheduled logo backfill job
+- **Gateway HUD** — unified in-app chip + compact bottom overlay replaces top banner, heads-up success alerts, and `ServerReadyActivity` launches; one ready ping per boot at catalog load
+
 ## [1.0.31] - 2026-06-22
 
 ### Fixed

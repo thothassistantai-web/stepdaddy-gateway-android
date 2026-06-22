@@ -10,31 +10,35 @@ import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.WindowManager
-import com.thothassistant.stepdaddy.gateway.databinding.OverlayServerReadyBinding
+import android.widget.TextView
+import com.thothassistant.stepdaddy.gateway.databinding.OverlayGatewayToastBinding
 
 /**
- * Brief system overlay for Google TV devices that suppress heads-up notifications and
- * block background activity launches. Requires [Settings.canDrawOverlays].
+ * Compact bottom overlay for cross-app HUD toasts (TiviMate, Google TV home).
+ * Requires [Settings.canDrawOverlays].
  */
 object GatewayOverlay {
     private const val TAG = "GatewayOverlay"
-    private const val DISMISS_MS = 15_000L
 
     private val mainHandler = Handler(Looper.getMainLooper())
     @Volatile
     private var activeRoot: android.view.View? = null
     private var dismissRunnable: Runnable? = null
 
-    fun showServerReady(context: Context, channelCount: Int) {
+    fun showToast(context: Context, message: String, durationMs: Long) {
         if (!canDraw(context)) {
-            Log.w(TAG, "Overlay permission missing; skipping server-ready banner")
+            Log.w(TAG, "Overlay permission missing; skipping HUD toast")
             return
         }
         mainHandler.post {
-            runCatching { showInternal(context.applicationContext, channelCount) }
+            runCatching { showInternal(context.applicationContext, message, durationMs) }
                 .onFailure { exc -> Log.w(TAG, "Overlay failed: ${exc.message}") }
         }
     }
+
+    /** @deprecated Use [GatewayHud.readyMessage]; kept for notification body text. */
+    fun readyBodyText(context: Context, channelCount: Int): String =
+        GatewayHud.readyMessage(context, channelCount)
 
     fun dismiss() {
         mainHandler.post { dismissActive() }
@@ -50,11 +54,11 @@ object GatewayOverlay {
         }
     }
 
-    private fun showInternal(context: Context, channelCount: Int) {
+    private fun showInternal(context: Context, message: String, durationMs: Long) {
         dismissActive()
         val windowManager = context.getSystemService(WindowManager::class.java)
-        val binding = OverlayServerReadyBinding.inflate(LayoutInflater.from(context))
-        binding.textBody.text = readyBodyText(context, channelCount)
+        val binding = OverlayGatewayToastBinding.inflate(LayoutInflater.from(context))
+        binding.textHudMessage.text = message
         val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
         } else {
@@ -70,26 +74,18 @@ object GatewayOverlay {
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT,
         ).apply {
-            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            y = 48
+            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
         }
         activeRoot = binding.root
         windowManager.addView(binding.root, params)
-        Log.i(TAG, "Showing server-ready overlay (channels=$channelCount)")
+        Log.i(TAG, "HUD toast: $message")
         val dismiss = Runnable {
             runCatching { windowManager.removeView(binding.root) }
             if (activeRoot === binding.root) activeRoot = null
         }
         dismissRunnable = dismiss
-        mainHandler.postDelayed(dismiss, DISMISS_MS)
+        mainHandler.postDelayed(dismiss, durationMs)
     }
 
     fun canDraw(context: Context): Boolean = Settings.canDrawOverlays(context.applicationContext)
-
-    internal fun readyBodyText(context: Context, channelCount: Int): String =
-        if (channelCount > 0) {
-            context.getString(R.string.alert_server_running_text, channelCount)
-        } else {
-            context.getString(R.string.alert_server_running_loading)
-        }
 }
