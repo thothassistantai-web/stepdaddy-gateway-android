@@ -11,14 +11,14 @@ import com.thothassistant.stepdaddy.gateway.model.LoadProgress
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
-class DashboardStatCardView(root: View) {
-    val root: View = root.findViewById(R.id.statCardRoot)
-    private val icon: ImageView = root.findViewById(R.id.statCardIcon)
-    private val value: TextView = root.findViewById(R.id.statCardValue)
-    private val label: TextView = root.findViewById(R.id.statCardLabel)
-    private val progressTrack: FrameLayout = root.findViewById(R.id.statCardProgressTrack)
-    private val progressFill: View = root.findViewById(R.id.statCardProgressFill)
-    private val eta: TextView = root.findViewById(R.id.statCardEta)
+class DashboardStatCardView(cardRoot: View) {
+    val root: View = cardRoot
+    private val icon: ImageView = cardRoot.findViewById(R.id.statCardIcon)
+    private val value: TextView = cardRoot.findViewById(R.id.statCardValue)
+    private val label: TextView = cardRoot.findViewById(R.id.statCardLabel)
+    private val progressTrack: FrameLayout = cardRoot.findViewById(R.id.statCardProgressTrack)
+    private val progressFill: View = cardRoot.findViewById(R.id.statCardProgressFill)
+    private val eta: TextView = cardRoot.findViewById(R.id.statCardEta)
 
     fun setIcon(resId: Int) {
         icon.setImageResource(resId)
