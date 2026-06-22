@@ -1,7 +1,7 @@
 {
-  "versionCode": 31,
-  "versionName": "1.0.28",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.28/stepdaddy-gateway-1.0.28-debug.apk",
-  "releaseNotes": "Dashboard UX fixes, supplement settings rework, Lifetime Network EPG root fix, Special Events on by default.",
+  "versionCode": 32,
+  "versionName": "1.0.29",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.29/stepdaddy-gateway-1.0.29-debug.apk",
+  "releaseNotes": "Fix dashboard opening scrolled to bottom on cold start.",
   "mandatory": false
 }
