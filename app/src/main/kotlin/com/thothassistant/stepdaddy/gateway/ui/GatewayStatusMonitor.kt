@@ -40,18 +40,19 @@ class GatewayStatusMonitor(
 
     suspend fun fetch(): GatewayLiveStatus = withContext(Dispatchers.IO) {
         val url = healthUrl()
-        runCatching {
+        val result = runCatching {
             val request = Request.Builder().url(url).get().build()
             http.newCall(request).execute().use { response ->
                 val body = response.body?.string().orEmpty()
                 if (!response.isSuccessful) {
-                    return@withContext GatewayLiveStatus(
+                    GatewayLiveStatus(
                         fetchError = "HTTP ${response.code}",
                         lastFetchMs = System.currentTimeMillis(),
                     )
+                } else {
+                    val health = json.decodeFromString<HealthResponse>(body)
+                    GatewayLiveStatus(health = health, lastFetchMs = System.currentTimeMillis())
                 }
-                val health = json.decodeFromString<HealthResponse>(body)
-                GatewayLiveStatus(health = health, lastFetchMs = System.currentTimeMillis())
             }
         }.getOrElse { exc ->
             Log.d(TAG, "Health fetch failed: ${exc.message}")
@@ -60,9 +61,15 @@ class GatewayStatusMonitor(
                 lastFetchMs = System.currentTimeMillis(),
             )
         }
+        lastCachedStatus = result
+        result
     }
 
     companion object {
         private const val TAG = "GatewayStatusMonitor"
+
+        @Volatile
+        var lastCachedStatus: GatewayLiveStatus? = null
+            private set
     }
 }

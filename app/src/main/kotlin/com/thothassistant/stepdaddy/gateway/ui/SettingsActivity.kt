@@ -99,7 +99,6 @@ class SettingsActivity : AppCompatActivity() {
         updateRemoteNetworkVisibility()
         binding.editDlhdUrl.setText(environment.dlhdBaseUrl)
         binding.editMirrorUrls.setText(environment.mirrorUrls.joinToString(","))
-        binding.editSupplementUrl.setText(environment.supplementBaseUrl)
         SettingsSupplementControls.load(binding, environment)
         SettingsSupplementControls.wireListeners(binding)
         binding.switchGatewayEpg.isChecked = environment.gatewayEpgEnabled
@@ -166,7 +165,6 @@ class SettingsActivity : AppCompatActivity() {
             ?.map { it.trim() }
             ?.filter { it.isNotEmpty() }
             .orEmpty()
-        environment.supplementBaseUrl = binding.editSupplementUrl.text?.toString().orEmpty()
         SettingsSupplementControls.save(binding, environment)
         environment.gatewayEpgEnabled = binding.switchGatewayEpg.isChecked
         environment.externalEpgUrl = binding.editExternalEpgUrl.text?.toString().orEmpty()

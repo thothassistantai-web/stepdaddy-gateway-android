@@ -22,8 +22,8 @@ android {
         applicationId = "com.thothassistant.stepdaddy.gateway"
         minSdk = 24
         targetSdk = 34
-        versionCode = 30
-        versionName = "1.0.27"
+        versionCode = 31
+        versionName = "1.0.28"
 
         buildConfigField("int", "DEFAULT_PORT", "3000")
         buildConfigField("String", "DEFAULT_API_URL", "\"http://127.0.0.1:3000\"")
@@ -32,9 +32,9 @@ android {
             "DEFAULT_DLHD_BASE_URL",
             "\"https://daddylive.org\"",
         )
-        buildConfigField("String", "DEFAULT_SUPPLEMENT_BASE_URL", "\"http://127.0.0.1:4124\"")
-        buildConfigField("boolean", "DEFAULT_EMBEDDED_SIDECAR_ENABLED", "true")
-        buildConfigField("boolean", "DEFAULT_SUPPLEMENT_SPORTS_ENABLED", "false")
+        buildConfigField("String", "DEFAULT_SUPPLEMENT_BASE_URL", "\"\"")
+        buildConfigField("boolean", "DEFAULT_EMBEDDED_SIDECAR_ENABLED", "false")
+        buildConfigField("boolean", "DEFAULT_SUPPLEMENT_SPORTS_ENABLED", "true")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_IPTV_ORG_ENABLED", "true")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_NTV_CX_ENABLED", "true")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_ADULT_SWIM_ENABLED", "true")

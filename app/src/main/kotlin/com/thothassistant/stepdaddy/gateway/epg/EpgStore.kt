@@ -139,6 +139,18 @@ class EpgStore(context: Context) {
     return age > EpgConfig.STALE_REBUILD_SECONDS
   }
 
+  /** Drop served guide so the next refresh rebuilds with corrected channel mappings. */
+  fun invalidateBuild() {
+    meta = meta.copy(
+        builtAtMs = 0L,
+        programmeCount = 0,
+        state = "pending",
+        lastError = null,
+    )
+    saveMeta()
+    if (servedXml.isFile) servedXml.delete()
+  }
+
   fun trimFeedCache() {
     val files = feedsDir.listFiles()?.filter { it.isFile }?.sortedByDescending { it.lastModified() }.orEmpty()
     var total = files.sumOf { it.length() }

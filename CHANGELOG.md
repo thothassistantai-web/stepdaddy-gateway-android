@@ -7,6 +7,22 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.28] - 2026-06-22
+
+### Changed
+
+- **Special Events** — live sports supplement enabled by default for new installs
+- **MoveOnJoy sidecar** — off by default; toggle now syncs loopback URL on save (legacy supplement URL field hidden)
+- **Enable all supplements** — one-way master toggle (no longer flips off when disabling a single provider); includes Sports/Special Events
+
+### Fixed
+
+- **Dashboard status tile** — fixed-size Online/Starting/Loading labels (no layout jump on server state changes)
+- **Dashboard scroll** — opens at top; removed weight stretch that pushed focus to the bottom panel
+- **Resume UX** — cached gateway health hydrates stats when returning while the server is still running
+- **Lifetime Network EPG** — correct `LifetimeNetwork.us` tvg-id; bridge cross-wire removed; stale runtime map migration + one-time EPG rebuild
+- **Supplement settings** — skip-duplicate rows hide when provider is off (no layout shift)
+
 ## [1.0.27] - 2026-06-22
 
 ### Added

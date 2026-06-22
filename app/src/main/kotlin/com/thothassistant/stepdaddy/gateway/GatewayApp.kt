@@ -1,6 +1,7 @@
 package com.thothassistant.stepdaddy.gateway
 
 import android.app.Application
+import android.util.Log
 import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.epg.EpgManager
 import com.thothassistant.stepdaddy.gateway.epg.EpgShareIdBridge
@@ -115,7 +116,12 @@ class GatewayApp : Application() {
                 _playlistCache = PlaylistCache()
                 _embeddedSidecarRepository = EmbeddedSidecarRepository(this@GatewayApp)
                 val store = EpgStore(this@GatewayApp)
+                maybeInvalidateEpgForBridgeFix(store)
                 _epgChannelMapper = EpgChannelMapper(this@GatewayApp)
+                if (_epgChannelMapper!!.mappingMigrationApplied) {
+                    store.invalidateBuild()
+                    Log.i("GatewayApp", "EPG rebuild scheduled after channel mapping correction")
+                }
                 _iptvOrgNameIndex = IptvOrgNameIndex(this@GatewayApp)
                 _tvgIdResolver = TvgIdResolver(_iptvOrgNameIndex!!, _epgChannelMapper!!)
                 _epgShareIdBridge = EpgShareIdBridge(this@GatewayApp)
@@ -142,5 +148,14 @@ class GatewayApp : Application() {
         if (!componentsReady.isCompleted) {
             componentsReady.complete(Unit)
         }
+    }
+
+    private fun maybeInvalidateEpgForBridgeFix(store: EpgStore) {
+        val prefs = getSharedPreferences("epg", MODE_PRIVATE)
+        val key = "id_bridge_lifetime_fix_v1"
+        if (prefs.getBoolean(key, false)) return
+        prefs.edit().putBoolean(key, true).apply()
+        store.invalidateBuild()
+        Log.i("GatewayApp", "EPG rebuild scheduled after Lifetime/USA bridge correction")
     }
 }

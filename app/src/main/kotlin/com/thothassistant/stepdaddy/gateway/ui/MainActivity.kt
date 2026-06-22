@@ -98,6 +98,11 @@ class MainActivity : AppCompatActivity() {
         bottomPanel = DashboardBottomPanel(this, binding.root, environment, lifecycleScope)
         bottomPanel.attach()
         GatewayMessageBus.post("Dashboard opened")
+        views.scrollDashboard.post {
+            views.scrollDashboard.scrollTo(0, 0)
+            views.buttonHeaderSettings.requestFocus()
+        }
+        hydrateDashboardFromCache()
         updateStatus()
         updateEpgStatus()
         updateFooterMetrics(null)
@@ -113,6 +118,7 @@ class MainActivity : AppCompatActivity() {
             updateCoordinator.flushPendingPrompts(this)
         }
         bottomPanel.onResume()
+        hydrateDashboardFromCache()
         updateStatus()
         bindNetworkMode()
         bindUrls()
@@ -254,7 +260,14 @@ class MainActivity : AppCompatActivity() {
             views.scrollDashboard.smoothScrollTo(0, 0)
             views.buttonHeaderSettings.requestFocus()
         }
-        views.buttonHeaderSettings.requestFocus()
+    }
+
+    private fun hydrateDashboardFromCache() {
+        if (!ServerService.isServiceActive) return
+        val cached = GatewayStatusMonitor.lastCachedStatus ?: return
+        if (cached.health != null) {
+            renderDashboard(cached)
+        }
     }
 
     private fun openSettings() {
@@ -426,7 +439,15 @@ class MainActivity : AppCompatActivity() {
         }
         updateServerToggleButton(active)
         views.buttonRestart.isEnabled = active
-        updateSummaryStatus(false, active, null)
+        val cached = GatewayStatusMonitor.lastCachedStatus?.takeIf { it.health != null }
+        if (cached != null && active) {
+            val health = cached.health!!
+            val online = cached.fetchError == null && health.ok &&
+                (!health.starting || health.channels > 0 || (health.providers?.total ?: 0) > 0)
+            updateSummaryStatus(online, true, health)
+        } else {
+            updateSummaryStatus(false, active, null)
+        }
         if (!active) {
             updateFooterOnline(false)
         }
@@ -509,7 +530,7 @@ class MainActivity : AppCompatActivity() {
             DashboardBarRenderer.renderProviders(this, views.containerProviderBars, null)
             views.textProvidersTotal.text = ""
             DashboardBarRenderer.renderCategories(this, views.containerCategoryBars, emptyList())
-            updateSummaryStatus(ServerService.isServiceActive, ServerService.isServiceActive, null)
+            updateSummaryStatus(false, ServerService.isServiceActive, null)
             return
         }
 
@@ -522,8 +543,8 @@ class MainActivity : AppCompatActivity() {
         views.textHealthStatus.text = when {
             live.fetchError != null -> getString(R.string.status_offline_upper)
             health.channels == 0 && (health.providers?.total ?: 0) == 0 && health.ok ->
-                getString(R.string.dashboard_health_starting).uppercase(Locale.US)
-            health.starting -> getString(R.string.dashboard_health_starting).uppercase(Locale.US)
+                getString(R.string.status_loading_short).uppercase(Locale.US)
+            health.starting -> getString(R.string.status_loading_short).uppercase(Locale.US)
             health.ok -> getString(R.string.status_online_upper)
             else -> getString(R.string.status_offline_upper)
         }
@@ -592,8 +613,8 @@ class MainActivity : AppCompatActivity() {
         views.statProgramsValue.text = health?.let { numberFormat.format(it.epgProgrammeCount) } ?: "—"
         views.statStatusValue.text = when {
             online -> getString(R.string.status_online)
-            active && health != null && health.ok -> getString(R.string.dashboard_health_starting)
-            active -> getString(R.string.status_starting)
+            active && health != null && health.ok -> getString(R.string.status_loading_short)
+            active -> getString(R.string.status_starting_short)
             else -> getString(R.string.status_offline)
         }
         views.statStatusValue.setTextColor(

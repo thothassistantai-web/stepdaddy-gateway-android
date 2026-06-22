@@ -26,9 +26,13 @@ class EpgChannelMapper(context: Context) {
   private val byChannelId: MutableMap<String, String> = mutableMapOf()
   private val byNormName: MutableMap<String, String> = mutableMapOf()
 
+  /** True when stale runtime id mappings were corrected (triggers one-time EPG rebuild). */
+  val mappingMigrationApplied: Boolean
+
   init {
     loadBundledIdMap(appContext)
-    loadRuntimeIdMap(appContext)
+    mappingMigrationApplied = loadRuntimeIdMap(appContext)
+    applyAuthoritativeIdCorrections()
     loadBundledNameOverrides(appContext)
     loadRuntimeNameOverrides(appContext)
   }
@@ -134,13 +138,34 @@ class EpgChannelMapper(context: Context) {
     }
   }
 
-  private fun loadRuntimeIdMap(context: Context) {
+  private fun loadRuntimeIdMap(context: Context): Boolean {
     val file = File(context.filesDir, "epg/channel_epg_map.json")
-    if (!file.isFile) return
+    if (!file.isFile) return false
+    var dirty = false
     runCatching {
       val asset = json.decodeFromString<MappingAsset>(file.readText())
-      asset.mapping.forEach { (id, tvg) -> putIdMapping(id, tvg) }
+      asset.mapping.forEach { (id, tvg) ->
+        val corrected = correctStaleRuntimeId(id, tvg)
+        if (corrected != tvg) dirty = true
+        putIdMapping(id, corrected)
+      }
     }
+    if (dirty) {
+      saveRuntimeIdMap(context)
+      Log.i(TAG, "Corrected stale runtime EPG id mappings")
+    }
+    return dirty
+  }
+
+  private fun applyAuthoritativeIdCorrections() {
+    AUTHORITATIVE_ID_MAPPINGS.forEach { (id, tvg) ->
+      byChannelId[id] = tvg
+    }
+  }
+
+  private fun correctStaleRuntimeId(channelId: String, tvgId: String): String {
+    val stale = STALE_RUNTIME_ID_VALUES[channelId] ?: return tvgId
+    return if (tvgId in stale) AUTHORITATIVE_ID_MAPPINGS[channelId] ?: tvgId else tvgId
   }
 
   private fun loadBundledNameOverrides(context: Context) {
@@ -207,6 +232,17 @@ class EpgChannelMapper(context: Context) {
   companion object {
     private const val TAG = "EpgChannelMapper"
     const val RUNTIME_NAME_OVERRIDES_FILE = "epg/name_overrides.json"
+
+    /** Bundled truth for channels that had bad auto-mappings in older builds. */
+    private val AUTHORITATIVE_ID_MAPPINGS = mapOf(
+        "326" to "LifetimeNetwork.us",
+        "389" to "LifetimeMovieNetwork.us",
+    )
+
+    private val STALE_RUNTIME_ID_VALUES = mapOf(
+        "326" to setOf("USANetwork.us", "USA.Network.HD.us2", "USA.Network.HD.(Pacific).us2"),
+        "389" to setOf("LifetimeNetwork.us"),
+    )
 
     fun runtimeNameOverridesFile(context: Context): File =
         File(context.filesDir, RUNTIME_NAME_OVERRIDES_FILE)

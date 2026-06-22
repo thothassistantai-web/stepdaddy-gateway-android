@@ -145,6 +145,8 @@
     <string name="label_tivimate_watch_hint">Restart gateway if Android suspends background processes.</string>
     <string name="status_running">Server running at %1$s</string>
     <string name="status_starting">Server starting…</string>
+    <string name="status_starting_short">Starting</string>
+    <string name="status_loading_short">Loading</string>
     <string name="status_stopped">Server stopped</string>
     <string name="toast_server_starting">Starting gateway…</string>
     <string name="toast_server_running">Gateway running on port 3000</string>
@@ -199,7 +201,7 @@
     <string name="settings_embedded_sidecar">Enable MoveOnJoy sidecar</string>
     <string name="settings_supplement_iptv_org_enable">Enable iptv-org streams</string>
     <string name="settings_supplement_ntv_cx_enable">Enable ntv.cx 24/7 (~940 channels)</string>
-    <string name="settings_supplement_sports_enable">Enable live sports (thetvapp)</string>
+    <string name="settings_supplement_sports_enable">Enable live sports &amp; Special Events channels</string>
     <string name="settings_import_skip_duplicates">Skip channels already on DaddyLive</string>
     <string name="settings_import_mode_hint">Off (default) = full catalog from each provider. On = hide rows whose name already appears on the main DaddyLive list.</string>
     <string name="settings_supplement_sports">Sports supplement (thetvapp)</string>

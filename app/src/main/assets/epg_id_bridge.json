@@ -2852,8 +2852,13 @@
     "UGold.uk": [
       "Gold.HD.al"
     ],
-    "USANetwork.us": [
+    "LifetimeNetwork.us": [
       "Lifetime.HD.us2",
+      "Lifetime.HD.us",
+      "Lifetime.us",
+      "Lifetime.Network.HD.us2"
+    ],
+    "USANetwork.us": [
       "USA.Network.HD.(Pacific).us2",
       "USA.Network.HD.us2",
       "USA.Network.ca2",
