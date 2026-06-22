@@ -4,6 +4,7 @@ import com.thothassistant.stepdaddy.gateway.BuildConfig
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.epg.EpgManager
 import com.thothassistant.stepdaddy.gateway.epg.EpgCoverageCalculator
+import com.thothassistant.stepdaddy.gateway.epg.EpgPlaylistUrlResolver
 import com.thothassistant.stepdaddy.gateway.model.CanaryStatus
 import com.thothassistant.stepdaddy.gateway.model.CategoryCount
 import com.thothassistant.stepdaddy.gateway.model.ProviderStats
@@ -43,6 +44,11 @@ class HealthRoutes(
             .take(8)
             .map { CategoryCount(it.key, it.value) }
         val supplementCount = supplementSource.channelCount()
+        val gatewayEpgOn = environment.gatewayEpgEnabled
+        val playlistEpgUrls = EpgPlaylistUrlResolver.resolvePlaylistEpgUrls(
+            environment,
+            supplementSource.sportsEpgXmlFile(),
+        )
         val payload = HealthResponse(
             ok = true,
             starting = channelCount == 0 && !environment.serverRunning,
@@ -51,14 +57,25 @@ class HealthRoutes(
             port = environment.port,
             baseUrl = environment.loopbackBase(),
             upstreamBaseUrl = client.activeBaseUrl,
-            epgReady = epgManager.epgReady(),
-            epgProgrammeCount = epgManager.programmeCount(),
-            epgAgeSeconds = epgManager.ageSeconds(),
-            epgCoverage = EpgCoverageCalculator.snapshot(
-                channels = client.channels,
-                supplementSource = supplementSource,
-                meta = epgManager.meta,
-            ),
+            gatewayEpgEnabled = gatewayEpgOn,
+            epgExternal = !gatewayEpgOn,
+            epgSourceCount = playlistEpgUrls.size,
+            epgReady = if (gatewayEpgOn) epgManager.epgReady() else playlistEpgUrls.isNotEmpty(),
+            epgProgrammeCount = if (gatewayEpgOn) {
+                epgManager.programmeCount()
+            } else {
+                playlistEpgUrls.size
+            },
+            epgAgeSeconds = if (gatewayEpgOn) epgManager.ageSeconds() else null,
+            epgCoverage = if (gatewayEpgOn) {
+                EpgCoverageCalculator.snapshot(
+                    channels = client.channels,
+                    supplementSource = supplementSource,
+                    meta = epgManager.meta,
+                )
+            } else {
+                null
+            },
             supplementEnabled = supplementSource.enabled(),
             supplementChannels = supplementCount,
             supplement = SupplementStatus(
@@ -130,14 +147,27 @@ class HealthRoutes(
 
     suspend fun tivimateSetup(call: ApplicationCall) {
         val base = environment.loopbackBase()
+        val playlistEpgUrls = EpgPlaylistUrlResolver.resolvePlaylistEpgUrls(
+            environment,
+            supplementSource.sportsEpgXmlFile(),
+        )
+        val gatewayEpgOn = environment.gatewayEpgEnabled
         val payload = TivimateSetup(
             playlist = "$base/tivimate-playlist.m3u8",
-            epg = "$base/epg.xml",
+            epg = playlistEpgUrls.joinToString(","),
             health = "$base/health",
-            hint = "Add the playlist URL in TiviMate using 127.0.0.1 on this device.",
-            epgReady = epgManager.epgReady(),
-            epgProgrammeCount = epgManager.programmeCount(),
-            epgAgeSeconds = epgManager.ageSeconds(),
+            hint = if (gatewayEpgOn) {
+                "Add the playlist URL in TiviMate using 127.0.0.1 on this device."
+            } else {
+                "Gateway EPG is disabled. TiviMate loads EPG from the external URLs in the playlist."
+            },
+            epgReady = if (gatewayEpgOn) epgManager.epgReady() else playlistEpgUrls.isNotEmpty(),
+            epgProgrammeCount = if (gatewayEpgOn) {
+                epgManager.programmeCount()
+            } else {
+                playlistEpgUrls.size
+            },
+            epgAgeSeconds = if (gatewayEpgOn) epgManager.ageSeconds() else null,
         )
         call.respondText(
             json.encodeToString(payload),

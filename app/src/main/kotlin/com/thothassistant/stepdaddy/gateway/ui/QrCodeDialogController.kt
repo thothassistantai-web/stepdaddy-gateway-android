@@ -26,18 +26,34 @@ class QrCodeDialogController(
         binding.toggleAccessMode.visibility = View.GONE
         binding.layoutRemoteSection.visibility = View.GONE
 
-        fun pathFor(kind: UrlKind): String = when (kind) {
-            UrlKind.PLAYLIST -> "/tivimate-playlist.m3u8"
-            UrlKind.EPG -> "/epg.xml"
-        }
-
         fun refreshQr() {
             when (mode) {
                 NetworkAccessMode.DEFAULT -> {
                     binding.textLocalHelper.visibility = View.VISIBLE
-                    binding.textLocalHelper.text = activity.getString(R.string.qr_default_helper)
+                    binding.textLocalHelper.text = if (urlKind == UrlKind.EPG &&
+                        !environment.gatewayEpgEnabled
+                    ) {
+                        activity.getString(R.string.qr_external_epg_helper)
+                    } else {
+                        activity.getString(R.string.qr_default_helper)
+                    }
+                    if (urlKind == UrlKind.EPG) {
+                        val epgUrl = GatewayUrlBuilder.epgQrUrl(environment)
+                        if (epgUrl.isNullOrBlank()) {
+                            binding.imageQrCode.setImageDrawable(null)
+                            binding.textQrUrl.text = ""
+                            binding.textQrError.visibility = View.VISIBLE
+                            binding.textQrError.text = activity.getString(R.string.qr_error_no_epg_url)
+                            return
+                        }
+                        binding.textQrError.visibility = View.GONE
+                        binding.textQrUrl.text = epgUrl
+                        val bitmap = QrCodeHelper.encode(epgUrl, QR_SIZE_PX)
+                        binding.imageQrCode.setImageBitmap(bitmap)
+                        return
+                    }
                     binding.imageQrCode.setImageDrawable(null)
-                    binding.textQrUrl.text = environment.loopbackBase() + pathFor(urlKind)
+                    binding.textQrUrl.text = environment.loopbackBase() + "/tivimate-playlist.m3u8"
                     binding.textQrError.visibility = View.GONE
                     return
                 }
@@ -56,23 +72,47 @@ class QrCodeDialogController(
                 }
             }
 
-            val base = GatewayUrlBuilder.qrBaseUrl(environment)
-            if (base == null) {
-                binding.imageQrCode.setImageDrawable(null)
-                binding.textQrUrl.text = ""
-                binding.textQrError.visibility = View.VISIBLE
-                binding.textQrError.text = when (mode) {
-                    NetworkAccessMode.LOCAL -> activity.getString(R.string.qr_error_no_lan_ip)
-                    NetworkAccessMode.REMOTE -> activity.getString(R.string.qr_error_no_remote_url)
-                    else -> ""
+            val url = when (urlKind) {
+                UrlKind.PLAYLIST -> {
+                    val base = GatewayUrlBuilder.qrBaseUrl(environment)
+                    if (base == null) {
+                        binding.imageQrCode.setImageDrawable(null)
+                        binding.textQrUrl.text = ""
+                        binding.textQrError.visibility = View.VISIBLE
+                        binding.textQrError.text = when (mode) {
+                            NetworkAccessMode.LOCAL -> activity.getString(R.string.qr_error_no_lan_ip)
+                            NetworkAccessMode.REMOTE -> activity.getString(R.string.qr_error_no_remote_url)
+                            else -> ""
+                        }
+                        return
+                    }
+                    GatewayUrlBuilder.appendAccessToken(
+                        "${base.trimEnd('/')}/tivimate-playlist.m3u8",
+                        if (mode == NetworkAccessMode.REMOTE) environment.remoteAccessToken else "",
+                    )
                 }
-                return
+                UrlKind.EPG -> {
+                    val epgUrl = GatewayUrlBuilder.epgQrUrl(environment)
+                    if (epgUrl.isNullOrBlank()) {
+                        binding.imageQrCode.setImageDrawable(null)
+                        binding.textQrUrl.text = ""
+                        binding.textQrError.visibility = View.VISIBLE
+                        binding.textQrError.text = activity.getString(R.string.qr_error_no_epg_url)
+                        return
+                    }
+                    if (epgUrl.startsWith("https://") ||
+                        (epgUrl.startsWith("http://") && !epgUrl.contains("127.0.0.1"))
+                    ) {
+                        epgUrl
+                    } else {
+                        GatewayUrlBuilder.appendAccessToken(
+                            epgUrl,
+                            if (mode == NetworkAccessMode.REMOTE) environment.remoteAccessToken else "",
+                        )
+                    }
+                }
             }
 
-            val url = GatewayUrlBuilder.appendAccessToken(
-                "${base.trimEnd('/')}${pathFor(urlKind)}",
-                if (mode == NetworkAccessMode.REMOTE) environment.remoteAccessToken else "",
-            )
             binding.textQrError.visibility = View.GONE
             binding.textQrUrl.text = url
             val bitmap = QrCodeHelper.encode(url, QR_SIZE_PX)

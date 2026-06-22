@@ -120,6 +120,8 @@
     <string name="qr_error_no_lan_ip">No LAN IP found — connect to Wi‑Fi and try again.</string>
     <string name="qr_error_no_remote_url">Set a tunnel base URL in Settings → Network.</string>
     <string name="qr_error_encode_failed">Could not generate QR code.</string>
+    <string name="qr_error_no_epg_url">No EPG URL configured. Set external feeds in Settings → EPG or enable gateway EPG.</string>
+    <string name="qr_external_epg_helper">External EPG mode — QR shows the first feed URL. The playlist header includes all configured feeds.</string>
     <string name="label_version_line">v%1$s (%2$s) · built %3$s</string>
     <string name="label_auto_start_on_launch">Auto-start server when app opens</string>
     <string name="label_auto_start_short">Auto Start</string>
@@ -205,6 +207,12 @@
     <string name="settings_supplement_ntv_cx">ntv.cx 24/7 supplement (~850 channels)</string>
     <string name="settings_iptv_org_epg">iptv-org FAST EPG (Pluto, Plex, Xumo, Distro)</string>
     <string name="settings_iptv_org_epg_url">iptv-org EPG URL (gzip XMLTV, optional)</string>
+    <string name="settings_section_epg">EPG (program guide)</string>
+    <string name="settings_epg_intro">Build merged XMLTV on the gateway, or disable and point TiviMate at an external XMLTV feed via the playlist.</string>
+    <string name="settings_gateway_epg">Build EPG on gateway (/epg.xml)</string>
+    <string name="settings_external_epg_url">External EPG URLs for TiviMate</string>
+    <string name="settings_external_epg_url_hint">One URL per line (or comma-separated). Pre-filled with the same epgshare US feeds the gateway merges. TiviMate Premium merges multiple sources.</string>
+    <string name="status_epg_external">External EPG (TiviMate)</string>
     <string name="settings_port_invalid">Port must be between 1024 and 65535</string>
     <string name="settings_saved_restart_hint">Settings saved. Restart the server to apply.</string>
     <string name="settings_build_info">Version %1$s (%2$d)\nGit %3$s · %4$s build\nBuilt %5$s</string>

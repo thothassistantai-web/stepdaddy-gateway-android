@@ -49,8 +49,12 @@ class GuideScheduleMediaCache(context: Context) {
     companion object {
         private const val TAG = "GuideScheduleMediaCache"
 
+        /** Bump when guide slate layout/theme changes so cached MP4s regenerate. */
+        private const val RENDER_REVISION = 3
+
         fun contentKey(events: List<SpecialEventsMerger.GuideEventRow>, syncedAtMs: Long): String {
             val digest = MessageDigest.getInstance("SHA-256")
+            digest.update(RENDER_REVISION.toString().toByteArray())
             digest.update(syncedAtMs.toString().toByteArray())
             events.take(32).forEach { row ->
                 digest.update(row.title.toByteArray())

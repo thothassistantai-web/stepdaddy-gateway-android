@@ -20,36 +20,52 @@ class EpgManager(
     idBridge: EpgShareIdBridge? = null,
     tvtvFetcher: TvtvUsEpgFetcher? = null,
     builder: LightEpgBuilder? = null,
+    private val isGatewayEpgEnabled: () -> Boolean = { true },
 ) {
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
   private val buildMutex = Mutex()
   private val epgBuilder = builder ?: LightEpgBuilder(store, idBridge, tvtvFetcher)
+  private val tvtvFetcher = tvtvFetcher
   @Volatile
   private var buildInFlight = false
+  @Volatile
+  private var tvtvFollowUpScheduled = false
 
   val meta: EpgMeta
     get() = store.meta
 
+  fun gatewayEpgEnabled(): Boolean = isGatewayEpgEnabled()
+
   fun epgReady(): Boolean =
-      store.servedXml.exists() && store.meta.programmeCount > 0 && store.meta.builtAtMs > 0L
+      isGatewayEpgEnabled() &&
+          store.servedXml.exists() &&
+          store.meta.programmeCount > 0 &&
+          store.meta.builtAtMs > 0L
 
   fun isBuilding(): Boolean = buildInFlight || store.meta.state == "building"
 
   fun needsBuild(): Boolean =
-      !epgReady() && (store.meta.programmeCount <= 0 || store.meta.state != "ready" || store.isStale())
+      isGatewayEpgEnabled() &&
+          !epgReady() &&
+          (store.meta.programmeCount <= 0 || store.meta.state != "ready" || store.isStale())
 
-  fun programmeCount(): Int = store.meta.programmeCount
+  fun programmeCount(): Int = if (isGatewayEpgEnabled()) store.meta.programmeCount else 0
 
-  fun ageSeconds(): Long? = store.ageSeconds()
+  fun ageSeconds(): Long? = if (isGatewayEpgEnabled()) store.ageSeconds() else null
 
-  fun isServeStale(): Boolean = store.isServeStale()
+  fun isServeStale(): Boolean = isGatewayEpgEnabled() && store.isServeStale()
 
-  fun scheduleRefresh(channels: List<Channel>, force: Boolean = false) {
+  fun scheduleRefresh(
+      channels: List<Channel>,
+      force: Boolean = false,
+      tvtvGapFill: Boolean = true,
+  ) {
+    if (!isGatewayEpgEnabled()) return
     if (channels.isEmpty()) return
     if (buildInFlight) return
     if (!force && epgReady() && !store.isStale() && !store.isServeStale()) return
     scope.launch {
-      refresh(channels, force = force)
+      refresh(channels, force = force, tvtvGapFill = tvtvGapFill)
     }
   }
 
@@ -57,16 +73,23 @@ class EpgManager(
     scope.launch {
       delay(15_000)
       while (isActive) {
-        val channels = channelProvider()
-        if (channels.isNotEmpty()) {
-          refresh(channels, force = store.isStale() || store.isServeStale())
+        if (isGatewayEpgEnabled()) {
+          val channels = channelProvider()
+          if (channels.isNotEmpty()) {
+            refresh(channels, force = store.isStale() || store.isServeStale())
+          }
         }
         delay(EpgConfig.REBUILD_CHECK_INTERVAL_MS)
       }
     }
   }
 
-  suspend fun refresh(channels: List<Channel>, force: Boolean = false) {
+  suspend fun refresh(
+      channels: List<Channel>,
+      force: Boolean = false,
+      tvtvGapFill: Boolean = true,
+  ) {
+    if (!isGatewayEpgEnabled()) return
     buildMutex.withLock {
       if (buildInFlight) return
       if (!force && epgReady() && !store.isStale() && !store.isServeStale()) return
@@ -76,8 +99,11 @@ class EpgManager(
       buildInFlight = true
       store.updateState("building")
       val started = System.currentTimeMillis()
+      val useTvtvGapFill = tvtvGapFill && (force || epgReady() || store.servedXml.exists())
       try {
-        supplementSource?.prepareFastEpgForBuild()
+        if (useTvtvGapFill) {
+          supplementSource?.prepareFastEpgForBuild()
+        }
         supplementSource?.applyNameEpgOverrides()
         val namesById = channels.associate { it.id to it.name }
         val tvgIds = mapper.allTvgIds(channels.map { it.id }, namesById)
@@ -102,6 +128,8 @@ class EpgManager(
               fastEpgTvgIds = fastTvgIds,
               channelNamesByTvgId = channelNamesByTvgId,
               placeholdersEnabled = true,
+              placeholderExcludeIds = sportsTvgIds,
+              tvtvGapFillEnabled = useTvtvGapFill,
           )
         }
         val elapsed = (System.currentTimeMillis() - started) / 1000.0
@@ -129,8 +157,12 @@ class EpgManager(
         Log.i(
             TAG,
             "EPG built: ${result.programmeCount} programmes (${result.realProgrammeCount} real, " +
-                "${result.placeholderProgrammeCount} placeholder), ${result.channelCount} channels in ${elapsed}s",
+                "${result.placeholderProgrammeCount} placeholder), ${result.channelCount} channels in ${elapsed}s" +
+                if (!useTvtvGapFill) " [fast pass, tvtv deferred]" else "",
         )
+        if (!useTvtvGapFill && tvtvFetcher != null && result.programmeCount > 0) {
+          scheduleTvtvFollowUp(channels)
+        }
       } catch (exc: Throwable) {
         if (exc is OutOfMemoryError) {
           Log.e(TAG, "EPG build OOM — keeping cached epg.xml", exc)
@@ -147,15 +179,33 @@ class EpgManager(
     }
   }
 
-  fun readCachedXml(): ByteArray? = store.readServedXml()
+  private fun scheduleTvtvFollowUp(channels: List<Channel>) {
+    if (tvtvFollowUpScheduled) return
+    tvtvFollowUpScheduled = true
+    scope.launch {
+      try {
+        refresh(channels, force = false, tvtvGapFill = true)
+      } finally {
+        tvtvFollowUpScheduled = false
+      }
+    }
+  }
+
+  fun readCachedXml(): ByteArray? =
+      if (isGatewayEpgEnabled()) store.readServedXml() else null
 
   fun servedXmlFile(): java.io.File? =
-      store.servedXml.takeIf { it.isFile && it.length() > 0L }
+      if (!isGatewayEpgEnabled()) {
+          null
+      } else {
+          store.servedXml.takeIf { it.isFile && it.length() > 0L }
+      }
 
   fun hasCachedProgrammes(): Boolean =
-      store.meta.programmeCount > 0 && servedXmlFile() != null
+      isGatewayEpgEnabled() && store.meta.programmeCount > 0 && servedXmlFile() != null
 
   fun maybeTriggerStaleRefresh(channels: List<Channel>) {
+    if (!isGatewayEpgEnabled()) return
     if (store.isStale() || store.isServeStale()) {
       scheduleRefresh(channels, force = false)
     }

@@ -20,7 +20,9 @@ object SpecialEventsGuideSchedule {
         nowMs: Long = System.currentTimeMillis(),
         maxRows: Int = 14,
     ): ViewModel {
-        val sorted = events.sortedBy { it.startMs }
+        val sorted = events
+            .filter { row -> SpecialEventLifecycle.isActive(row.startMs, row.stopMs, nowMs) }
+            .sortedBy { it.startMs }
         val now = Instant.ofEpochMilli(nowMs)
         val live = sorted.filter { row ->
             val start = Instant.ofEpochMilli(row.startMs)

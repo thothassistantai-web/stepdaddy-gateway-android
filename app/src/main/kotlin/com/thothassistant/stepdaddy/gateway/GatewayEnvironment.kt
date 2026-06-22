@@ -2,6 +2,7 @@ package com.thothassistant.stepdaddy.gateway
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.thothassistant.stepdaddy.gateway.epg.EpgConfig
 import com.thothassistant.stepdaddy.gateway.network.NetworkAccessMode
 import com.thothassistant.stepdaddy.gateway.upstream.PlaylistTitleStyle
 import com.thothassistant.stepdaddy.gateway.upstream.SupplementImportMode
@@ -245,6 +246,39 @@ class GatewayEnvironment(context: Context) {
             supplementNtvCxImportMode = value
         }
 
+    /**
+     * When true, the gateway builds and serves merged XMLTV at `/epg.xml`.
+     * When false, EPG build/download is skipped and TiviMate uses [externalEpgUrl] from the playlist.
+     */
+    var gatewayEpgEnabled: Boolean
+        get() = prefs.getBoolean(KEY_GATEWAY_EPG_ENABLED, BuildConfig.DEFAULT_GATEWAY_EPG_ENABLED)
+        set(value) {
+            prefs.edit().putBoolean(KEY_GATEWAY_EPG_ENABLED, value).apply()
+        }
+
+    /**
+     * XMLTV feed URL(s) for TiviMate when [gatewayEpgEnabled] is false.
+     * Stored as comma/newline-separated text; defaults to [EpgConfig.DEFAULT_EXTERNAL_EPG_URLS].
+     */
+    var externalEpgUrl: String
+        get() {
+            if (!prefs.contains(KEY_EXTERNAL_EPG_URL)) {
+                return BuildConfig.DEFAULT_EXTERNAL_EPG_URL
+            }
+            return prefs.getString(KEY_EXTERNAL_EPG_URL, "").orEmpty()
+        }
+        set(value) {
+            prefs.edit().putString(KEY_EXTERNAL_EPG_URL, value.trim()).apply()
+        }
+
+    fun externalEpgUrls(): List<String> {
+        val parsed = EpgConfig.parseExternalEpgUrls(externalEpgUrl)
+        return parsed.ifEmpty { EpgConfig.DEFAULT_EXTERNAL_EPG_URLS }
+    }
+
+    fun externalEpgUrlForDisplay(): String =
+        EpgConfig.formatExternalEpgUrlsForDisplay(externalEpgUrls())
+
     /** When true, merge iptv-org FAST provider EPG (Pluto, Plex, Xumo, Distro) for supplement channels. */
     var iptvOrgEpgEnabled: Boolean
         get() = prefs.getBoolean(KEY_IPTV_ORG_EPG_ENABLED, BuildConfig.DEFAULT_IPTV_ORG_EPG_ENABLED)
@@ -405,6 +439,8 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_SUPPLEMENT_SIDECAR_IMPORT_MODE = "supplement_sidecar_import_mode"
         private const val KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE = "supplement_iptv_org_import_mode"
         private const val KEY_SUPPLEMENT_NTV_CX_MERGE_MODE = "supplement_ntv_cx_merge_mode"
+        private const val KEY_GATEWAY_EPG_ENABLED = "gateway_epg_enabled"
+        private const val KEY_EXTERNAL_EPG_URL = "external_epg_url"
         private const val KEY_IPTV_ORG_EPG_ENABLED = "iptv_org_epg_enabled"
         private const val KEY_IPTV_ORG_EPG_URL = "iptv_org_epg_url"
         private const val KEY_AUTO_CHECK_UPDATES = "auto_check_updates"

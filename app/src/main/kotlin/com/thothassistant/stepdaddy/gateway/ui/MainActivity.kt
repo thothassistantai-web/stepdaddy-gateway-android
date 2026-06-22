@@ -452,6 +452,7 @@ class MainActivity : AppCompatActivity() {
             runCatching { app.awaitComponents() }
             val epgManager = app.epgManager
             views.textEpgStatus.text = when {
+                !epgManager.gatewayEpgEnabled() -> getString(R.string.status_epg_external)
                 epgManager.isBuilding() -> getString(R.string.status_epg_building)
                 epgManager.epgReady() -> getString(R.string.status_epg_ready, epgManager.programmeCount())
                 epgManager.meta.state == "error" -> getString(

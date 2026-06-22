@@ -2,6 +2,7 @@ package com.thothassistant.stepdaddy.gateway.upstream
 
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import java.security.MessageDigest
+import java.time.Instant
 
 import kotlinx.serialization.Serializable
 
@@ -53,8 +54,11 @@ object SpecialEventsMerger {
         val theTvAppStreams = mutableListOf<SupplementChannel>()
         val occupiedStreamKeys = linkedSetOf<String>()
         val occupiedTitleKeys = mutableSetOf<String>()
+        val nowMs = System.currentTimeMillis()
 
         dlhdEvents.forEach { event ->
+            val (start, stop) = DlhdScheduleTime.parseWindow(event.dateKey, event.timeLabel)
+            if (!SpecialEventLifecycle.isActive(start, stop, Instant.ofEpochMilli(nowMs))) return@forEach
             val guideSlug = slugify(event.category)
             val guideId = "dlhd-guide:$guideSlug"
             if (guideId !in guides) {
@@ -70,7 +74,6 @@ object SpecialEventsMerger {
                 )
                 guideProgrammes[guideId] = mutableListOf()
             }
-            val (start, stop) = DlhdScheduleTime.parseWindow(event.dateKey, event.timeLabel)
             guideProgrammes.getValue(guideId) += GuideEventRow(
                 title = event.title,
                 startMs = start.toEpochMilli(),
@@ -113,6 +116,7 @@ object SpecialEventsMerger {
                 guides = guides,
                 streamsByCategory = streamsByCategory,
                 theTvAppStreams = theTvAppStreams,
+                guideProgrammes = guideProgrammes,
                 maxStreams = maxStreams,
             ),
             guideProgrammes = guideProgrammes,
@@ -124,6 +128,7 @@ object SpecialEventsMerger {
         guides: Map<String, SupplementChannel>,
         streamsByCategory: Map<String, List<SupplementChannel>>,
         theTvAppStreams: List<SupplementChannel>,
+        guideProgrammes: Map<String, List<GuideEventRow>>,
         maxStreams: Int,
     ): List<SupplementChannel> {
         val orderedGuides = guides.values.sortedWith(
@@ -140,10 +145,11 @@ object SpecialEventsMerger {
         val result = mutableListOf<SupplementChannel>()
         var streamCount = 0
         for (guide in orderedGuides) {
-            result += guide
-            if (streamCount >= maxStreams) continue
             val slug = guide.id.removePrefix("dlhd-guide:")
             val streams = streamsByCategory[slug].orEmpty().sortedBy { it.name.lowercase() }
+            if (streams.isEmpty() && guideProgrammes[guide.id].orEmpty().isEmpty()) continue
+            result += guide
+            if (streamCount >= maxStreams) continue
             for (stream in streams) {
                 if (streamCount >= maxStreams) break
                 result += stream

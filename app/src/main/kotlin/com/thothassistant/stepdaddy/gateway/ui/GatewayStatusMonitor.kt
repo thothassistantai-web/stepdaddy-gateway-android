@@ -23,6 +23,7 @@ data class GatewayLiveStatus(
             health.healing?.breakerOpen == true -> "Circuit breaker open"
             health.healing?.outageMode == true -> "Upstream outage mode"
             health.healing?.cacheServeMode == true -> "Serving from cache"
+            health.epgExternal -> "External EPG (TiviMate)"
             !health.epgReady -> "Building EPG…"
             else -> "Serving playlist"
         }

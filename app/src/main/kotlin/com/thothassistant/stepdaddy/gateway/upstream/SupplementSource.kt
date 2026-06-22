@@ -342,7 +342,9 @@ class SupplementSource(
                 SupplementConfig.MAX_M3U_BYTES,
             )
             if (m3uText != null) {
-                downloadEpg(base)
+                if (environment.gatewayEpgEnabled) {
+                    downloadEpg(base)
+                }
                 val entries = M3uParser.parse(m3uText)
                 filterResult = SupplementProviderFilter.filter(entries)
                 SupplementDedup.filterNewChannels(
@@ -405,7 +407,7 @@ class SupplementSource(
             emptyList()
         }
 
-        if (iptvOrgEnabled() && environment.iptvOrgEpgEnabled) {
+        if (environment.gatewayEpgEnabled && iptvOrgEnabled() && environment.iptvOrgEpgEnabled) {
             runCatching {
                 fastEpgCatalog.refresh(
                     force = fastEpgCatalog.isStale() || fastEpgCatalog.cachedFeedFiles().isEmpty(),
@@ -480,7 +482,7 @@ class SupplementSource(
             }
         }
 
-        if (iptvOrgEnabled() && environment.iptvOrgEpgEnabled) {
+        if (environment.gatewayEpgEnabled && iptvOrgEnabled() && environment.iptvOrgEpgEnabled) {
             runCatching {
                 iptvOrgEpgRepository.refresh(
                     environment.iptvOrgEpgUrl.takeIf { it.isNotBlank() },

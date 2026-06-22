@@ -4,15 +4,19 @@ import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 class SpecialEventsMergerTest {
+    private val futureDateKey = "Monday 23rd June 2026 - Schedule Time UK GMT"
+
     @Test
     fun merge_buildsGuidesStreamsAndDedupsTheTvApp() {
         val dlhdEvents = listOf(
             DaddyLiveEventResolver.ParsedEvent(
                 category = "PPV Events",
-                dateKey = "Sunday 21st June 2026 - Schedule Time UK GMT",
-                timeLabel = "20:00",
+                dateKey = futureDateKey,
+                timeLabel = "live",
                 title = "Baseball : Seattle Mariners vs Boston Red Sox",
                 league = "MLB",
                 streams = listOf(
@@ -54,8 +58,8 @@ class SpecialEventsMergerTest {
         val dlhdEvents = listOf(
             DaddyLiveEventResolver.ParsedEvent(
                 category = "Swimming",
-                dateKey = "Sunday 21st June 2026 - Schedule Time UK GMT",
-                timeLabel = "14:00",
+                dateKey = futureDateKey,
+                timeLabel = "live",
                 title = "Swimming : Final Heat",
                 league = "SWIMMING",
                 streams = listOf(
@@ -69,8 +73,8 @@ class SpecialEventsMergerTest {
             ),
             DaddyLiveEventResolver.ParsedEvent(
                 category = "Golf",
-                dateKey = "Sunday 21st June 2026 - Schedule Time UK GMT",
-                timeLabel = "15:00",
+                dateKey = futureDateKey,
+                timeLabel = "live",
                 title = "Golf : Round 1",
                 league = "GOLF",
                 streams = listOf(
@@ -101,5 +105,39 @@ class SpecialEventsMergerTest {
         assertTrue(golfGuide >= 0 && golfEvent > golfGuide)
         assertTrue(swimGuide >= 0 && swimEvent > swimGuide)
         assertTrue(golfGuide < swimGuide)
+    }
+
+    @Test
+    fun merge_dropsEndedEvents() {
+        val past = Instant.now().minus(2, ChronoUnit.HOURS)
+        val dateKey = "Sunday 21st June 2026 - Schedule Time UK GMT"
+        val timeLabel = "%02d:%02d".format(
+            past.atZone(java.time.ZoneId.of("Europe/London")).hour,
+            past.atZone(java.time.ZoneId.of("Europe/London")).minute,
+        )
+        val bundle = SpecialEventsMerger.buildFromParsed(
+            dlhdEvents = listOf(
+                DaddyLiveEventResolver.ParsedEvent(
+                    category = "Tennis",
+                    dateKey = dateKey,
+                    timeLabel = timeLabel,
+                    title = "Tennis : Finished Match",
+                    league = "TENNIS",
+                    streams = listOf(
+                        DaddyLiveEventResolver.ParsedStream(
+                            label = "Link - 1",
+                            channelId = "301",
+                            source = DaddyLiveEventResolver.StreamSource.TV,
+                        ),
+                    ),
+                    live = false,
+                ),
+            ),
+            dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = 1, streamLinks = 1),
+            theTvAppChannels = emptyList(),
+            maxStreams = 10,
+        )
+        assertEquals(0, bundle.channels.count { it.id.startsWith("dlhd-event:") })
+        assertEquals(0, bundle.guideProgrammes.values.sumOf { it.size })
     }
 }

@@ -1,5 +1,6 @@
 package com.thothassistant.stepdaddy.gateway.routes
 
+import com.thothassistant.stepdaddy.gateway.epg.EpgPlaylistUrlResolver
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
 import com.thothassistant.stepdaddy.gateway.upstream.ChannelMetaStore
@@ -11,7 +12,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.request.httpMethod
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
@@ -50,6 +50,8 @@ class PlaylistRoutes(
             channelRevision = client.channelRevision(),
             logoDbLoaded = logoResolver.isLoaded(),
             playlistTitleStyle = environment.playlistTitleStyle,
+            playlistEpgUrl = resolvedPlaylistEpgUrl(),
+            playlistEpgUrlKey = EpgPlaylistUrlResolver.playlistCacheKey(environment),
         )
         playlistCache.schedulePrewarm(cacheKey) {
             buildPlaylistBodySync(channels, supplements)
@@ -66,27 +68,35 @@ class PlaylistRoutes(
             channelRevision = client.channelRevision(),
             logoDbLoaded = logoResolver.isLoaded(),
             playlistTitleStyle = environment.playlistTitleStyle,
+            playlistEpgUrl = resolvedPlaylistEpgUrl(),
+            playlistEpgUrlKey = EpgPlaylistUrlResolver.playlistCacheKey(environment),
         )
         playlistCache.getOrBuild(cacheKey) {
             buildPlaylistBodySync(channels, supplements)
         }
     }
 
+    private fun resolvedPlaylistEpgUrl(): String? =
+        EpgPlaylistUrlResolver.resolve(environment, supplementSource.sportsEpgXmlFile())
+
     private fun buildPlaylistBodySync(
         channels: List<com.thothassistant.stepdaddy.gateway.model.Channel>,
         supplements: List<com.thothassistant.stepdaddy.gateway.model.SupplementChannel>,
     ): String {
+        val base = environment.loopbackBase()
+        val epgUrl = resolvedPlaylistEpgUrl()
         if (channels.isEmpty()) {
-            return PlaylistBuilder.minimalPlaylist(environment.loopbackBase())
+            return PlaylistBuilder.minimalPlaylist(base, epgUrl)
         }
         return PlaylistBuilder.tivimatePlaylist(
             channels = channels,
-            baseUrl = environment.loopbackBase(),
+            baseUrl = base,
             dlhdOrigin = client.activeBaseUrl,
             logoResolver = logoResolver,
             channelMetaStore = channelMetaStore,
             supplements = supplements,
             titleStyle = environment.playlistTitleStyle,
+            epgUrl = epgUrl,
         )
     }
 }

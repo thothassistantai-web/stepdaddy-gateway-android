@@ -39,6 +39,7 @@ class SpecialEventsGuideHtmlRendererTest {
         assertTrue(rendered.html.contains("Next up"))
         assertTrue(rendered.html.contains("Golf : Round 1"))
         assertTrue(rendered.html.contains("Upcoming"))
+        assertTrue(rendered.html.contains("US Eastern"))
     }
 
     @Test

@@ -13,6 +13,7 @@ import java.util.zip.GZIPInputStream
  */
 object XmltvParser {
   private const val CHUNK_SIZE = 256 * 1024
+  private const val TAIL_KEEP_BYTES = 256
 
   fun iterBlocksFromGzip(
       file: File,
@@ -62,26 +63,26 @@ object XmltvParser {
   ): Sequence<String> = sequence {
     val startMarker = "<$startTag ".toByteArray(Charsets.UTF_8)
     val endMarker = "</$endTag>".toByteArray(Charsets.UTF_8)
-    var buf = ByteArray(0)
+    val buffer = StreamBuffer()
     val chunk = ByteArray(CHUNK_SIZE)
     while (true) {
       val read = input.read(chunk)
       if (read <= 0) break
-      buf = buf + chunk.copyOf(read)
+      buffer.append(chunk, 0, read)
       while (true) {
-        val start = buf.indexOf(startMarker)
+        val start = buffer.indexOf(startMarker)
         if (start < 0) {
-          buf = if (buf.size > 256) buf.copyOfRange(buf.size - 256, buf.size) else buf
+          buffer.compactTail(TAIL_KEEP_BYTES)
           break
         }
-        val end = buf.indexOf(endMarker, start)
+        val end = buffer.indexOf(endMarker, start)
         if (end < 0) {
-          buf = buf.copyOfRange(start, buf.size)
+          buffer.discardBefore(start)
           break
         }
         val blockEnd = end + endMarker.size
-        yield(buf.copyOfRange(start, blockEnd).toString(Charsets.UTF_8))
-        buf = buf.copyOfRange(blockEnd, buf.size)
+        yield(buffer.copyRange(start, blockEnd).toString(Charsets.UTF_8))
+        buffer.discardBefore(blockEnd)
       }
     }
   }
@@ -115,31 +116,30 @@ object XmltvParser {
     val endMarker = "</$endTag>".toByteArray(Charsets.UTF_8)
     val attrPrefix = "$attrName=\"".toByteArray(Charsets.UTF_8)
     val wanted = wantedIds.toSet()
-    var buf = ByteArray(0)
-
+    val buffer = StreamBuffer()
     val chunk = ByteArray(CHUNK_SIZE)
     while (true) {
       val read = input.read(chunk)
       if (read <= 0) break
-      buf = buf + chunk.copyOf(read)
+      buffer.append(chunk, 0, read)
       while (true) {
-        val start = buf.indexOf(startMarker)
+        val start = buffer.indexOf(startMarker)
         if (start < 0) {
-          buf = if (buf.size > 256) buf.copyOfRange(buf.size - 256, buf.size) else buf
+          buffer.compactTail(TAIL_KEEP_BYTES)
           break
         }
-        val end = buf.indexOf(endMarker, start)
+        val end = buffer.indexOf(endMarker, start)
         if (end < 0) {
-          buf = buf.copyOfRange(start, buf.size)
+          buffer.discardBefore(start)
           break
         }
         val blockEnd = end + endMarker.size
-        val block = buf.copyOfRange(start, blockEnd)
-        buf = buf.copyOfRange(blockEnd, buf.size)
-        val attrPos = block.indexOf(attrPrefix)
+        val block = buffer.copyRange(start, blockEnd)
+        buffer.discardBefore(blockEnd)
+        val attrPos = block.indexOf(attrPrefix, limit = block.size)
         if (attrPos < 0) continue
         val valueStart = attrPos + attrPrefix.size
-        val valueEnd = block.indexOf('"'.code.toByte(), valueStart)
+        val valueEnd = block.indexOf('"'.code.toByte(), valueStart, block.size)
         if (valueEnd < 0) continue
         val value = block.copyOfRange(valueStart, valueEnd).toString(Charsets.UTF_8)
         if (value in wanted) {
@@ -203,9 +203,49 @@ object XmltvParser {
     return block.substring(valueStart, valueEnd)
   }
 
-  private fun ByteArray.indexOf(target: ByteArray, fromIndex: Int = 0): Int {
-    if (target.isEmpty() || fromIndex >= size) return -1
-    outer@ for (i in fromIndex..size - target.size) {
+  private class StreamBuffer {
+    private var buf = ByteArray(CHUNK_SIZE)
+    private var size = 0
+
+    fun append(source: ByteArray, offset: Int, length: Int) {
+      if (length <= 0) return
+      ensureCapacity(size + length)
+      source.copyInto(buf, destinationOffset = size, startIndex = offset, endIndex = offset + length)
+      size += length
+    }
+
+    fun discardBefore(index: Int) {
+      if (index <= 0) return
+      if (index >= size) {
+        size = 0
+        return
+      }
+      buf.copyInto(buf, destinationOffset = 0, startIndex = index, endIndex = size)
+      size -= index
+    }
+
+    fun compactTail(keep: Int) {
+      if (size <= keep) return
+      discardBefore(size - keep)
+    }
+
+    fun copyRange(start: Int, end: Int): ByteArray = buf.copyOfRange(start, end)
+
+    fun indexOf(target: ByteArray, fromIndex: Int = 0): Int = buf.indexOf(target, fromIndex, size)
+
+    private fun ensureCapacity(required: Int) {
+      if (required <= buf.size) return
+      var newSize = buf.size
+      while (newSize < required) {
+        newSize *= 2
+      }
+      buf = buf.copyOf(newSize)
+    }
+  }
+
+  private fun ByteArray.indexOf(target: ByteArray, fromIndex: Int = 0, limit: Int = size): Int {
+    if (target.isEmpty() || fromIndex >= limit) return -1
+    outer@ for (i in fromIndex..limit - target.size) {
       for (j in target.indices) {
         if (this[i + j] != target[j]) continue@outer
       }
@@ -214,8 +254,8 @@ object XmltvParser {
     return -1
   }
 
-  private fun ByteArray.indexOf(byte: Byte, fromIndex: Int = 0): Int {
-    for (i in fromIndex until size) {
+  private fun ByteArray.indexOf(byte: Byte, fromIndex: Int = 0, limit: Int = size): Int {
+    for (i in fromIndex until limit) {
       if (this[i] == byte) return i
     }
     return -1

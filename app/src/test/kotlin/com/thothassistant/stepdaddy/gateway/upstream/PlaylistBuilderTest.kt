@@ -2,6 +2,7 @@ package com.thothassistant.stepdaddy.gateway.upstream
 
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
+import com.thothassistant.stepdaddy.gateway.epg.PlaylistEpgHeader
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -278,6 +279,36 @@ class PlaylistBuilderTest {
         assertTrue(golfGuide >= 0 && golfEvent > golfGuide)
         assertTrue(swimGuide >= 0 && swimEvent > swimGuide)
         assertTrue(golfGuide < swimGuide)
+    }
+
+    @Test
+    fun `external epg urls are embedded comma separated in playlist header`() {
+        val urls = listOf(
+            "https://epgshare01.online/epgshare01/epg_ripper_US2.xml.gz",
+            "https://epgshare01.online/epgshare01/epg_ripper_US_SPORTS1.xml.gz",
+        )
+        val playlist = PlaylistBuilder.tivimatePlaylist(
+            channels = listOf(ch("fox", "Fox News", listOf("🇺🇸", "#news"), tvgId = "FoxNews.us")),
+            baseUrl = "http://127.0.0.1:3000",
+            dlhdOrigin = "https://daddylive.org",
+            epgUrl = PlaylistEpgHeader.joinUrls(urls),
+        )
+        assertTrue(playlist.contains("url-tvg=\"${urls[0]},${urls[1]}\""))
+    }
+
+    @Test
+    fun `gateway epg default uses loopback endpoint in header when url provided`() {
+        val playlist = PlaylistBuilder.minimalPlaylist(
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:3000/epg.xml",
+        )
+        assertTrue(playlist.contains("url-tvg=\"http://127.0.0.1:3000/epg.xml\""))
+    }
+
+    @Test
+    fun `empty epg url omits tvg attributes`() {
+        val playlist = PlaylistBuilder.minimalPlaylist("http://127.0.0.1:3000", null)
+        assertEquals("#EXTM3U\n", playlist)
     }
 
     @Test

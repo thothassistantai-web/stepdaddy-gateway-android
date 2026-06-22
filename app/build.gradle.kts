@@ -39,6 +39,14 @@ android {
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_NTV_CX_ENABLED", "true")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_ADULT_SWIM_ENABLED", "true")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_NTV_CX_SUPPLEMENT_ONLY", "false")
+        buildConfigField("boolean", "DEFAULT_GATEWAY_EPG_ENABLED", "true")
+        buildConfigField(
+            "String",
+            "DEFAULT_EXTERNAL_EPG_URL",
+            "\"https://epgshare01.online/epgshare01/epg_ripper_US2.xml.gz," +
+                "https://epgshare01.online/epgshare01/epg_ripper_US_SPORTS1.xml.gz," +
+                "https://epgshare01.online/epgshare01/epg_ripper_US_LOCALS1.xml.gz\"",
+        )
         buildConfigField("boolean", "DEFAULT_IPTV_ORG_EPG_ENABLED", "true")
         buildConfigField("String", "DEFAULT_IPTV_ORG_EPG_URL", "\"\"")
         buildConfigField("boolean", "DEFAULT_AUTO_CHECK_UPDATES", "true")

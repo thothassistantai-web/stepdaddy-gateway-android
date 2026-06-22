@@ -24,6 +24,8 @@ class LightEpgBuilder(
       fastEpgTvgIds: Set<String> = emptySet(),
       channelNamesByTvgId: Map<String, String> = emptyMap(),
       placeholdersEnabled: Boolean = true,
+      placeholderExcludeIds: Set<String> = emptySet(),
+      tvtvGapFillEnabled: Boolean = true,
   ): BuildResult {
     val output = File(store.servedXml.parentFile, "epg.build.part")
     val allIds = tvgIds + supplementTvgIds + sportsTvgIds + fastEpgTvgIds
@@ -113,7 +115,7 @@ class LightEpgBuilder(
           }.distinct().take(TvtvUsEpgConfig.MAX_CHANNELS_PER_BUILD)
           prioritized
       }.orEmpty()
-      if (tvtvFetcher != null && tvtvBridgeIds.isNotEmpty()) {
+      if (tvtvGapFillEnabled && tvtvFetcher != null && tvtvBridgeIds.isNotEmpty()) {
         val beforeProgrammes = programmeCount
         tvtvFetcher.mergeGapFill(
             writer = writer,
@@ -218,7 +220,9 @@ class LightEpgBuilder(
       realProgrammeCount = programmeCount
       realChannelsWithProgrammes = idsWithProgrammes.size
       if (placeholdersEnabled) {
-        val gapIds = allIds.filter { it !in idsWithProgrammes }.toSet()
+        val gapIds = allIds.filter {
+            it !in idsWithProgrammes && it !in placeholderExcludeIds
+        }.toSet()
         if (gapIds.isNotEmpty()) {
           placeholderProgrammeCount = PlaceholderProgrammeWriter.appendPlaceholders(
               writer = writer,

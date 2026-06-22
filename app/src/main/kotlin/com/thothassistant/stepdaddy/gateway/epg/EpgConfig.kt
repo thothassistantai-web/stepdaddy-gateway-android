@@ -31,6 +31,23 @@ object EpgConfig {
   /** All epgshare feeds (primary + gap-fill). Gap-fill entries are lazy-loaded. */
   val FEED_URLS = PRIMARY_FEED_URLS + GAP_FILL_FEED_URLS
 
+  /**
+   * Default XMLTV feeds passed to TiviMate when gateway EPG is disabled.
+   * Matches [PRIMARY_FEED_URLS] — same trio as stepdaddy-web `EPG_URLS`.
+   */
+  val DEFAULT_EXTERNAL_EPG_URLS: List<String> = PRIMARY_FEED_URLS
+
+  fun parseExternalEpgUrls(raw: String): List<String> =
+      raw.split(',', '\n', ';')
+          .map { it.trim() }
+          .filter { it.isNotEmpty() }
+
+  fun joinExternalEpgUrls(urls: List<String>): String =
+      urls.joinToString(",")
+
+  fun formatExternalEpgUrlsForDisplay(urls: List<String>): String =
+      urls.joinToString("\n")
+
   /** Max bytes per upstream gzip feed download. */
   const val MAX_FEED_BYTES = 64 * 1024 * 1024
 

@@ -101,6 +101,7 @@ class GatewayAdminController(
                 ?.let {
                     environment.networkAccessMode = it
                     requiresRestart = true
+                    app.playlistCache.invalidate()
                 }
         }
         patch.gatewayName?.let { environment.gatewayName = it }
@@ -112,10 +113,17 @@ class GatewayAdminController(
         patch.supplementIptvOrgEnabled?.let { environment.supplementIptvOrgEnabled = it }
         patch.supplementNtvCxEnabled?.let { environment.supplementNtvCxEnabled = it }
         patch.supplementAdultSwimEnabled?.let { environment.supplementAdultSwimEnabled = it }
+        patch.gatewayEpgEnabled?.let { environment.gatewayEpgEnabled = it }
+        patch.externalEpgUrl?.let { environment.externalEpgUrl = it }
         patch.iptvOrgEpgEnabled?.let { environment.iptvOrgEpgEnabled = it }
         patch.iptvOrgEpgUrl?.let { environment.iptvOrgEpgUrl = it }
         patch.startOnBoot?.let { environment.startOnBoot = it }
         patch.autoStartOnLaunch?.let { environment.autoStartOnLaunch = it }
+        if (patch.gatewayEpgEnabled != null || patch.externalEpgUrl != null ||
+            patch.iptvOrgEpgEnabled != null || patch.iptvOrgEpgUrl != null
+        ) {
+            app.playlistCache.invalidate()
+        }
         return snapshotSettings() to requiresRestart
     }
 
@@ -151,6 +159,13 @@ class GatewayAdminController(
     }
 
     override suspend fun refreshEpg(force: Boolean): AdminActionResult {
+        if (!environment.gatewayEpgEnabled) {
+            return AdminActionResult(
+                ok = false,
+                action = "refresh-epg",
+                message = "Gateway EPG is disabled — TiviMate uses external EPG from the playlist",
+            )
+        }
         epgManager.scheduleRefresh(client.channels, force = force)
         return AdminActionResult(
             ok = true,
@@ -570,6 +585,8 @@ class GatewayAdminController(
         supplementIptvOrgEnabled = environment.supplementIptvOrgEnabled,
         supplementNtvCxEnabled = environment.supplementNtvCxEnabled,
         supplementAdultSwimEnabled = environment.supplementAdultSwimEnabled,
+        gatewayEpgEnabled = environment.gatewayEpgEnabled,
+        externalEpgUrl = environment.externalEpgUrlForDisplay(),
         iptvOrgEpgEnabled = environment.iptvOrgEpgEnabled,
         iptvOrgEpgUrl = environment.iptvOrgEpgUrl,
         startOnBoot = environment.startOnBoot,

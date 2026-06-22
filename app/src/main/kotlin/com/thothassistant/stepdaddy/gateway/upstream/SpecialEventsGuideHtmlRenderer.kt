@@ -1,16 +1,9 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
 import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /** HTML schedule page for a Special Events guide channel. */
 object SpecialEventsGuideHtmlRenderer {
-    private val UK = ZoneId.of("Europe/London")
-    private val TIME_FMT = DateTimeFormatter.ofPattern("EEE d MMM, HH:mm", Locale.ENGLISH)
-    private val DATE_FMT = DateTimeFormatter.ofPattern("EEE d MMM yyyy", Locale.ENGLISH)
-
     data class RenderedSchedule(
         val html: String,
         val eventCount: Int,
@@ -33,6 +26,8 @@ object SpecialEventsGuideHtmlRenderer {
         }
         val upcoming = sorted.filter { Instant.ofEpochMilli(it.startMs).isAfter(now) }
         val statusMessage = buildStatusMessage(category, sorted, live, upcoming, now)
+        val theme = SpecialEventsGuideTheme.forCategory(category, emoji)
+        val themeCss = themeCss(theme)
 
         val body = buildString {
             appendLine("""<!DOCTYPE html>""")
@@ -42,12 +37,14 @@ object SpecialEventsGuideHtmlRenderer {
             appendLine("""<meta http-equiv="refresh" content="120">""")
             appendLine("""<title>${escapeHtml("$emoji $category Schedule")}</title>""")
             appendLine("""<style>""")
-            appendLine(STYLES)
+            appendLine(BASE_STYLES)
+            appendLine(themeCss)
             appendLine("""</style></head><body>""")
+            appendLine("""<div class="watermark" aria-hidden="true">${theme.watermarkEmoji}</div>""")
             appendLine("""<main>""")
             appendLine("""<header><p class="eyebrow">🎟️ Special Events</p>""")
             appendLine("""<h1>${escapeHtml(emoji)} ${escapeHtml(category)}</h1>""")
-            appendLine("""<p class="subtitle">Schedule times UK (GMT/BST)</p></header>""")
+            appendLine("""<p class="subtitle">${escapeHtml(GuideScheduleDisplayZone.label)}</p></header>""")
             appendLine("""<section class="status">${statusMessage}</section>""")
 
             if (live.isNotEmpty()) {
@@ -87,7 +84,7 @@ object SpecialEventsGuideHtmlRenderer {
         }
         if (upcoming.isNotEmpty()) {
             val next = upcoming.first()
-            val nextStart = Instant.ofEpochMilli(next.startMs).atZone(UK).format(TIME_FMT)
+            val nextStart = GuideScheduleDisplayZone.formatDateTime(Instant.ofEpochMilli(next.startMs))
             return """<p class="ok">Next up: <strong>${escapeHtml(next.title)}</strong> at <strong>$nextStart</strong>.</p>"""
         }
         val last = all.maxByOrNull { it.stopMs }
@@ -99,13 +96,48 @@ object SpecialEventsGuideHtmlRenderer {
     }
 
     private fun StringBuilder.appendEventRow(row: SpecialEventsMerger.GuideEventRow, cssClass: String) {
-        val start = Instant.ofEpochMilli(row.startMs).atZone(UK)
-        val stop = Instant.ofEpochMilli(row.stopMs).atZone(UK)
+        val start = Instant.ofEpochMilli(row.startMs)
+        val stop = Instant.ofEpochMilli(row.stopMs)
         append("""<li class="event $cssClass">""")
-        append("""<span class="time">${escapeHtml(start.format(TIME_FMT))} – ${escapeHtml(stop.format(TIME_FMT))}</span>""")
+        append("""<span class="time">${escapeHtml(GuideScheduleDisplayZone.formatWindow(start, stop))}</span>""")
         append("""<span class="title">${escapeHtml(row.title)}</span>""")
-        append("""<span class="date">${escapeHtml(start.format(DATE_FMT))}</span>""")
+        append("""<span class="date">${escapeHtml(GuideScheduleDisplayZone.formatDateTime(start))}</span>""")
         appendLine("</li>")
+    }
+
+    private fun themeCss(theme: SpecialEventsGuideTheme): String {
+        fun hex(color: Int): String = String.format("#%06X", 0xFFFFFF and color)
+        return """
+            :root {
+              --bg-top: ${hex(theme.gradientTop)};
+              --bg-bottom: ${hex(theme.gradientBottom)};
+              --accent: ${hex(theme.accent)};
+              --accent-soft: ${hex(theme.accentSoft)};
+              --panel: rgba(12, 18, 30, 0.88);
+            }
+            body {
+              background: linear-gradient(165deg, var(--bg-top) 0%, var(--bg-bottom) 72%);
+            }
+            body::before {
+              content: '';
+              position: fixed;
+              inset: 0;
+              background: radial-gradient(circle at 78% 28%, color-mix(in srgb, var(--accent) 28%, transparent), transparent 58%);
+              pointer-events: none;
+            }
+            .watermark {
+              position: fixed;
+              right: 2rem;
+              bottom: 1rem;
+              font-size: 9rem;
+              opacity: 0.12;
+              pointer-events: none;
+              user-select: none;
+            }
+            header, .status, .event { background: var(--panel); }
+            h2, .event .time { color: var(--accent-soft); }
+            .event.live { border-left-color: var(--accent); }
+        """.trimIndent()
     }
 
     private fun escapeHtml(value: String): String =
@@ -114,27 +146,27 @@ object SpecialEventsGuideHtmlRenderer {
             .replace(">", "&gt;")
             .replace("\"", "&quot;")
 
-    private const val STYLES = """
-        :root { color-scheme: dark; --bg: #0f1419; --card: #1a2332; --text: #e8eef5; --muted: #8b9cb3; --accent: #5b9fd4; --live: #3dd68c; }
+    private const val BASE_STYLES = """
+        :root { color-scheme: dark; --text: #e8eef5; --muted: #96a8c0; --live: #3dd68c; }
         * { box-sizing: border-box; }
-        body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.45; }
-        main { max-width: 720px; margin: 0 auto; padding: 1.25rem 1rem 2rem; }
-        header { margin-bottom: 1.25rem; }
+        body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color: var(--text); line-height: 1.45; min-height: 100vh; }
+        main { max-width: 900px; margin: 0 auto; padding: 1.25rem 1rem 2rem; position: relative; z-index: 1; }
+        header { margin-bottom: 1rem; border-radius: 14px; padding: 1rem 1.1rem; border-left: 4px solid var(--accent); }
         .eyebrow { margin: 0 0 0.35rem; font-size: 0.85rem; color: var(--muted); }
         h1 { margin: 0 0 0.35rem; font-size: 1.65rem; font-weight: 700; }
         .subtitle { margin: 0; color: var(--muted); font-size: 0.95rem; }
-        h2 { margin: 1.25rem 0 0.65rem; font-size: 1.05rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.04em; }
-        .status { background: var(--card); border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 0.5rem; }
+        h2 { margin: 1rem 0 0.55rem; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .status { border-radius: 12px; padding: 0.85rem 1rem; margin-bottom: 0.5rem; }
         .status p { margin: 0; }
         .status .empty { color: var(--muted); }
         .status .ok { color: var(--text); }
-        .events { list-style: none; margin: 0; padding: 0; }
-        .event { background: var(--card); border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 0.55rem; display: grid; gap: 0.2rem; }
-        .event.live { border-left: 4px solid var(--live); }
-        .event .time { font-size: 0.9rem; color: var(--accent); font-weight: 600; }
+        .events { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+        .event { border-radius: 12px; padding: 0.8rem 0.95rem; display: grid; gap: 0.2rem; border-left: 4px solid transparent; }
+        .event.live { border-left-color: var(--live); }
+        .event .time { font-size: 0.9rem; font-weight: 600; }
         .event .title { font-size: 1rem; }
         .event .date { font-size: 0.82rem; color: var(--muted); }
-        footer { margin-top: 1.75rem; padding-top: 1rem; border-top: 1px solid #2a3544; color: var(--muted); font-size: 0.85rem; }
+        footer { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); color: var(--muted); font-size: 0.85rem; }
         footer p { margin: 0.35rem 0; }
     """
 }

@@ -1,14 +1,13 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
+import com.thothassistant.stepdaddy.gateway.epg.PlaylistEpgHeader
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import com.thothassistant.stepdaddy.gateway.upstream.GatewayConfig.TIVIMATE_USER_AGENT
 
 object PlaylistBuilder {
-    fun minimalPlaylist(baseUrl: String): String {
-        val base = baseUrl.trimEnd('/')
-        return "#EXTM3U url-tvg=\"$base/epg.xml\" x-tvg-url=\"$base/epg.xml\"\n"
-    }
+    fun minimalPlaylist(baseUrl: String, epgUrl: String? = null): String =
+        PlaylistEpgHeader.line(epgUrl)
 
     fun tivimatePlaylist(
         channels: List<Channel>,
@@ -18,6 +17,7 @@ object PlaylistBuilder {
         channelMetaStore: ChannelMetaStore? = null,
         supplements: List<SupplementChannel> = emptyList(),
         titleStyle: PlaylistTitleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
+        epgUrl: String? = null,
     ): String = GroupTitleResolver.withResolveCache {
         buildTivimatePlaylist(
             channels = channels,
@@ -27,6 +27,7 @@ object PlaylistBuilder {
             channelMetaStore = channelMetaStore,
             supplements = supplements,
             titleStyle = titleStyle,
+            epgUrl = epgUrl,
         )
     }
 
@@ -38,6 +39,7 @@ object PlaylistBuilder {
         channelMetaStore: ChannelMetaStore? = null,
         supplements: List<SupplementChannel> = emptyList(),
         titleStyle: PlaylistTitleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
+        epgUrl: String? = null,
     ): String {
         val base = baseUrl.trimEnd('/')
         val (channelNumbers, supplementNumbers) = ChannelNumberResolver.assignPlaylist(channels, supplements)
@@ -77,7 +79,7 @@ object PlaylistBuilder {
 
         val estimatedBytes = rows.size * 420 + 128
         val out = StringBuilder(estimatedBytes.coerceAtMost(8 * 1024 * 1024))
-        out.append("#EXTM3U url-tvg=\"$base/epg.xml\" x-tvg-url=\"$base/epg.xml\"\n")
+        out.append(PlaylistEpgHeader.line(epgUrl))
         rows.forEach { row ->
             out.append(row.extinf).append('\n')
             out.append(row.stream).append('\n')

@@ -79,7 +79,7 @@ class GatewayServer(
             NtvCxCdnLiveResolver(NtvCxCdnLiveResolver.defaultClient()),
         )
         val contentRoutes = ContentRoutes(environment, client, ResportzParser.defaultClient())
-        val epgRoutes = EpgRoutes(client, epgManager)
+        val epgRoutes = EpgRoutes(client, epgManager, supplementSource)
         val adminRoutes = adminActions?.let { AdminRoutes(it) }
 
         val bindHost = GatewayNetworkGuard.bindHost(environment.networkAccessMode)
@@ -155,6 +155,10 @@ class GatewayServer(
                 route("/epg.xml") {
                     get { epgRoutes.epgXml(call) }
                     head { epgRoutes.epgXml(call) }
+                }
+                route("/sports-epg.xml") {
+                    get { epgRoutes.sportsEpgXml(call) }
+                    head { epgRoutes.sportsEpgXml(call) }
                 }
                 get("/logo/{token}") {
                     logoRoutes.logo(call, call.parameters["token"].orEmpty())

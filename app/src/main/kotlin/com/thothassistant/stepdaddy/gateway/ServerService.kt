@@ -197,7 +197,11 @@ class ServerService : LifecycleService() {
                     }
                     epgManager.schedulePeriodicRefresh { daddyLiveClient.channels }
                     if (epgManager.needsBuild()) {
-                        epgManager.scheduleRefresh(client.channels, force = true)
+                        epgManager.scheduleRefresh(
+                            client.channels,
+                            force = true,
+                            tvtvGapFill = false,
+                        )
                     }
                     app.supplementSource.schedulePeriodicRefresh { daddyLiveClient.channels }
                     scheduleLogoBackfill(deferMs = 8_000L)

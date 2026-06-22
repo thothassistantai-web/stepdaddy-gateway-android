@@ -102,6 +102,10 @@ class SettingsActivity : AppCompatActivity() {
         binding.editSupplementUrl.setText(environment.supplementBaseUrl)
         SettingsSupplementControls.load(binding, environment)
         SettingsSupplementControls.wireListeners(binding)
+        binding.switchGatewayEpg.isChecked = environment.gatewayEpgEnabled
+        binding.editExternalEpgUrl.setText(environment.externalEpgUrlForDisplay())
+        updateExternalEpgVisibility()
+        binding.switchGatewayEpg.setOnCheckedChangeListener { _, _ -> updateExternalEpgVisibility() }
         binding.switchIptvOrgEpg.isChecked = environment.iptvOrgEpgEnabled
         binding.editIptvOrgEpgUrl.setText(environment.iptvOrgEpgUrl)
         binding.switchAutoStart.isChecked = environment.autoStartOnLaunch
@@ -130,6 +134,14 @@ class SettingsActivity : AppCompatActivity() {
             if (selectedNetworkMode == NetworkAccessMode.REMOTE) View.VISIBLE else View.GONE
     }
 
+    private fun updateExternalEpgVisibility() {
+        val gatewayEpg = binding.switchGatewayEpg.isChecked
+        val external = !gatewayEpg
+        binding.layoutExternalEpgUrl.visibility = if (external) View.VISIBLE else View.GONE
+        binding.switchIptvOrgEpg.visibility = if (gatewayEpg) View.VISIBLE else View.GONE
+        binding.layoutIptvOrgEpgUrl.visibility = if (gatewayEpg) View.VISIBLE else View.GONE
+    }
+
     private fun saveAndFinish() {
         val port = binding.editPort.text?.toString()?.trim()?.toIntOrNull()
         if (port == null || port !in 1024..65535) {
@@ -156,6 +168,8 @@ class SettingsActivity : AppCompatActivity() {
             .orEmpty()
         environment.supplementBaseUrl = binding.editSupplementUrl.text?.toString().orEmpty()
         SettingsSupplementControls.save(binding, environment)
+        environment.gatewayEpgEnabled = binding.switchGatewayEpg.isChecked
+        environment.externalEpgUrl = binding.editExternalEpgUrl.text?.toString().orEmpty()
         environment.iptvOrgEpgEnabled = binding.switchIptvOrgEpg.isChecked
         environment.iptvOrgEpgUrl = binding.editIptvOrgEpgUrl.text?.toString().orEmpty()
         environment.autoStartOnLaunch = binding.switchAutoStart.isChecked

@@ -1,7 +1,9 @@
 package com.thothassistant.stepdaddy.gateway.epg
 
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
+import com.thothassistant.stepdaddy.gateway.upstream.DlhdEventSourceMeta
 import com.thothassistant.stepdaddy.gateway.upstream.DlhdScheduleTime
+import com.thothassistant.stepdaddy.gateway.upstream.SpecialEventLifecycle
 import com.thothassistant.stepdaddy.gateway.upstream.SpecialEventsMerger
 import java.io.File
 import java.time.Instant
@@ -25,6 +27,7 @@ object SpecialEventsEpgGenerator {
     fun programmesForBundle(
         channels: List<SupplementChannel>,
         guideProgrammes: Map<String, List<SpecialEventsMerger.GuideEventRow>>,
+        now: Instant = Instant.now(),
     ): List<EventProgramme> {
         val out = mutableListOf<EventProgramme>()
         channels.forEach { channel ->
@@ -33,19 +36,21 @@ object SpecialEventsEpgGenerator {
                     val tvgId = channel.tvgId?.trim().orEmpty()
                     if (tvgId.isEmpty()) return@forEach
                     val rows = guideProgrammes[channel.id].orEmpty()
+                        .filter { row -> SpecialEventLifecycle.isActive(row.startMs, row.stopMs, now.toEpochMilli()) }
+                        .sortedBy { it.startMs }
                     if (rows.isEmpty()) {
-                        out += placeholderGuideProgramme(tvgId, channel.name, "No scheduled events")
+                        out += placeholderGuideProgramme(tvgId, channel.name, "No upcoming events", now)
                     } else {
-                        rows.forEach { row ->
-                            out += guideProgramme(tvgId, channel.name, row)
+                        rows.mapNotNullTo(out) { row ->
+                            guideProgramme(tvgId, channel.name, row, now)
                         }
                     }
                 }
                 channel.id.startsWith("dlhd-event:") -> {
-                    programmeForStream(channel)?.let { out += it }
+                    programmeForStream(channel, now)?.let { out += it }
                 }
                 channel.id.startsWith("sport:") -> {
-                    programmeForLiveStream(channel)?.let { out += it }
+                    programmeForLiveStream(channel, now)?.let { out += it }
                 }
             }
         }
@@ -56,17 +61,15 @@ object SpecialEventsEpgGenerator {
         tvgId: String,
         displayName: String,
         row: SpecialEventsMerger.GuideEventRow,
-    ): EventProgramme {
+        now: Instant,
+    ): EventProgramme? {
         val start = Instant.ofEpochMilli(row.startMs)
-        var stop = Instant.ofEpochMilli(row.stopMs)
-        val now = Instant.now()
-        if (!stop.isAfter(now)) {
-            stop = now.plus(30, ChronoUnit.MINUTES)
-        }
+        val stop = Instant.ofEpochMilli(row.stopMs)
+        if (!SpecialEventLifecycle.isActive(start, stop, now)) return null
         return EventProgramme(
             channelId = tvgId,
             displayName = displayName,
-            title = row.title,
+            title = row.title.substringAfter(": ", row.title).trim().ifEmpty { row.title },
             start = start,
             stop = stop,
         )
@@ -76,25 +79,28 @@ object SpecialEventsEpgGenerator {
         tvgId: String,
         displayName: String,
         title: String,
+        now: Instant,
     ): EventProgramme {
-        val now = Instant.now().truncatedTo(ChronoUnit.MINUTES)
+        val start = now.truncatedTo(ChronoUnit.MINUTES)
         return EventProgramme(
             channelId = tvgId,
             displayName = displayName,
             title = title,
-            start = now,
-            stop = now.plus(LIVE_EVENT_HOURS, ChronoUnit.HOURS),
+            start = start,
+            stop = start.plus(LIVE_EVENT_HOURS, ChronoUnit.HOURS),
         )
     }
 
-    private fun programmeForStream(channel: SupplementChannel): EventProgramme? {
+    private fun programmeForStream(channel: SupplementChannel, now: Instant): EventProgramme? {
         val tvgId = channel.tvgId?.trim().orEmpty()
         if (tvgId.isEmpty()) return null
-        val meta = channel.eventSourceUrl?.split("|").orEmpty()
-        val dateKey = meta.getOrNull(1).orEmpty()
-        val timeLabel = meta.getOrNull(2).orEmpty()
-        val title = meta.getOrNull(3)?.trim().orEmpty().ifEmpty { channel.name }
+        val meta = DlhdEventSourceMeta.parse(channel.eventSourceUrl)
+        val title = meta?.displayTitle()?.ifEmpty { null }
+            ?: channel.name.substringAfter(": ", channel.name).trim().ifEmpty { channel.name }
+        val dateKey = meta?.dateKey.orEmpty()
+        val timeLabel = meta?.timeLabel.orEmpty()
         val (start, stop) = DlhdScheduleTime.parseWindow(dateKey, timeLabel)
+        if (!SpecialEventLifecycle.isActive(start, stop, now)) return null
         return EventProgramme(
             channelId = tvgId,
             displayName = channel.name,
@@ -104,16 +110,17 @@ object SpecialEventsEpgGenerator {
         )
     }
 
-    private fun programmeForLiveStream(channel: SupplementChannel): EventProgramme? {
+    private fun programmeForLiveStream(channel: SupplementChannel, now: Instant): EventProgramme? {
         val tvgId = channel.tvgId?.trim().orEmpty()
         if (tvgId.isEmpty()) return null
-        val now = Instant.now().truncatedTo(ChronoUnit.MINUTES)
+        val start = now.truncatedTo(ChronoUnit.MINUTES)
+        val title = channel.name.trim().ifEmpty { "Live event" }
         return EventProgramme(
             channelId = tvgId,
             displayName = channel.name,
-            title = channel.name,
-            start = now,
-            stop = now.plus(LIVE_EVENT_HOURS, ChronoUnit.HOURS),
+            title = title,
+            start = start,
+            stop = start.plus(LIVE_EVENT_HOURS, ChronoUnit.HOURS),
         )
     }
 

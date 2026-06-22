@@ -135,6 +135,7 @@ class GatewayApp : Application() {
                     _supplementSource!!,
                     _epgShareIdBridge!!,
                     tvtvFetcher,
+                    isGatewayEpgEnabled = { gatewayEnvironment.gatewayEpgEnabled },
                 )
             }
         }
