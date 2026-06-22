@@ -98,10 +98,7 @@ class MainActivity : AppCompatActivity() {
         bottomPanel = DashboardBottomPanel(this, binding.root, environment, lifecycleScope)
         bottomPanel.attach()
         GatewayMessageBus.post("Dashboard opened")
-        views.scrollDashboard.post {
-            views.scrollDashboard.scrollTo(0, 0)
-            views.buttonHeaderSettings.requestFocus()
-        }
+        scrollDashboardToTop()
         hydrateDashboardFromCache()
         updateStatus()
         updateEpgStatus()
@@ -126,6 +123,19 @@ class MainActivity : AppCompatActivity() {
         startStatusPolling()
         startClock()
         maybeScanLanPeers()
+        scrollDashboardToTop()
+    }
+
+    private fun scrollDashboardToTop() {
+        val scroll = views.scrollDashboard
+        scroll.post {
+            scroll.scrollTo(0, 0)
+            scroll.post {
+                scroll.fullScroll(View.FOCUS_UP)
+                scroll.scrollTo(0, 0)
+                views.buttonHeaderSettings.requestFocus()
+            }
+        }
     }
 
     override fun onPause() {
@@ -257,8 +267,7 @@ class MainActivity : AppCompatActivity() {
         views.buttonLaunchTivimate.setOnClickListener { launchTivimate() }
         views.buttonInstallTivimate.setOnClickListener { installTivimate() }
         views.buttonFooterScrollTop.setOnClickListener {
-            views.scrollDashboard.smoothScrollTo(0, 0)
-            views.buttonHeaderSettings.requestFocus()
+            scrollDashboardToTop()
         }
     }
 

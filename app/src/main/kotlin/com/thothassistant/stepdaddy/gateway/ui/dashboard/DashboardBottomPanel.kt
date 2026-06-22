@@ -82,6 +82,7 @@ class DashboardBottomPanel(
 
     private var activeTab: Tab = Tab.MESSAGES
     private var channelsLoaded = false
+    private var skipNextMessageAutoScroll = true
 
     fun attach() {
         playerErrorOverlay = PlayerErrorOverlay(
@@ -314,7 +315,14 @@ class DashboardBottomPanel(
         } else {
             messages.joinToString("\n") { it.formatLine() }
         }
-        scrollMessages.post { scrollMessages.fullScroll(View.FOCUS_DOWN) }
+        scrollMessages.post {
+            if (skipNextMessageAutoScroll) {
+                skipNextMessageAutoScroll = false
+                scrollMessages.scrollTo(0, 0)
+            } else {
+                scrollMessages.fullScroll(View.FOCUS_DOWN)
+            }
+        }
     }
 
     private fun renderErrorLogs(lines: List<GatewayLogLine>) {

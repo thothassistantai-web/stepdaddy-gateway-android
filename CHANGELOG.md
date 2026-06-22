@@ -7,6 +7,13 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [1.0.29] - 2026-06-22
+
+### Fixed
+
+- **Dashboard scroll (launch)** — removed `fillViewport` and inner `layout_weight` stretch inside the main `ScrollView` so the header is visible on cold start (completes the 1.0.28 scroll fix)
+- **Message panel** — skip auto-scroll-to-bottom on first paint so opening the dashboard does not jump to the log area
+
 ## [1.0.28] - 2026-06-22
 
 ### Changed
