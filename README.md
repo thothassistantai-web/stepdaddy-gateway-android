@@ -8,6 +8,7 @@
 | **Package** | `com.thothassistant.stepdaddy.gateway` |
 | **License** | [MIT](LICENSE) — see [LEGAL.md](LEGAL.md) / [DISCLAIMER.md](DISCLAIMER.md) |
 | **Upstream parity** | [stepdaddy-livehd](https://github.com/thothassistantai-web/stepdaddy-livehd) (Linux/web gateway) |
+| **TiviMate Daddy (patch APK)** | [tivimate-daddy](https://github.com/thothassistantai-web/tivimate-daddy) — TiViMate 4.6.1 mod releases; `tivimate-daddy-v*` tags on this repo are archived |
 
 ---
 
