@@ -14,7 +14,10 @@ val gitHash: String = runCatching {
 
 val buildTime: Long = System.currentTimeMillis()
 
-val stepdaddyVersionFile = rootProject.file("../STEPDADDY_VERSION")
+val stepdaddyVersionFile = sequenceOf(
+    rootProject.file("STEPDADDY_VERSION"),
+    rootProject.file("../STEPDADDY_VERSION"),
+).firstOrNull { it.isFile } ?: rootProject.file("STEPDADDY_VERSION")
 fun readStepdaddyVersionProp(name: String, default: String): String {
     if (!stepdaddyVersionFile.isFile) return default
     return stepdaddyVersionFile.readLines()

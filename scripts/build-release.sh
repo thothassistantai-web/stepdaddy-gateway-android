@@ -42,7 +42,9 @@ mkdir -p "${RELEASE_DIR}"
 
 # Copy artifacts with stable names (match STEPDADDY_VERSION / app defaultConfig)
 _version_file="${ROOT}/VERSION"
-if [[ -f "${ROOT}/../STEPDADDY_VERSION" ]]; then
+if [[ -f "${ROOT}/STEPDADDY_VERSION" ]]; then
+  _version_file="${ROOT}/STEPDADDY_VERSION"
+elif [[ -f "${ROOT}/../STEPDADDY_VERSION" ]]; then
   _version_file="${ROOT}/../STEPDADDY_VERSION"
 fi
 VERSION_NAME="$(grep -E '^STEPDADDY_VERSION=' "${_version_file}" | head -1 | cut -d= -f2-)"
