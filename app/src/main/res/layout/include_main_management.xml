@@ -47,11 +47,26 @@
         android:layout_height="44dp"
         android:layout_marginTop="8dp"
         android:nextFocusLeft="@id/buttonSettings"
-        android:nextFocusRight="@id/switchAutoStart"
+        android:nextFocusRight="@id/buttonAbout"
         android:nextFocusUp="@id/buttonSettings"
-        android:nextFocusDown="@id/switchAutoStart"
+        android:nextFocusDown="@id/buttonAbout"
         android:text="@string/action_install_apps_upper"
         app:icon="@drawable/ic_download"
+        app:iconGravity="end"
+        app:iconPadding="12dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/buttonAbout"
+        style="@style/Widget.StepDaddyGateway.TvButton.Management"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="8dp"
+        android:nextFocusLeft="@id/buttonInstallApps"
+        android:nextFocusRight="@id/switchAutoStart"
+        android:nextFocusUp="@id/buttonInstallApps"
+        android:nextFocusDown="@id/switchAutoStart"
+        android:text="@string/action_about_upper"
+        app:icon="@drawable/ic_about"
         app:iconGravity="end"
         app:iconPadding="12dp" />
 </LinearLayout>

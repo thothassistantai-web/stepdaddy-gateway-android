@@ -130,6 +130,6 @@ class PlaylistCache {
     companion object {
         private const val TAG = "PlaylistCache"
         /** Bump when playlist ordering logic changes so in-memory cache rebuilds. */
-        private const val PLAYLIST_SORT_REVISION = 18
+        private const val PLAYLIST_SORT_REVISION = 20
     }
 }

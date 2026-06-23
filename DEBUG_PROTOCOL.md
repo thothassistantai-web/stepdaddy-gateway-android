@@ -60,14 +60,25 @@ Expected: < 30s cold, < 10s warm (cached).
 
 ## 6. TiviMate launch toggle
 
-With **Launch TiviMate when ready** enabled in Settings:
+With **Launch TiviMate when ready** enabled on dashboard:
 
 ```bash
 adb -s $DEV logcat -c
 adb -s $DEV shell am force-stop com.thothassistant.stepdaddy.gateway.debug
 adb -s $DEV shell monkey -p com.thothassistant.stepdaddy.gateway.debug -c android.intent.category.LAUNCHER 1
 sleep 90
-adb -s $DEV logcat -d | rg "TiviMateLauncher|Launched TiviMate"
+adb -s $DEV logcat -d | rg "GatewayHud|TiviMateLauncher|Boot-tune"
+```
+
+Expect: `Launched TiviMate` after catalog ready (+2.5 s); `Boot-tune N saved via patch HTTP` when Daddy patch installed.
+
+## 6b. Boot-tune / patch version (Daddy mod)
+
+```bash
+adb -s $DEV forward tcp:4617 tcp:4617
+curl -s http://127.0.0.1:4617/status | jq '{patchVersion, setupDone}'
+# Require patchVersion >= 1.2.1-boot-tune-safe for cold-boot stability
+./scripts/fusa-first-stream-timer.sh   # optional end-to-end timing
 ```
 
 ## 7. Boot reliability

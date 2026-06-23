@@ -40,9 +40,13 @@ BUNDLE_DIR="${ROOT}/app/build/outputs/bundle/release"
 RELEASE_DIR="${ROOT}/release"
 mkdir -p "${RELEASE_DIR}"
 
-# Copy artifacts with stable names
-VERSION_NAME="$(grep -E 'versionName\s*=' app/build.gradle.kts | head -1 | sed -E 's/.*"([^"]+)".*/\1/')"
-VERSION_CODE="$(grep -E 'versionCode\s*=' app/build.gradle.kts | head -1 | sed -E 's/.*=\s*([0-9]+).*/\1/')"
+# Copy artifacts with stable names (match STEPDADDY_VERSION / app defaultConfig)
+_version_file="${ROOT}/VERSION"
+if [[ -f "${ROOT}/../STEPDADDY_VERSION" ]]; then
+  _version_file="${ROOT}/../STEPDADDY_VERSION"
+fi
+VERSION_NAME="$(grep -E '^STEPDADDY_VERSION=' "${_version_file}" | head -1 | cut -d= -f2-)"
+VERSION_CODE="$(grep -E '^VERSION_CODE=' "${_version_file}" | head -1 | cut -d= -f2-)"
 
 DEBUG_APK_DIR="${ROOT}/app/build/outputs/apk/debug"
 DEBUG_APK="${DEBUG_APK_DIR}/app-debug.apk"

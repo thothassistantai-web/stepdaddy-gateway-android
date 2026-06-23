@@ -52,7 +52,10 @@ object ChannelTitleNormalizer {
             val league = providerTag?.trim().orEmpty().ifEmpty {
                 eventSourceUrl?.let { SpecialEventSort.leagueFromEventUrl(it) }
             }
-            return XtreamCategoryTitleFormatter.formatSpecialEvent(channelName, league)
+            val eventTitle = DlhdEventSourceMeta.parse(eventSourceUrl)?.displayTitle()
+                ?.takeIf { it.isNotBlank() }
+                ?: channelName
+            return XtreamCategoryTitleFormatter.formatSpecialEvent(eventTitle, league)
         }
         return XtreamCategoryTitleFormatter.format(channelName, resolution, source)
     }

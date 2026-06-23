@@ -106,7 +106,7 @@ patch_settings_from_pairs() {
     case "$key" in
       port) typed="$value" ;;
       supplementSportsEnabled|supplementIptvOrgEnabled|supplementNtvCxEnabled|\
-supplementAdultSwimEnabled|embeddedSidecarEnabled|iptvOrgEpgEnabled|startOnBoot|autoStartOnLaunch)
+supplementAdultSwimEnabled|embeddedSidecarEnabled|iptvOrgEpgEnabled|startOnBoot|autoStartOnLaunch|autoLaunchTiviMate)
         if [[ "$value" == "true" || "$value" == "1" ]]; then typed="true"
         elif [[ "$value" == "false" || "$value" == "0" ]]; then typed="false"
         else echo "Boolean expected for $key" >&2; exit 1

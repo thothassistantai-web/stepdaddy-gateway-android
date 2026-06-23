@@ -58,6 +58,12 @@
             android:theme="@style/Theme.StepDaddyGateway" />
 
         <activity
+            android:name=".ui.AboutActivity"
+            android:exported="false"
+            android:label="@string/about_title"
+            android:parentActivityName=".ui.MainActivity" />
+
+        <activity
             android:name=".ui.SettingsActivity"
             android:exported="false"
             android:label="@string/settings_title"

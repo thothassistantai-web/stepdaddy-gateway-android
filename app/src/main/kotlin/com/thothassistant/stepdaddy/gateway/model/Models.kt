@@ -140,6 +140,7 @@ data class HealthResponse(
     val topCategories: List<CategoryCount> = emptyList(),
     val healing: HealingStatus? = null,
     val loadProgress: DashboardLoadProgress? = null,
+    val tivimateEvents: TiviMateHealthEvents? = null,
 )
 
 @Serializable
@@ -151,4 +152,9 @@ data class TivimateSetup(
     val epgReady: Boolean = false,
     val epgProgrammeCount: Int = 0,
     val epgAgeSeconds: Long? = null,
+    val playerInstalled: Boolean = false,
+    val playerVersion: String? = null,
+    val playerVersionCode: Long? = null,
+    val playerLikelyActive: Boolean = false,
+    val launchComponent: String = "ar.tvplayer.tv/.ui.MainActivity",
 )

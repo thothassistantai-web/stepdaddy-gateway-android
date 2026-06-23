@@ -226,9 +226,50 @@ class InstallAppsCatalogRepository(
         return pool.maxWithOrNull(tivimateEntryComparator)
     }
 
+    /** StepDaddy-patched TiViMate (bidirectional control). */
+    fun findStepDaddyTiviMateEntry(catalog: InstallAppsCatalog): InstallAppEntry? {
+        catalog.apps.firstOrNull { entry ->
+            entry.id.equals(STEPDADDY_TIVIMATE_CATALOG_ID, ignoreCase = true) ||
+                entry.name.contains("stepdaddy", ignoreCase = true) ||
+                (entry.name.contains("daddy", ignoreCase = true) &&
+                    TIVIMATE_NAME.containsMatchIn(entry.name))
+        }?.takeIf { it.apkUrl.isNotBlank() }?.let { return it }
+
+        val overrideUrl = com.thothassistant.stepdaddy.gateway.BuildConfig
+            .DEFAULT_TIVIMATE_STEPDADDY_APK_URL
+            .trim()
+        if (overrideUrl.isNotBlank()) {
+            return InstallAppEntry(
+                id = STEPDADDY_TIVIMATE_CATALOG_ID,
+                name = "TiviMate Daddy (StepDaddy)",
+                description = "4.6.1 mod + StepDaddy patch — bidirectional gateway control.",
+                iconUrl = "https://www.google.com/s2/favicons?domain=tivimate.com&sz=128",
+                apkUrl = overrideUrl,
+                source = SOURCE_STEPDADDY,
+                packageName = "ar.tvplayer.tv",
+                version = "1.2.1-boot-tune-safe",
+            )
+        }
+        return null
+    }
+
+    /** 4.6.1 premium mod base (no StepDaddy patch). */
+    fun find461ModTiviMateEntry(catalog: InstallAppsCatalog): InstallAppEntry? {
+        catalog.apps.firstOrNull { it.id == MOD_461_CATALOG_ID }?.let { return it }
+        return catalog.apps.firstOrNull { entry ->
+            TIVIMATE_NAME.containsMatchIn(entry.name) &&
+                entry.name.contains("4.6.1", ignoreCase = true) &&
+                entry.apkUrl.isNotBlank()
+        }
+    }
+
     companion object {
         const val SOURCE_TV2024 = "tv2024"
         const val SOURCE_DOCSQUIFFY = "docsquiffy"
+        const val SOURCE_STEPDADDY = "stepdaddy"
+        const val STEPDADDY_TIVIMATE_CATALOG_ID = "stepdaddy-TiviMate-4.6.1-StepDaddy"
+        const val MOD_461_CATALOG_ID = "tv2024-TiviMate-v4.6.1-Premium-Mod"
+        const val TIVIMATE_OFFICIAL_URL = "https://tivimate.com"
         private const val BUNDLED_CATALOG_ASSET = "install_apps_catalog.json"
         private const val CATALOG_CACHE_FILE = "install_apps_catalog_cache.json"
         private const val TV2024_GITHUB_API =

@@ -2,6 +2,16 @@
   "version": 1,
   "apps": [
     {
+      "id": "stepdaddy-TiviMate-4.6.1-StepDaddy",
+      "name": "TiviMate Daddy (StepDaddy)",
+      "description": "TiViMate 4.6.1 premium mod with StepDaddy patch — bidirectional gateway control, HTTP API :4617, auto-setup from /tivimate-setup. Recommended for StepDaddy fleet sticks.",
+      "iconUrl": "https://www.google.com/s2/favicons?domain=tivimate.com&sz=128",
+      "apkUrl": "https://github.com/thothassistantai-web/tivimate-daddy/releases/download/tivimate-daddy-v2.0.0/TiviMate-4.6.1-StepDaddy-2.0.0.apk",
+      "source": "stepdaddy",
+      "packageName": "ar.tvplayer.tv",
+      "version": "2.0.0"
+    },
+    {
       "id": "tv2024-+++++Tivimate_v1.3.0_(Premium)",
       "name": "+++++Tivimate v1.3.0 (Premium)",
       "description": "Premium IPTV player with EPG, recordings, and catch-up support.",

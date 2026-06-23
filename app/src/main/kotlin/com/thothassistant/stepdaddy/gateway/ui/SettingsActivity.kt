@@ -2,6 +2,7 @@ package com.thothassistant.stepdaddy.gateway.ui
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
@@ -50,6 +51,9 @@ class SettingsActivity : AppCompatActivity() {
         binding.buttonSave.setOnClickListener { saveAndFinish() }
         binding.buttonBack.setOnClickListener { finish() }
         binding.buttonCheckUpdate.setOnClickListener { checkForUpdates(manual = true) }
+        binding.buttonOpenAbout.setOnClickListener {
+            startActivity(Intent(this, AboutActivity::class.java))
+        }
         binding.buttonCopyAccessToken.setOnClickListener { copyAccessToken() }
         binding.buttonRegenerateAccessToken.setOnClickListener { regenerateAccessToken() }
         binding.toggleNetworkMode.addOnButtonCheckedListener(networkModeListener)
@@ -108,7 +112,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.switchIptvOrgEpg.isChecked = environment.iptvOrgEpgEnabled
         binding.editIptvOrgEpgUrl.setText(environment.iptvOrgEpgUrl)
         binding.switchAutoStart.isChecked = environment.autoStartOnLaunch
-        binding.switchLaunchTivimate.isChecked = environment.launchTivimateOnReady
+        binding.switchLaunchTivimate.isChecked = environment.autoLaunchTiviMate
         binding.switchBoot.isChecked = environment.startOnBoot
         binding.switchTivimateWatch.isChecked = environment.tivimateWatchEnabled
         binding.switchXtreamPlaylistTitles.isChecked =
@@ -171,7 +175,7 @@ class SettingsActivity : AppCompatActivity() {
         environment.iptvOrgEpgEnabled = binding.switchIptvOrgEpg.isChecked
         environment.iptvOrgEpgUrl = binding.editIptvOrgEpgUrl.text?.toString().orEmpty()
         environment.autoStartOnLaunch = binding.switchAutoStart.isChecked
-        environment.launchTivimateOnReady = binding.switchLaunchTivimate.isChecked
+        environment.autoLaunchTiviMate = binding.switchLaunchTivimate.isChecked
         environment.startOnBoot = binding.switchBoot.isChecked
         environment.tivimateWatchEnabled = binding.switchTivimateWatch.isChecked
         environment.playlistTitleStyle = if (binding.switchXtreamPlaylistTitles.isChecked) {

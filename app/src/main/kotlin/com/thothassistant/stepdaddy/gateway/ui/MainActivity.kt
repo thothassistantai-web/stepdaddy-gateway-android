@@ -25,7 +25,8 @@ import com.thothassistant.stepdaddy.gateway.GatewayStartHelper
 import com.thothassistant.stepdaddy.gateway.PermissionHelper
 import com.thothassistant.stepdaddy.gateway.R
 import com.thothassistant.stepdaddy.gateway.ServerService
-import com.thothassistant.stepdaddy.gateway.TiviMateLauncher
+import com.thothassistant.stepdaddy.gateway.TiviMateController
+import com.thothassistant.stepdaddy.gateway.TiviMatePlaylistStateHelper
 import com.thothassistant.stepdaddy.gateway.databinding.ActivityMainBinding
 import com.thothassistant.stepdaddy.gateway.ui.dashboard.DashboardBottomPanel
 import com.thothassistant.stepdaddy.gateway.ui.dashboard.DashboardStatusReporter
@@ -41,10 +42,10 @@ import com.thothassistant.stepdaddy.gateway.network.LanAddressResolver
 import com.thothassistant.stepdaddy.gateway.network.NetworkAccessMode
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -62,13 +63,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var updateCoordinator: AppUpdateCoordinator
     private var pollJob: Job? = null
     private var clockJob: Job? = null
-    private var tivimateInstallJob: Job? = null
     private var restartJob: Job? = null
     private var peerScanJob: Job? = null
+    private lateinit var tivimateLaunchCoordinator: TiviMateLaunchCoordinator
     private val mainUpdateListener: (AppUpdateInfo?) -> Unit = { onUpdateAvailability(it) }
     private var pendingUpdateInfo: AppUpdateInfo? = null
     private var lastGatewayOnline = false
-    private val tivimateInstallMutex = Mutex()
     private lateinit var bottomPanel: DashboardBottomPanel
     private lateinit var statCards: DashboardStatCards
     private var lastGoodHealth: HealthResponse? = null
@@ -103,6 +103,15 @@ class MainActivity : AppCompatActivity() {
         statusMonitor = GatewayStatusMonitor { healthUrl() }
         catalogRepository = InstallAppsCatalogRepository(this)
         installManager = ApkInstallManager(this)
+        tivimateLaunchCoordinator = TiviMateLaunchCoordinator(
+            activity = this,
+            environment = environment,
+            catalogRepository = catalogRepository,
+            installManager = installManager,
+            scope = lifecycleScope,
+            ensureInstallAllowed = { ensureInstallAllowed() },
+            onBusyChanged = { busy -> setTivimateInstallBusy(busy) },
+        )
         updateCoordinator = (application as GatewayApp).appUpdateCoordinator
         updateCoordinator.setPrimaryHost(this)
         updateCoordinator.addAvailabilityListener(mainUpdateListener)
@@ -138,6 +147,7 @@ class MainActivity : AppCompatActivity() {
         GatewayHud.attachHost(gatewayHudHost)
         hydrateDashboardFromCache()
         updateStatus()
+        updateTiviMatePlaylistState()
         bindNetworkMode()
         bindUrls()
         updateEpgStatus()
@@ -243,9 +253,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         views.switchLaunchTivimate.setOnCheckedChangeListener(null)
-        views.switchLaunchTivimate.isChecked = environment.launchTivimateOnReady
+        views.switchLaunchTivimate.isChecked = environment.autoLaunchTiviMate
         views.switchLaunchTivimate.setOnCheckedChangeListener { _, checked ->
-            environment.launchTivimateOnReady = checked
+            environment.autoLaunchTiviMate = checked
         }
 
         views.switchBoot.setOnCheckedChangeListener(null)
@@ -280,15 +290,18 @@ class MainActivity : AppCompatActivity() {
         views.buttonInstallApps.setOnClickListener {
             startActivity(Intent(this, InstallAppsActivity::class.java))
         }
+        views.buttonAbout.setOnClickListener { openAbout() }
         views.buttonHeaderSettings.setOnClickListener { openSettings() }
         views.buttonHeaderUpdate.setOnClickListener { checkForUpdates(manual = true) }
         views.buttonCopyPlaylist.setOnClickListener { copyUrl(playlistUrl()) }
         views.buttonOpenPlaylist.setOnClickListener { openUrl(playlistUrl()) }
-        views.buttonQrPlaylist.setOnClickListener { QrCodeDialogController(this, environment).show() }
+        views.buttonQrPlaylist.setOnClickListener {
+            QrCodeDialogController(this, environment, tivimateLaunchCoordinator).show()
+        }
         views.buttonCopyEpg.setOnClickListener { copyUrl(epgUrl()) }
         views.buttonOpenEpg.setOnClickListener { openUrl(epgUrl()) }
-        views.buttonLaunchTivimate.setOnClickListener { launchTivimate() }
-        views.buttonInstallTivimate.setOnClickListener { installTivimate() }
+        views.buttonLaunchTivimate.setOnClickListener { tivimateLaunchCoordinator.launchOrPromptInstall() }
+        views.buttonInstallTivimate.setOnClickListener { showTivimateInstallPicker() }
         views.buttonFooterScrollTop.setOnClickListener {
             scrollDashboardToTop()
         }
@@ -316,6 +329,10 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent(this, SettingsActivity::class.java))
     }
 
+    private fun openAbout() {
+        startActivity(Intent(this, AboutActivity::class.java))
+    }
+
     private fun checkForUpdates(manual: Boolean) {
         updateCoordinator.checkForUpdate(this, manual)
     }
@@ -337,52 +354,20 @@ class MainActivity : AppCompatActivity() {
         views.textFooterUpdate.visibility = View.VISIBLE
     }
 
-    private fun launchTivimate() {
-        if (TiviMateLauncher.launch(this)) return
-        if (!TiviMateLauncher.isInstalled(this)) {
-            Toast.makeText(this, R.string.toast_tivimate_not_installed, Toast.LENGTH_LONG).show()
-            installTivimate()
-            return
-        }
-        Toast.makeText(this, R.string.toast_tivimate_launch_failed, Toast.LENGTH_SHORT).show()
-    }
-
-    private fun installTivimate() {
-        if (!ensureInstallAllowed()) return
-        if (tivimateInstallJob?.isActive == true) return
-        tivimateInstallJob = lifecycleScope.launch {
-            setTivimateInstallBusy(true)
-            runCatching {
-                tivimateInstallMutex.withLock {
-                    val catalog = catalogRepository.loadCatalog()
-                    val entry = catalogRepository.findBestTiviMateEntry(catalog)
-                        ?: error(getString(R.string.toast_tivimate_catalog_missing))
-                    Toast.makeText(
-                        this@MainActivity,
-                        R.string.toast_tivimate_installing,
-                        Toast.LENGTH_SHORT,
-                    ).show()
-                    GatewayMessageBus.postInstallProgress("TiviMate", "downloading")
-                    val apkFile = installManager.downloadApk(entry) { }
-                    if (!installManager.launchInstall(apkFile)) {
-                        error(getString(R.string.install_apps_launch_failed))
+    private fun showTivimateInstallPicker() {
+        TiviMateInstallPickerDialog.show(this, lifecycleScope, catalogRepository) { choice ->
+            when (choice) {
+                is TiviMateInstallChoice.CatalogDownload -> {
+                    if (choice.entry.apkUrl.isBlank()) {
+                        Toast.makeText(this, R.string.tivimate_option_unavailable, Toast.LENGTH_LONG).show()
+                    } else {
+                        tivimateLaunchCoordinator.downloadAndInstall(choice.entry)
                     }
-                    entry
                 }
-            }.onSuccess {
-                Toast.makeText(
-                    this@MainActivity,
-                    R.string.toast_tivimate_install_ready,
-                    Toast.LENGTH_LONG,
-                ).show()
-            }.onFailure { exc ->
-                Toast.makeText(
-                    this@MainActivity,
-                    getString(R.string.toast_tivimate_install_failed, exc.message ?: "error"),
-                    Toast.LENGTH_LONG,
-                ).show()
+                TiviMateInstallChoice.OfficialSite -> {
+                    tivimateLaunchCoordinator.openOfficialInstallPage()
+                }
             }
-            setTivimateInstallBusy(false)
         }
     }
 
@@ -531,6 +516,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun updateTiviMatePlaylistState() {
+        if (!TiviMateController.isInstalled(this)) {
+            views.textTiviMatePlaylistState.visibility = View.GONE
+            return
+        }
+        lifecycleScope.launch {
+            val summary = withContext(Dispatchers.IO) {
+                val probe = TiviMateController.probeState()
+                TiviMatePlaylistStateHelper.summary(this@MainActivity, probe.state)
+            }
+            views.textTiviMatePlaylistState.text = summary
+            views.textTiviMatePlaylistState.visibility = View.VISIBLE
+        }
+    }
+
     private fun startClock() {
         clockJob?.cancel()
         clockJob = lifecycleScope.launch {
@@ -559,6 +559,7 @@ class MainActivity : AppCompatActivity() {
                     renderDashboard(null)
                 }
                 updateFooterMetrics(if (active) environment.lastServiceStartMs else null)
+                updateTiviMatePlaylistState()
                 delay(STATUS_POLL_MS)
             }
         }

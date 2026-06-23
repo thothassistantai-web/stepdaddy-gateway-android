@@ -7,8 +7,8 @@ How to cut a **StepDaddy Gateway** Android release for sideload, GitHub Releases
 Edit `app/build.gradle.kts`:
 
 ```kotlin
-versionCode = 3        // monotonic integer — required for updates
-versionName = "1.0.1"  // user-visible semver
+versionCode = 20000    // monotonic integer — required for updates (see ../STEPDADDY_VERSION)
+versionName = "2.0.0"  // user-visible semver
 ```
 
 Update [CHANGELOG.md](../CHANGELOG.md) — move `Unreleased` items into a dated section.

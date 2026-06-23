@@ -18,6 +18,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 
 class ServerService : LifecycleService() {
     private lateinit var environment: GatewayEnvironment
@@ -63,6 +64,8 @@ class ServerService : LifecycleService() {
             app.awaitComponents()
             epgManager = app.epgManager
         }
+        // Start HTTP without waiting for onStartCommand binder hop (boot path).
+        startGateway()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -115,9 +118,16 @@ class ServerService : LifecycleService() {
                     if (!::epgManager.isInitialized) {
                         epgManager = app.epgManager
                     }
-                    startEmbeddedSidecar(app)
                     val client = ensureDaddyLiveClient(app)
-                    client.awaitInitialLoad()
+                    val cacheReady = withTimeoutOrNull(BOOT_CHANNEL_LOAD_MAX_WAIT_MS) {
+                        client.awaitInitialLoad()
+                    }
+                    if (cacheReady == null) {
+                        GatewayDiagnostics.info(
+                            TAG,
+                            "Channel disk cache still loading after ${BOOT_CHANNEL_LOAD_MAX_WAIT_MS}ms; starting HTTP anyway",
+                        )
+                    }
                     val adminController = GatewayAdminController(
                         context = this@ServerService,
                         environment = environment,
@@ -200,20 +210,14 @@ class ServerService : LifecycleService() {
                     updateRunningNotification()
                     GatewayStartHelper.schedulePeriodicEnsureAlive(this@ServerService)
                     GatewayDiagnostics.info(TAG, "Gateway listening on ${environment.loopbackBase()} ($channelCount channels)")
-                    scheduleEmbeddedSidecarRefreshIfEmpty(app)
+                    scheduleDeferredEmbeddedSidecar(app)
+                    scheduleDeferredBootEpgBuild(client)
                     if (client.channels.isEmpty()) {
                         client.scheduleChannelRefresh(force = true) {
                             updateRunningNotification()
                         }
                     }
                     epgManager.schedulePeriodicRefresh { daddyLiveClient.channels }
-                    if (epgManager.needsBuild()) {
-                        epgManager.scheduleRefresh(
-                            client.channels,
-                            force = true,
-                            tvtvGapFill = false,
-                        )
-                    }
                     app.supplementSource.schedulePeriodicRefresh { daddyLiveClient.channels }
                     app.supplementSource.schedulePeriodicSpecialEventsMaintenance {
                         daddyLiveClient.activeBaseUrl
@@ -243,6 +247,17 @@ class ServerService : LifecycleService() {
         }
     }
 
+    /** Defer loopback sidecar until HTTP is listening — keeps CIO bind fast on cold boot. */
+    private fun scheduleDeferredEmbeddedSidecar(app: GatewayApp) {
+        if (!environment.embeddedSidecarEnabled) return
+        lifecycleScope.launch(Dispatchers.IO) {
+            delay(BOOT_SIDECAR_DEFER_MS)
+            if (!isServiceActive) return@launch
+            startEmbeddedSidecar(app)
+            scheduleEmbeddedSidecarRefreshIfEmpty(app)
+        }
+    }
+
     private suspend fun startEmbeddedSidecar(app: GatewayApp) {
         if (!environment.embeddedSidecarEnabled) return
         if (embeddedSidecarServer?.isRunning == true) return
@@ -256,6 +271,20 @@ class ServerService : LifecycleService() {
         if (app.embeddedSidecarRepository.channelCount() > 0) return
         lifecycleScope.launch(Dispatchers.IO) {
             app.embeddedSidecarRepository.refresh(force = true)
+        }
+    }
+
+    private fun scheduleDeferredBootEpgBuild(client: DaddyLiveClient) {
+        if (!epgManager.needsBuild()) return
+        lifecycleScope.launch(Dispatchers.IO) {
+            delay(BOOT_EPG_BUILD_DEFER_MS)
+            if (!isServiceActive || !::epgManager.isInitialized) return@launch
+            if (!epgManager.needsBuild()) return@launch
+            epgManager.scheduleRefresh(
+                client.channels,
+                force = true,
+                tvtvGapFill = false,
+            )
         }
     }
 
@@ -450,6 +479,9 @@ class ServerService : LifecycleService() {
         const val ACTION_ENSURE_GATEWAY = "com.thothassistant.stepdaddy.gateway.action.ENSURE_GATEWAY"
         private const val HTTP_HEALTH_CHECK_MS = 90_000L
         private const val TIVIMATE_WATCH_MS = 60_000L
+        private const val BOOT_CHANNEL_LOAD_MAX_WAIT_MS = 4_000L
         private const val BOOT_CHANNEL_REFRESH_DEFER_MS = 45_000L
+        private const val BOOT_SIDECAR_DEFER_MS = 12_000L
+        private const val BOOT_EPG_BUILD_DEFER_MS = 20_000L
     }
 }

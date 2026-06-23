@@ -93,11 +93,33 @@ class GatewayEnvironment(context: Context) {
             prefs.edit().putBoolean(KEY_AUTO_START_ON_LAUNCH, value).apply()
         }
 
-    /** When true, launch TiviMate once the gateway is ready (after channel load). */
-    var launchTivimateOnReady: Boolean
-        get() = prefs.getBoolean(KEY_LAUNCH_TIVIMATE_ON_READY, true)
+    /** When true, launch TiViMate once the gateway HTTP server is ready. */
+    var autoLaunchTiviMate: Boolean
+        get() {
+            if (prefs.contains(KEY_AUTO_LAUNCH_TIVIMATE)) {
+                return prefs.getBoolean(KEY_AUTO_LAUNCH_TIVIMATE, true)
+            }
+            return prefs.getBoolean(KEY_LAUNCH_TIVIMATE_ON_READY, true)
+        }
         set(value) {
-            prefs.edit().putBoolean(KEY_LAUNCH_TIVIMATE_ON_READY, value).apply()
+            prefs.edit()
+                .putBoolean(KEY_AUTO_LAUNCH_TIVIMATE, value)
+                .putBoolean(KEY_LAUNCH_TIVIMATE_ON_READY, value)
+                .apply()
+        }
+
+    /** @deprecated use [autoLaunchTiviMate] */
+    var launchTivimateOnReady: Boolean
+        get() = autoLaunchTiviMate
+        set(value) {
+            autoLaunchTiviMate = value
+        }
+
+    /** Playlist channel number to tune on TiViMate boot (patched build /boot-tune). */
+    var tivimateBootTuneChannel: Int
+        get() = prefs.getInt(KEY_TIVIMATE_BOOT_TUNE, DEFAULT_TIVIMATE_BOOT_TUNE)
+        set(value) {
+            prefs.edit().putInt(KEY_TIVIMATE_BOOT_TUNE, value.coerceAtLeast(0)).apply()
         }
 
     /** When true, periodic + wake kicks prioritize recovery while TiviMate is active. */
@@ -353,6 +375,13 @@ class GatewayEnvironment(context: Context) {
             prefs.edit().putString(KEY_PENDING_UPDATE_APK_PATH, value).apply()
         }
 
+    /** Cached path to a downloaded TiviMate Daddy APK awaiting install. */
+    var pendingTiviMateUpdateApkPath: String
+        get() = prefs.getString(KEY_PENDING_TIVIMATE_UPDATE_APK_PATH, "").orEmpty()
+        set(value) {
+            prefs.edit().putString(KEY_PENDING_TIVIMATE_UPDATE_APK_PATH, value).apply()
+        }
+
     /** Survives process death within the same boot session. Cleared on BOOT_COMPLETED. */
     var readyHudShownThisBoot: Boolean
         get() = prefs.getBoolean(KEY_READY_BANNER_SHOWN, false)
@@ -430,7 +459,10 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_MIRROR_URLS = "mirror_urls"
         private const val KEY_START_ON_BOOT = "start_on_boot"
         private const val KEY_AUTO_START_ON_LAUNCH = "auto_start_on_launch"
+        private const val KEY_AUTO_LAUNCH_TIVIMATE = "auto_launch_tivimate"
         private const val KEY_LAUNCH_TIVIMATE_ON_READY = "launch_tivimate_on_ready"
+        private const val KEY_TIVIMATE_BOOT_TUNE = "tivimate_boot_tune_channel"
+        private const val DEFAULT_TIVIMATE_BOOT_TUNE = 51
         private const val KEY_TIVIMATE_WATCH = "tivimate_watch"
         private const val KEY_PLAYLIST_TITLE_STYLE = "playlist_title_style"
         private const val KEY_SERVER_RUNNING = "server_running"
@@ -456,8 +488,9 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_UPDATE_DRIVE_FOLDER_URL = "update_drive_folder_url"
         private const val KEY_DISMISSED_UPDATE_VERSION_CODE = "dismissed_update_version_code"
         private const val KEY_PENDING_UPDATE_APK_PATH = "pending_update_apk_path"
+        private const val KEY_PENDING_TIVIMATE_UPDATE_APK_PATH = "pending_tivimate_update_apk_path"
         private const val CRASH_RECOVERY_BANNER_SKIP_MS = 10 * 60 * 1000L
         private const val DEFAULT_MIRRORS_CSV =
-            "https://daddylive.org,https://daddylive.li,https://daddylive.eu"
+            "https://daddylive.li,https://daddylive.org"
     }
 }

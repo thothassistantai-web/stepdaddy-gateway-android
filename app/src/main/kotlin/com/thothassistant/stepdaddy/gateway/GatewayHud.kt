@@ -69,13 +69,16 @@ object GatewayHud {
         }
     }
 
-    /** HTTP server is listening; catalog may still be empty on cold boot. */
+    /** HTTP server is listening; launch TiViMate in parallel when enabled. */
     fun onHttpListening(context: Context, channelCount: Int, skipSurface: Boolean) {
         if (skipSurface) return
         val environment = (context.applicationContext as GatewayApp).gatewayEnvironment
         if (channelCount > 0) {
             onCatalogReady(context, channelCount, environment, launchTivimate = true)
             return
+        }
+        if (environment.autoLaunchTiviMate) {
+            maybeLaunchTivimate(context, environment)
         }
         if (startingSurfaced) return
         startingSurfaced = true
@@ -176,16 +179,56 @@ object GatewayHud {
     }
 
     private fun maybeLaunchTivimate(context: Context, environment: GatewayEnvironment) {
-        if (!environment.launchTivimateOnReady || tivimateLaunchedThisBoot) return
+        if (!environment.autoLaunchTiviMate || tivimateLaunchedThisBoot) return
         if (!TiviMateLauncher.isInstalled(context)) {
             Log.i(TAG, "Launch TiviMate skipped — not installed")
             return
         }
         tivimateLaunchedThisBoot = true
+        val bootChannel = environment.tivimateBootTuneChannel
         mainHandler.postDelayed({
-            TiviMateLauncher.launch(context)
+            TiviMateLauncher.launchForGateway(context, environment.loopbackBase())
+            if (bootChannel > 0) {
+                scheduleBootTuneWhenPatchReady(context, bootChannel)
+            }
         }, LAUNCHER_SETTLE_MS)
     }
 
-    private const val LAUNCHER_SETTLE_MS = 2_000L
+    private fun scheduleBootTuneWhenPatchReady(context: Context, channel: Int) {
+        val appContext = context.applicationContext
+        var attempts = 0
+        val retry = object : Runnable {
+            override fun run() {
+                if (attempts++ >= 24) return
+                val state = TiviMateController.probeState()
+                if (!state.reachable) {
+                    mainHandler.postDelayed(this, 500L)
+                    return
+                }
+                val player = state.state
+                if (TiviMatePlaylistStateHelper.shouldDeferBootTune(player)) {
+                    Log.i(
+                        TAG,
+                        "Boot-tune deferred — ${player?.stateReason ?: "no_state"} " +
+                            "(channels=${player?.channelCount ?: 0})",
+                    )
+                    mainHandler.postDelayed(this, 500L)
+                    return
+                }
+                if (player?.setupDone == true && (player.channelCount ?: 0) > 0) {
+                    Log.i(TAG, "Boot-tune skipped — playlist ready; TiViMate restores last channel")
+                    return
+                }
+                if (TiviMateController.setBootTuneChannel(appContext, channel)) {
+                    Log.i(TAG, "Boot-tune $channel saved via patch HTTP (first setup)")
+                    return
+                }
+                mainHandler.postDelayed(this, 500L)
+            }
+        }
+        mainHandler.postDelayed(retry, 800L)
+    }
+
+    /** Wait for TiViMate cold start before parallel launch + boot-tune HTTP. */
+    private const val LAUNCHER_SETTLE_MS = 2_500L
 }

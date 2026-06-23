@@ -14,6 +14,7 @@ import com.thothassistant.stepdaddy.gateway.routes.LogoRoutes
 import com.thothassistant.stepdaddy.gateway.routes.NtvStreamRoutes
 import com.thothassistant.stepdaddy.gateway.routes.PlaylistRoutes
 import com.thothassistant.stepdaddy.gateway.routes.StreamRoutes
+import com.thothassistant.stepdaddy.gateway.routes.TiviMateRoutes
 import com.thothassistant.stepdaddy.gateway.routes.UiRoutes
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
 import com.thothassistant.stepdaddy.gateway.upstream.NtvCxCdnLiveResolver
@@ -61,7 +62,8 @@ class GatewayServer(
 
     fun start() {
         if (engine != null) return
-        val healthRoutes = HealthRoutes(environment, client, epgManager, supplementSource)
+        val healthRoutes = HealthRoutes(appContext, environment, client, epgManager, supplementSource)
+        val tiviMateRoutes = TiviMateRoutes(appContext, environment)
         val routes = PlaylistRoutes(
             environment,
             client,
@@ -105,6 +107,18 @@ class GatewayServer(
                 }
                 get("/tivimate-setup") {
                     healthRoutes.tivimateSetup(call)
+                }
+                post("/tivimate-events") {
+                    tiviMateRoutes.postEvent(call)
+                }
+                get("/tivimate-events") {
+                    tiviMateRoutes.getEvents(call)
+                }
+                get("/tivimate-handshake") {
+                    tiviMateRoutes.handshake(call)
+                }
+                get("/tivimate-state") {
+                    tiviMateRoutes.state(call)
                 }
                 route("/tivimate-playlist.m3u8") {
                     get { routes.tivimatePlaylist(call) }

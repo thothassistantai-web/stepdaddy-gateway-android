@@ -629,6 +629,25 @@
             android:textSize="12sp" />
 
         <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/about_section_about"
+            android:textColor="@color/on_background"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonOpenAbout"
+            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/action_about"
+            app:icon="@drawable/ic_about"
+            app:iconGravity="textStart" />
+
+        <TextView
             android:id="@+id/textBuildInfo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

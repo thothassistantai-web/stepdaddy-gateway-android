@@ -4,6 +4,7 @@ import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import com.thothassistant.stepdaddy.gateway.epg.PlaylistEpgHeader
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -274,8 +275,9 @@ class PlaylistBuilderTest {
         val golfEvent = playlist.indexOf("ROUND 1")
         val swimGuide = playlist.indexOf("SWIMMING SCHEDULE")
         val swimEvent = playlist.indexOf("FINAL HEAT")
-        assertTrue(playlist.contains("dlhd-event-guide/golf.mp4"))
-        assertTrue(playlist.contains("dlhd-event-guide/swimming.mp4"))
+        assertTrue(playlist.contains("dlhd-event-guide/golf.mp4|"))
+        assertTrue(playlist.contains("dlhd-event-guide/swimming.mp4|"))
+        assertFalse(playlist.contains("dlhd-event-guide/golf.m3u8"))
         assertTrue(golfGuide >= 0 && golfEvent > golfGuide)
         assertTrue(swimGuide >= 0 && swimEvent > swimGuide)
         assertTrue(golfGuide < swimGuide)

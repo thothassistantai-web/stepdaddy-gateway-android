@@ -7,6 +7,20 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-06-23
+
+### Changed
+
+- **Suite alignment** — unified semver `2.0.0` / `versionCode` 20000 with TiviMate Daddy patch
+- **Version source** — `STEPDADDY_VERSION` at monorepo root drives Gradle `versionName` / `versionCode` and default TiviMate patch constants
+
+## [1.0.34] - 2026-06-22
+
+### Fixed
+
+- **Special Events guides in TiviMate** — guide channels use HLS `.m3u8` wrappers (not direct `.mp4`) so they appear in the live TV list, not Movies/VOD
+- **Event playlist titles** — scraped event titles (e.g. Bulls vs Knicks) used for stream rows; EPG blocks still use scraped start/stop times
+
 ## [1.0.33] - 2026-06-22
 
 ### Added

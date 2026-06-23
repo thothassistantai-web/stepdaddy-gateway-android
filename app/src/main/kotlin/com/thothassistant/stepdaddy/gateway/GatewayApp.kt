@@ -81,6 +81,16 @@ class GatewayApp : Application() {
                 gatewayEnvironment,
             ).also { _appUpdateCoordinator = it }
 
+    private var _tiviMateUpdateCoordinator:
+        com.thothassistant.stepdaddy.gateway.update.TiviMateUpdateCoordinator? = null
+
+    val tiviMateUpdateCoordinator: com.thothassistant.stepdaddy.gateway.update.TiviMateUpdateCoordinator
+        get() = _tiviMateUpdateCoordinator
+            ?: com.thothassistant.stepdaddy.gateway.update.TiviMateUpdateCoordinator(
+                this,
+                gatewayEnvironment,
+            ).also { _tiviMateUpdateCoordinator = it }
+
     override fun onCreate() {
         super.onCreate()
         // Keep Application.onCreate minimal — heavy init during BOOT_COMPLETED ANRs the

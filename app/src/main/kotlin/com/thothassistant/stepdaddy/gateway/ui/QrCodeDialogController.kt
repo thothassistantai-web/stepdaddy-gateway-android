@@ -15,6 +15,7 @@ import com.thothassistant.stepdaddy.gateway.network.NetworkAccessMode
 class QrCodeDialogController(
     private val activity: AppCompatActivity,
     private val environment: GatewayEnvironment,
+    private val tivimateLaunchCoordinator: TiviMateLaunchCoordinator? = null,
 ) {
     private enum class UrlKind { PLAYLIST, EPG }
 
@@ -145,6 +146,14 @@ class QrCodeDialogController(
             .create()
 
         binding.buttonQrClose.setOnClickListener { dialog.dismiss() }
+        if (tivimateLaunchCoordinator != null) {
+            binding.buttonQrLaunchTivimate.setOnClickListener {
+                dialog.dismiss()
+                tivimateLaunchCoordinator.launchOrPromptInstall()
+            }
+        } else {
+            binding.buttonQrLaunchTivimate.visibility = View.GONE
+        }
         binding.buttonHowItWorks.visibility = View.GONE
 
         refreshQr()

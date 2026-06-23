@@ -117,6 +117,7 @@ class GatewayAdminController(
         patch.iptvOrgEpgUrl?.let { environment.iptvOrgEpgUrl = it }
         patch.startOnBoot?.let { environment.startOnBoot = it }
         patch.autoStartOnLaunch?.let { environment.autoStartOnLaunch = it }
+        patch.autoLaunchTiviMate?.let { environment.autoLaunchTiviMate = it }
         if (patch.gatewayEpgEnabled != null || patch.externalEpgUrl != null ||
             patch.iptvOrgEpgEnabled != null || patch.iptvOrgEpgUrl != null
         ) {
@@ -590,6 +591,7 @@ class GatewayAdminController(
         iptvOrgEpgUrl = environment.iptvOrgEpgUrl,
         startOnBoot = environment.startOnBoot,
         autoStartOnLaunch = environment.autoStartOnLaunch,
+        autoLaunchTiviMate = environment.autoLaunchTiviMate,
     )
 
     companion object {

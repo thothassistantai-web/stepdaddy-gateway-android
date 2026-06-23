@@ -1,7 +1,10 @@
 package com.thothassistant.stepdaddy.gateway.routes
 
+import android.content.Context
 import com.thothassistant.stepdaddy.gateway.BuildConfig
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
+import com.thothassistant.stepdaddy.gateway.TiviMateEventStore
+import com.thothassistant.stepdaddy.gateway.TiviMateController
 import com.thothassistant.stepdaddy.gateway.epg.EpgManager
 import com.thothassistant.stepdaddy.gateway.epg.EpgCoverageCalculator
 import com.thothassistant.stepdaddy.gateway.epg.EpgPlaylistUrlResolver
@@ -11,6 +14,7 @@ import com.thothassistant.stepdaddy.gateway.model.ProviderStats
 import com.thothassistant.stepdaddy.gateway.model.SupplementStatus
 import com.thothassistant.stepdaddy.gateway.model.HealingStatus
 import com.thothassistant.stepdaddy.gateway.model.HealthResponse
+import com.thothassistant.stepdaddy.gateway.model.TiviMateHealthEvents
 import com.thothassistant.stepdaddy.gateway.model.TivimateSetup
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
 import com.thothassistant.stepdaddy.gateway.upstream.GroupTitleResolver
@@ -23,6 +27,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class HealthRoutes(
+    private val appContext: Context,
     private val environment: GatewayEnvironment,
     private val client: DaddyLiveClient,
     private val epgManager: EpgManager,
@@ -156,12 +161,18 @@ class HealthRoutes(
         )
         val gatewayOnline = totalChannels > 0 && !basePayload.starting &&
             (!gatewayEpgOn || epgReady || !epgManager.isBuilding())
+        val lastTiviMateEvent = TiviMateEventStore.lastEvent()
         val payload = basePayload.copy(
             loadProgress = DashboardLoadProgressCalculator.snapshot(
                 health = basePayload,
                 epgManager = epgManager,
                 gatewayOnline = gatewayOnline,
                 serviceActive = true,
+            ),
+            tivimateEvents = TiviMateHealthEvents(
+                buffered = TiviMateEventStore.size(),
+                lastEvent = lastTiviMateEvent?.event,
+                lastTimestamp = lastTiviMateEvent?.timestamp,
             ),
         )
         call.respondText(
@@ -177,6 +188,7 @@ class HealthRoutes(
             supplementSource.sportsEpgXmlFile(),
         )
         val gatewayEpgOn = environment.gatewayEpgEnabled
+        val player = TiviMateController.probe(appContext)
         val payload = TivimateSetup(
             playlist = "$base/tivimate-playlist.m3u8",
             epg = playlistEpgUrls.joinToString(","),
@@ -193,6 +205,11 @@ class HealthRoutes(
                 playlistEpgUrls.size
             },
             epgAgeSeconds = if (gatewayEpgOn) epgManager.ageSeconds() else null,
+            playerInstalled = player.installed,
+            playerVersion = player.versionName,
+            playerVersionCode = player.versionCode,
+            playerLikelyActive = player.likelyActive,
+            launchComponent = TiviMateController.LAUNCH_COMPONENT,
         )
         call.respondText(
             json.encodeToString(payload),

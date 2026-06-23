@@ -207,6 +207,16 @@
             android:visibility="gone" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonQrLaunchTivimate"
+            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp"
+            android:focusable="true"
+            android:text="@string/action_launch_tivimate" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonQrClose"
             style="@style/Widget.StepDaddyGateway.TvButton"
             android:layout_width="wrap_content"

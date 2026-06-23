@@ -14,6 +14,22 @@ val gitHash: String = runCatching {
 
 val buildTime: Long = System.currentTimeMillis()
 
+val stepdaddyVersionFile = rootProject.file("../STEPDADDY_VERSION")
+fun readStepdaddyVersionProp(name: String, default: String): String {
+    if (!stepdaddyVersionFile.isFile) return default
+    return stepdaddyVersionFile.readLines()
+        .map { it.trim() }
+        .firstOrNull { it.startsWith("$name=") }
+        ?.substringAfter("=")
+        ?.trim()
+        ?: default
+}
+val stepdaddyVersionName = readStepdaddyVersionProp("STEPDADDY_VERSION", "2.0.0")
+val stepdaddyVersionCode = readStepdaddyVersionProp("VERSION_CODE", "20000").toInt()
+val tiviMateApkUrl =
+    "https://github.com/thothassistantai-web/tivimate-daddy/releases/download/" +
+        "tivimate-daddy-v${stepdaddyVersionName}/TiviMate-4.6.1-StepDaddy-${stepdaddyVersionName}.apk"
+
 android {
     namespace = "com.thothassistant.stepdaddy.gateway"
     compileSdk = 34
@@ -22,15 +38,15 @@ android {
         applicationId = "com.thothassistant.stepdaddy.gateway"
         minSdk = 24
         targetSdk = 34
-        versionCode = 36
-        versionName = "1.0.33"
+        versionCode = stepdaddyVersionCode
+        versionName = stepdaddyVersionName
 
         buildConfigField("int", "DEFAULT_PORT", "3000")
         buildConfigField("String", "DEFAULT_API_URL", "\"http://127.0.0.1:3000\"")
         buildConfigField(
             "String",
             "DEFAULT_DLHD_BASE_URL",
-            "\"https://daddylive.org\"",
+            "\"https://daddylive.eu\"",
         )
         buildConfigField("String", "DEFAULT_SUPPLEMENT_BASE_URL", "\"\"")
         buildConfigField("boolean", "DEFAULT_EMBEDDED_SIDECAR_ENABLED", "false")
@@ -57,6 +73,19 @@ android {
             "\"https://api.github.com/repos/thothassistantai-web/stepdaddy-gateway-android/releases/latest\"",
         )
         buildConfigField("String", "DEFAULT_UPDATE_DRIVE_FOLDER_URL", "\"\"")
+        buildConfigField(
+            "String",
+            "DEFAULT_TIVIMATE_STEPDADDY_APK_URL",
+            "\"$tiviMateApkUrl\"",
+        )
+        buildConfigField(
+            "String",
+            "TIVIMATE_GITHUB_RELEASE_REPO",
+            "\"thothassistantai-web/tivimate-daddy\"",
+        )
+        buildConfigField("String", "TIVIMATE_RELEASE_TAG_PREFIX", "\"tivimate-daddy-v\"")
+        buildConfigField("String", "DEFAULT_TIVIMATE_PATCH_VERSION", "\"$stepdaddyVersionName\"")
+        buildConfigField("int", "DEFAULT_TIVIMATE_PATCH_VERSION_CODE", "$stepdaddyVersionCode")
         buildConfigField("String", "GIT_HASH", "\"$gitHash\"")
         buildConfigField("long", "BUILD_TIME", "${buildTime}L")
     }

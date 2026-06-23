@@ -2,9 +2,12 @@
 
 **Native Android TV IPTV gateway** — Kotlin + Ktor on port **3000**, built for ONN sticks, Google TV, and sideload installs. Replaces the Termux/Python stack with a single APK that serves TiviMate-compatible playlists and XMLTV EPG on-device.
 
+Works **standalone** (any IPTV client) or **with [TiviMate Daddy](https://github.com/thothassistantai-web/tivimate-daddy)** for auto-setup, channel tune, and bidirectional telemetry. See [docs/TWO-APP.md](docs/TWO-APP.md).
+
 | | |
 |---|---|
-| **Version** | 1.0.3 (`versionCode` 6) |
+| **Gateway version** | 2.0.0 (`versionCode` 20000) |
+| **TiviMate Daddy patch** | `2.0.0` (on TiViMate 4.6.1) |
 | **Package** | `com.thothassistant.stepdaddy.gateway` |
 | **License** | [MIT](LICENSE) — see [LEGAL.md](LEGAL.md) / [DISCLAIMER.md](DISCLAIMER.md) |
 | **Upstream parity** | [stepdaddy-livehd](https://github.com/thothassistantai-web/stepdaddy-livehd) (Linux/web gateway) |
@@ -14,13 +17,21 @@
 
 ## For users
 
-StepDaddy Gateway runs a small HTTP server on your Android TV device. Point **TiviMate** (or any M3U/XMLTV app) at local URLs — no command line, no Termux.
+### ONN stick quick start
 
-**Quick start**
+**Fastest path:** [docs/ONN-QUICK-START.md](docs/ONN-QUICK-START.md) — install Gateway + TiviMate Daddy, enable boot + auto-launch, verify in ~5 minutes.
+
+### Gateway only (any IPTV app)
 
 1. Install the APK → [docs/INSTALL.md](docs/INSTALL.md)
-2. Open the app → **Start server** → wait for the ready banner
-3. Add playlist + EPG URLs in TiviMate → [docs/TUTORIAL.md](docs/TUTORIAL.md)
+2. Open the app → **Start server** → wait for the ready HUD
+3. Add playlist + EPG URLs in your player → [docs/TUTORIAL.md](docs/TUTORIAL.md)
+
+### Gateway + TiviMate Daddy (recommended)
+
+1. Start Gateway first (`127.0.0.1:3000` listening)
+2. Install `TiviMate-4.6.1-StepDaddy.apk` → auto-setup on first launch
+3. Optional: **Launch TiviMate when ready** in Gateway settings
 
 | URL | Purpose |
 |-----|---------|
@@ -28,12 +39,14 @@ StepDaddy Gateway runs a small HTTP server on your Android TV device. Point **Ti
 | `http://127.0.0.1:3000/epg.xml` | XMLTV guide |
 | `http://127.0.0.1:3000/tivimate-stream/{id}.m3u8` | Per-channel HLS |
 | `http://127.0.0.1:3000/health` | JSON status |
+| `http://127.0.0.1:3000/tivimate-handshake` | Patch bootstrap (bidirectional) |
+| `http://127.0.0.1:4617/status` | TiviMate Daddy control API (patch only) |
 
-**Important:** This app is an **educational aggregator** — it does not host video. Third-party upstream sources may change or stop working. [DISCLAIMER.md](DISCLAIMER.md)
+**Important:** Educational aggregator — does not host video. Third-party upstream may change. [DISCLAIMER.md](DISCLAIMER.md)
 
 **Problems?** → [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) · [GitHub Issues](https://github.com/thothassistantai-web/stepdaddy-gateway-android/issues)
 
-**Network modes:** Settings → Network — **Default** (loopback only), **Local** (same Wi‑Fi subnet), **Remote** (HTTPS tunnel + access token). See [docs/NETWORK-MODES.md](docs/NETWORK-MODES.md).
+**Network modes:** Settings → Network — **Default** (loopback), **Local** (LAN), **Remote** (tunnel + token). [docs/NETWORK-MODES.md](docs/NETWORK-MODES.md)
 
 **Privacy:** [PRIVACY.md](PRIVACY.md)
 
@@ -90,6 +103,14 @@ See [docs/RELEASE.md](docs/RELEASE.md) for signing, GitHub Releases, and Play St
 | Play bundle | `app/build/outputs/bundle/release/app-release.aab` |
 | Copied artifacts | `release/stepdaddy-gateway-<version>.apk` |
 
+### Build TiviMate Daddy patch
+
+```bash
+cd research/tivimate-apk/stepdaddy-patch
+./build.sh
+# → research/tivimate-apk/TiviMate-4.6.1-StepDaddy.apk
+```
+
 ### Tests
 
 ```bash
@@ -98,7 +119,8 @@ See [docs/RELEASE.md](docs/RELEASE.md) for signing, GitHub Releases, and Play St
 
 ### Architecture
 
-[ARCHITECTURE.md](ARCHITECTURE.md) — Python → Kotlin route map, EPG pipeline, boot lifecycle.
+[ARCHITECTURE.md](ARCHITECTURE.md) — routes, EPG, boot lifecycle, bidirectional API.  
+[TWO-APP.md](docs/TWO-APP.md) — independent vs combined deployment, version matrix.
 
 ### Project layout
 
@@ -107,12 +129,15 @@ stepdaddy-android/
   app/src/main/kotlin/.../gateway/
     ServerService.kt          # Foreground service
     GatewayServer.kt          # Ktor routing
-    routes/                   # Health, playlist, stream, EPG
+    GatewayHud.kt             # Ready HUD + TiviMate auto-launch
+    TiviMateController.kt     # Patch HTTP :4617 + intents
+    routes/                   # Health, playlist, stream, EPG, tivimate-*
     epg/                      # Light EPG builder
-    upstream/                 # DaddyLive + resportz
+    upstream/                 # DaddyLive + resportz + Special Events
     ui/                       # TV dashboard, player, settings
-  docs/                       # Install, tutorial, release, migration
-  scripts/                    # build-release.sh, EPG export, FUSA tests
+  docs/                       # Install, tutorial, two-app, ONN quick start
+  scripts/                    # build-release.sh, FUSA boot tests
+research/tivimate-apk/stepdaddy-patch/   # TiviMate Daddy smali patch
 ```
 
 ### Contributing
@@ -123,10 +148,12 @@ stepdaddy-android/
 
 ## Features
 
-- Embedded Ktor HTTP server with enforced network modes (Default / Local / Remote)
-- DaddyLive channel API + resportz HLS resolution (mirror failover)
+- Embedded Ktor HTTP server with network modes (Default / Local / Remote)
+- DaddyLive channel API + mirror failover + resportz HLS resolution
+- Special Events (DaddyLive schedule + guides) with TiviMate-compatible HLS wrappers
 - Light EPG (epgshare + iptv-org), channel logos
-- Boot auto-start, overlay banner, TiviMate watch / keep-alive
+- Boot auto-start, HUD overlay, **Launch TiviMate when ready**, boot-tune via patch
+- Bidirectional API: `POST /tivimate-events`, `GET /tivimate-state`, handshake
 - Built-in player, QR remote URLs, optional GitHub/Drive updates
 - `/content/` segment proxy for TiviMate HLS compatibility
 
@@ -136,17 +163,17 @@ stepdaddy-android/
 
 | Doc | Description |
 |-----|-------------|
-| [docs/INSTALL.md](docs/INSTALL.md) | APK install, permissions, legacy conflict |
+| [docs/ONN-QUICK-START.md](docs/ONN-QUICK-START.md) | Fastest ONN stick setup |
+| [docs/TWO-APP.md](docs/TWO-APP.md) | Gateway + TiviMate Daddy architecture |
+| [docs/INSTALL.md](docs/INSTALL.md) | APK install, TiviMate options, permissions |
 | [docs/TUTORIAL.md](docs/TUTORIAL.md) | TiviMate setup walkthrough |
-| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Boot, EPG, stream diagnostics |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Boot, EPG, stream, patch diagnostics |
 | [docs/RELEASE.md](docs/RELEASE.md) | Version bump, signing, GitHub release |
-| [docs/GITHUB-SETUP-NEEDED.md](docs/GITHUB-SETUP-NEEDED.md) | Credentials checklist for org publish |
-| [docs/MIGRATION-PLAN.md](docs/MIGRATION-PLAN.md) | Repo mapping for thothassistantai-web |
-| [docs/NETWORK-MODES.md](docs/NETWORK-MODES.md) | Default / Local / Remote access enforcement |
+| [docs/NETWORK-MODES.md](docs/NETWORK-MODES.md) | Default / Local / Remote access |
 | [docs/REMOTE-ACCESS.md](docs/REMOTE-ACCESS.md) | Cloudflare Tunnel, Tailscale, access token |
+| [.cursor/skills/tivimate-control/SKILL.md](.cursor/skills/tivimate-control/SKILL.md) | Agent skill — patch + bidirectional API |
+| [research/tivimate-apk/stepdaddy-patch/README.md](../research/tivimate-apk/stepdaddy-patch/README.md) | Patch build, HTTP :4617, version history |
 | [PRIVACY.md](PRIVACY.md) | Privacy policy |
-| [docs/SCREENSHOT-CHECKLIST.md](docs/SCREENSHOT-CHECKLIST.md) | Play Store capture list |
-| [PLAY_STORE_LISTING.md](PLAY_STORE_LISTING.md) | Store description draft |
 | [BENCHMARKS.md](BENCHMARKS.md) | ONN stick performance notes |
 
 ---
@@ -157,3 +184,4 @@ stepdaddy-android/
 |----------|------------|
 | Linux / web gateway | [stepdaddy-livehd](https://github.com/thothassistantai-web/stepdaddy-livehd) |
 | Android TV remote (Linux) | [android-tv-connect](https://github.com/thothassistantai-web/android-tv-connect) |
+| TiviMate Daddy patch | `research/tivimate-apk/stepdaddy-patch/` |

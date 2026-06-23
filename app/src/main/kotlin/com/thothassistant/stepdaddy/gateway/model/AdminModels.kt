@@ -65,6 +65,7 @@ data class AdminSettingsSnapshot(
     val iptvOrgEpgUrl: String,
     val startOnBoot: Boolean,
     val autoStartOnLaunch: Boolean,
+    val autoLaunchTiviMate: Boolean,
 )
 
 @Serializable
@@ -86,6 +87,7 @@ data class AdminSettingsPatch(
     val iptvOrgEpgUrl: String? = null,
     val startOnBoot: Boolean? = null,
     val autoStartOnLaunch: Boolean? = null,
+    val autoLaunchTiviMate: Boolean? = null,
 )
 
 @Serializable

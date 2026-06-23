@@ -9,7 +9,7 @@
 | **Gateway target** | `http://10.161.65.181:3000` (LAN IP; check with `adb shell ip -4 addr show wlan0`) |
 | **APK / version** (`GET /health`) | `0.2.0-gateway-mvp-debug` |
 | **Channels in playlist** | 1140 |
-| **Upstream** | `https://daddylive.org` |
+| **Upstream** | `https://daddylive.org` (historical run; current default is `https://daddylive.eu`) |
 | **Package** | `com.thothassistant.stepdaddy.gateway.debug` |
 
 ---

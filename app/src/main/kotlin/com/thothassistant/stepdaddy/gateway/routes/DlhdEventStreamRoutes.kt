@@ -4,6 +4,7 @@ import android.content.Context
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import com.thothassistant.stepdaddy.gateway.upstream.DlhdEventStreamResolver
+import com.thothassistant.stepdaddy.gateway.upstream.GuideScheduleHlsManifest
 import com.thothassistant.stepdaddy.gateway.upstream.GuideScheduleMediaCache
 import com.thothassistant.stepdaddy.gateway.upstream.HlsErrorManifest
 import com.thothassistant.stepdaddy.gateway.upstream.M3u8Rewriter
@@ -103,14 +104,7 @@ class DlhdEventStreamRoutes(
         }
         val base = environment.loopbackBase().trimEnd('/')
         val mp4Url = "$base/dlhd-event-guide/$normalized.mp4"
-        val body = buildString {
-            appendLine("#EXTM3U")
-            appendLine("#EXT-X-VERSION:3")
-            appendLine("#EXT-X-TARGETDURATION:30")
-            appendLine("#EXT-X-PLAYLIST-TYPE:EVENT")
-            appendLine("#EXTINF:30.0,schedule")
-            appendLine(mp4Url)
-        }
+        val body = GuideScheduleHlsManifest.build(mp4Url)
         call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
         call.response.header(HttpHeaders.CacheControl, "no-cache")
         call.respondBytes(body.toByteArray(StandardCharsets.UTF_8), ContentType("application", "vnd.apple.mpegurl"))
