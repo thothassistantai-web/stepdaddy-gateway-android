@@ -40,7 +40,13 @@ object TvtvUsEpgConfig {
     const val MAX_CHANNELS_PER_BUILD = 24
 
     /** Pause between grid HTTP calls to avoid 429 rate limits. */
-    const val GRID_REQUEST_DELAY_MS = 1_500L
+    const val GRID_REQUEST_DELAY_MS = 2_000L
+
+    /** Retries when tvtv.us returns HTTP 429 (rate limit). */
+    const val MAX_GRID_429_RETRIES = 3
+
+    /** Initial backoff after 429; doubles each retry. */
+    const val GRID_429_BACKOFF_MS = 5_000L
 
     const val DOWNLOAD_TIMEOUT_MS = 45_000L
 

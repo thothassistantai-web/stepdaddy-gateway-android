@@ -7,6 +7,12 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.4] - 2026-06-29
+
+### Fixed
+
+- **Eastern EPG rate limits** — tvtv.us grid fetches retry HTTP 429 with exponential backoff (5s → 10s → 20s) and a longer inter-request delay (2s) so HBO 2, Showtime, and STARZ in Black keep real programme titles instead of "Live programming" placeholders
+
 ## [3.0.3] - 2026-06-29
 
 ### Fixed

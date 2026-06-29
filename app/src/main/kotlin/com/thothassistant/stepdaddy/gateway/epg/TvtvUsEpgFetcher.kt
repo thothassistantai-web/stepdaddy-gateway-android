@@ -142,23 +142,36 @@ class TvtvUsEpgFetcher(
             .get()
             .build()
         val tmp = java.io.File(cache.parentFile, "${cache.name}.part")
-        httpClient.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) error("tvtv_grid_download_failed:${response.code}")
-            val body = response.body ?: error("tvtv_grid_empty")
-            val sink = tmp.outputStream()
-            val max = TvtvUsEpgConfig.MAX_GRID_BYTES.toLong()
-            var total = 0L
-            body.byteStream().use { input ->
-                val buffer = ByteArray(64 * 1024)
-                while (true) {
-                    val read = input.read(buffer)
-                    if (read <= 0) break
-                    total += read
-                    if (total > max) error("tvtv_grid_exceeded_max_bytes")
-                    sink.write(buffer, 0, read)
+        var attempt = 0
+        var backoffMs = TvtvUsEpgConfig.GRID_429_BACKOFF_MS
+        while (true) {
+            val response = httpClient.newCall(request).execute()
+            response.use {
+                if (it.code == 429 && attempt < TvtvUsEpgConfig.MAX_GRID_429_RETRIES) {
+                    attempt++
+                    Log.w(TAG, "tvtv.us grid rate-limited (429), retry $attempt after ${backoffMs}ms")
+                    Thread.sleep(backoffMs)
+                    backoffMs *= 2
+                    return@use
                 }
+                if (!it.isSuccessful) error("tvtv_grid_download_failed:${it.code}")
+                val body = it.body ?: error("tvtv_grid_empty")
+                val sink = tmp.outputStream()
+                val max = TvtvUsEpgConfig.MAX_GRID_BYTES.toLong()
+                var total = 0L
+                body.byteStream().use { input ->
+                    val buffer = ByteArray(64 * 1024)
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read <= 0) break
+                        total += read
+                        if (total > max) error("tvtv_grid_exceeded_max_bytes")
+                        sink.write(buffer, 0, read)
+                    }
+                }
+                sink.close()
             }
-            sink.close()
+            if (tmp.exists()) break
         }
         if (!tmp.renameTo(cache)) {
             cache.writeBytes(tmp.readBytes())
