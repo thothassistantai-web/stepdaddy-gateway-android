@@ -98,7 +98,7 @@ class EpgRoutes(
         }
         if (call.request.httpMethod == HttpMethod.Head) {
             call.response.header(HttpHeaders.ContentLength, file.length().toString())
-            call.respondText("", ContentType.Application.Xml)
+            call.respond(HttpStatusCode.OK)
             return
         }
         call.respondFile(file)

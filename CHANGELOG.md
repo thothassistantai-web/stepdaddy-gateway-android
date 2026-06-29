@@ -7,6 +7,12 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.2] - 2026-06-29
+
+### Fixed
+
+- **EPG HEAD** — `/epg.xml` HEAD no longer emits duplicate `Content-Length` headers (TiViMate silent EPG refresh)
+
 ## [3.0.1] - 2026-06-29
 
 ### Fixed
