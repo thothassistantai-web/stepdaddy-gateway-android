@@ -84,7 +84,9 @@ internal object StreamVaultPluginPlaybackPrepare {
                 supplement?.origin?.trim()?.takeIf { it.isNotEmpty() }?.let { headers["Origin"] = it }
                 userAgent = GatewayConfig.TIVIMATE_USER_AGENT
             }
-            path.contains("/dlhd-event-stream/") -> {
+            path.contains("/dlhd-event-stream/") ||
+                path.contains("/tivimate-stream/dlhd-event-") ||
+                path.contains("/dlhd-event-mirror/") -> {
                 headers["Referer"] = DlhdEventStreamResolver.EMBED_REFERER
                 headers["Origin"] = DlhdEventStreamResolver.EMBED_REFERER.trimEnd('/')
                 userAgent = GatewayConfig.TIVIMATE_USER_AGENT

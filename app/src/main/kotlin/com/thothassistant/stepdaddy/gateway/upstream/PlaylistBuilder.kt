@@ -409,17 +409,17 @@ object PlaylistBuilder {
             }
         }
         if (supplement.id.startsWith("dlhd-event:")) {
-            val key = supplement.dlhdEventStreamKey?.trim().orEmpty()
-            if (key.startsWith("tv|", ignoreCase = true)) {
-                return channelStreamLine(base, key.substringAfter("|"), dlhdOrigin, streamUrlStyle)
-            }
-            val token = supplement.id.removePrefix("dlhd-event:")
-            val stream = "${base.trimEnd('/')}/dlhd-event-stream/$token.m3u8"
+            val token = supplement.dlhdEventKey
+                ?: supplement.id.removePrefix("dlhd-event:")
+            val stream = "${base.trimEnd('/')}/tivimate-stream/dlhd-event-$token.m3u8"
             if (streamUrlStyle == StreamUrlStyle.PLAIN) {
                 return stream
             }
-            val referer = DlhdEventStreamResolver.EMBED_REFERER
-            return "$stream|User-Agent=$TIVIMATE_USER_AGENT|Referer=$referer|Origin=${referer.trimEnd('/')}"
+            val referer = supplement.referer?.trim()?.takeIf { it.isNotEmpty() }
+                ?: DlhdEventStreamResolver.EMBED_REFERER
+            val origin = supplement.origin?.trim()?.takeIf { it.isNotEmpty() }
+                ?: referer.trimEnd('/')
+            return "$stream|User-Agent=$TIVIMATE_USER_AGENT|Referer=$referer|Origin=$origin"
         }
         if (supplement.id.startsWith("ntv:")) {
             val token = supplement.id.removePrefix("ntv:")

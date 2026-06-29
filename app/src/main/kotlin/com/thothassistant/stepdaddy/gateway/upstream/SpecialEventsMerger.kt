@@ -1,5 +1,6 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
+import com.thothassistant.stepdaddy.gateway.model.DlhdEventMirror
 import com.thothassistant.stepdaddy.gateway.model.EventScheduleSource
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import java.security.MessageDigest
@@ -54,7 +55,7 @@ object SpecialEventsMerger {
         val guides = linkedMapOf<String, SupplementChannel>()
         val streamsByCategory = linkedMapOf<String, MutableList<SupplementChannel>>()
         val theTvAppStreams = mutableListOf<SupplementChannel>()
-        val occupiedStreamKeys = linkedSetOf<String>()
+        val occupiedEventKeys = linkedSetOf<String>()
         val occupiedTitleKeys = mutableSetOf<String>()
         val nowMs = System.currentTimeMillis()
 
@@ -73,6 +74,10 @@ object SpecialEventsMerger {
             )
             val (start, stop) = schedule.window()
             if (!SpecialEventLifecycle.isActive(start, stop, Instant.ofEpochMilli(nowMs))) return@forEach
+
+            val eventKey = buildEventKey(event.category, event.title, start.toEpochMilli())
+            if (!occupiedEventKeys.add(eventKey)) return@forEach
+
             val guideSlug = slugify(event.category)
             val guideId = "dlhd-guide:$guideSlug"
             if (guideId !in guides) {
@@ -117,52 +122,55 @@ object SpecialEventsMerger {
                 ),
             )
 
-            val cappedStreams = limitStreamLinks(event.streams)
-            cappedStreams.forEachIndexed { linkIndex, stream ->
-                val streamKey = "${stream.source.name}|${stream.channelId}"
-                if (!occupiedStreamKeys.add(streamKey)) return@forEachIndexed
-                val titleKey = normalizeTitleKey(event.title)
-                occupiedTitleKeys += titleKey
+            val mirrors = buildMirrors(event)
+            if (mirrors.isEmpty()) return@forEach
+            val ranked = SpecialEventMirrorRanker.orderedMirrors(mirrors)
+            val primary = ranked.first()
 
-                val streamSchedule = EventTimeExtractor.fromDlhdParsedEvent(
-                    event = event,
-                    stream = stream,
-                    now = Instant.ofEpochMilli(nowMs),
-                )
-                val (streamStart, streamStop) = streamSchedule.window()
+            val titleKey = normalizeTitleKey(event.title)
+            if (titleKey in occupiedTitleKeys) return@forEach
+            occupiedTitleKeys += titleKey
 
-                val id = "dlhd-event:${shortHash(streamKey)}"
-                val displayName = buildStreamName(event.title, stream.label, linkIndex)
-                streamsByCategory.getOrPut(guideSlug) { mutableListOf() } += SupplementChannel(
-                    id = id,
-                    name = displayName,
-                    tvgId = "DLHD.Event.${shortHash("$titleKey|$streamKey")}",
-                    groupTitle = group,
-                    streamUrl = "",
-                    providerTag = event.league,
-                    tags = listOf("#events"),
-                    dlhdEventStreamKey = dlhdStreamKey(stream),
-                    eventSourceUrl = "${event.category}|${event.dateKey}|${event.timeLabel}|${event.title}",
-                    eventStartMs = streamStart.toEpochMilli(),
-                    eventStopMs = streamStop.toEpochMilli(),
-                    languageCode = SpecialEventLanguageIdentifier.identify(
-                        SpecialEventLanguageIdentifier.Context(
-                            eventTitle = event.title,
-                            streamLabel = stream.label,
-                            category = event.category,
-                            league = event.league,
-                        ),
+            val streamSchedule = EventTimeExtractor.fromDlhdParsedEvent(
+                event = event,
+                stream = event.streams.first(),
+                now = Instant.ofEpochMilli(nowMs),
+            )
+            val (streamStart, streamStop) = streamSchedule.window()
+
+            val id = "dlhd-event:$eventKey"
+            val displayName = buildStreamName(event.title, primary.label, 0)
+            streamsByCategory.getOrPut(guideSlug) { mutableListOf() } += SupplementChannel(
+                id = id,
+                name = displayName,
+                tvgId = "DLHD.Event.$eventKey",
+                groupTitle = group,
+                streamUrl = "",
+                providerTag = event.league,
+                tags = listOf("#events"),
+                dlhdEventKey = eventKey,
+                dlhdEventStreamKey = primary.streamKey,
+                dlhdEventMirrors = ranked,
+                eventSourceUrl = "${event.category}|${event.dateKey}|${event.timeLabel}|${event.title}",
+                eventStartMs = streamStart.toEpochMilli(),
+                eventStopMs = streamStop.toEpochMilli(),
+                languageCode = SpecialEventLanguageIdentifier.identify(
+                    SpecialEventLanguageIdentifier.Context(
+                        eventTitle = event.title,
+                        streamLabel = primary.label,
+                        category = event.category,
+                        league = event.league,
                     ),
-                    regionCode = SpecialEventRegionIdentifier.identify(
-                        SpecialEventRegionIdentifier.Context(
-                            eventTitle = event.title,
-                            streamLabel = stream.label,
-                            category = event.category,
-                            league = event.league,
-                        ),
+                ),
+                regionCode = SpecialEventRegionIdentifier.identify(
+                    SpecialEventRegionIdentifier.Context(
+                        eventTitle = event.title,
+                        streamLabel = primary.label,
+                        category = event.category,
+                        league = event.league,
                     ),
-                )
-            }
+                ),
+            )
         }
 
         theTvAppChannels.forEach { channel ->
@@ -184,7 +192,29 @@ object SpecialEventsMerger {
         )
     }
 
-    /** Keeps primary link plus at most one backup per schedule event. */
+    fun buildEventKey(category: String, title: String, startMs: Long): String =
+        shortHash(
+            "${category.trim().lowercase()}|" +
+                "${normalizeTitleKey(title)}|$startMs",
+        )
+
+    fun buildMirrors(event: DaddyLiveEventResolver.ParsedEvent): List<DlhdEventMirror> {
+        val seen = linkedSetOf<String>()
+        return buildList {
+            event.streams.forEach { stream ->
+                val key = dlhdStreamKey(stream)
+                if (!seen.add(key.lowercase())) return@forEach
+                add(
+                    DlhdEventMirror(
+                        streamKey = key,
+                        label = stream.label.trim().ifEmpty { "Link" },
+                    ),
+                )
+            }
+        }
+    }
+
+    /** @deprecated Playlist emits one row per event; mirrors are internal. */
     fun limitStreamLinks(
         streams: List<DaddyLiveEventResolver.ParsedStream>,
         maxLinks: Int = SupplementConfig.MAX_STREAM_LINKS_PER_EVENT,
@@ -249,7 +279,10 @@ object SpecialEventsMerger {
         ) {
             return core
         }
-        return "$core ($link)"
+        if (linkIndex > 0) {
+            return "$core ($link)"
+        }
+        return core
     }
 
     private fun dlhdStreamKey(stream: DaddyLiveEventResolver.ParsedStream): String =

@@ -74,7 +74,15 @@ object SpecialEventCatalogMaintainer {
 
         val mergedSpecialById = linkedMapOf<String, SupplementChannel>()
         existingSpecial.forEach { mergedSpecialById[it.id] = it }
-        fetchedSpecial.forEach { mergedSpecialById[it.id] = it }
+        fetchedSpecial.forEach { fetched ->
+            val eventKey = fetched.dlhdEventKey?.trim().orEmpty()
+            if (eventKey.isNotEmpty()) {
+                mergedSpecialById.entries
+                    .filter { (_, channel) -> channel.dlhdEventKey == eventKey }
+                    .forEach { (id, _) -> mergedSpecialById.remove(id) }
+            }
+            mergedSpecialById[fetched.id] = fetched
+        }
 
         val mergedGuides = linkedMapOf<String, List<SpecialEventsMerger.GuideEventRow>>()
         pruned.guideSchedules.forEach { (guideId, rows) -> mergedGuides[guideId] = rows.toList() }

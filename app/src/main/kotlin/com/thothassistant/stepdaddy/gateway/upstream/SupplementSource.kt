@@ -58,6 +58,7 @@ class SupplementSource(
     private val adultSwimSource = AdultSwimStreamsSource(AdultSwimStreamsSource.defaultClient())
     private val dlhdEventResolver = DaddyLiveEventResolver(httpClient)
     private val dlhdEventHealthStore = DlhdEventStreamHealthStore()
+    private val dlhdEventActiveMirrorStore = DlhdEventActiveMirrorStore()
     private val dlhdEventProber = DlhdEventStreamProber(httpClient = httpClient)
     private val eventStreamHealthMonitor by lazy {
         EventStreamHealthMonitor(
@@ -286,6 +287,14 @@ class SupplementSource(
     }
 
     fun dlhdEventHealthStore(): DlhdEventStreamHealthStore = dlhdEventHealthStore
+
+    fun dlhdEventActiveMirrorStore(): DlhdEventActiveMirrorStore = dlhdEventActiveMirrorStore
+
+    fun specialEventsMirrorSummary(): SpecialEventsMirrorHealth.Summary =
+        SpecialEventsMirrorHealth.summarize(
+            channels = cached,
+            activeMirrorIndexByEvent = dlhdEventActiveMirrorStore.snapshot(),
+        )
 
     fun eventStreamHealthMonitor(): EventStreamHealthMonitor = eventStreamHealthMonitor
 

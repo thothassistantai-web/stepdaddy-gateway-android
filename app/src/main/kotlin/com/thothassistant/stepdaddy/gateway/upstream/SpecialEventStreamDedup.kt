@@ -82,6 +82,9 @@ object SpecialEventStreamDedup {
     }
 
     fun canonicalStreamKey(channel: SupplementChannel): String? {
+        channel.dlhdEventKey?.trim()?.takeIf { it.isNotEmpty() }?.let {
+            return "eventkey:${it.lowercase()}"
+        }
         channel.dlhdEventStreamKey?.trim()?.takeIf { it.isNotEmpty() }?.let {
             return "dlhd:${it.lowercase()}"
         }
@@ -102,6 +105,7 @@ object SpecialEventStreamDedup {
         if (!channel.eventSourceUrl.isNullOrBlank()) score += 15
         if (!channel.providerTag.isNullOrBlank()) score += 10
         if (!channel.dlhdEventStreamKey.isNullOrBlank()) score += 8
+        if (channel.dlhdEventMirrors.isNotEmpty()) score += channel.dlhdEventMirrors.size.coerceAtMost(20)
         if (!channel.logo.isNullOrBlank()) score += 5
         if (channel.id.startsWith("dlhd-event:")) score += 4
         score += channel.name.trim().length.coerceAtMost(40)

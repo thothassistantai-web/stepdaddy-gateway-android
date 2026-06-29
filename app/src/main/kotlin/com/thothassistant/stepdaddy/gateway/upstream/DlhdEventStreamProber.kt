@@ -1,5 +1,6 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
+import com.thothassistant.stepdaddy.gateway.model.DlhdEventMirror
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import java.util.concurrent.TimeUnit
 import okhttp3.OkHttpClient
@@ -17,12 +18,39 @@ class DlhdEventStreamProber(
         channel: SupplementChannel,
         tvStreamProbe: suspend (channelId: String) -> Boolean,
     ): DlhdEventStreamHealth.ProbeResult {
-        val key = channel.dlhdEventStreamKey?.trim().orEmpty()
+        val mirrors = SpecialEventsMirrorHealth.mirrorsFor(channel)
+        if (mirrors.isEmpty()) {
+            val key = channel.dlhdEventStreamKey?.trim().orEmpty()
+            if (key.isEmpty()) {
+                return DlhdEventStreamHealth.ProbeResult.unhealthy("missing_stream_key")
+            }
+            return probeMirror(channel, DlhdEventMirror(streamKey = key), tvStreamProbe)
+        }
+
+        val ranked = SpecialEventMirrorRanker.rankMirrors(mirrors)
+        val candidates = ranked.hot.ifEmpty { mirrors.take(1) }
+        var lastResult = DlhdEventStreamHealth.ProbeResult.unhealthy("all_mirrors_failed")
+        for (mirror in candidates) {
+            val result = probeMirror(channel, mirror, tvStreamProbe)
+            if (result.status == DlhdEventStreamHealth.Status.HEALTHY) {
+                return result
+            }
+            lastResult = result
+        }
+        return lastResult
+    }
+
+    private suspend fun probeMirror(
+        channel: SupplementChannel,
+        mirror: DlhdEventMirror,
+        tvStreamProbe: suspend (channelId: String) -> Boolean,
+    ): DlhdEventStreamHealth.ProbeResult {
+        val key = mirror.streamKey.trim()
         if (key.isEmpty()) {
             return DlhdEventStreamHealth.ProbeResult.unhealthy("missing_stream_key")
         }
         return when {
-            key.startsWith("tv2|", ignoreCase = true) -> probeTv2Embed(channel, key)
+            key.startsWith("tv2|", ignoreCase = true) -> probeTv2Embed(channel, key, mirror)
             key.startsWith("tv|", ignoreCase = true) -> probeNumericTv(key, tvStreamProbe)
             else -> DlhdEventStreamHealth.ProbeResult.unknown("unsupported_stream_key")
         }
@@ -31,8 +59,10 @@ class DlhdEventStreamProber(
     private fun probeTv2Embed(
         channel: SupplementChannel,
         streamKey: String,
+        mirror: DlhdEventMirror,
     ): DlhdEventStreamHealth.ProbeResult {
-        val referer = channel.referer?.trim()?.takeIf { it.isNotEmpty() }
+        val referer = mirror.referer?.trim()?.takeIf { it.isNotEmpty() }
+            ?: channel.referer?.trim()?.takeIf { it.isNotEmpty() }
             ?: DlhdEventStreamResolver.EMBED_REFERER
         val manifestUrl = resolver.resolveManifestUrl(streamKey, referer)
             ?: return DlhdEventStreamHealth.ProbeResult.unhealthy("manifest_unresolved")

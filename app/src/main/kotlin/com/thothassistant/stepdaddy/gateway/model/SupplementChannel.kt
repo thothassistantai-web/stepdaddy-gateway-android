@@ -21,8 +21,12 @@ data class SupplementChannel(
     val eventSourceUrl: String? = null,
     /** Play-time resolve key for ntv.cx 24/7 (`server|name|regionOrStreamUrl`). */
     val ntvCdnLiveKey: String? = null,
-    /** DaddyLive event stream key: `tv|153` or `tv2|admin/ppv-.../1`. */
+    /** Stable event key for consolidated mirror rows (`dlhd-event:{eventKey}`). */
+    val dlhdEventKey: String? = null,
+    /** DaddyLive event stream key: `tv|153` or `tv2|admin/ppv-.../1` (primary mirror). */
     val dlhdEventStreamKey: String? = null,
+    /** All upstream mirrors for internal failover (playlist emits one row per event). */
+    val dlhdEventMirrors: List<DlhdEventMirror> = emptyList(),
     /** Scheduled block start (epoch ms) for dlhd-event rows — used by EPG and lifecycle. */
     val eventStartMs: Long? = null,
     /** Scheduled block end (epoch ms) for dlhd-event rows — used by EPG and lifecycle. */

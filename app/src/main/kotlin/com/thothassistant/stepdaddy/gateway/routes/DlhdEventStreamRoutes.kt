@@ -2,16 +2,22 @@ package com.thothassistant.stepdaddy.gateway.routes
 
 import android.content.Context
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
+import com.thothassistant.stepdaddy.gateway.model.DlhdEventMirror
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
+import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
+import com.thothassistant.stepdaddy.gateway.upstream.DlhdEventActiveMirrorStore
 import com.thothassistant.stepdaddy.gateway.upstream.DlhdEventStreamHealth
 import com.thothassistant.stepdaddy.gateway.upstream.DlhdEventStreamResolver
 import com.thothassistant.stepdaddy.gateway.upstream.GuideScheduleHlsManifest
 import com.thothassistant.stepdaddy.gateway.upstream.GuideScheduleMediaCache
 import com.thothassistant.stepdaddy.gateway.upstream.HlsErrorManifest
 import com.thothassistant.stepdaddy.gateway.upstream.M3u8Rewriter
+import com.thothassistant.stepdaddy.gateway.upstream.MirrorHlsManifest
 import com.thothassistant.stepdaddy.gateway.upstream.SpecialEventCategoryEmoji
+import com.thothassistant.stepdaddy.gateway.upstream.SpecialEventMirrorRanker
 import com.thothassistant.stepdaddy.gateway.upstream.SpecialEventsGuideBitmapRenderer
 import com.thothassistant.stepdaddy.gateway.upstream.SpecialEventsGuideHtmlRenderer
+import com.thothassistant.stepdaddy.gateway.upstream.SpecialEventsMirrorHealth
 import com.thothassistant.stepdaddy.gateway.upstream.SupplementSource
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -33,12 +39,16 @@ class DlhdEventStreamRoutes(
     context: Context,
     private val environment: GatewayEnvironment,
     private val supplementSource: SupplementSource,
+    private val client: DaddyLiveClient,
     private val resolver: DlhdEventStreamResolver = DlhdEventStreamResolver(),
+    private val activeMirrorStore: DlhdEventActiveMirrorStore = supplementSource.dlhdEventActiveMirrorStore(),
 ) {
     private val appContext = context.applicationContext
     private val guideMediaCache = GuideScheduleMediaCache(appContext)
 
-    suspend fun eventStream(call: ApplicationCall, token: String) {
+    fun activeMirrorStore(): DlhdEventActiveMirrorStore = activeMirrorStore
+
+    suspend fun eventStreamMaster(call: ApplicationCall, token: String) {
         if (call.request.httpMethod.value == "HEAD") {
             call.respondText("", ContentType("application", "vnd.apple.mpegurl"))
             return
@@ -46,26 +56,33 @@ class DlhdEventStreamRoutes(
         try {
             val supplement = supplementSource.dlhdEventChannel(token)
                 ?: error("dlhd_event_not_found")
-            val key = supplement.dlhdEventStreamKey?.trim().orEmpty()
-            if (key.isEmpty()) error("dlhd_event_key_missing")
-            val playlist = withContext(Dispatchers.IO) {
-                withTimeout(STREAM_TIMEOUT_MS) {
-                    resolvePlaylist(supplement, key)
+            val mirrors = SpecialEventsMirrorHealth.mirrorsFor(supplement)
+            if (mirrors.isEmpty()) error("dlhd_event_key_missing")
+
+            val hot = SpecialEventMirrorRanker.rankMirrors(mirrors).hot
+            val variantCount = hot.size.coerceAtLeast(1)
+            val body = if (variantCount <= 1) {
+                withContext(Dispatchers.IO) {
+                    withTimeout(STREAM_TIMEOUT_MS) {
+                        resolveMirrorPlaylist(supplement, mirrors, 0)
+                    }
                 }
+            } else {
+                MirrorHlsManifest.build(
+                    baseUrl = environment.loopbackBase(),
+                    eventToken = token,
+                    mirrorCount = variantCount,
+                    labels = hot.map { it.label },
+                )
             }
-            val bytes = playlist.toByteArray(StandardCharsets.UTF_8)
+            activeMirrorStore.recordActive(token, 0)
             supplementSource.recordDlhdEventStreamHealth(
                 token,
                 DlhdEventStreamHealth.ProbeResult.healthy(),
             )
-            call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
-            call.response.header(HttpHeaders.CacheControl, "no-cache")
-            call.respondBytes(bytes, ContentType("application", "vnd.apple.mpegurl"))
+            respondPlaylist(call, body)
         } catch (_: TimeoutCancellationException) {
-            supplementSource.recordDlhdEventStreamHealth(
-                token,
-                DlhdEventStreamHealth.ProbeResult.unhealthy("upstream_timeout"),
-            )
+            recordUnhealthy(token, "upstream_timeout")
             respondError(
                 call,
                 HttpStatusCode.GatewayTimeout,
@@ -75,22 +92,57 @@ class DlhdEventStreamRoutes(
         } catch (exc: CancellationException) {
             throw exc
         } catch (exc: Exception) {
+            recordUnhealthy(token, exc.message ?: "upstream_error")
             val transient = exc.message?.contains("timeout", ignoreCase = true) == true
-            supplementSource.recordDlhdEventStreamHealth(
-                token,
-                DlhdEventStreamHealth.ProbeResult.unhealthy(exc.message ?: "upstream_error"),
-            )
             respondError(
                 call,
-                if (transient) {
-                    HttpStatusCode.GatewayTimeout
-                } else {
-                    HttpStatusCode.BadGateway
-                },
+                if (transient) HttpStatusCode.GatewayTimeout else HttpStatusCode.BadGateway,
                 exc.message ?: "dlhd_event_upstream_error",
                 retryAfter = if (transient) "3" else null,
             )
         }
+    }
+
+    suspend fun eventMirrorStream(call: ApplicationCall, token: String, mirrorIndex: Int) {
+        if (call.request.httpMethod.value == "HEAD") {
+            call.respondText("", ContentType("application", "vnd.apple.mpegurl"))
+            return
+        }
+        try {
+            val supplement = supplementSource.dlhdEventChannel(token)
+                ?: error("dlhd_event_not_found")
+            val mirrors = SpecialEventsMirrorHealth.mirrorsFor(supplement)
+            if (mirrors.isEmpty()) error("dlhd_event_key_missing")
+
+            val playlist = withContext(Dispatchers.IO) {
+                withTimeout(STREAM_TIMEOUT_MS) {
+                    resolveMirrorWithFailover(supplement, mirrors, mirrorIndex)
+                }
+            }
+            respondPlaylist(call, playlist)
+        } catch (_: TimeoutCancellationException) {
+            recordUnhealthy(token, "upstream_timeout")
+            respondError(
+                call,
+                HttpStatusCode.GatewayTimeout,
+                "dlhd event mirror timeout — retry shortly",
+                retryAfter = "3",
+            )
+        } catch (exc: CancellationException) {
+            throw exc
+        } catch (exc: Exception) {
+            recordUnhealthy(token, exc.message ?: "mirror_error")
+            respondError(
+                call,
+                HttpStatusCode.BadGateway,
+                exc.message ?: "dlhd_event_mirror_error",
+            )
+        }
+    }
+
+    /** Legacy route — delegates to consolidated master/failover handler. */
+    suspend fun eventStream(call: ApplicationCall, token: String) {
+        eventStreamMaster(call, token)
     }
 
     suspend fun guidePage(call: ApplicationCall, slug: String) {
@@ -201,6 +253,81 @@ class DlhdEventStreamRoutes(
         call.respondBytes(body.toByteArray(StandardCharsets.UTF_8), ContentType("application", "vnd.apple.mpegurl"))
     }
 
+    private suspend fun resolveMirrorWithFailover(
+        supplement: SupplementChannel,
+        mirrors: List<DlhdEventMirror>,
+        preferredIndex: Int,
+    ): String {
+        val ordered = buildFailoverOrder(mirrors, preferredIndex)
+        var lastError: Exception? = null
+        for ((index, _) in ordered) {
+            runCatching {
+                val playlist = resolveMirrorPlaylist(supplement, mirrors, index)
+                val eventKey = supplement.dlhdEventKey ?: supplement.id.removePrefix("dlhd-event:")
+                activeMirrorStore.recordActive(eventKey, index)
+                supplementSource.recordDlhdEventStreamHealth(
+                    eventKey,
+                    DlhdEventStreamHealth.ProbeResult.healthy(),
+                )
+                return playlist
+            }.onFailure { exc ->
+                if (exc is CancellationException) throw exc
+                lastError = exc as? Exception ?: Exception(exc.message)
+            }
+        }
+        throw lastError ?: IllegalStateException("all_mirrors_failed")
+    }
+
+    private fun buildFailoverOrder(
+        mirrors: List<DlhdEventMirror>,
+        preferredIndex: Int,
+    ): List<Pair<Int, DlhdEventMirror>> {
+        if (mirrors.isEmpty()) return emptyList()
+        val start = preferredIndex.coerceIn(0, mirrors.lastIndex)
+        val indices = (start until mirrors.size) + (0 until start)
+        return indices.map { it to mirrors[it] }
+    }
+
+    private suspend fun resolveMirrorPlaylist(
+        supplement: SupplementChannel,
+        mirrors: List<DlhdEventMirror>,
+        mirrorIndex: Int,
+    ): String {
+        val mirror = mirrors.getOrNull(mirrorIndex)
+            ?: error("mirror_index_out_of_range")
+        val key = mirror.streamKey.trim()
+        if (key.isEmpty()) error("dlhd_event_key_missing")
+
+        if (key.startsWith("tv|", ignoreCase = true)) {
+            val channelId = key.substringAfter("|").trim()
+            if (channelId.isEmpty()) error("missing_tv_channel_id")
+            return client.resolveStream(
+                channelId = channelId,
+                useProxy = true,
+                apiUrl = environment.loopbackBase(),
+            )
+        }
+
+        val referer = mirror.referer?.trim()?.takeIf { it.isNotEmpty() }
+            ?: supplement.referer?.trim()?.takeIf { it.isNotEmpty() }
+            ?: DlhdEventStreamResolver.EMBED_REFERER
+        val manifestUrl = resolver.resolveManifestUrl(key, referer)
+            ?: error("dlhd_event_manifest_unresolved")
+        val manifestText = resolver.fetchManifestText(manifestUrl, referer)
+            ?: error("dlhd_event_manifest_fetch_failed")
+        val origin = mirror.origin?.trim()?.takeIf { it.isNotEmpty() }
+            ?: supplement.origin?.trim()?.takeIf { it.isNotEmpty() }
+            ?: referer.trimEnd('/')
+        return M3u8Rewriter.rewrite(
+            m3u8Text = manifestText,
+            m3u8Url = manifestUrl,
+            refererHost = origin,
+            useProxy = false,
+            apiUrl = environment.loopbackBase(),
+            preferLighterVariant = true,
+        )
+    }
+
     private fun normalizeGuideSlug(raw: String): String? {
         val slug = raw.trim().trim('/').removeSuffix(".html").removeSuffix(".m3u8").removeSuffix(".mp4")
         if (slug.isEmpty()) return null
@@ -216,24 +343,17 @@ class DlhdEventStreamRoutes(
         </body></html>
     """.trimIndent()
 
-    private fun resolvePlaylist(supplement: SupplementChannel, key: String): String {
-        if (key.startsWith("tv|", ignoreCase = true)) {
-            error("numeric_tv_streams_use_tivimate_route")
-        }
-        val referer = supplement.referer?.trim()?.takeIf { it.isNotEmpty() }
-            ?: DlhdEventStreamResolver.EMBED_REFERER
-        val manifestUrl = resolver.resolveManifestUrl(key, referer)
-            ?: error("dlhd_event_manifest_unresolved")
-        val manifestText = resolver.fetchManifestText(manifestUrl, referer)
-            ?: error("dlhd_event_manifest_fetch_failed")
-        val origin = supplement.origin?.trim()?.takeIf { it.isNotEmpty() } ?: referer.trimEnd('/')
-        return M3u8Rewriter.rewrite(
-            m3u8Text = manifestText,
-            m3u8Url = manifestUrl,
-            refererHost = origin,
-            useProxy = false,
-            apiUrl = environment.loopbackBase(),
-            preferLighterVariant = true,
+    private suspend fun respondPlaylist(call: ApplicationCall, playlist: String) {
+        val bytes = playlist.toByteArray(StandardCharsets.UTF_8)
+        call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+        call.response.header(HttpHeaders.CacheControl, "no-cache")
+        call.respondBytes(bytes, ContentType("application", "vnd.apple.mpegurl"))
+    }
+
+    private fun recordUnhealthy(token: String, reason: String) {
+        supplementSource.recordDlhdEventStreamHealth(
+            token,
+            DlhdEventStreamHealth.ProbeResult.unhealthy(reason),
         )
     }
 

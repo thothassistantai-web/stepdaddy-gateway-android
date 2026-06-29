@@ -311,6 +311,7 @@ class HealthRoutes(
             nowMs = nowMs,
         )
         val eventHealth = supplementSource.dlhdEventStreamHealthSummary()
+        val mirrorHealth = supplementSource.specialEventsMirrorSummary()
         return SupplementStatus(
             enabled = supplementSource.enabled(),
             sportsEnabled = sportsOn,
@@ -347,6 +348,10 @@ class HealthRoutes(
             dlhdEventHealthFailed = eventHealth.unhealthy,
             dlhdEventHealthUnknown = eventHealth.unknown,
             dlhdEventHealthLastProbeMs = eventHealth.lastProbeMs,
+            specialEventMirrorsTotal = mirrorHealth.totalMirrors,
+            specialEventMirrorsHealthy = mirrorHealth.healthyMirrors,
+            specialEventMirrorEvents = mirrorHealth.eventsWithMirrors,
+            specialEventAvgMirrorsPerEvent = mirrorHealth.avgMirrorsPerEvent,
         )
     }
 

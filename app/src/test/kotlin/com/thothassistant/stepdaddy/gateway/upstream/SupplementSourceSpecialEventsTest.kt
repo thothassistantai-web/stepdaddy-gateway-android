@@ -122,7 +122,8 @@ class SupplementSourceSpecialEventsTest {
             ),
         )
         val events = channels.filter { it.id.startsWith("dlhd-event:") }
-        assertEquals(1, events.size)
+        assertEquals(2, events.size)
+        assertEquals(1, events.map { it.dlhdEventMirrors.single().streamKey }.toSet().size)
     }
 
     @Test

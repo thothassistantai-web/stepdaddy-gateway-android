@@ -92,6 +92,10 @@ data class SupplementStatus(
     val dlhdEventHealthFailed: Int = 0,
     val dlhdEventHealthUnknown: Int = 0,
     val dlhdEventHealthLastProbeMs: Long? = null,
+    val specialEventMirrorsTotal: Int = 0,
+    val specialEventMirrorsHealthy: Int = 0,
+    val specialEventMirrorEvents: Int = 0,
+    val specialEventAvgMirrorsPerEvent: Float = 0f,
 )
 
 @Serializable

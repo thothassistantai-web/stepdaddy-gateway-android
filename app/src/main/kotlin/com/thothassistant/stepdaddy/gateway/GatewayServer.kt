@@ -83,7 +83,7 @@ class GatewayServer(
         )
         playlistRoutes = routes
         val streamRoutes = StreamRoutes(environment, client)
-        val dlhdEventStreamRoutes = DlhdEventStreamRoutes(appContext, environment, supplementSource)
+        val dlhdEventStreamRoutes = DlhdEventStreamRoutes(appContext, environment, supplementSource, client)
         val ntvStreamRoutes = NtvStreamRoutes(
             environment,
             supplementSource,
@@ -173,8 +173,36 @@ class GatewayServer(
                     head { routes.streamVaultUserPlaylist(call) }
                 }
                 route("/tivimate-stream/{channelId}.m3u8") {
-                    get { streamRoutes.tivimateStream(call, call.parameters["channelId"].orEmpty()) }
-                    head { streamRoutes.tivimateStream(call, call.parameters["channelId"].orEmpty()) }
+                    get {
+                        val channelId = call.parameters["channelId"].orEmpty()
+                        if (channelId.startsWith("dlhd-event-")) {
+                            val token = channelId.removePrefix("dlhd-event-")
+                            dlhdEventStreamRoutes.eventStreamMaster(call, token)
+                        } else {
+                            streamRoutes.tivimateStream(call, channelId)
+                        }
+                    }
+                    head {
+                        val channelId = call.parameters["channelId"].orEmpty()
+                        if (channelId.startsWith("dlhd-event-")) {
+                            val token = channelId.removePrefix("dlhd-event-")
+                            dlhdEventStreamRoutes.eventStreamMaster(call, token)
+                        } else {
+                            streamRoutes.tivimateStream(call, channelId)
+                        }
+                    }
+                }
+                route("/dlhd-event-mirror/{token}/{index}.m3u8") {
+                    get {
+                        val token = call.parameters["token"].orEmpty()
+                        val index = call.parameters["index"]?.toIntOrNull() ?: 0
+                        dlhdEventStreamRoutes.eventMirrorStream(call, token, index)
+                    }
+                    head {
+                        val token = call.parameters["token"].orEmpty()
+                        val index = call.parameters["index"]?.toIntOrNull() ?: 0
+                        dlhdEventStreamRoutes.eventMirrorStream(call, token, index)
+                    }
                 }
                 route("/ntv-stream/{token}.m3u8") {
                     get { ntvStreamRoutes.tivimateStream(call, call.parameters["token"].orEmpty()) }

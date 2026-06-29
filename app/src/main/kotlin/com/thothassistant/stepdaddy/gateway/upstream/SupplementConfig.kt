@@ -4,8 +4,11 @@ object SupplementConfig {
     /** Max playable event streams (DaddyLive + TheTvApp combined). */
     const val MAX_SPECIAL_EVENT_STREAMS = 120
 
-    /** Max upstream links kept per schedule event (primary + optional backup). */
-    const val MAX_STREAM_LINKS_PER_EVENT = 2
+    /** Max mirrors probed eagerly per event; remaining mirrors are cold failovers. */
+    const val HOT_MIRRORS_PER_EVENT = 8
+
+    /** @deprecated Mirrors are internal; playlist emits one row per event. */
+    const val MAX_STREAM_LINKS_PER_EVENT = 1
 
     /** Re-fetch DaddyLive schedule + TheTvApp embeds for Special Events only. */
     const val SPECIAL_EVENTS_SYNC_INTERVAL_MS = 15 * 60_000L
@@ -25,7 +28,7 @@ object SupplementConfig {
     const val SPECIAL_EVENTS_PRE_START_WINDOW_MS = 15 * 60_000L
 
     /** Keep ended dlhd-event rows in playlists briefly before catalog prune removes them. */
-    const val SPECIAL_EVENT_ENDED_GRACE_MS = 30 * 60_000L
+    const val SPECIAL_EVENT_ENDED_GRACE_MS = 15 * 60_000L
 
     /** @deprecated Use [MAX_SPECIAL_EVENT_STREAMS]. */
     const val MAX_SPORTS_EVENTS = MAX_SPECIAL_EVENT_STREAMS

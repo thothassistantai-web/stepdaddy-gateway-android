@@ -7,6 +7,22 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.8] - 2026-06-29
+
+### Added
+
+- **Special Events mirror consolidation** — one playlist row per event at `tivimate-stream/dlhd-event-{key}.m3u8`; all upstream `channels[]` stored as internal mirrors with multi-variant HLS master failover
+- **Mirror health** — `/health` supplement stats expose `specialEventMirrorsTotal`, `specialEventMirrorsHealthy`, `specialEventMirrorEvents`, and per-event `activeMirrorIndex`
+
+### Changed
+
+- **Event budget** — `MAX_SPECIAL_EVENT_STREAMS=120` caps unique events, not backup URLs (e.g. Germany vs Paraguay with 58 links = 1 row)
+- **Ended grace** — post-stop playlist grace reduced to 15 minutes
+
+### Fixed
+
+- **Stale multi-link blocks** — full special-events replace on sync drops legacy per-mirror playlist rows
+
 ## [3.0.7] - 2026-06-29
 
 ### Fixed

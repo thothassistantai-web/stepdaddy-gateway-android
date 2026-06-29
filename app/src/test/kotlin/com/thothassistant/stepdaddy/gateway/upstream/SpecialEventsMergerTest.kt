@@ -155,46 +155,55 @@ class SpecialEventsMergerTest {
     }
 
     @Test
-    fun limitStreamLinks_capsAtTwoPerEvent() {
+    fun buildMirrors_dedupesByStreamKey() {
         val streams = (1..5).map { index ->
             DaddyLiveEventResolver.ParsedStream(
                 label = "Link - $index",
-                channelId = "ch-$index",
+                channelId = if (index == 3) "ch-1" else "ch-$index",
                 source = DaddyLiveEventResolver.StreamSource.TV,
             )
         }
-        val capped = SpecialEventsMerger.limitStreamLinks(streams)
-        assertEquals(2, capped.size)
-        assertEquals("ch-1", capped[0].channelId)
-        assertEquals("ch-2", capped[1].channelId)
+        val event = DaddyLiveEventResolver.ParsedEvent(
+            category = "Soccer",
+            dateKey = futureDateKey,
+            timeLabel = "live",
+            title = "Germany vs Paraguay",
+            league = "SOCCER",
+            streams = streams,
+            live = true,
+        )
+        val mirrors = SpecialEventsMerger.buildMirrors(event)
+        assertEquals(4, mirrors.size)
     }
 
     @Test
-    fun merge_capsStreamLinksPerEvent() {
-        val streams = (1..4).map { index ->
+    fun merge_oneRowPerEventWithAllMirrors() {
+        val streams = (1..58).map { index ->
             DaddyLiveEventResolver.ParsedStream(
                 label = "Link - $index",
-                channelId = "multi-$index",
+                channelId = "de-py-$index",
                 source = DaddyLiveEventResolver.StreamSource.TV,
             )
         }
         val bundle = SpecialEventsMerger.buildFromParsed(
             dlhdEvents = listOf(
                 DaddyLiveEventResolver.ParsedEvent(
-                    category = "Boxing",
+                    category = "Soccer",
                     dateKey = futureDateKey,
                     timeLabel = "live",
-                    title = "Boxing : Main Event",
-                    league = "BOXING",
+                    title = "FIFA World Cup : Germany vs Paraguay",
+                    league = "SOCCER",
                     streams = streams,
-                    live = false,
+                    live = true,
                 ),
             ),
-            dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = 1, streamLinks = 4),
+            dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = 1, streamLinks = 58),
             theTvAppChannels = emptyList(),
             maxStreams = 10,
         )
-        assertEquals(2, bundle.channels.count { it.id.startsWith("dlhd-event:") })
+        assertEquals(1, bundle.channels.count { it.id.startsWith("dlhd-event:") })
+        val event = bundle.channels.first { it.id.startsWith("dlhd-event:") }
+        assertEquals(58, event.dlhdEventMirrors.size)
     }
 
     @Test
@@ -241,6 +250,38 @@ class SpecialEventsMergerTest {
         val eventStreams = bundle.channels.filter { it.id.startsWith("dlhd-event:") }
         assertTrue(eventStreams.size <= 5)
         assertTrue(eventStreams.any { it.eventSourceUrl?.startsWith("Japan|") == true })
+    }
+
+    @Test
+    fun merge_eventBudgetCountsUniqueEventsNotMirrors() {
+        val dateKey = futureDateKey
+        val events = (1..10).map { index ->
+            DaddyLiveEventResolver.ParsedEvent(
+                category = "Soccer",
+                dateKey = dateKey,
+                timeLabel = "live",
+                title = "Soccer : Match $index",
+                league = "SOCCER",
+                streams = (1..5).map { link ->
+                    DaddyLiveEventResolver.ParsedStream(
+                        label = "Link - $link",
+                        channelId = "m$index-$link",
+                        source = DaddyLiveEventResolver.StreamSource.TV,
+                    )
+                },
+                live = true,
+            )
+        }
+        val bundle = SpecialEventsMerger.buildFromParsed(
+            dlhdEvents = events,
+            dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = 10, streamLinks = 50),
+            theTvAppChannels = emptyList(),
+            maxStreams = 5,
+        )
+        assertEquals(5, bundle.channels.count { it.id.startsWith("dlhd-event:") })
+        bundle.channels.filter { it.id.startsWith("dlhd-event:") }.forEach { event ->
+            assertTrue(event.dlhdEventMirrors.size >= 5)
+        }
     }
 
     @Test
@@ -309,7 +350,7 @@ class SpecialEventsMergerTest {
             theTvAppChannels = emptyList(),
             maxStreams = 10,
         )
-        assertEquals(1, bundle.channels.count { it.id.startsWith("dlhd-event:") })
+        assertEquals(2, bundle.channels.count { it.id.startsWith("dlhd-event:") })
     }
 
     @Test
