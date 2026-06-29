@@ -7,6 +7,12 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.3] - 2026-06-29
+
+### Fixed
+
+- **EPG HEAD** — rely on Ktor `respondFile` for `/epg.xml` HEAD (no manual `Content-Length`; fixes duplicate header on TiViMate EPG refresh)
+
 ## [3.0.2] - 2026-06-29
 
 ### Fixed

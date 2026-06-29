@@ -1,8 +1,8 @@
 {
-  "versionCode": 30002,
-  "versionName": "3.0.2",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.2/stepdaddy-gateway-3.0.2-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.2/stepdaddy-gateway-3.0.2-debug.apk",
-  "releaseNotes": "Fix duplicate Content-Length on /epg.xml HEAD. Includes 3.0.1 Eastern EPG and TiViMate x2 mod fixes.",
+  "versionCode": 30003,
+  "versionName": "3.0.3",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.3/stepdaddy-gateway-3.0.3-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.3/stepdaddy-gateway-3.0.3-debug.apk",
+  "releaseNotes": "Fix /epg.xml HEAD duplicate Content-Length. Includes 3.0.1 Eastern EPG and TiViMate x2 mod fixes.",
   "mandatory": false
 }

@@ -96,11 +96,6 @@ class EpgRoutes(
         if (stale) {
             call.response.header("X-EPG-Status", "stale")
         }
-        if (call.request.httpMethod == HttpMethod.Head) {
-            call.response.header(HttpHeaders.ContentLength, file.length().toString())
-            call.respond(HttpStatusCode.OK)
-            return
-        }
         call.respondFile(file)
     }
 }
