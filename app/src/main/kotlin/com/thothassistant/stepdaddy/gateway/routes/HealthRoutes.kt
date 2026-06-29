@@ -4,7 +4,9 @@ import android.content.Context
 import com.thothassistant.stepdaddy.gateway.BuildConfig
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.TiviMateEventStore
+import com.thothassistant.stepdaddy.gateway.StreamVaultController
 import com.thothassistant.stepdaddy.gateway.TiviMateController
+import com.thothassistant.stepdaddy.gateway.streamvault.StreamVaultPluginContract
 import com.thothassistant.stepdaddy.gateway.epg.EpgManager
 import com.thothassistant.stepdaddy.gateway.epg.EpgCoverageCalculator
 import com.thothassistant.stepdaddy.gateway.epg.EpgPlaylistUrlResolver
@@ -13,16 +15,22 @@ import com.thothassistant.stepdaddy.gateway.model.CategoryCount
 import com.thothassistant.stepdaddy.gateway.model.ProviderStats
 import com.thothassistant.stepdaddy.gateway.model.SupplementStatus
 import com.thothassistant.stepdaddy.gateway.model.HealingStatus
+import com.thothassistant.stepdaddy.gateway.model.MirrorStats
 import com.thothassistant.stepdaddy.gateway.model.HealthResponse
 import com.thothassistant.stepdaddy.gateway.model.TiviMateHealthEvents
+import com.thothassistant.stepdaddy.gateway.model.StreamVaultSetup
 import com.thothassistant.stepdaddy.gateway.model.TivimateSetup
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
 import com.thothassistant.stepdaddy.gateway.upstream.GroupTitleResolver
+import com.thothassistant.stepdaddy.gateway.upstream.PlaylistCache
 import com.thothassistant.stepdaddy.gateway.upstream.SupplementSource
+import com.thothassistant.stepdaddy.gateway.upstream.SpecialEventsHealthSummary
 import com.thothassistant.stepdaddy.gateway.ui.dashboard.DashboardLoadProgressCalculator
 import io.ktor.http.ContentType
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respondText
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -32,10 +40,67 @@ class HealthRoutes(
     private val client: DaddyLiveClient,
     private val epgManager: EpgManager,
     private val supplementSource: SupplementSource,
+    private val playlistCache: PlaylistCache,
 ) {
     private val json = Json { prettyPrint = true; encodeDefaults = true }
 
     suspend fun health(call: ApplicationCall) {
+        if (call.request.queryParameters["lite"] == "1") {
+            val payload = withContext(Dispatchers.Default) { buildLiteHealthPayload() }
+            call.respondText(json.encodeToString(payload), ContentType.Application.Json)
+            return
+        }
+        val payload = withContext(Dispatchers.Default) { buildFullHealthPayload() }
+        call.respondText(json.encodeToString(payload), ContentType.Application.Json)
+    }
+
+    /** Fast loopback probe — includes dashboard stats without expensive category/healing scans. */
+    private fun buildLiteHealthPayload(): HealthResponse {
+        val channelCount = client.channels.size
+        val supplementCount = supplementSource.channelCount()
+        val totalChannels = channelCount + supplementCount
+        val gatewayEpgOn = environment.gatewayEpgEnabled
+        val sync = supplementSource.syncSnapshot()
+        val supplementStatus = buildSupplementStatus(sync)
+        val providerStats = buildProviderStats(channelCount, totalChannels)
+        val epgReady = if (gatewayEpgOn) epgManager.epgReady() else false
+        val basePayload = HealthResponse(
+            ok = true,
+            starting = totalChannels == 0,
+            version = BuildConfig.VERSION_NAME,
+            channels = channelCount,
+            port = environment.port,
+            baseUrl = environment.loopbackBase(),
+            upstreamBaseUrl = client.activeBaseUrl,
+            gatewayEpgEnabled = gatewayEpgOn,
+            epgExternal = !gatewayEpgOn,
+            epgReady = epgReady,
+            epgProgrammeCount = if (gatewayEpgOn) epgManager.programmeCount() else 0,
+            epgAgeSeconds = if (gatewayEpgOn) epgManager.ageSeconds() else null,
+            supplementEnabled = supplementSource.enabled(),
+            supplementChannels = supplementCount,
+            supplement = supplementStatus,
+            providers = providerStats,
+        )
+        val gatewayOnline = totalChannels > 0 && !basePayload.starting
+        val mirrorStats = client.mirrorStatsSnapshot()
+        return basePayload.copy(
+            loadProgress = DashboardLoadProgressCalculator.snapshot(
+                health = basePayload,
+                epgManager = epgManager,
+                gatewayOnline = gatewayOnline,
+                serviceActive = true,
+            ),
+            mirrorStats = MirrorStats(
+                activeBaseUrl = mirrorStats.activeBaseUrl,
+                fastestMirrorEmaMs = mirrorStats.fastestMirrorEmaMs,
+                streamCacheHitRate = mirrorStats.streamCacheHitRate,
+                mirrorLatenciesMs = mirrorStats.mirrorLatenciesMs,
+            ),
+        )
+    }
+
+    private fun buildFullHealthPayload(): HealthResponse {
         val healing = client.healingSnapshot()
         val channelCount = client.channels.size
         val sync = supplementSource.syncSnapshot()
@@ -62,47 +127,16 @@ class HealthRoutes(
             environment,
             supplementSource.sportsEpgXmlFile(),
         )
-        val supplementStatus = SupplementStatus(
-                enabled = supplementSource.enabled(),
-                sidecarEnabled = supplementSource.sidecarEnabled(),
-                sportsEnabled = supplementSource.sportsEnabled(),
-                iptvOrgEnabled = supplementSource.iptvOrgEnabled(),
-                ntvCxEnabled = supplementSource.ntvCxEnabled(),
-                adultSwimEnabled = supplementSource.adultSwimEnabled(),
-                channels = supplementSource.channelCount(),
-                moveOnJoyChannels = supplementSource.moveOnJoyCount(),
-                sportsChannels = supplementSource.sportsCount(),
-                specialEventGuides = specialEventGuides,
-                dlhdEventStreams = dlhdEventStreams,
-                sportsEventsScanned = sync.sportsEventsScanned,
-                supplementSyncInFlight = supplementSource.syncInFlight(),
-                iptvOrgChannels = supplementSource.iptvOrgCount(),
-                ntvCxChannels = supplementSource.ntvCxCount(),
-                adultSwimChannels = supplementSource.adultSwimCount(),
-                ntvCxImportMode = supplementSource.ntvCxImportMode().name,
-                ntvCxMergeMode = supplementSource.ntvCxImportMode().name,
-                sidecarImportMode = environment.supplementSidecarImportMode.name,
-                iptvOrgImportMode = environment.supplementIptvOrgImportMode.name,
-                adultSwimImportMode = environment.supplementAdultSwimImportMode.name,
-                ntvCxResolveProbeOk = sync.ntvCxResolveProbeOk,
-                adultSwimProbed = sync.adultSwimProbed,
-                adultSwimProbeOk = sync.adultSwimProbeOk,
-                iptvOrgPlaylistsFetched = sync.iptvOrgPlaylistsFetched,
-                iptvOrgPlaylistsFailed = sync.iptvOrgPlaylistsFailed,
-                blockedTheTvApp = sync.blockedTheTvApp,
-                blockedTvPass = sync.blockedTvPass,
-                blockedTokenProxy = sync.blockedTokenProxy,
-            )
-        val providerStats = ProviderStats(
-                daddylive = channelCount,
-                moveOnJoy = supplementSource.moveOnJoyCount(),
-                iptvOrg = supplementSource.iptvOrgCount(),
-                sports = supplementSource.sportsCount(),
-                ntvCx = supplementSource.ntvCxCount(),
-                adultSwim = supplementSource.adultSwimCount(),
-                adult = adultCount,
-                total = totalChannels,
-            )
+        val supplementStatus = buildSupplementStatus(
+            sync = sync,
+            specialEventGuides = specialEventGuides,
+            dlhdEventStreams = dlhdEventStreams,
+        )
+        val providerStats = buildProviderStats(
+            channelCount = channelCount,
+            totalChannels = totalChannels,
+            adultCount = adultCount,
+        )
         val epgReady = if (gatewayEpgOn) epgManager.epgReady() else playlistEpgUrls.isNotEmpty()
         val basePayload = HealthResponse(
             ok = true,
@@ -159,10 +193,9 @@ class HealthRoutes(
                 recentActions = healing.recentActions.takeLast(5),
             ),
         )
-        val gatewayOnline = totalChannels > 0 && !basePayload.starting &&
-            (!gatewayEpgOn || epgReady || !epgManager.isBuilding())
+        val gatewayOnline = totalChannels > 0 && !basePayload.starting
         val lastTiviMateEvent = TiviMateEventStore.lastEvent()
-        val payload = basePayload.copy(
+        return basePayload.copy(
             loadProgress = DashboardLoadProgressCalculator.snapshot(
                 health = basePayload,
                 epgManager = epgManager,
@@ -175,13 +208,19 @@ class HealthRoutes(
                 lastTimestamp = lastTiviMateEvent?.timestamp,
             ),
         )
-        call.respondText(
-            json.encodeToString(payload),
-            ContentType.Application.Json,
-        )
     }
 
     suspend fun tivimateSetup(call: ApplicationCall) {
+        val payload = withContext(Dispatchers.Default) { buildTivimateSetupPayload() }
+        call.respondText(json.encodeToString(payload), ContentType.Application.Json)
+    }
+
+    suspend fun streamvaultSetup(call: ApplicationCall) {
+        val payload = withContext(Dispatchers.Default) { buildStreamVaultSetupPayload() }
+        call.respondText(json.encodeToString(payload), ContentType.Application.Json)
+    }
+
+    private fun buildTivimateSetupPayload(): TivimateSetup {
         val base = environment.loopbackBase()
         val playlistEpgUrls = EpgPlaylistUrlResolver.resolvePlaylistEpgUrls(
             environment,
@@ -189,14 +228,17 @@ class HealthRoutes(
         )
         val gatewayEpgOn = environment.gatewayEpgEnabled
         val player = TiviMateController.probe(appContext)
-        val payload = TivimateSetup(
-            playlist = "$base/tivimate-playlist.m3u8",
+        return TivimateSetup(
+            playlist = "$base${PlaylistPaths.TIVIMATE}",
+            playlistDiagnostic = "$base${PlaylistPaths.TIVIMATE_SETUP}",
             epg = playlistEpgUrls.joinToString(","),
             health = "$base/health",
             hint = if (gatewayEpgOn) {
-                "Add the playlist URL in TiviMate using 127.0.0.1 on this device."
+                "Add $base${PlaylistPaths.TIVIMATE} in TiviMate (127.0.0.1 on this device). " +
+                    "Legacy $base${PlaylistPaths.TIVIMATE_SETUP} (50-channel bootstrap) remains for diagnostics."
             } else {
-                "Gateway EPG is disabled. TiviMate loads EPG from the external URLs in the playlist."
+                "Add $base${PlaylistPaths.TIVIMATE} in TiviMate. Gateway EPG is disabled — " +
+                    "TiviMate loads EPG from external URLs in the playlist header."
             },
             epgReady = if (gatewayEpgOn) epgManager.epgReady() else playlistEpgUrls.isNotEmpty(),
             epgProgrammeCount = if (gatewayEpgOn) {
@@ -209,11 +251,121 @@ class HealthRoutes(
             playerVersion = player.versionName,
             playerVersionCode = player.versionCode,
             playerLikelyActive = player.likelyActive,
-            launchComponent = TiviMateController.LAUNCH_COMPONENT,
+            launchComponent = TiviMateController.launchComponent(appContext),
         )
-        call.respondText(
-            json.encodeToString(payload),
-            ContentType.Application.Json,
+    }
+
+    private fun buildStreamVaultSetupPayload(): StreamVaultSetup {
+        val base = environment.loopbackBase()
+        val playlistEpgUrls = EpgPlaylistUrlResolver.resolvePlaylistEpgUrls(
+            environment,
+            supplementSource.sportsEpgXmlFile(),
+        )
+        val gatewayEpgOn = environment.gatewayEpgEnabled
+        val player = StreamVaultController.probe(appContext)
+        val gatewayPackage = appContext.packageName
+        return StreamVaultSetup(
+            playlist = "$base${PlaylistPaths.STREAMVAULT}",
+            playlistDiagnostic = "$base${PlaylistPaths.STREAMVAULT_SETUP}",
+            epg = playlistEpgUrls.joinToString(","),
+            health = "$base/health",
+            hint = "Enable the StepDaddy Gateway plugin in StreamVault, or paste " +
+                "$base${PlaylistPaths.STREAMVAULT} in Provider Setup. " +
+                "Legacy $base${PlaylistPaths.STREAMVAULT_SETUP} still works.",
+            pluginId = StreamVaultPluginContract.PLUGIN_ID,
+            pluginService = "$gatewayPackage/.streamvault.StreamVaultPluginService",
+            epgReady = if (gatewayEpgOn) epgManager.epgReady() else playlistEpgUrls.isNotEmpty(),
+            epgProgrammeCount = if (gatewayEpgOn) {
+                epgManager.programmeCount()
+            } else {
+                playlistEpgUrls.size
+            },
+            epgAgeSeconds = if (gatewayEpgOn) epgManager.ageSeconds() else null,
+            playerInstalled = player.installed,
+            playerVersion = player.versionName,
+            playerVersionCode = player.versionCode,
+            launchComponent = StreamVaultController.launchComponent(appContext),
+        )
+    }
+
+    private fun buildSupplementStatus(
+        sync: SupplementSource.SyncSnapshot,
+        specialEventGuides: Int = sync.specialEventGuides
+            .takeIf { it > 0 }
+            ?: supplementSource.specialEventGuideCount(),
+        dlhdEventStreams: Int = sync.dlhdEventStreams
+            .takeIf { it > 0 }
+            ?: supplementSource.dlhdEventStreamCount(),
+    ): SupplementStatus {
+        val sportsOn = supplementSource.sportsEnabled()
+        val syncInFlight = supplementSource.syncInFlight()
+        val lastSyncMs = supplementSource.specialEventsLastSyncMs().takeIf { it > 0L }
+        val nowMs = System.currentTimeMillis()
+        val stale = SpecialEventsHealthSummary.isStale(lastSyncMs, nowMs)
+        val status = SpecialEventsHealthSummary.status(
+            sportsEnabled = sportsOn,
+            syncInFlight = syncInFlight,
+            guideCount = specialEventGuides,
+            liveEventCount = dlhdEventStreams,
+            lastSyncMs = lastSyncMs,
+            nowMs = nowMs,
+        )
+        val eventHealth = supplementSource.dlhdEventStreamHealthSummary()
+        return SupplementStatus(
+            enabled = supplementSource.enabled(),
+            sportsEnabled = sportsOn,
+            iptvOrgEnabled = supplementSource.iptvOrgEnabled(),
+            ntvCxEnabled = supplementSource.ntvCxEnabled(),
+            adultSwimEnabled = supplementSource.adultSwimEnabled(),
+            channels = supplementSource.channelCount(),
+            sportsChannels = supplementSource.sportsCount(),
+            specialEventGuides = specialEventGuides,
+            dlhdEventStreams = dlhdEventStreams,
+            sportsEventsScanned = sync.sportsEventsScanned,
+            supplementSyncInFlight = syncInFlight,
+            iptvOrgChannels = supplementSource.iptvOrgCount(),
+            ntvCxChannels = supplementSource.ntvCxCount(),
+            adultSwimChannels = supplementSource.adultSwimCount(),
+            ntvCxImportMode = supplementSource.ntvCxImportMode().name,
+            ntvCxMergeMode = supplementSource.ntvCxImportMode().name,
+            iptvOrgImportMode = environment.supplementIptvOrgImportMode.name,
+            adultSwimImportMode = environment.supplementAdultSwimImportMode.name,
+            ntvCxResolveProbeOk = sync.ntvCxResolveProbeOk,
+            adultSwimProbed = sync.adultSwimProbed,
+            adultSwimProbeOk = sync.adultSwimProbeOk,
+            iptvOrgPlaylistsFetched = sync.iptvOrgPlaylistsFetched,
+            iptvOrgPlaylistsFailed = sync.iptvOrgPlaylistsFailed,
+            blockedTheTvApp = sync.blockedTheTvApp,
+            blockedTvPass = sync.blockedTvPass,
+            blockedTokenProxy = sync.blockedTokenProxy,
+            lastSpecialEventsSyncMs = lastSyncMs,
+            specialEventsScrapeAgeSeconds = SpecialEventsHealthSummary.ageSeconds(lastSyncMs, nowMs),
+            specialEventsStale = stale,
+            specialEventsStatus = status,
+            dlhdEventHealthProbed = eventHealth.probed,
+            dlhdEventHealthOk = eventHealth.healthy,
+            dlhdEventHealthFailed = eventHealth.unhealthy,
+            dlhdEventHealthUnknown = eventHealth.unknown,
+            dlhdEventHealthLastProbeMs = eventHealth.lastProbeMs,
+        )
+    }
+
+    private fun buildProviderStats(
+        channelCount: Int,
+        totalChannels: Int,
+        adultCount: Int = 0,
+    ): ProviderStats {
+        val playlistReady = playlistCache.cachedEntryCount().takeIf { it > 0 }
+            ?: (totalChannels.takeIf { it > 0 } ?: 0)
+        return ProviderStats(
+            daddylive = channelCount,
+            iptvOrg = supplementSource.iptvOrgCount(),
+            sports = supplementSource.sportsCount(),
+            ntvCx = supplementSource.ntvCxCount(),
+            adultSwim = supplementSource.adultSwimCount(),
+            adult = adultCount,
+            playlistReady = playlistReady,
+            total = totalChannels,
         )
     }
 }

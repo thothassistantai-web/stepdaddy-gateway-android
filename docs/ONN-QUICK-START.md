@@ -13,7 +13,7 @@ Fastest path to live TV on a **Google TV / ONN streaming stick** (tested on `FUS
 | ONN 4K or Full HD stick | Android TV 11+, API 24+ |
 | Wi‑Fi | Upstream fetch requires internet |
 | ADB (optional) | USB or wireless — speeds up install |
-| Two APKs | Gateway + TiviMate Daddy (recommended) |
+| Two APKs | Gateway + DaddyLive TV (recommended; legacy fleet may still use TiviMate Daddy) |
 
 ---
 
@@ -40,7 +40,7 @@ adb -s $DEV shell appops set $PKG SYSTEM_ALERT_WINDOW allow
 
 ---
 
-## 2. Install TiviMate Daddy
+## 2. Install DaddyLive TV
 
 ```bash
 # Install from GitHub Releases (recommended)
@@ -50,8 +50,9 @@ adb -s $DEV shell appops set $PKG SYSTEM_ALERT_WINDOW allow
 cd research/tivimate-apk/stepdaddy-patch   # or clone tivimate-daddy
 ./build.sh
 
-# Install — uninstall old TiviMate first if signatures differ
-adb -s $DEV uninstall ar.tvplayer.tv || true
+# Install — uninstall prior DaddyLive / legacy Daddy build if signatures differ
+adb -s $DEV uninstall com.thothassistant.daddylive || true
+# Legacy fleet (≤2.0.0): adb -s $DEV uninstall ar.tvplayer.tv || true
 adb -s $DEV install -r ../TiviMate-4.6.1-StepDaddy.apk
 ```
 
@@ -77,7 +78,8 @@ Default boot-tune channel is **51** (ESPN-class slot in DaddyLive ordering). Cha
 **Gateway must be listening on `127.0.0.1:3000` before first TiviMate open.**
 
 ```bash
-adb -s $DEV shell am start -n ar.tvplayer.tv/.ui.MainActivity
+adb -s $DEV shell am start -n com.thothassistant.daddylive/ar.tvplayer.tv.ui.MainActivity
+# Legacy fleet (≤2.0.0): ar.tvplayer.tv/.ui.MainActivity
 ```
 
 The Daddy patch will:
@@ -124,7 +126,7 @@ Expect: gateway health **200** within ~60 s, overlay banner, TiviMate auto-launc
 
 | Problem | Fix |
 |---------|-----|
-| Empty TiviMate playlist | Start gateway first; force setup: `adb shell am broadcast -a ar.tvplayer.tv.action.STEPDADDY_SETUP` |
+| Empty TiviMate playlist | Start gateway first; force setup: `adb shell am broadcast -a com.thothassistant.daddylive.action.STEPDADDY_SETUP` (legacy: `ar.tvplayer.tv.action.STEPDADDY_SETUP`) |
 | TiviMate crash on boot | Upgrade to patch `1.2.1-boot-tune-safe` |
 | Port 3000 in use | Uninstall legacy Termux `com.nova.stepdaddylivehd` |
 | No overlay banner | `appops set … SYSTEM_ALERT_WINDOW allow` |

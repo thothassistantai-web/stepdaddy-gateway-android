@@ -15,6 +15,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import kotlinx.coroutines.delay
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -35,7 +36,7 @@ object GatewayStartHelper {
     private val fallbacksScheduled = AtomicBoolean(false)
     private val bootExecutor = Executors.newSingleThreadExecutor()
 
-    /** FGS alive AND loopback /health responds OK (prefs alone are stale after reboot). */
+    /** FGS alive AND loopback catalog is serving channels (not merely HTTP up). */
     fun isGatewayHealthy(context: Context): Boolean {
         val appContext = context.applicationContext
         val environment = (appContext as GatewayApp).gatewayEnvironment
@@ -43,15 +44,95 @@ object GatewayStartHelper {
             if (environment.serverRunning) {
                 environment.clearBootStaleState()
             }
+            GatewayHealth.setReadinessPhase(GatewayHealth.ReadinessPhase.COLD)
             return false
         }
-        if (GatewayHealth.probeLoopback(appContext)) {
+        val snapshot = GatewayHealth.probeReadiness(appContext)
+        if (snapshot.ready) {
             environment.serverRunning = true
+            GatewayHealth.setReadinessPhase(GatewayHealth.ReadinessPhase.READY)
             return true
         }
         if (environment.serverRunning) {
             environment.clearBootStaleState()
         }
+        GatewayHealth.setReadinessPhase(
+            if (snapshot.healthOk) {
+                GatewayHealth.ReadinessPhase.WAITING_CHANNELS
+            } else {
+                GatewayHealth.ReadinessPhase.WAKING
+            },
+        )
+        return false
+    }
+
+    /**
+     * Wake FGS (and trampoline activity if needed), then poll until /health?lite=1 reports
+     * channels>0 and /tivimate-setup returns a playlist URL — stable across two probes.
+     */
+    suspend fun ensureGatewayReady(
+        context: Context,
+        timeoutMs: Long = DEFAULT_READY_TIMEOUT_MS,
+        pollMs: Long = DEFAULT_READY_POLL_MS,
+    ): Boolean {
+        val appContext = context.applicationContext
+        val environment = (appContext as GatewayApp).gatewayEnvironment
+        val deadline = SystemClock.elapsedRealtime() + timeoutMs
+        GatewayHealth.setReadinessPhase(GatewayHealth.ReadinessPhase.WAKING)
+        Log.i(TAG, "ensureGatewayReady: waking gateway (timeout=${timeoutMs}ms)")
+
+        if (!ServerService.isServiceActive) {
+            startIfNeeded(appContext, "ensureGatewayReady")
+        } else if (!environment.serverRunning) {
+            nudgeRunningService(appContext)
+        }
+
+        var stableHits = 0
+        var lastChannelCount = -1
+        while (SystemClock.elapsedRealtime() < deadline) {
+            if (!ServerService.isServiceActive) {
+                startIfNeeded(appContext, "ensureGatewayReady-retry")
+            } else if (!GatewayHealth.probeReadiness(appContext).healthOk) {
+                nudgeRunningService(appContext)
+                launchBootStartActivity(appContext, "ensureGatewayReady")
+            }
+
+            val snapshot = GatewayHealth.probeReadiness(appContext)
+            if (snapshot.ready) {
+                if (snapshot.channelCount == lastChannelCount) {
+                    stableHits++
+                } else {
+                    stableHits = 1
+                    lastChannelCount = snapshot.channelCount
+                }
+                if (stableHits >= STABLE_READY_PROBES) {
+                    environment.serverRunning = true
+                    GatewayHealth.setReadinessPhase(GatewayHealth.ReadinessPhase.READY)
+                    onGatewayHealthy(appContext)
+                    val elapsed = timeoutMs - (deadline - SystemClock.elapsedRealtime())
+                    Log.i(
+                        TAG,
+                        "ensureGatewayReady: ready in ${elapsed.coerceAtLeast(0)}ms " +
+                            "(channels=${snapshot.channelCount})",
+                    )
+                    return true
+                }
+            } else {
+                stableHits = 0
+                lastChannelCount = -1
+                GatewayHealth.setReadinessPhase(
+                    if (snapshot.healthOk) {
+                        GatewayHealth.ReadinessPhase.WAITING_CHANNELS
+                    } else {
+                        GatewayHealth.ReadinessPhase.WAKING
+                    },
+                )
+            }
+            delay(pollMs)
+        }
+
+        GatewayHealth.setReadinessPhase(GatewayHealth.ReadinessPhase.TIMEOUT)
+        Log.w(TAG, "ensureGatewayReady: timed out after ${timeoutMs}ms")
         return false
     }
 
@@ -77,7 +158,6 @@ object GatewayStartHelper {
         val fgsResult = tryStartForegroundService(appContext, source)
         when (fgsResult) {
             StartResult.STARTED -> {
-                onGatewayHealthy(appContext)
                 return StartResult.STARTED
             }
             StartResult.LAUNCHED_TRAMPOLINE -> {
@@ -344,6 +424,9 @@ object GatewayStartHelper {
     private const val REQUEST_CODE_TRAMPOLINE = 30_100
     private const val PERIODIC_ENSURE_ALIVE_MINUTES = 20L
     private const val PERIODIC_ENSURE_ALIVE_TIVIMATE_MINUTES = 5L
+    private const val DEFAULT_READY_TIMEOUT_MS = 120_000L
+    private const val DEFAULT_READY_POLL_MS = 2_000L
+    private const val STABLE_READY_PROBES = 2
     private val ALARM_DELAYS_MS = longArrayOf(
         3_000, 8_000, 15_000, 30_000, 60_000, 120_000, 240_000,
     )

@@ -1,8 +1,6 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
 object SupplementConfig {
-    const val MAX_CHANNELS = 100
-
     /** Max playable event streams (DaddyLive + TheTvApp combined). */
     const val MAX_SPECIAL_EVENT_STREAMS = 60
 
@@ -11,6 +9,20 @@ object SupplementConfig {
 
     /** Drop finished events and stale guide rows between upstream syncs. */
     const val SPECIAL_EVENTS_PRUNE_INTERVAL_MS = 2 * 60_000L
+
+    /** Tier 4: background reachability probes for active `dlhd-event:*` streams. */
+    const val DLHD_EVENT_HEALTH_PROBES_ENABLED = true
+
+    const val DLHD_EVENT_HEALTH_PROBE_INTERVAL_MS = 5 * 60_000L
+    const val DLHD_EVENT_HEALTH_INITIAL_DELAY_MS = 90_000L
+    const val DLHD_EVENT_HEALTH_PROBE_TIMEOUT_MS = 20_000L
+    const val DLHD_EVENT_HEALTH_MAX_CONCURRENT = 3
+
+    /** Re-fetch when a scheduled row starts within this window but has no stream row yet. */
+    const val SPECIAL_EVENTS_PRE_START_WINDOW_MS = 15 * 60_000L
+
+    /** Keep ended dlhd-event rows in playlists briefly before catalog prune removes them. */
+    const val SPECIAL_EVENT_ENDED_GRACE_MS = 30 * 60_000L
 
     /** @deprecated Use [MAX_SPECIAL_EVENT_STREAMS]. */
     const val MAX_SPORTS_EVENTS = MAX_SPECIAL_EVENT_STREAMS
@@ -37,11 +49,4 @@ object SupplementConfig {
     /** @deprecated Stored on disk from older builds; maps to [GroupTitleResolver.SPECIAL_EVENTS]. */
     const val LEGACY_SPORTS_GROUP_TITLE = "🏈 | Sports | TheTvApp"
 
-    const val MOVEONJOY_REFERER = "https://moveonjoy.com/"
-
-    fun playlistUrl(base: String): String = "${base.trimEnd('/')}/playlist.m3u8"
-
-    fun epgGzipUrl(base: String): String = "${base.trimEnd('/')}/xmltv.xml.gz"
-
-    fun epgXmlUrl(base: String): String = "${base.trimEnd('/')}/xmltv.xml"
 }

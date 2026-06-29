@@ -16,6 +16,7 @@ import android.util.LruCache
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import com.thothassistant.stepdaddy.gateway.R
+import com.thothassistant.stepdaddy.gateway.TiviMateController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -143,7 +144,8 @@ class InstallAppIconLoader(
     private fun faviconDomain(entry: InstallAppEntry): String? {
         entry.packageName?.let { pkg ->
             return when {
-                pkg.contains("tivimate") || pkg == "ar.tvplayer.tv" -> "tivimate.com"
+                pkg.contains("tivimate") || pkg == "ar.tvplayer.tv" ||
+                    pkg == TiviMateController.DADDY_LIVE_PACKAGE -> "tivimate.com"
                 pkg.contains("sparkle") -> "sparkle-tv.com"
                 pkg.contains("localsend") -> "localsend.org"
                 pkg.contains("stremio") -> "stremio.com"

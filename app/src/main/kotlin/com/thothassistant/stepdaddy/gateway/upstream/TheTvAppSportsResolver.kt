@@ -38,6 +38,7 @@ class TheTvAppSportsResolver(
             val variant = firstVariantUrl(playlist) ?: continue
             val name = eventTitle(eventHtml, eventUrl)
             val league = SpecialEventSort.leagueFromEventUrl(eventUrl)
+            val schedule = EventTimeExtractor.fromTheTvAppEventHtml(eventHtml, eventUrl)
             channels += SupplementChannel(
                 id = "sport:${shortHash(eventUrl)}",
                 name = name,
@@ -49,6 +50,23 @@ class TheTvAppSportsResolver(
                 referer = embedReferer,
                 origin = EMBED_ORIGIN,
                 eventSourceUrl = eventUrl,
+                eventStartMs = schedule?.startMs,
+                eventStopMs = schedule?.stopMs,
+                languageCode = SpecialEventLanguageIdentifier.identify(
+                    SpecialEventLanguageIdentifier.Context(
+                        eventTitle = name,
+                        league = league,
+                        eventSourceUrl = eventUrl,
+                        siteLocale = "en",
+                    ),
+                ),
+                regionCode = SpecialEventRegionIdentifier.identify(
+                    SpecialEventRegionIdentifier.Context(
+                        eventTitle = name,
+                        league = league,
+                        eventSourceUrl = eventUrl,
+                    ),
+                ),
             )
         }
         return channels to ResolveStats(

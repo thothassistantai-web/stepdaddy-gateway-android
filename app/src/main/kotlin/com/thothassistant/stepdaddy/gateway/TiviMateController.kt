@@ -26,18 +26,31 @@ import kotlinx.serialization.json.Json
  * `stepdaddy://` URIs, explicit broadcast actions, and loopback HTTP on port 4617.
  */
 object TiviMateController {
-    const val PACKAGE = TiviMateWatch.PACKAGE
+    const val DADDY_LIVE_PACKAGE = TiviMateWatch.DADDY_LIVE_PACKAGE
+    const val LEGACY_DADDY_LIVE_PACKAGE = TiviMateWatch.LEGACY_DADDY_LIVE_PACKAGE
+    const val LEGACY_TIVIMATE_PACKAGE = TiviMateWatch.LEGACY_TIVIMATE_PACKAGE
+    /** Expected applicationId for new DaddyLive TV APK releases (2.3.0+). */
+    const val PACKAGE = DADDY_LIVE_PACKAGE
+
     const val MAIN_ACTIVITY_CLASS = "ar.tvplayer.tv.ui.MainActivity"
-    const val LAUNCH_COMPONENT = "$PACKAGE/.ui.MainActivity"
     const val BRIDGE_ACTIVITY_CLASS = "ar.tvplayer.tv.stepdaddy.StepDaddyBridgeActivity"
     const val COMMAND_RECEIVER_CLASS = "ar.tvplayer.tv.stepdaddy.StepDaddyCommandReceiver"
 
-    const val ACTION_SETUP = "ar.tvplayer.tv.action.STEPDADDY_SETUP"
-    const val ACTION_TUNE = "ar.tvplayer.tv.action.STEPDADDY_TUNE"
-    const val ACTION_STREAM = "ar.tvplayer.tv.action.STEPDADDY_STREAM"
-    const val ACTION_OPEN_EPG = "ar.tvplayer.tv.action.STEPDADDY_EPG"
-    const val ACTION_START_HTTP = "ar.tvplayer.tv.action.STEPDADDY_HTTP_START"
-    const val ACTION_STOP_HTTP = "ar.tvplayer.tv.action.STEPDADDY_HTTP_STOP"
+    private const val DADDY_ACTION_PREFIX = "$DADDY_LIVE_PACKAGE.action"
+    private const val LEGACY_DADDY_ACTION_PREFIX = "$LEGACY_DADDY_LIVE_PACKAGE.action"
+    private const val LEGACY_ACTION_PREFIX = "$LEGACY_TIVIMATE_PACKAGE.action"
+
+    const val ACTION_SETUP = "$DADDY_ACTION_PREFIX.STEPDADDY_SETUP"
+    const val ACTION_TUNE = "$DADDY_ACTION_PREFIX.STEPDADDY_TUNE"
+    const val ACTION_STREAM = "$DADDY_ACTION_PREFIX.STEPDADDY_STREAM"
+    const val ACTION_OPEN_EPG = "$DADDY_ACTION_PREFIX.STEPDADDY_EPG"
+    const val ACTION_START_HTTP = "$DADDY_ACTION_PREFIX.STEPDADDY_HTTP_START"
+    const val ACTION_STOP_HTTP = "$DADDY_ACTION_PREFIX.STEPDADDY_HTTP_STOP"
+
+    private const val ACTION_SETUP_SUFFIX = "STEPDADDY_SETUP"
+    private const val ACTION_TUNE_SUFFIX = "STEPDADDY_TUNE"
+    private const val ACTION_STREAM_SUFFIX = "STEPDADDY_STREAM"
+    private const val ACTION_OPEN_EPG_SUFFIX = "STEPDADDY_EPG"
 
     const val EXTRA_CHANNEL = "channel"
     const val EXTRA_CHANNEL_ID = "channel_id"
@@ -110,33 +123,94 @@ object TiviMateController {
         )
     }
 
-    fun isInstalled(context: Context): Boolean =
-        runCatching { loadPackageInfo(context); true }.getOrDefault(false)
+    fun isInstalled(context: Context): Boolean = playerPackage(context) != null
+
+    /** Package with StepDaddy bridge — prefers daddyliveTV, then legacy DaddyLive, then fleet. */
+    fun controlPackage(context: Context): String? {
+        if (isPackageInstalled(context, DADDY_LIVE_PACKAGE)) return DADDY_LIVE_PACKAGE
+        if (isPackageInstalled(context, LEGACY_DADDY_LIVE_PACKAGE) &&
+            hasStepDaddyBridge(context, LEGACY_DADDY_LIVE_PACKAGE)
+        ) {
+            return LEGACY_DADDY_LIVE_PACKAGE
+        }
+        if (isPackageInstalled(context, LEGACY_TIVIMATE_PACKAGE) &&
+            hasStepDaddyBridge(context, LEGACY_TIVIMATE_PACKAGE)
+        ) {
+            return LEGACY_TIVIMATE_PACKAGE
+        }
+        return null
+    }
+
+    /** Any installed TiViMate-family player (daddyliveTV, legacy DaddyLive, or stock). */
+    fun playerPackage(context: Context): String? {
+        if (isPackageInstalled(context, DADDY_LIVE_PACKAGE)) return DADDY_LIVE_PACKAGE
+        if (isPackageInstalled(context, LEGACY_DADDY_LIVE_PACKAGE)) return LEGACY_DADDY_LIVE_PACKAGE
+        if (isPackageInstalled(context, LEGACY_TIVIMATE_PACKAGE)) return LEGACY_TIVIMATE_PACKAGE
+        return null
+    }
 
     /**
      * Probe `:4617/status` and package metadata to distinguish StepDaddy patch vs plain mod vs unknown.
      */
     fun detectInstalledVariant(context: Context): TiviMateVariantProbe {
-        if (!isInstalled(context)) {
+        val daddyLiveInstalled = isPackageInstalled(context, DADDY_LIVE_PACKAGE)
+        val legacyDaddyInstalled = isPackageInstalled(context, LEGACY_DADDY_LIVE_PACKAGE)
+        val legacyInstalled = isPackageInstalled(context, LEGACY_TIVIMATE_PACKAGE)
+        if (!daddyLiveInstalled && !legacyDaddyInstalled && !legacyInstalled) {
             return TiviMateVariantProbe(TiviMateInstalledVariant.NOT_INSTALLED)
         }
-        val versionName = runCatching { loadPackageInfo(context).versionName }.getOrNull()
+
         val statusPatch = probeStatusPatchVersion()
-        if (statusPatch != null) {
-            val variant = if (isStepDaddyPatchVersion(statusPatch)) {
-                TiviMateInstalledVariant.STEP_DADDY
-            } else {
-                TiviMateInstalledVariant.PLAIN_MOD
+        if (daddyLiveInstalled) {
+            val versionName = packageVersionName(context, DADDY_LIVE_PACKAGE)
+            if (statusPatch != null) {
+                val variant = if (isStepDaddyPatchVersion(statusPatch)) {
+                    TiviMateInstalledVariant.STEP_DADDY
+                } else {
+                    TiviMateInstalledVariant.PLAIN_MOD
+                }
+                return TiviMateVariantProbe(variant, statusPatch, versionName)
             }
-            return TiviMateVariantProbe(variant, statusPatch, versionName)
+            if (hasStepDaddyBridge(context, DADDY_LIVE_PACKAGE)) {
+                return TiviMateVariantProbe(TiviMateInstalledVariant.STEP_DADDY, versionName = versionName)
+            }
         }
-        if (hasStepDaddyBridge(context)) {
-            return TiviMateVariantProbe(TiviMateInstalledVariant.STEP_DADDY, versionName = versionName)
+
+        if (legacyDaddyInstalled) {
+            val versionName = packageVersionName(context, LEGACY_DADDY_LIVE_PACKAGE)
+            if (statusPatch != null && !daddyLiveInstalled) {
+                val variant = if (isStepDaddyPatchVersion(statusPatch)) {
+                    TiviMateInstalledVariant.STEP_DADDY
+                } else {
+                    TiviMateInstalledVariant.PLAIN_MOD
+                }
+                return TiviMateVariantProbe(variant, statusPatch, versionName)
+            }
+            if (hasStepDaddyBridge(context, LEGACY_DADDY_LIVE_PACKAGE)) {
+                return TiviMateVariantProbe(TiviMateInstalledVariant.STEP_DADDY, versionName = versionName)
+            }
         }
-        if (isLikely461Mod(versionName)) {
-            return TiviMateVariantProbe(TiviMateInstalledVariant.PLAIN_MOD, versionName = versionName)
+
+        if (legacyInstalled) {
+            val versionName = packageVersionName(context, LEGACY_TIVIMATE_PACKAGE)
+            if (statusPatch != null && !daddyLiveInstalled && !legacyDaddyInstalled) {
+                val variant = if (isStepDaddyPatchVersion(statusPatch)) {
+                    TiviMateInstalledVariant.STEP_DADDY
+                } else {
+                    TiviMateInstalledVariant.PLAIN_MOD
+                }
+                return TiviMateVariantProbe(variant, statusPatch, versionName)
+            }
+            if (hasStepDaddyBridge(context, LEGACY_TIVIMATE_PACKAGE)) {
+                return TiviMateVariantProbe(TiviMateInstalledVariant.STEP_DADDY, versionName = versionName)
+            }
+            if (isLikely461Mod(versionName)) {
+                return TiviMateVariantProbe(TiviMateInstalledVariant.PLAIN_MOD, versionName = versionName)
+            }
+            return TiviMateVariantProbe(TiviMateInstalledVariant.UNKNOWN, versionName = versionName)
         }
-        return TiviMateVariantProbe(TiviMateInstalledVariant.UNKNOWN, versionName = versionName)
+
+        return TiviMateVariantProbe(TiviMateInstalledVariant.UNKNOWN)
     }
 
     /** Launch TiViMate for gateway use — setup URI when StepDaddy patch is present. */
@@ -158,9 +232,9 @@ object TiviMateController {
         }
     }
 
-    fun hasStepDaddyBridge(context: Context): Boolean {
+    fun hasStepDaddyBridge(context: Context, packageName: String): Boolean {
         val probe = Intent(Intent.ACTION_VIEW, Uri.parse("$SCHEME://$HOST_SETUP")).apply {
-            setPackage(PACKAGE)
+            setPackage(packageName)
         }
         val matches = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.packageManager.queryIntentActivities(
@@ -201,30 +275,60 @@ object TiviMateController {
         return name.startsWith("4.6.") || name.contains("4.6.1")
     }
 
-    private fun loadPackageInfo(context: Context) =
+    private fun isPackageInstalled(context: Context, packageName: String): Boolean {
+        val pm = context.packageManager
+        return runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                pm.getPackageInfo(
+                    packageName,
+                    PackageManager.PackageInfoFlags.of(0),
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                pm.getPackageInfo(packageName, 0)
+            }
+            true
+        }.getOrElse {
+            // Fallback when <queries> is missing or package metadata is restricted.
+            @Suppress("DEPRECATION")
+            pm.getInstalledPackages(0).any { it.packageName == packageName }
+        }
+    }
+
+    private fun packageVersionName(context: Context, packageName: String): String? =
+        runCatching { loadPackageInfo(context, packageName).versionName }.getOrNull()
+
+    private fun loadPackageInfo(context: Context, packageName: String = playerPackage(context) ?: PACKAGE) =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.packageManager.getPackageInfo(
-                PACKAGE,
+                packageName,
                 PackageManager.PackageInfoFlags.of(0),
             )
         } else {
             @Suppress("DEPRECATION")
-            context.packageManager.getPackageInfo(PACKAGE, 0)
+            context.packageManager.getPackageInfo(packageName, 0)
         }
 
+    /** `adb shell am start -n` component for the installed TiViMate-family player. */
+    fun launchComponent(context: Context): String {
+        val pkg = playerPackage(context) ?: DADDY_LIVE_PACKAGE
+        return "$pkg/$MAIN_ACTIVITY_CLASS"
+    }
+
     fun launch(context: Context): Boolean {
-        if (!isInstalled(context)) {
-            Log.w(TAG, "TiviMate not installed ($PACKAGE)")
+        val targetPackage = playerPackage(context)
+        if (targetPackage == null) {
+            Log.w(TAG, "TiviMate not installed ($DADDY_LIVE_PACKAGE / $LEGACY_TIVIMATE_PACKAGE)")
             return false
         }
         val intent = Intent(Intent.ACTION_MAIN).apply {
-            component = ComponentName(PACKAGE, MAIN_ACTIVITY_CLASS)
+            component = ComponentName(targetPackage, MAIN_ACTIVITY_CLASS)
             addCategory(Intent.CATEGORY_LAUNCHER)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         return runCatching {
             context.startActivity(intent)
-            Log.i(TAG, "Launched TiViMate via $LAUNCH_COMPONENT")
+            Log.i(TAG, "Launched TiViMate via $targetPackage/.ui.MainActivity")
             true
         }.getOrElse { exc ->
             Log.w(TAG, "TiViMate launch failed: ${exc.message}")
@@ -254,9 +358,9 @@ object TiviMateController {
      * Uses an explicit broadcast; falls back to `stepdaddy://setup?base=...`.
      */
     fun triggerSetup(context: Context, gatewayBase: String? = null): Boolean {
-        if (!isInstalled(context)) return false
+        val targetPackage = controlPackage(context) ?: return false
         val base = normalizeGatewayBase(gatewayBase)
-        val broadcast = sendStepDaddyBroadcast(context, ACTION_SETUP) {
+        val broadcast = sendStepDaddyBroadcast(context, targetPackage, ACTION_SETUP_SUFFIX) {
             putExtra(EXTRA_GATEWAY_BASE, base)
         }
         val uri = Uri.Builder()
@@ -264,7 +368,7 @@ object TiviMateController {
             .authority(HOST_SETUP)
             .appendQueryParameter("base", base)
             .build()
-        val viaUri = startBridgeUri(context, uri)
+        val viaUri = startBridgeUri(context, targetPackage, uri)
         val started = broadcast || viaUri
         if (started) {
             Log.i(TAG, "Triggered TiViMate setup for gateway base=$base")
@@ -274,8 +378,9 @@ object TiviMateController {
 
     /** Tune to a playlist channel number (tvg-chno / position) in patched TiViMate. */
     fun tuneChannel(context: Context, channelNumber: Int): Boolean {
-        if (!isInstalled(context) || channelNumber <= 0) return false
-        val broadcast = sendStepDaddyBroadcast(context, ACTION_TUNE) {
+        val targetPackage = controlPackage(context) ?: return false
+        if (channelNumber <= 0) return false
+        val broadcast = sendStepDaddyBroadcast(context, targetPackage, ACTION_TUNE_SUFFIX) {
             putExtra(EXTRA_CHANNEL, channelNumber)
         }
         val uri = Uri.Builder()
@@ -283,7 +388,7 @@ object TiviMateController {
             .authority(HOST_CHANNEL)
             .appendPath(channelNumber.toString())
             .build()
-        val viaUri = startBridgeUri(context, uri)
+        val viaUri = startBridgeUri(context, targetPackage, uri)
         val started = broadcast || viaUri
         if (started) {
             Log.i(TAG, "Tuned TiViMate to channel $channelNumber")
@@ -297,7 +402,7 @@ object TiviMateController {
      * Numeric strings are treated as channel numbers; values containing `://` are stream URLs.
      */
     fun openStream(context: Context, channelOrUrl: String): Boolean {
-        if (!isInstalled(context)) return false
+        val targetPackage = controlPackage(context) ?: return false
         val trimmed = channelOrUrl.trim()
         if (trimmed.isEmpty()) return false
 
@@ -312,7 +417,7 @@ object TiviMateController {
             "${DEFAULT_GATEWAY_BASE}/tivimate-stream/$trimmed.m3u8"
         }
 
-        val broadcast = sendStepDaddyBroadcast(context, ACTION_STREAM) {
+        val broadcast = sendStepDaddyBroadcast(context, targetPackage, ACTION_STREAM_SUFFIX) {
             putExtra(EXTRA_STREAM_URL, streamUrl)
         }
         val uri = Uri.Builder()
@@ -320,7 +425,7 @@ object TiviMateController {
             .authority(HOST_STREAM)
             .appendQueryParameter("url", streamUrl)
             .build()
-        val viaUri = startBridgeUri(context, uri)
+        val viaUri = startBridgeUri(context, targetPackage, uri)
         val started = broadcast || viaUri
         if (started) {
             Log.i(TAG, "Opened TiViMate stream: $streamUrl")
@@ -330,8 +435,8 @@ object TiviMateController {
 
     /** Open the TiViMate EPG overlay (patched build only). */
     fun openEpg(context: Context): Boolean {
-        if (!isInstalled(context)) return false
-        val broadcast = sendStepDaddyBroadcast(context, ACTION_OPEN_EPG)
+        val targetPackage = controlPackage(context) ?: return false
+        val broadcast = sendStepDaddyBroadcast(context, targetPackage, ACTION_OPEN_EPG_SUFFIX)
         val started = broadcast || launch(context)
         if (started) {
             Log.i(TAG, "Requested TiViMate EPG overlay")
@@ -501,10 +606,10 @@ object TiviMateController {
      * Best-effort stream open on stock TiViMate — bypasses playlist metadata; may not tune EPG/channel numbers.
      */
     fun launchStream(context: Context, streamUrl: String): Boolean {
-        if (!isInstalled(context)) return false
+        val targetPackage = playerPackage(context) ?: return false
         val uri = runCatching { Uri.parse(streamUrl) }.getOrNull() ?: return false
         val intent = Intent(Intent.ACTION_VIEW, uri).apply {
-            component = ComponentName(PACKAGE, MAIN_ACTIVITY_CLASS)
+            component = ComponentName(targetPackage, MAIN_ACTIVITY_CLASS)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         return runCatching {
@@ -522,14 +627,25 @@ object TiviMateController {
         return raw.trimEnd('/')
     }
 
+    private fun broadcastAction(packageName: String, actionSuffix: String): String {
+        val prefix = when (packageName) {
+            DADDY_LIVE_PACKAGE -> DADDY_ACTION_PREFIX
+            LEGACY_DADDY_LIVE_PACKAGE -> LEGACY_DADDY_ACTION_PREFIX
+            else -> LEGACY_ACTION_PREFIX
+        }
+        return "$prefix.$actionSuffix"
+    }
+
     private fun sendStepDaddyBroadcast(
         context: Context,
-        action: String,
+        packageName: String,
+        actionSuffix: String,
         configure: Intent.() -> Unit = {},
     ): Boolean {
+        val action = broadcastAction(packageName, actionSuffix)
         val intent = Intent(action).apply {
-            setPackage(PACKAGE)
-            setComponent(ComponentName(PACKAGE, COMMAND_RECEIVER_CLASS))
+            setPackage(packageName)
+            setComponent(ComponentName(packageName, COMMAND_RECEIVER_CLASS))
             configure()
         }
         return runCatching {
@@ -541,10 +657,10 @@ object TiviMateController {
         }
     }
 
-    private fun startBridgeUri(context: Context, uri: Uri): Boolean {
+    private fun startBridgeUri(context: Context, packageName: String, uri: Uri): Boolean {
         val intent = Intent(Intent.ACTION_VIEW, uri).apply {
-            setPackage(PACKAGE)
-            setComponent(ComponentName(PACKAGE, BRIDGE_ACTIVITY_CLASS))
+            setPackage(packageName)
+            setComponent(ComponentName(packageName, BRIDGE_ACTIVITY_CLASS))
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         return runCatching {

@@ -20,11 +20,12 @@ class TheTvAppSportsResolverTest {
   }
 
   @Test
-  fun `resolves embed playlist to supplement channel`() {
-    val home = """<a href="https://thetvapp.link/world-championship-gr-l/panama-ghana/40362886704">x</a>"""
-    val eventHtml = """
+    fun `resolves embed playlist to supplement channel`() {
+        val home = """<a href="https://thetvapp.link/world-championship-gr-l/panama-ghana/40362886704">x</a>"""
+        val eventHtml = """
       <title>Panama vs Ghana | TheTvApp</title>
       <iframe src="https://gooz.aapmains.net/new-stream-embed/52168"></iframe>
+      <span class="time-badge">In Progress</span>
     """.trimIndent()
     val playlist = """
       #EXTM3U
@@ -47,5 +48,8 @@ class TheTvAppSportsResolverTest {
     assertNotNull(ch.eventSourceUrl)
     assertNotNull(ch.referer)
     assertTrue(ch.streamUrl.contains("goozekhar3.space"))
+    assertNotNull(ch.eventStartMs)
+    assertNotNull(ch.eventStopMs)
+    assertTrue((ch.eventStopMs ?: 0L) > (ch.eventStartMs ?: 0L))
   }
 }

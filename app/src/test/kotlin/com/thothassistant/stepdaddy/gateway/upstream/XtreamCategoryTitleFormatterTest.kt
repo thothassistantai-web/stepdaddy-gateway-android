@@ -77,4 +77,20 @@ class XtreamCategoryTitleFormatterTest {
         val title = XtreamCategoryTitleFormatter.formatSpecialEvent("Lakers vs Celtics", "NBA")
         assertEquals("US: NBA LAKERS VS CELTICS ᴸᴵⱽᴱ", title)
     }
+
+    @Test
+    fun formatSpecialEvent_ukRegion_usesUkPrefix() {
+        val title = XtreamCategoryTitleFormatter.formatSpecialEvent(
+            "Arsenal vs Chelsea",
+            "SOCCER",
+            countryCode = "UK",
+        )
+        assertEquals("UK: SOCCER ARSENAL VS CHELSEA ᴸᴵⱽᴱ", title)
+    }
+
+    @Test
+    fun formatSpecialEvent_endedGracePrefixesRedDot() {
+        val title = XtreamCategoryTitleFormatter.formatSpecialEvent("Lakers vs Celtics", "NBA", endedGrace = true)
+        assertEquals("🔴 US: NBA LAKERS VS CELTICS ᴸᴵⱽᴱ", title)
+    }
 }

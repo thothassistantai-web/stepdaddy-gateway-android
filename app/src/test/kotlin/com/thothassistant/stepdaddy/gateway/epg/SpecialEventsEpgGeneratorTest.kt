@@ -12,6 +12,28 @@ import java.time.temporal.ChronoUnit
 
 class SpecialEventsEpgGeneratorTest {
     @Test
+    fun streamProgramme_usesStoredEventTimes() {
+        val start = Instant.now().plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.MINUTES)
+        val stop = start.plus(3, ChronoUnit.HOURS)
+        val channel = SupplementChannel(
+            id = "dlhd-event:stored",
+            name = "Stored Times Event",
+            tvgId = "DLHD.Event.stored",
+            groupTitle = "🎟️ Special Events",
+            streamUrl = "",
+            eventStartMs = start.toEpochMilli(),
+            eventStopMs = stop.toEpochMilli(),
+        )
+        val programmes = SpecialEventsEpgGenerator.programmesForBundle(
+            channels = listOf(channel),
+            guideProgrammes = emptyMap(),
+        )
+        assertEquals(1, programmes.size)
+        assertEquals(start, programmes.single().start)
+        assertEquals(stop, programmes.single().stop)
+    }
+
+    @Test
     fun streamProgramme_usesParsedEventTitle() {
         val channel = SupplementChannel(
             id = "dlhd-event:abc",

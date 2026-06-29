@@ -8,13 +8,10 @@ internal object SettingsSupplementControls {
     private var syncingMaster = false
 
     fun load(binding: ActivitySettingsBinding, environment: com.thothassistant.stepdaddy.gateway.GatewayEnvironment) {
-        binding.switchEmbeddedSidecar.isChecked = environment.embeddedSidecarEnabled
         binding.switchSupplementSports.isChecked = environment.supplementSportsEnabled
         binding.switchSupplementIptvOrg.isChecked = environment.supplementIptvOrgEnabled
         binding.switchSupplementNtvCx.isChecked = environment.supplementNtvCxEnabled
         binding.switchSupplementAdultSwim.isChecked = environment.supplementAdultSwimEnabled
-        binding.switchSidecarSkipDuplicates.isChecked =
-            environment.supplementSidecarImportMode == SupplementImportMode.SKIP_DUPLICATES
         binding.switchIptvOrgSkipDuplicates.isChecked =
             environment.supplementIptvOrgImportMode == SupplementImportMode.SKIP_DUPLICATES
         binding.switchNtvCxSkipDuplicates.isChecked =
@@ -29,7 +26,6 @@ internal object SettingsSupplementControls {
         val skipListener = { _: android.widget.CompoundButton, _: Boolean ->
             updateSkipDuplicateVisibility(binding)
         }
-        binding.switchEmbeddedSidecar.setOnCheckedChangeListener(skipListener)
         binding.switchSupplementSports.setOnCheckedChangeListener(skipListener)
         binding.switchSupplementIptvOrg.setOnCheckedChangeListener(skipListener)
         binding.switchSupplementNtvCx.setOnCheckedChangeListener(skipListener)
@@ -37,7 +33,6 @@ internal object SettingsSupplementControls {
         binding.switchEnableAllSupplements.setOnCheckedChangeListener { _, checked ->
             if (syncingMaster) return@setOnCheckedChangeListener
             syncingMaster = true
-            binding.switchEmbeddedSidecar.isChecked = checked
             binding.switchSupplementSports.isChecked = checked
             binding.switchSupplementIptvOrg.isChecked = checked
             binding.switchSupplementNtvCx.isChecked = checked
@@ -53,23 +48,9 @@ internal object SettingsSupplementControls {
         environment.supplementIptvOrgEnabled = binding.switchSupplementIptvOrg.isChecked
         environment.supplementNtvCxEnabled = binding.switchSupplementNtvCx.isChecked
         environment.supplementAdultSwimEnabled = binding.switchSupplementAdultSwim.isChecked
-        applyMoveOnJoySidecar(environment, binding.switchEmbeddedSidecar.isChecked)
-        environment.supplementSidecarImportMode = importMode(binding.switchSidecarSkipDuplicates.isChecked)
         environment.supplementIptvOrgImportMode = importMode(binding.switchIptvOrgSkipDuplicates.isChecked)
         environment.supplementNtvCxImportMode = importMode(binding.switchNtvCxSkipDuplicates.isChecked)
         environment.supplementAdultSwimImportMode = importMode(binding.switchAdultSwimSkipDuplicates.isChecked)
-    }
-
-    private fun applyMoveOnJoySidecar(
-        environment: com.thothassistant.stepdaddy.gateway.GatewayEnvironment,
-        enabled: Boolean,
-    ) {
-        environment.embeddedSidecarEnabled = enabled
-        if (enabled) {
-            environment.ensureEmbeddedSidecarUrl()
-        } else {
-            environment.supplementBaseUrl = ""
-        }
     }
 
     private fun importMode(skipDuplicates: Boolean): SupplementImportMode =
@@ -79,8 +60,7 @@ internal object SettingsSupplementControls {
     private fun refreshMasterSwitch(binding: ActivitySettingsBinding) {
         if (syncingMaster) return
         syncingMaster = true
-        val allOn = binding.switchEmbeddedSidecar.isChecked &&
-            binding.switchSupplementSports.isChecked &&
+        val allOn = binding.switchSupplementSports.isChecked &&
             binding.switchSupplementIptvOrg.isChecked &&
             binding.switchSupplementNtvCx.isChecked &&
             binding.switchSupplementAdultSwim.isChecked
@@ -89,7 +69,6 @@ internal object SettingsSupplementControls {
     }
 
     private fun updateSkipDuplicateVisibility(binding: ActivitySettingsBinding) {
-        setSkipDuplicateRow(binding.switchSidecarSkipDuplicates, binding.switchEmbeddedSidecar.isChecked)
         setSkipDuplicateRow(binding.switchIptvOrgSkipDuplicates, binding.switchSupplementIptvOrg.isChecked)
         setSkipDuplicateRow(binding.switchNtvCxSkipDuplicates, binding.switchSupplementNtvCx.isChecked)
         setSkipDuplicateRow(binding.switchAdultSwimSkipDuplicates, binding.switchSupplementAdultSwim.isChecked)

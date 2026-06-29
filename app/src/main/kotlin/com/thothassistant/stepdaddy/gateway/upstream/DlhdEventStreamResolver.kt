@@ -6,8 +6,10 @@ import okhttp3.Request
 /** Resolves DaddyLive tv2 embed streams (`embed.st`) at play time. */
 class DlhdEventStreamResolver(
     private val httpClient: OkHttpClient = ResportzParser.defaultClient(),
+    private val manifestUrlOverride: ((streamKey: String) -> String?)? = null,
 ) {
     fun resolveManifestUrl(streamKey: String, referer: String = EMBED_REFERER): String? {
+        manifestUrlOverride?.invoke(streamKey)?.let { return it }
         val parts = streamKey.split("|", limit = 2)
         if (parts.size != 2) return null
         return when (parts[0].lowercase()) {

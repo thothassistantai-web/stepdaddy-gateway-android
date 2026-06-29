@@ -14,6 +14,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -37,13 +39,16 @@ class DaddyLiveClient(
     private val tvgIdResolver: TvgIdResolver? = null,
     private val logoResolver: LogoResolver? = null,
     private val channelMetaStore: ChannelMetaStore? = null,
-    private val resportzParser: ResportzParser = ResportzParser(),
+    resportzParser: ResportzParser? = null,
     private val client: OkHttpClient = ResportzParser.defaultClient(),
     context: Context,
 ) {
     private val prefs = context.getSharedPreferences("stepdaddy_channels", Context.MODE_PRIVATE)
     private val staleGoodCacheStore = StaleGoodCacheStore(context)
     private val channelNameOverrides = ChannelNameOverrides(context)
+    private val mirrorLatencyTracker = MirrorLatencyTracker()
+    private val resportzParser: ResportzParser =
+        resportzParser ?: ResportzParser(mirrorLatencyTracker = mirrorLatencyTracker)
     private val json = Json { ignoreUnknownKeys = true }
     private val refreshScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val loadMutex = Mutex()
@@ -73,6 +78,10 @@ class DaddyLiveClient(
     private var lastUpstreamSuccessMs: Long = 0L
     @Volatile
     private var lastCanarySnapshot: CanarySnapshot = CanarySnapshot()
+    @Volatile
+    private var streamCacheHits: Long = 0L
+    @Volatile
+    private var streamCacheMisses: Long = 0L
 
     @Volatile
     var channels: List<Channel> = emptyList()
@@ -95,9 +104,10 @@ class DaddyLiveClient(
     }
 
     init {
+        // Fast path: serve disk-cached channels before HTTP listen (async load blocked boot for seconds).
+        loadDiskCache()
+        initialLoadGate.complete(Unit)
         refreshScope.launch {
-            loadDiskCache()
-            initialLoadGate.complete(Unit)
             staleGoodCacheStore.purgeExpired(GatewayConfig.STALE_DISK_TTL_MS)
             runCatching {
                 logoResolver?.awaitLoaded(120_000L)
@@ -220,9 +230,11 @@ class DaddyLiveClient(
         cacheMutex.withLock {
             val cached = streamCache[cacheKey]
             if (cached != null && now - cached.savedAtMs < GatewayConfig.STREAM_CACHE_TTL_MS) {
+                streamCacheHits++
                 return cached.rewrittenPlaylist
             }
         }
+        streamCacheMisses++
         if (isGlobalOutageActive()) {
             serveStaleStreamFromCaches(cacheKey, channelId, now)?.let { return it }
         }
@@ -284,11 +296,94 @@ class DaddyLiveClient(
         channelId: String,
         startedAtMs: Long,
     ): UpstreamManifest {
+        val mirrors = orderedMirrorUrls()
+        if (
+            GatewayConfig.HEDGED_MIRROR_RACE_ENABLED &&
+            !isGlobalOutageActive() &&
+            mirrors.size >= 2
+        ) {
+            val hedged = tryHedgedMirrorRace(channelId, mirrors.take(2), startedAtMs)
+            if (hedged != null) {
+                return hedged
+            }
+        }
+        return fetchManifestSerial(channelId, mirrors, startedAtMs)
+    }
+
+    private suspend fun tryHedgedMirrorRace(
+        channelId: String,
+        mirrors: List<String>,
+        startedAtMs: Long,
+    ): UpstreamManifest? = coroutineScope {
+        val elapsed = System.currentTimeMillis() - startedAtMs
+        val remaining = streamFetchTimeoutMs() - elapsed
+        val raceBudget = minOf(
+            GatewayConfig.HEDGED_MIRROR_RACE_TIMEOUT_MS,
+            remaining,
+            mirrorAttemptTimeoutMs(),
+        )
+        if (raceBudget <= 500L) return@coroutineScope null
+
+        val eligible = mirrors.filter { !isMirrorDead(it) && !isMirrorCoolingDown(it) }
+        if (eligible.size < 2) return@coroutineScope null
+
+        val winner = CompletableDeferred<UpstreamManifest>()
+        val jobs = eligible.take(2).map { baseUrl ->
+            async {
+                val mirrorKey = baseUrl.trimEnd('/')
+                val attemptStarted = System.nanoTime()
+                try {
+                    val manifest = withTimeout(raceBudget) {
+                        if (isDaddyLiveMirror(baseUrl)) {
+                            resportzParser.fetchManifest(channelId, baseUrl)
+                        } else {
+                            error("Non-DaddyLive mirrors not implemented in MVP: $baseUrl")
+                        }
+                    }
+                    val latencyMs = (System.nanoTime() - attemptStarted) / 1_000_000L
+                    mirrorLatencyTracker.recordMirrorSuccess(baseUrl, latencyMs)
+                    markMirrorAlive(baseUrl)
+                    activeBaseUrl = baseUrl
+                    clearGlobalOutageIfOpen()
+                    val savedAt = System.currentTimeMillis()
+                    cacheMutex.withLock {
+                        upstreamCache[channelId] = CachedUpstream(savedAt, manifest)
+                    }
+                    staleGoodCacheStore.saveUpstream(channelId, manifest)
+                    lastUpstreamSuccessMs = savedAt
+                    if (!winner.isCompleted) {
+                        winner.complete(manifest)
+                    }
+                    manifest
+                } catch (exc: CancellationException) {
+                    throw exc
+                } catch (exc: Exception) {
+                    mirrorLatencyTracker.recordMirrorFailure(baseUrl)
+                    if (isConnectivityFailure(exc) || shouldMarkMirrorDead(exc)) {
+                        markMirrorFailure(baseUrl)
+                    }
+                    Log.d(TAG, "Hedged mirror failed for $channelId on $mirrorKey: ${exc.message}")
+                    null
+                }
+            }
+        }
+        val result = withTimeoutOrNull(raceBudget) {
+            runCatching { winner.await() }.getOrNull()
+        }
+        jobs.forEach { it.cancel() }
+        result
+    }
+
+    private suspend fun fetchManifestSerial(
+        channelId: String,
+        mirrors: List<String>,
+        startedAtMs: Long,
+    ): UpstreamManifest {
         var lastError: Exception? = null
         val resportzTimedOut = mutableSetOf<String>()
         var attemptedMirrors = 0
         var connectivityFailures = 0
-        for (baseUrl in orderedMirrorUrls()) {
+        for (baseUrl in mirrors) {
             if (isMirrorDead(baseUrl) || isMirrorCoolingDown(baseUrl)) continue
             attemptedMirrors++
             val mirrorKey = baseUrl.trimEnd('/')
@@ -301,6 +396,7 @@ class DaddyLiveClient(
                 break
             }
             val attemptBudget = minOf(mirrorAttemptTimeoutMs(), remaining)
+            val attemptStarted = System.nanoTime()
             try {
                 val manifest = withTimeout(attemptBudget) {
                     if (isDaddyLiveMirror(baseUrl)) {
@@ -309,6 +405,8 @@ class DaddyLiveClient(
                         error("Non-DaddyLive mirrors not implemented in MVP: $baseUrl")
                     }
                 }
+                val latencyMs = (System.nanoTime() - attemptStarted) / 1_000_000L
+                mirrorLatencyTracker.recordMirrorSuccess(baseUrl, latencyMs)
                 markMirrorAlive(baseUrl)
                 activeBaseUrl = baseUrl
                 clearGlobalOutageIfOpen()
@@ -323,6 +421,7 @@ class DaddyLiveClient(
                 throw exc
             } catch (exc: TimeoutCancellationException) {
                 lastError = exc
+                mirrorLatencyTracker.recordMirrorFailure(baseUrl)
                 if (isDaddyLiveMirror(baseUrl)) {
                     resportzTimedOut += mirrorKey
                 }
@@ -336,6 +435,7 @@ class DaddyLiveClient(
                     break
                 }
                 if (isConnectivityFailure(exc) || shouldMarkMirrorDead(exc)) {
+                    mirrorLatencyTracker.recordMirrorFailure(baseUrl)
                     connectivityFailures++
                     markMirrorFailure(baseUrl)
                     Log.d(TAG, "Mirror failed for $channelId on $baseUrl: ${exc.message}")
@@ -460,11 +560,27 @@ class DaddyLiveClient(
             json.decodeFromString<List<UpstreamChannelRow>>(body)
         }
 
-    private fun orderedMirrorUrls(): List<String> {
-        val ordered = linkedSetOf<String>()
-        ordered += environment.dlhdBaseUrl.trimEnd('/')
-        ordered += environment.mirrorUrls.map { it.trimEnd('/') }
-        return ordered.toList()
+    private fun orderedMirrorUrls(): List<String> =
+        MirrorLatencyTracker.orderedMirrorUrls(
+            activeBaseUrl = activeBaseUrl,
+            dlhdBaseUrl = environment.dlhdBaseUrl,
+            configuredMirrors = environment.mirrorUrls,
+            mirrorLatencyMs = mirrorLatencyTracker::mirrorLatencyMs,
+            isExcluded = { baseUrl ->
+                isMirrorDead(baseUrl) || isMirrorCoolingDown(baseUrl)
+            },
+        )
+
+    fun mirrorStatsSnapshot(): MirrorStatsSnapshot {
+        val hits = streamCacheHits
+        val misses = streamCacheMisses
+        val total = hits + misses
+        return MirrorStatsSnapshot(
+            activeBaseUrl = activeBaseUrl,
+            fastestMirrorEmaMs = mirrorLatencyTracker.fastestMirrorEmaMs(),
+            streamCacheHitRate = if (total > 0) hits.toDouble() / total.toDouble() else null,
+            mirrorLatenciesMs = mirrorLatencyTracker.mirrorLatencySnapshot(),
+        )
     }
 
     private fun isDaddyLiveMirror(baseUrl: String): Boolean {
@@ -921,6 +1037,13 @@ class DaddyLiveClient(
         val badExpectedFail: Int = 0,
         val badTotal: Int = 0,
         val lastProbeMs: Long = 0L,
+    )
+
+    data class MirrorStatsSnapshot(
+        val activeBaseUrl: String,
+        val fastestMirrorEmaMs: Double?,
+        val streamCacheHitRate: Double?,
+        val mirrorLatenciesMs: Map<String, Double>,
     )
 
     companion object {

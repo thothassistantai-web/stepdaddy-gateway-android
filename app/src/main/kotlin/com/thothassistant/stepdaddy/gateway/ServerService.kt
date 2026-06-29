@@ -7,17 +7,18 @@ import android.os.Looper
 import android.util.Log
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
-import com.thothassistant.stepdaddy.gateway.sidecar.EmbeddedSidecarRepository
-import com.thothassistant.stepdaddy.gateway.sidecar.EmbeddedSidecarServer
 import com.thothassistant.stepdaddy.gateway.admin.GatewayAdminController
 import com.thothassistant.stepdaddy.gateway.ui.dashboard.GatewayDiagnostics
 import com.thothassistant.stepdaddy.gateway.ui.dashboard.GatewayMessageBus
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
+import com.thothassistant.stepdaddy.gateway.upstream.GatewayConfig
+import com.thothassistant.stepdaddy.gateway.upstream.SupplementConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 
 class ServerService : LifecycleService() {
@@ -25,7 +26,6 @@ class ServerService : LifecycleService() {
     private lateinit var daddyLiveClient: DaddyLiveClient
     private lateinit var epgManager: com.thothassistant.stepdaddy.gateway.epg.EpgManager
     private var gatewayServer: GatewayServer? = null
-    private var embeddedSidecarServer: EmbeddedSidecarServer? = null
     private var streamHealthWatchdog: StreamHealthWatchdog? = null
     private val startMutex = Mutex()
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -73,6 +73,12 @@ class ServerService : LifecycleService() {
         when (intent?.action) {
             ACTION_STOP -> stopGateway()
             ACTION_ENSURE_GATEWAY -> ensureGatewayListening()
+            ACTION_ENSURE_READY -> {
+                ensureGatewayListening()
+                lifecycleScope.launch(Dispatchers.IO) {
+                    GatewayStartHelper.ensureGatewayReady(this@ServerService)
+                }
+            }
             else -> startGateway()
         }
         return START_STICKY
@@ -114,7 +120,16 @@ class ServerService : LifecycleService() {
                 }
                 try {
                     val app = application as GatewayApp
-                    app.awaitComponents()
+                    val componentsReady = withTimeoutOrNull(COMPONENT_INIT_MAX_WAIT_MS) {
+                        app.awaitComponents()
+                    }
+                    if (componentsReady == null) {
+                        GatewayDiagnostics.error(
+                            TAG,
+                            "Gateway components init timed out after ${COMPONENT_INIT_MAX_WAIT_MS}ms; will retry",
+                        )
+                        return@withLock
+                    }
                     if (!::epgManager.isInitialized) {
                         epgManager = app.epgManager
                     }
@@ -167,7 +182,6 @@ class ServerService : LifecycleService() {
                             TAG,
                             buildString {
                                 append("Supplement sync done")
-                                append(" · MOJ ${sync.moveOnJoyChannels}")
                                 append(" · sports ${sync.sportsChannels}")
                                 if (sync.specialEventGuides > 0) {
                                     append(" (${sync.specialEventGuides} guides")
@@ -193,8 +207,13 @@ class ServerService : LifecycleService() {
                         server.prewarmPlaylist()
                         epgManager.scheduleRefresh(client.channels, force = true)
                     }
+                    app.supplementSource.onDlhdEventHealthChanged = {
+                        app.playlistCache.invalidate()
+                        server.prewarmPlaylist()
+                    }
                     server.start()
                     server.prewarmPlaylist()
+                    scheduleImmediateBootEpgFastPass(client)
                     environment.serverRunning = true
                     streamHealthWatchdog?.stop()
                     streamHealthWatchdog = StreamHealthWatchdog(
@@ -210,7 +229,6 @@ class ServerService : LifecycleService() {
                     updateRunningNotification()
                     GatewayStartHelper.schedulePeriodicEnsureAlive(this@ServerService)
                     GatewayDiagnostics.info(TAG, "Gateway listening on ${environment.loopbackBase()} ($channelCount channels)")
-                    scheduleDeferredEmbeddedSidecar(app)
                     scheduleDeferredBootEpgBuild(client)
                     if (client.channels.isEmpty()) {
                         client.scheduleChannelRefresh(force = true) {
@@ -221,6 +239,22 @@ class ServerService : LifecycleService() {
                     app.supplementSource.schedulePeriodicRefresh { daddyLiveClient.channels }
                     app.supplementSource.schedulePeriodicSpecialEventsMaintenance {
                         daddyLiveClient.activeBaseUrl
+                    }
+                    if (SupplementConfig.DLHD_EVENT_HEALTH_PROBES_ENABLED) {
+                        app.eventStreamHealthMonitor.start { channelId ->
+                            try {
+                                withTimeout(GatewayConfig.WATCHDOG_PROBE_TIMEOUT_MS) {
+                                    daddyLiveClient.resolveStream(
+                                        channelId,
+                                        useProxy = true,
+                                        apiUrl = environment.loopbackBase(),
+                                    )
+                                }
+                                true
+                            } catch (_: Exception) {
+                                false
+                            }
+                        }
                     }
                     scheduleDeferredBootChannelRefresh(skipReadySurface)
                 } catch (exc: Exception) {
@@ -242,38 +276,29 @@ class ServerService : LifecycleService() {
                     }
                 } finally {
                     startInFlight = false
+                    if (gatewayServer?.isRunning != true) {
+                        mainHandler.postDelayed(
+                            { startGateway(skipReadySurface = true) },
+                            COMPONENT_INIT_RETRY_MS,
+                        )
+                    }
                 }
             }
         }
     }
 
-    /** Defer loopback sidecar until HTTP is listening — keeps CIO bind fast on cold boot. */
-    private fun scheduleDeferredEmbeddedSidecar(app: GatewayApp) {
-        if (!environment.embeddedSidecarEnabled) return
-        lifecycleScope.launch(Dispatchers.IO) {
-            delay(BOOT_SIDECAR_DEFER_MS)
-            if (!isServiceActive) return@launch
-            startEmbeddedSidecar(app)
-            scheduleEmbeddedSidecarRefreshIfEmpty(app)
-        }
+    /** Fast EPG pass from disk caches as soon as channels are available (no 20s boot defer). */
+    private fun scheduleImmediateBootEpgFastPass(client: DaddyLiveClient) {
+        if (!::epgManager.isInitialized || !epgManager.needsBuild()) return
+        if (client.channels.isEmpty()) return
+        epgManager.scheduleRefresh(
+            client.channels,
+            force = true,
+            tvtvGapFill = false,
+        )
     }
 
-    private suspend fun startEmbeddedSidecar(app: GatewayApp) {
-        if (!environment.embeddedSidecarEnabled) return
-        if (embeddedSidecarServer?.isRunning == true) return
-        environment.ensureEmbeddedSidecarUrl()
-        app.embeddedSidecarRepository.schedulePeriodicRefresh()
-        embeddedSidecarServer = EmbeddedSidecarServer(app.embeddedSidecarRepository).also { it.start() }
-    }
-
-    private fun scheduleEmbeddedSidecarRefreshIfEmpty(app: GatewayApp) {
-        if (!environment.embeddedSidecarEnabled) return
-        if (app.embeddedSidecarRepository.channelCount() > 0) return
-        lifecycleScope.launch(Dispatchers.IO) {
-            app.embeddedSidecarRepository.refresh(force = true)
-        }
-    }
-
+    /** Fallback when catalog was empty at listen time — retry after deferred channel refresh. */
     private fun scheduleDeferredBootEpgBuild(client: DaddyLiveClient) {
         if (!epgManager.needsBuild()) return
         lifecycleScope.launch(Dispatchers.IO) {
@@ -341,6 +366,7 @@ class ServerService : LifecycleService() {
                 }
             }
             runCatching {
+                app.supplementSource.recoverFromDiskIfNeeded(daddyLiveClient.channels)
                 app.supplementSource.refresh(
                     daddyLiveClient.channels,
                     force = true,
@@ -349,7 +375,13 @@ class ServerService : LifecycleService() {
             }.onFailure { exc ->
                 Log.w(TAG, "Boot supplement refresh failed", exc)
             }
-            epgManager.scheduleRefresh(daddyLiveClient.channels, force = true)
+            if (epgManager.needsBuild() || epgManager.isServeStale()) {
+                epgManager.scheduleRefresh(
+                    daddyLiveClient.channels,
+                    force = epgManager.needsBuild(),
+                    tvtvGapFill = true,
+                )
+            }
         }
     }
 
@@ -357,6 +389,11 @@ class ServerService : LifecycleService() {
         val channelCount =
             if (::daddyLiveClient.isInitialized) daddyLiveClient.channels.size else lastKnownChannelCount
         lastKnownChannelCount = channelCount
+        if (channelCount > 0) {
+            GatewayHealth.setReadinessPhase(GatewayHealth.ReadinessPhase.READY)
+        } else if (gatewayServer?.isRunning == true) {
+            GatewayHealth.setReadinessPhase(GatewayHealth.ReadinessPhase.WAITING_CHANNELS)
+        }
         startForeground(
             GatewayNotifier.NOTIFICATION_ID_ONGOING,
             GatewayNotifier.buildOngoingNotification(
@@ -371,10 +408,11 @@ class ServerService : LifecycleService() {
     private fun stopGateway() {
         streamHealthWatchdog?.stop()
         streamHealthWatchdog = null
+        runCatching {
+            (application as? GatewayApp)?.eventStreamHealthMonitor?.stop()
+        }
         gatewayServer?.stop()
         gatewayServer = null
-        embeddedSidecarServer?.stop()
-        embeddedSidecarServer = null
         environment.serverRunning = false
         isServiceActive = false
         GatewayNotifier.cancelAlerts(this)
@@ -394,10 +432,11 @@ class ServerService : LifecycleService() {
         httpHealthCheckPosted = false
         streamHealthWatchdog?.stop()
         streamHealthWatchdog = null
+        runCatching {
+            (application as? GatewayApp)?.eventStreamHealthMonitor?.stop()
+        }
         gatewayServer?.stop()
         gatewayServer = null
-        embeddedSidecarServer?.stop()
-        embeddedSidecarServer = null
         environment.serverRunning = false
         isServiceActive = false
         super.onDestroy()
@@ -477,11 +516,14 @@ class ServerService : LifecycleService() {
 
         const val ACTION_STOP = "com.thothassistant.stepdaddy.gateway.action.STOP"
         const val ACTION_ENSURE_GATEWAY = "com.thothassistant.stepdaddy.gateway.action.ENSURE_GATEWAY"
-        private const val HTTP_HEALTH_CHECK_MS = 90_000L
+        const val ACTION_ENSURE_READY = "com.thothassistant.stepdaddy.gateway.action.ENSURE_READY"
+        private const val HTTP_HEALTH_CHECK_MS = 30_000L
+        /** FUSA sticks need >25s when iptv-org CSV + supplement stores load on cold process. */
+        private const val COMPONENT_INIT_MAX_WAIT_MS = 60_000L
+        private const val COMPONENT_INIT_RETRY_MS = 5_000L
         private const val TIVIMATE_WATCH_MS = 60_000L
         private const val BOOT_CHANNEL_LOAD_MAX_WAIT_MS = 4_000L
         private const val BOOT_CHANNEL_REFRESH_DEFER_MS = 45_000L
-        private const val BOOT_SIDECAR_DEFER_MS = 12_000L
-        private const val BOOT_EPG_BUILD_DEFER_MS = 20_000L
+        private const val BOOT_EPG_BUILD_DEFER_MS = 5_000L
     }
 }

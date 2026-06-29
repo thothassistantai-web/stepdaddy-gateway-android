@@ -53,11 +53,9 @@ data class HealingStatus(
 @Serializable
 data class SupplementStatus(
     val enabled: Boolean = false,
-    val sidecarEnabled: Boolean = false,
     val sportsEnabled: Boolean = false,
     val iptvOrgEnabled: Boolean = false,
     val channels: Int = 0,
-    val moveOnJoyChannels: Int = 0,
     val sportsChannels: Int = 0,
     val specialEventGuides: Int = 0,
     val dlhdEventStreams: Int = 0,
@@ -71,7 +69,6 @@ data class SupplementStatus(
     val blockedTokenProxy: Int = 0,
     val ntvCxEnabled: Boolean = false,
     val ntvCxChannels: Int = 0,
-    val sidecarImportMode: String = "FULL_CATALOG",
     val iptvOrgImportMode: String = "FULL_CATALOG",
     val ntvCxImportMode: String = "FULL_CATALOG",
     /** @deprecated use [ntvCxImportMode] */
@@ -82,17 +79,31 @@ data class SupplementStatus(
     val adultSwimImportMode: String = "FULL_CATALOG",
     val adultSwimProbed: Int = 0,
     val adultSwimProbeOk: Int = 0,
+    /** Epoch ms of the last DaddyLive + TheTvApp Special Events scrape. */
+    val lastSpecialEventsSyncMs: Long? = null,
+    /** Seconds since [lastSpecialEventsSyncMs]; null when never scraped. */
+    val specialEventsScrapeAgeSeconds: Long? = null,
+    /** True when scrape age exceeds the 15-minute refresh interval (+ grace). */
+    val specialEventsStale: Boolean = false,
+    /** Operator label: ok, stale, syncing, pending, empty, disabled. */
+    val specialEventsStatus: String = "disabled",
+    val dlhdEventHealthProbed: Int = 0,
+    val dlhdEventHealthOk: Int = 0,
+    val dlhdEventHealthFailed: Int = 0,
+    val dlhdEventHealthUnknown: Int = 0,
+    val dlhdEventHealthLastProbeMs: Long? = null,
 )
 
 @Serializable
 data class ProviderStats(
     val daddylive: Int = 0,
-    val moveOnJoy: Int = 0,
     val iptvOrg: Int = 0,
     val sports: Int = 0,
     val ntvCx: Int = 0,
     val adultSwim: Int = 0,
     val adult: Int = 0,
+    /** Channels in the warmed playlist cache (stream-ready); 0 until prewarm completes. */
+    val playlistReady: Int = 0,
     val total: Int = 0,
 )
 
@@ -114,6 +125,14 @@ data class EpgCoverage(
     val mappedPercent: Float = 0f,
     val programmePercent: Float = 0f,
     val placeholderProgrammes: Int = 0,
+)
+
+@Serializable
+data class MirrorStats(
+    val activeBaseUrl: String = "",
+    val fastestMirrorEmaMs: Double? = null,
+    val streamCacheHitRate: Double? = null,
+    val mirrorLatenciesMs: Map<String, Double> = emptyMap(),
 )
 
 @Serializable
@@ -141,6 +160,7 @@ data class HealthResponse(
     val healing: HealingStatus? = null,
     val loadProgress: DashboardLoadProgress? = null,
     val tivimateEvents: TiviMateHealthEvents? = null,
+    val mirrorStats: MirrorStats? = null,
 )
 
 @Serializable
@@ -149,6 +169,8 @@ data class TivimateSetup(
     val epg: String,
     val health: String,
     val hint: String,
+    /** Legacy diagnostic URL (bootstrap or superseded path); still served for backward compatibility. */
+    val playlistDiagnostic: String = "",
     val epgReady: Boolean = false,
     val epgProgrammeCount: Int = 0,
     val epgAgeSeconds: Long? = null,
@@ -156,5 +178,24 @@ data class TivimateSetup(
     val playerVersion: String? = null,
     val playerVersionCode: Long? = null,
     val playerLikelyActive: Boolean = false,
-    val launchComponent: String = "ar.tvplayer.tv/.ui.MainActivity",
+    val launchComponent: String = "com.thothassistant.daddyliveTV/ar.tvplayer.tv.ui.MainActivity",
+)
+
+@Serializable
+data class StreamVaultSetup(
+    val playlist: String,
+    val epg: String,
+    val health: String,
+    val hint: String,
+    /** Legacy diagnostic URL; still served for backward compatibility. */
+    val playlistDiagnostic: String = "",
+    val pluginId: String,
+    val pluginService: String,
+    val epgReady: Boolean = false,
+    val epgProgrammeCount: Int = 0,
+    val epgAgeSeconds: Long? = null,
+    val playerInstalled: Boolean = false,
+    val playerVersion: String? = null,
+    val playerVersionCode: Long? = null,
+    val launchComponent: String = "com.streamvault.app/com.streamvault.app.MainActivity",
 )

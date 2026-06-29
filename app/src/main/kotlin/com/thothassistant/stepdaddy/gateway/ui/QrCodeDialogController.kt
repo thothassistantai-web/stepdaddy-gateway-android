@@ -54,7 +54,7 @@ class QrCodeDialogController(
                         return
                     }
                     binding.imageQrCode.setImageDrawable(null)
-                    binding.textQrUrl.text = environment.loopbackBase() + "/tivimate-playlist.m3u8"
+                    binding.textQrUrl.text = GatewayUrlBuilder.tivimatePlaylistUrl(environment)
                     binding.textQrError.visibility = View.GONE
                     return
                 }
@@ -88,7 +88,7 @@ class QrCodeDialogController(
                         return
                     }
                     GatewayUrlBuilder.appendAccessToken(
-                        "${base.trimEnd('/')}/tivimate-playlist.m3u8",
+                        GatewayUrlBuilder.tivimatePlaylistUrl(environment),
                         if (mode == NetworkAccessMode.REMOTE) environment.remoteAccessToken else "",
                     )
                 }

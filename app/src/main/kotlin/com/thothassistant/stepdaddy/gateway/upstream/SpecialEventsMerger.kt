@@ -1,5 +1,6 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
+import com.thothassistant.stepdaddy.gateway.model.EventScheduleSource
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import java.security.MessageDigest
 import java.time.Instant
@@ -23,6 +24,7 @@ object SpecialEventsMerger {
         val stopMs: Long,
         val category: String,
         val league: String,
+        val regionCode: String? = null,
     )
 
     /** Per-guide-channel EPG rows keyed by supplement id. */
@@ -57,7 +59,19 @@ object SpecialEventsMerger {
         val nowMs = System.currentTimeMillis()
 
         dlhdEvents.forEach { event ->
-            val (start, stop) = DlhdScheduleTime.parseWindow(event.dateKey, event.timeLabel)
+            val schedule = EventTimeExtractor.fromDlhdSchedule(
+                dateKey = event.dateKey,
+                timeLabel = event.timeLabel,
+                eventToken = event.title,
+                source = when (event.streams.firstOrNull()?.source) {
+                    DaddyLiveEventResolver.StreamSource.TV2 -> EventScheduleSource.DLHD_TV2
+                    DaddyLiveEventResolver.StreamSource.TV,
+                    null,
+                    -> EventScheduleSource.DLHD_TV
+                },
+                now = Instant.ofEpochMilli(nowMs),
+            )
+            val (start, stop) = schedule.window()
             if (!SpecialEventLifecycle.isActive(start, stop, Instant.ofEpochMilli(nowMs))) return@forEach
             val guideSlug = slugify(event.category)
             val guideId = "dlhd-guide:$guideSlug"
@@ -71,6 +85,20 @@ object SpecialEventsMerger {
                     streamUrl = "",
                     providerTag = event.league,
                     tags = listOf("#events", "#guide"),
+                    languageCode = SpecialEventLanguageIdentifier.identify(
+                        SpecialEventLanguageIdentifier.Context(
+                            eventTitle = event.title,
+                            category = event.category,
+                            league = event.league,
+                        ),
+                    ),
+                    regionCode = SpecialEventRegionIdentifier.identify(
+                        SpecialEventRegionIdentifier.Context(
+                            eventTitle = event.title,
+                            category = event.category,
+                            league = event.league,
+                        ),
+                    ),
                 )
                 guideProgrammes[guideId] = mutableListOf()
             }
@@ -80,6 +108,13 @@ object SpecialEventsMerger {
                 stopMs = stop.toEpochMilli(),
                 category = event.category,
                 league = event.league,
+                regionCode = SpecialEventRegionIdentifier.identify(
+                    SpecialEventRegionIdentifier.Context(
+                        eventTitle = event.title,
+                        category = event.category,
+                        league = event.league,
+                    ),
+                ),
             )
 
             event.streams.forEachIndexed { linkIndex, stream ->
@@ -87,6 +122,13 @@ object SpecialEventsMerger {
                 if (!occupiedStreamKeys.add(streamKey)) return@forEachIndexed
                 val titleKey = normalizeTitleKey(event.title)
                 occupiedTitleKeys += titleKey
+
+                val streamSchedule = EventTimeExtractor.fromDlhdParsedEvent(
+                    event = event,
+                    stream = stream,
+                    now = Instant.ofEpochMilli(nowMs),
+                )
+                val (streamStart, streamStop) = streamSchedule.window()
 
                 val id = "dlhd-event:${shortHash(streamKey)}"
                 val displayName = buildStreamName(event.title, stream.label, linkIndex)
@@ -100,6 +142,24 @@ object SpecialEventsMerger {
                     tags = listOf("#events"),
                     dlhdEventStreamKey = dlhdStreamKey(stream),
                     eventSourceUrl = "${event.category}|${event.dateKey}|${event.timeLabel}|${event.title}",
+                    eventStartMs = streamStart.toEpochMilli(),
+                    eventStopMs = streamStop.toEpochMilli(),
+                    languageCode = SpecialEventLanguageIdentifier.identify(
+                        SpecialEventLanguageIdentifier.Context(
+                            eventTitle = event.title,
+                            streamLabel = stream.label,
+                            category = event.category,
+                            league = event.league,
+                        ),
+                    ),
+                    regionCode = SpecialEventRegionIdentifier.identify(
+                        SpecialEventRegionIdentifier.Context(
+                            eventTitle = event.title,
+                            streamLabel = stream.label,
+                            category = event.category,
+                            league = event.league,
+                        ),
+                    ),
                 )
             }
         }
@@ -132,15 +192,7 @@ object SpecialEventsMerger {
         maxStreams: Int,
     ): List<SupplementChannel> {
         val orderedGuides = guides.values.sortedWith(
-            compareBy(
-                {
-                    SpecialEventSort.categoryBlockSortKey(
-                        it.name.removeSuffix(" Schedule"),
-                        it.providerTag,
-                    )
-                },
-                { it.name.lowercase() },
-            ),
+            compareBy { SpecialEventSort.guideDisplayName(it).lowercase() },
         )
         val result = mutableListOf<SupplementChannel>()
         var streamCount = 0

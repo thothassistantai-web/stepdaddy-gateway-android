@@ -41,6 +41,57 @@ class SpecialEventCatalogMaintainerTest {
     }
 
     @Test
+    fun `prune keeps ended dlhd event during grace window`() {
+        val now = Instant.parse("2026-06-22T19:10:00Z")
+        val dateKey = "Monday 22nd June 2026 - Schedule Time UK GMT"
+        val event = SupplementChannel(
+            id = "dlhd-event:grace",
+            name = "Just Finished Game",
+            tvgId = "DLHD.Event.grace",
+            groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+            streamUrl = "",
+            eventSourceUrl = "College Baseball|$dateKey|17:00|Game : Team C vs Team D",
+        )
+        val result = SpecialEventCatalogMaintainer.prune(
+            channels = listOf(event),
+            guideSchedules = emptyMap(),
+            nowMs = now.toEpochMilli(),
+        )
+        assertFalse(result.changed)
+        assertEquals(1, result.channels.count { it.id == "dlhd-event:grace" })
+    }
+
+    @Test
+    fun `prune removes guide when streams expired and schedule empty`() {
+        val now = Instant.parse("2026-06-22T20:00:00Z")
+        val dateKey = "Monday 22nd June 2026 - Schedule Time UK GMT"
+        val guide = SupplementChannel(
+            id = "dlhd-guide:college-baseball",
+            name = "College Baseball Schedule",
+            tvgId = "DLHD.Guide.college-baseball",
+            groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+            streamUrl = "",
+        )
+        val event = SupplementChannel(
+            id = "dlhd-event:abc",
+            name = "Finished Game",
+            tvgId = "DLHD.Event.abc",
+            groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+            streamUrl = "",
+            eventSourceUrl = "College Baseball|$dateKey|14:00|Game : Team A vs Team B",
+        )
+        val result = SpecialEventCatalogMaintainer.prune(
+            channels = listOf(guide, event),
+            guideSchedules = emptyMap(),
+            nowMs = now.toEpochMilli(),
+        )
+        assertTrue(result.changed)
+        assertEquals(1, result.removedStreams)
+        assertEquals(1, result.removedGuides)
+        assertTrue(result.channels.none { SpecialEventCatalogMaintainer.isSpecialEventChannel(it.id) })
+    }
+
+    @Test
     fun `prune keeps guide when schedule rows remain active`() {
         val now = Instant.parse("2026-06-22T20:00:00Z")
         val guideId = "dlhd-guide:tennis"
@@ -65,5 +116,150 @@ class SpecialEventCatalogMaintainerTest {
         )
         assertFalse(result.changed)
         assertEquals(1, result.channels.count { it.id == guideId })
+    }
+
+    @Test
+    fun `prune drops finished schedule rows`() {
+        val now = Instant.parse("2026-06-22T20:00:00Z")
+        val guideId = "dlhd-guide:tennis"
+        val guide = SupplementChannel(
+            id = guideId,
+            name = "Tennis Schedule",
+            tvgId = "DLHD.Guide.tennis",
+            groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+            streamUrl = "",
+        )
+        val finished = SpecialEventsMerger.GuideEventRow(
+            title = "Wimbledon : Semifinal",
+            startMs = now.minus(5, ChronoUnit.HOURS).toEpochMilli(),
+            stopMs = now.minus(2, ChronoUnit.HOURS).toEpochMilli(),
+            category = "Tennis",
+            league = "ATP",
+        )
+        val live = SpecialEventsMerger.GuideEventRow(
+            title = "Wimbledon : Final",
+            startMs = now.minus(30, ChronoUnit.MINUTES).toEpochMilli(),
+            stopMs = now.plus(2, ChronoUnit.HOURS).toEpochMilli(),
+            category = "Tennis",
+            league = "ATP",
+        )
+        val result = SpecialEventCatalogMaintainer.prune(
+            channels = listOf(guide),
+            guideSchedules = mapOf(guideId to listOf(finished, live)),
+            nowMs = now.toEpochMilli(),
+        )
+        assertTrue(result.changed)
+        assertEquals(1, result.removedScheduleRows)
+        assertEquals(listOf(live), result.guideSchedules[guideId])
+    }
+
+    @Test
+    fun `verify detects live schedule row missing stream`() {
+        val now = Instant.parse("2026-06-22T20:00:00Z")
+        val guideId = "dlhd-guide:tennis"
+        val row = SpecialEventsMerger.GuideEventRow(
+            title = "Tennis : Live Match",
+            startMs = now.minus(10, ChronoUnit.MINUTES).toEpochMilli(),
+            stopMs = now.plus(2, ChronoUnit.HOURS).toEpochMilli(),
+            category = "Tennis",
+            league = "ATP",
+        )
+        val verify = SpecialEventCatalogMaintainer.verifyStartedEvents(
+            channels = listOf(
+                SupplementChannel(
+                    id = guideId,
+                    name = "Tennis Schedule",
+                    groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+                    streamUrl = "",
+                ),
+            ),
+            guideSchedules = mapOf(guideId to listOf(row)),
+            nowMs = now.toEpochMilli(),
+        )
+        assertTrue(verify.needsRefresh)
+        assertEquals(1, verify.missingLiveStreams)
+        assertEquals(0, verify.upcomingWithoutStreams)
+    }
+
+    @Test
+    fun `verify detects upcoming row within pre-start window`() {
+        val now = Instant.parse("2026-06-22T20:00:00Z")
+        val guideId = "dlhd-guide:baseball"
+        val row = SpecialEventsMerger.GuideEventRow(
+            title = "Baseball : Red Sox vs Yankees",
+            startMs = now.plus(10, ChronoUnit.MINUTES).toEpochMilli(),
+            stopMs = now.plus(4, ChronoUnit.HOURS).toEpochMilli(),
+            category = "Baseball",
+            league = "MLB",
+        )
+        val verify = SpecialEventCatalogMaintainer.verifyStartedEvents(
+            channels = emptyList(),
+            guideSchedules = mapOf(guideId to listOf(row)),
+            nowMs = now.toEpochMilli(),
+            preStartWindowMs = 15 * 60_000L,
+        )
+        assertTrue(verify.needsRefresh)
+        assertEquals(0, verify.missingLiveStreams)
+        assertEquals(1, verify.upcomingWithoutStreams)
+    }
+
+    @Test
+    fun `verify skips when matching stream exists`() {
+        val now = Instant.parse("2026-06-22T20:00:00Z")
+        val guideId = "dlhd-guide:tennis"
+        val row = SpecialEventsMerger.GuideEventRow(
+            title = "Tennis : Live Match",
+            startMs = now.minus(10, ChronoUnit.MINUTES).toEpochMilli(),
+            stopMs = now.plus(2, ChronoUnit.HOURS).toEpochMilli(),
+            category = "Tennis",
+            league = "ATP",
+        )
+        val stream = SupplementChannel(
+            id = "dlhd-event:abc123",
+            name = "Live Match",
+            groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+            streamUrl = "",
+            eventSourceUrl = "Tennis|Monday 22nd June 2026 - Schedule Time UK GMT|19:50|Tennis : Live Match",
+        )
+        val verify = SpecialEventCatalogMaintainer.verifyStartedEvents(
+            channels = listOf(stream),
+            guideSchedules = mapOf(guideId to listOf(row)),
+            nowMs = now.toEpochMilli(),
+        )
+        assertFalse(verify.needsRefresh)
+    }
+
+    @Test
+    fun `merge adds fetched stream while keeping existing guide order`() {
+        val guide = SupplementChannel(
+            id = "dlhd-guide:tennis",
+            name = "Tennis Schedule",
+            groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+            streamUrl = "",
+        )
+        val existingStream = SupplementChannel(
+            id = "dlhd-event:existing",
+            name = "Existing Match",
+            groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+            streamUrl = "",
+            eventSourceUrl = "Tennis|Monday 22nd June 2026 - Schedule Time UK GMT|live|Existing Match",
+        )
+        val fetchedStream = SupplementChannel(
+            id = "dlhd-event:new",
+            name = "New Match",
+            groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+            streamUrl = "",
+            eventSourceUrl = "Tennis|Monday 22nd June 2026 - Schedule Time UK GMT|live|Tennis : New Match",
+        )
+        val (merged, guides) = SpecialEventCatalogMaintainer.mergeFetchedSpecialEvents(
+            existing = listOf(guide, existingStream),
+            fetched = listOf(guide, existingStream, fetchedStream),
+            fetchedGuideSchedules = emptyMap(),
+            existingGuideSchedules = emptyMap(),
+        )
+        assertEquals(3, merged.size)
+        assertTrue(merged.any { it.id == "dlhd-event:new" })
+        assertTrue(merged.any { it.id == "dlhd-event:existing" })
+        assertEquals(0, guides.size)
     }
 }

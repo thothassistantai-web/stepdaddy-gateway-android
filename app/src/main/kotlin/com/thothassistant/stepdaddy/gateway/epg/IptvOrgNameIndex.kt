@@ -3,49 +3,64 @@ package com.thothassistant.stepdaddy.gateway.epg
 import android.content.Context
 import android.util.Log
 import com.thothassistant.stepdaddy.gateway.upstream.TvgIdNormalizer
-import java.util.Locale
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 
 /**
  * Name → iptv-org [tvg-id] index from bundled channels_db_cache.csv.
  * Shared by auto-resolve (Phase 1a) and supplement import (Phase 1b).
+ *
+ * CSV parse runs on a background thread — synchronous init blocked FUSA cold boot
+ * for ~50s and tripped [ServerService] component-init timeouts.
  */
 class IptvOrgNameIndex(context: Context) {
-    private val byNormName: Map<String, String>
-    private val normKeys: List<String>
+    private val appContext = context.applicationContext
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val loadGate = CompletableDeferred<Unit>()
+    @Volatile
+    private var byNormName: Map<String, String> = emptyMap()
+    @Volatile
+    private var normKeys: List<String> = emptyList()
+    @Volatile
+    private var loaded = false
 
     init {
-        val map = linkedMapOf<String, String>()
-        runCatching {
-            context.assets.open("channels_db_cache.csv").bufferedReader().use { reader ->
-                reader.readLine()
-                reader.forEachLine { line ->
-                    val row = parseCsvLine(
-                        line,
-                        listOf("id", "name", "alt_names", "network", "owners", "country", "categories", "is_nsfw"),
-                    )
-                    val id = row["id"].orEmpty().trim()
-                    if (id.isEmpty()) return@forEachLine
-                    indexName(map, row["name"].orEmpty(), id)
-                    row["alt_names"].orEmpty().split(';').forEach { alt ->
-                        indexName(map, alt, id)
-                    }
+        scope.launch {
+            runCatching { loadCsv() }
+                .onSuccess { (map, keys) ->
+                    byNormName = map
+                    normKeys = keys
+                    loaded = true
+                    loadGate.complete(Unit)
+                    Log.i(TAG, "iptv-org name index: ${map.size} keys")
                 }
-            }
-            Log.i(TAG, "iptv-org name index: ${map.size} keys")
-        }.onFailure { exc ->
-            Log.w(TAG, "channels_db_cache.csv name index failed", exc)
+                .onFailure { exc ->
+                    Log.w(TAG, "channels_db_cache.csv name index failed", exc)
+                    loadGate.completeExceptionally(exc)
+                }
         }
-        byNormName = map
-        normKeys = map.keys.toList()
     }
 
+    suspend fun awaitLoaded(timeoutMs: Long = 120_000L) {
+        if (loaded) return
+        withTimeout(timeoutMs) { loadGate.await() }
+    }
+
+    fun isLoaded(): Boolean = loaded
+
     fun lookupExact(channelName: String): String? {
+        if (!loaded) return null
         val norm = TvgIdNormalizer.normalizeChannelName(channelName)
         if (norm.isEmpty()) return null
         return byNormName[norm]
     }
 
     fun lookupFuzzy(channelName: String, minScore: Double = FUZZY_MIN_SCORE): String? {
+        if (!loaded) return null
         val norm = TvgIdNormalizer.normalizeChannelName(channelName)
         if (norm.isEmpty()) return null
         byNormName[norm]?.let { return it }
@@ -66,6 +81,26 @@ class IptvOrgNameIndex(context: Context) {
             }
         }
         return bestId
+    }
+
+    private fun loadCsv(): Pair<Map<String, String>, List<String>> {
+        val map = linkedMapOf<String, String>()
+        appContext.assets.open("channels_db_cache.csv").bufferedReader().use { reader ->
+            reader.readLine()
+            reader.forEachLine { line ->
+                val row = parseCsvLine(
+                    line,
+                    listOf("id", "name", "alt_names", "network", "owners", "country", "categories", "is_nsfw"),
+                )
+                val id = row["id"].orEmpty().trim()
+                if (id.isEmpty()) return@forEachLine
+                indexName(map, row["name"].orEmpty(), id)
+                row["alt_names"].orEmpty().split(';').forEach { alt ->
+                    indexName(map, alt, id)
+                }
+            }
+        }
+        return map to map.keys.toList()
     }
 
     private fun indexName(map: MutableMap<String, String>, rawName: String, id: String) {

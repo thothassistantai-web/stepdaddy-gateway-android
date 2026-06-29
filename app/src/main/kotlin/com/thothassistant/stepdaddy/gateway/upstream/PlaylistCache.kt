@@ -43,6 +43,8 @@ class PlaylistCache {
         playlistTitleStyle: PlaylistTitleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
         playlistEpgUrl: String? = null,
         playlistEpgUrlKey: String = "",
+        playlistFlavor: Int = FLAVOR_TIVIMATE,
+        eventHealthRevision: Long = 0L,
     ): Long {
         var key = channelCount.toLong()
         key = key * 31 + supplementCount
@@ -52,7 +54,9 @@ class PlaylistCache {
         key = key * 31 + playlistTitleStyle.ordinal
         key = key * 31 + (playlistEpgUrl?.hashCode()?.toLong() ?: 0L)
         key = key * 31 + playlistEpgUrlKey.hashCode().toLong()
+        key = key * 31 + playlistFlavor
         key = key * 31 + PLAYLIST_SORT_REVISION
+        key = key * 31 + eventHealthRevision
         return key
     }
 
@@ -94,6 +98,20 @@ class PlaylistCache {
         return (System.currentTimeMillis() - builtAt) / 1000
     }
 
+    /** Count of #EXTINF rows in the warmed playlist snapshot (0 if not built yet). */
+    fun cachedEntryCount(): Int {
+        val body = snapshot?.body ?: return 0
+        var count = 0
+        var index = 0
+        while (true) {
+            index = body.indexOf("#EXTINF:", index, ignoreCase = true)
+            if (index < 0) break
+            count++
+            index += 8
+        }
+        return count
+    }
+
     private fun scheduleBuildLocked(key: Long, builder: () -> String) {
         if (buildFlight?.key == key) return
         val flight = scope.async {
@@ -130,6 +148,12 @@ class PlaylistCache {
     companion object {
         private const val TAG = "PlaylistCache"
         /** Bump when playlist ordering logic changes so in-memory cache rebuilds. */
-        private const val PLAYLIST_SORT_REVISION = 20
+        private const val PLAYLIST_SORT_REVISION = 25
+
+        /** Plain gateway proxy URLs for StreamVault (no TiviMate pipe suffixes). */
+        const val FLAVOR_STREAMVAULT = 1
+
+        /** TiviMate pipe-suffixed stream URLs. */
+        const val FLAVOR_TIVIMATE = 0
     }
 }

@@ -67,7 +67,6 @@ class IptvOrgStreamsSource(
                 daddyChannels = daddyChannels,
                 maxChannels = IptvOrgStreamsConfig.MAX_CHANNELS_AFTER_DEDUP,
                 importMode = importMode,
-                applySidecarProviderFilter = false,
             ) { entry, _ ->
                 toIptvOrgChannel(entry, entry.sourcePlaylist.orEmpty())
             }

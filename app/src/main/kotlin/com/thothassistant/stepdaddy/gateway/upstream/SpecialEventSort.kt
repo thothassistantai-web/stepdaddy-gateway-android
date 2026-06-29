@@ -3,8 +3,9 @@ package com.thothassistant.stepdaddy.gateway.upstream
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 
 /**
- * Orders live event rows in [GroupTitleResolver.SPECIAL_EVENTS] by sport/league type.
- * Guide channels are kept directly above their category's stream rows.
+ * Orders live event rows in [GroupTitleResolver.SPECIAL_EVENTS].
+ * Guide channels (`dlhd-guide:*`) sort A–Z by playlist display name; each guide sits
+ * directly above its category's stream rows. TheTvApp-only rows keep league priority.
  */
 object SpecialEventSort {
     private val LEAGUE_PRIORITY = listOf(
@@ -79,9 +80,55 @@ object SpecialEventSort {
         else -> null
     }
 
+    /** Xtream-style playlist title for a guide row (used for A–Z guide ordering). */
+    fun guideDisplayName(supplement: SupplementChannel): String {
+        val categoryName = dlhdCategoryName(supplement).orEmpty()
+        val category = SpecialEventCategoryEmoji.stripLeadingEmoji(categoryName)
+        return XtreamCategoryTitleFormatter.formatGuideSchedule(category, supplement.providerTag)
+    }
+
+    /** Block key shared by a guide and its category events (A–Z by Xtream display name). */
+    private fun dlhdGuideBlockKey(categoryName: String, providerTag: String?): String {
+        val category = SpecialEventCategoryEmoji.stripLeadingEmoji(categoryName)
+        return XtreamCategoryTitleFormatter.formatGuideSchedule(category, providerTag).lowercase()
+    }
+
+    /**
+     * Lexicographic block key for DaddyLive guide + event rows.
+     * Guides sort A–Z by playlist display name; events share their guide's key.
+     * TheTvApp-only `sport:*` rows sort after all guide blocks.
+     */
+    fun guideBlockSortKey(supplement: SupplementChannel): String = when {
+        supplement.id.startsWith("dlhd-guide:") ->
+            guideDisplayName(supplement).lowercase()
+        supplement.id.startsWith("dlhd-event:") -> {
+            val key = dlhdCategoryName(supplement)
+                ?.let { dlhdGuideBlockKey(it, supplement.providerTag) }
+                .orEmpty()
+            if (key.isEmpty()) {
+                "\uFFFE${supplement.name.lowercase()}"
+            } else {
+                key
+            }
+        }
+        supplement.id.startsWith("sport:") -> {
+            val leagueSlot = sortKey(supplement.providerTag, supplement.name, supplement.eventSourceUrl)
+            "\uFFFF${leagueSlot.toString().padStart(12, '0')}"
+        }
+        else -> ""
+    }
+
+    /** Slot within a guide block: guide first, then category streams by name. */
+    fun supplementIntraSlot(supplement: SupplementChannel): Int = when {
+        supplement.id.startsWith("dlhd-guide:") -> 0
+        supplement.id.startsWith("dlhd-event:") ->
+            1 + supplement.name.lowercase().hashCode().and(0x3FF)
+        else -> 0
+    }
+
     /**
      * Playlist / channel-number order within [GroupTitleResolver.SPECIAL_EVENTS].
-     * Each guide row is immediately followed by stream rows from the same schedule category.
+     * Prefer [guideBlockSortKey] + [supplementIntraSlot] for stable A–Z guide ordering.
      */
     fun supplementPlaylistOrder(supplement: SupplementChannel): Int {
         if (!supplement.id.startsWith("dlhd-guide:") &&
@@ -90,14 +137,8 @@ object SpecialEventSort {
         ) {
             return 0
         }
-        dlhdCategorySlug(supplement)?.let { _ ->
-            val categoryName = dlhdCategoryName(supplement).orEmpty()
-            val block = categoryBlockSortKey(categoryName, supplement.providerTag)
-            val slot = when {
-                supplement.id.startsWith("dlhd-guide:") -> 0
-                else -> 1 + supplement.name.lowercase().hashCode().and(0x3FF)
-            }
-            return block * 10_000 + slot
+        if (guideBlockSortKey(supplement).isNotEmpty()) {
+            return supplementIntraSlot(supplement)
         }
         return 1_000_000 +
             sortKey(supplement.providerTag, supplement.name, supplement.eventSourceUrl)

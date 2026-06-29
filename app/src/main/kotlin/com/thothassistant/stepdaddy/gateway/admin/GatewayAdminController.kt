@@ -105,8 +105,6 @@ class GatewayAdminController(
         patch.gatewayName?.let { environment.gatewayName = it }
         patch.dlhdBaseUrl?.let { environment.dlhdBaseUrl = it }
         patch.mirrorUrls?.let { environment.mirrorUrls = it }
-        patch.embeddedSidecarEnabled?.let { environment.embeddedSidecarEnabled = it }
-        patch.supplementBaseUrl?.let { environment.supplementBaseUrl = it }
         patch.supplementSportsEnabled?.let { environment.supplementSportsEnabled = it }
         patch.supplementIptvOrgEnabled?.let { environment.supplementIptvOrgEnabled = it }
         patch.supplementNtvCxEnabled?.let { environment.supplementNtvCxEnabled = it }
@@ -579,8 +577,6 @@ class GatewayAdminController(
         gatewayName = environment.displayGatewayName(),
         dlhdBaseUrl = environment.dlhdBaseUrl,
         mirrorUrls = environment.mirrorUrls,
-        embeddedSidecarEnabled = environment.embeddedSidecarEnabled,
-        supplementBaseUrl = environment.supplementBaseUrl,
         supplementSportsEnabled = environment.supplementSportsEnabled,
         supplementIptvOrgEnabled = environment.supplementIptvOrgEnabled,
         supplementNtvCxEnabled = environment.supplementNtvCxEnabled,

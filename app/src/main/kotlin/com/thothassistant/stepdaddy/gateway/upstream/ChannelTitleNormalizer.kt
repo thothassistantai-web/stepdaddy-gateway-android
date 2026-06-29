@@ -32,6 +32,7 @@ object ChannelTitleNormalizer {
         style: PlaylistTitleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
         source: PlaylistTitleSource = PlaylistTitleSource.FAST,
         eventSourceUrl: String? = null,
+        nowMs: Long = System.currentTimeMillis(),
     ): String {
         if (style == PlaylistTitleStyle.LEGACY) {
             val base = legacyDisplayTitle(channelName, resolution)
@@ -46,7 +47,11 @@ object ChannelTitleNormalizer {
             val category = SpecialEventCategoryEmoji.stripLeadingEmoji(
                 channelName.removeSuffix(" Schedule").trim(),
             )
-            return XtreamCategoryTitleFormatter.formatGuideSchedule(category, providerTag)
+            return XtreamCategoryTitleFormatter.formatGuideSchedule(
+                category,
+                providerTag,
+                resolution.countryCode.ifBlank { "US" },
+            )
         }
         if (source == PlaylistTitleSource.SPECIAL_EVENT) {
             val league = providerTag?.trim().orEmpty().ifEmpty {
@@ -55,7 +60,11 @@ object ChannelTitleNormalizer {
             val eventTitle = DlhdEventSourceMeta.parse(eventSourceUrl)?.displayTitle()
                 ?.takeIf { it.isNotBlank() }
                 ?: channelName
-            return XtreamCategoryTitleFormatter.formatSpecialEvent(eventTitle, league)
+            return XtreamCategoryTitleFormatter.formatSpecialEvent(
+                eventTitle,
+                league,
+                resolution.countryCode.ifBlank { "US" },
+            )
         }
         return XtreamCategoryTitleFormatter.format(channelName, resolution, source)
     }

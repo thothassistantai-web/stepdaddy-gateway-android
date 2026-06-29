@@ -16,7 +16,20 @@ import java.util.concurrent.TimeUnit
  * the user grants "Usage access" in system settings.
  */
 object TiviMateWatch {
-    const val PACKAGE = "ar.tvplayer.tv"
+    /** DaddyLive TV — StepDaddy patch with distinct applicationId (3.1.0+). */
+    const val DADDY_LIVE_PACKAGE = "com.thothassistant.daddyliveTV"
+    /** Pre-3.1.0 DaddyLive TV package (2.3.0–3.0.x). */
+    const val LEGACY_DADDY_LIVE_PACKAGE = "com.thothassistant.daddylive"
+    /** Stock / legacy mod / pre-2.3.0 StepDaddy TiviMate. */
+    const val LEGACY_TIVIMATE_PACKAGE = "ar.tvplayer.tv"
+    /** Primary package for new StepDaddy player installs. */
+    const val PACKAGE = DADDY_LIVE_PACKAGE
+
+    private val WATCHED_PACKAGES = listOf(
+        DADDY_LIVE_PACKAGE,
+        LEGACY_DADDY_LIVE_PACKAGE,
+        LEGACY_TIVIMATE_PACKAGE,
+    )
 
     fun isTiviMateLikelyActive(context: Context): Boolean {
         if (isProcessRunning(context)) {
@@ -44,7 +57,9 @@ object TiviMateWatch {
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val processes = activityManager.runningAppProcesses ?: return false
         return processes.any { process ->
-            process.processName == PACKAGE || process.processName.startsWith("$PACKAGE:")
+            WATCHED_PACKAGES.any { pkg ->
+                process.processName == pkg || process.processName.startsWith("$pkg:")
+            }
         }
     }
 
@@ -59,7 +74,7 @@ object TiviMateWatch {
             var lastForegroundMs = 0L
             while (events.hasNextEvent()) {
                 events.getNextEvent(event)
-                if (event.packageName != PACKAGE) continue
+                if (event.packageName !in WATCHED_PACKAGES) continue
                 if (event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND ||
                     event.eventType == UsageEvents.Event.ACTIVITY_RESUMED
                 ) {
@@ -76,7 +91,7 @@ object TiviMateWatch {
             now,
         ) ?: return false
         return stats.any { stat ->
-            stat.packageName == PACKAGE && stat.lastTimeUsed >= now - windowMs
+            stat.packageName in WATCHED_PACKAGES && stat.lastTimeUsed >= now - windowMs
         }
     }
 

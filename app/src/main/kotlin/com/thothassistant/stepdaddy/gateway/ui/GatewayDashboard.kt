@@ -8,7 +8,6 @@ import com.thothassistant.stepdaddy.gateway.upstream.SupplementSource
 
 data class ProviderChannelCounts(
     val daddylive: Int = 0,
-    val moveOnJoy: Int = 0,
     val iptvOrg: Int = 0,
     val sports: Int = 0,
     val ntvCx: Int = 0,
@@ -32,7 +31,6 @@ object GatewayDashboard {
         val supp = supplementSource
         return ProviderChannelCounts(
             daddylive = dl.size,
-            moveOnJoy = supp?.moveOnJoyCount() ?: 0,
             iptvOrg = supp?.iptvOrgCount() ?: 0,
             sports = supp?.sportsCount() ?: 0,
             ntvCx = supp?.ntvCxCount() ?: 0,

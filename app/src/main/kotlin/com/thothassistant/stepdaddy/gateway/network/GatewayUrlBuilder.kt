@@ -2,6 +2,7 @@ package com.thothassistant.stepdaddy.gateway.network
 
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.epg.EpgPlaylistUrlResolver
+import com.thothassistant.stepdaddy.gateway.routes.PlaylistPaths
 
 object GatewayUrlBuilder {
     fun effectiveBase(environment: GatewayEnvironment): String =
@@ -22,8 +23,20 @@ object GatewayUrlBuilder {
             }
         }
 
-    fun playlistUrl(environment: GatewayEnvironment): String =
-        appendPath(effectiveBase(environment), "/tivimate-playlist.m3u8", environment)
+    /** Canonical TiviMate user playlist (full catalog). */
+    fun tivimatePlaylistUrl(environment: GatewayEnvironment): String =
+        appendPath(effectiveBase(environment), PlaylistPaths.TIVIMATE, environment)
+
+    /** Canonical StreamVault user playlist (full catalog, plain proxy URLs). */
+    fun streamVaultPlaylistUrl(environment: GatewayEnvironment): String =
+        appendPath(effectiveBase(environment), PlaylistPaths.STREAMVAULT, environment)
+
+    /** Canonical VLC / generic-player playlist (full catalog, plain proxy URLs). */
+    fun vlcPlaylistUrl(environment: GatewayEnvironment): String =
+        appendPath(effectiveBase(environment), PlaylistPaths.VLC, environment)
+
+    /** Default dashboard copy — TiviMate full catalog. */
+    fun playlistUrl(environment: GatewayEnvironment): String = tivimatePlaylistUrl(environment)
 
     fun epgUrls(environment: GatewayEnvironment): List<String> =
         EpgPlaylistUrlResolver.resolveUrls(environment)

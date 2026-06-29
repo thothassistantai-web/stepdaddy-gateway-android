@@ -3,18 +3,14 @@ package com.thothassistant.stepdaddy.gateway.upstream
 import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
-import java.security.MessageDigest
 
 object SupplementDedup {
     fun filterNewChannels(
         entries: List<M3uParser.Entry>,
         daddyChannels: List<Channel>,
-        maxChannels: Int = SupplementConfig.MAX_CHANNELS,
+        maxChannels: Int = Int.MAX_VALUE,
         importMode: SupplementImportMode = SupplementImportMode.FULL_CATALOG,
-        applySidecarProviderFilter: Boolean = true,
-        mapChannel: (M3uParser.Entry, String) -> SupplementChannel = { entry, _ ->
-            toSidecarChannel(entry)
-        },
+        mapChannel: (M3uParser.Entry, String) -> SupplementChannel,
     ): List<SupplementChannel> {
         val skipDuplicates = importMode == SupplementImportMode.SKIP_DUPLICATES
         val daddyNormNames = if (skipDuplicates) {
@@ -33,17 +29,11 @@ object SupplementDedup {
             emptySet()
         }
 
-        val candidateEntries = if (applySidecarProviderFilter) {
-            SupplementProviderFilter.filter(entries).allowed
-        } else {
-            entries
-        }
-
         val seenUrls = mutableSetOf<String>()
         val seenTvgIds = mutableSetOf<String>()
         val out = mutableListOf<SupplementChannel>()
 
-        for (entry in candidateEntries) {
+        for (entry in entries) {
             if (out.size >= maxChannels) break
             val norm = EpgChannelMapper.normalizeName(entry.name)
             if (norm in daddyNormNames) continue
@@ -63,9 +53,6 @@ object SupplementDedup {
         return out
     }
 
-    fun providerFilterResult(entries: List<M3uParser.Entry>): SupplementProviderFilter.Result =
-        SupplementProviderFilter.filter(entries)
-
     fun matchesDaddyTvgId(entryTvgId: String?, daddyTvgIds: Set<String>): Boolean =
         tvgIdKeys(entryTvgId).any { it in daddyTvgIds }
 
@@ -77,27 +64,5 @@ object SupplementDedup {
             add(raw)
             if (base.isNotEmpty()) add(base)
         }
-    }
-
-    private fun toSidecarChannel(entry: M3uParser.Entry): SupplementChannel {
-        val norm = EpgChannelMapper.normalizeName(entry.name)
-        val id = "sup:${shortHash(norm + "|" + entry.streamUrl)}"
-        val groupTitle = entry.groupTitle?.trim()?.takeIf { it.isNotEmpty() }
-            ?: SupplementConfig.GROUP_PREFIX
-        return SupplementChannel(
-            id = id,
-            name = entry.name.trim(),
-            tvgId = entry.tvgId?.trim()?.takeIf { it.isNotEmpty() },
-            logo = entry.logo?.trim()?.takeIf { it.isNotEmpty() },
-            groupTitle = groupTitle,
-            streamUrl = entry.streamUrl.trim(),
-            referer = SupplementConfig.MOVEONJOY_REFERER,
-            origin = SupplementConfig.MOVEONJOY_REFERER.trimEnd('/'),
-        )
-    }
-
-    private fun shortHash(value: String): String {
-        val digest = MessageDigest.getInstance("SHA-256").digest(value.toByteArray(Charsets.UTF_8))
-        return digest.take(6).joinToString("") { "%02x".format(it) }
     }
 }

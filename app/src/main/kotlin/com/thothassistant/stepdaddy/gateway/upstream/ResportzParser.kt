@@ -2,6 +2,13 @@ package com.thothassistant.stepdaddy.gateway.upstream
 
 import android.util.Log
 import com.thothassistant.stepdaddy.gateway.model.UpstreamManifest
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import okhttp3.ConnectionPool
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.net.URL
@@ -10,14 +17,27 @@ import java.util.concurrent.TimeUnit
 class ResportzParser(
     private val client: OkHttpClient = defaultClient(),
     private val maxEmbedDepth: Int = 2,
+    private val mirrorLatencyTracker: MirrorLatencyTracker? = null,
 ) {
     suspend fun fetchManifest(channelId: String, refererBase: String): UpstreamManifest {
         val referer = "${refererBase.trimEnd('/')}/"
+        val candidates = watchUrlCandidates(channelId)
+        val dlhdCandidates = candidates.filter { isDlhdPkUrl(it) }
+        val otherCandidates = candidates.filterNot { isDlhdPkUrl(it) }
+
+        if (dlhdCandidates.isNotEmpty()) {
+            val raced = raceDlhdWatchUrls(channelId, dlhdCandidates, referer)
+            if (raced != null) {
+                return raced
+            }
+        }
+
         var lastError: Exception? = null
-        for (watchUrl in watchUrlCandidates(channelId)) {
+        for (watchUrl in otherCandidates) {
             try {
                 return fetchManifestFromWatchPage(channelId, watchUrl, referer)
             } catch (exc: Exception) {
+                if (exc is CancellationException) throw exc
                 lastError = exc
                 Log.d(TAG, "watch failed $watchUrl: ${exc.message}")
             }
@@ -28,15 +48,72 @@ class ResportzParser(
         )
     }
 
+    private suspend fun raceDlhdWatchUrls(
+        channelId: String,
+        candidates: List<String>,
+        referer: String,
+    ): UpstreamManifest? {
+        val ordered = mirrorLatencyTracker?.orderedDlhdPaths(
+            GatewayConfig.DLHD_PK_STREAM_PATHS.filter { path ->
+                candidates.any { url -> url.contains("/$path/") }
+            }.ifEmpty { GatewayConfig.DLHD_PK_STREAM_PATHS },
+        ) ?: GatewayConfig.DLHD_PK_STREAM_PATHS
+
+        val toRace = ordered.mapNotNull { path ->
+            candidates.firstOrNull { it.contains("/$path/") }
+        }.distinct().take(GatewayConfig.DLHD_PK_PARALLEL_PROBE_COUNT)
+
+        if (toRace.isEmpty()) return null
+        if (toRace.size == 1) {
+            return runCatching {
+                fetchManifestFromWatchPage(channelId, toRace.first(), referer)
+            }.getOrNull()
+        }
+
+        return coroutineScope {
+            val winner = CompletableDeferred<UpstreamManifest>()
+            val jobs = toRace.map { watchUrl ->
+                launch {
+                    val path = dlhdPathFromUrl(watchUrl)
+                    val startedAt = System.nanoTime()
+                    try {
+                        val manifest = fetchManifestFromWatchPage(channelId, watchUrl, referer)
+                        val latencyMs = (System.nanoTime() - startedAt) / 1_000_000L
+                        path?.let { mirrorLatencyTracker?.recordDlhdPathSuccess(it, latencyMs) }
+                        if (!winner.isCompleted) {
+                            winner.complete(manifest)
+                        }
+                    } catch (exc: CancellationException) {
+                        throw exc
+                    } catch (exc: Exception) {
+                        path?.let { mirrorLatencyTracker?.recordDlhdPathFailure(it) }
+                        Log.d(TAG, "dlhd race failed $watchUrl: ${exc.message}")
+                    }
+                }
+            }
+            val result = withTimeoutOrNull(GatewayConfig.MIRROR_ATTEMPT_TIMEOUT_MS) {
+                runCatching { winner.await() }.getOrNull()
+            }
+            jobs.forEach { it.cancel() }
+            result
+        }
+    }
+
     private fun watchUrlCandidates(channelId: String): List<String> {
+        val orderedPaths = mirrorLatencyTracker?.orderedDlhdPaths(GatewayConfig.DLHD_PK_STREAM_PATHS)
+            ?: GatewayConfig.DLHD_PK_STREAM_PATHS
         val ordered = linkedSetOf<String>()
-        // dlhd.pk relays first — resportz.cfd is often unreachable while dlhd.pk still works.
-        for (path in GatewayConfig.DLHD_PK_STREAM_PATHS) {
+        for (path in orderedPaths) {
             ordered += "https://dlhd.pk/$path/stream-$channelId.php"
         }
         ordered += GatewayConfig.RESPORTZ_STREAM_TEMPLATE.format(channelId)
         return ordered.toList()
     }
+
+    private fun isDlhdPkUrl(url: String): Boolean = url.contains("dlhd.pk/")
+
+    private fun dlhdPathFromUrl(url: String): String? =
+        GatewayConfig.DLHD_PK_STREAM_PATHS.firstOrNull { path -> url.contains("/$path/") }
 
     private suspend fun fetchManifestFromWatchPage(
         channelId: String,
@@ -162,6 +239,7 @@ class ResportzParser(
 
         fun defaultClient(): OkHttpClient =
             OkHttpClient.Builder()
+                .connectionPool(ConnectionPool(8, 5, TimeUnit.MINUTES))
                 .followRedirects(true)
                 .followSslRedirects(true)
                 .connectTimeout(GatewayConfig.UPSTREAM_CONNECT_TIMEOUT_SEC, TimeUnit.SECONDS)

@@ -3,6 +3,7 @@ package com.thothassistant.stepdaddy.gateway.routes
 import android.content.Context
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
+import com.thothassistant.stepdaddy.gateway.upstream.DlhdEventStreamHealth
 import com.thothassistant.stepdaddy.gateway.upstream.DlhdEventStreamResolver
 import com.thothassistant.stepdaddy.gateway.upstream.GuideScheduleHlsManifest
 import com.thothassistant.stepdaddy.gateway.upstream.GuideScheduleMediaCache
@@ -53,22 +54,41 @@ class DlhdEventStreamRoutes(
                 }
             }
             val bytes = playlist.toByteArray(StandardCharsets.UTF_8)
+            supplementSource.recordDlhdEventStreamHealth(
+                token,
+                DlhdEventStreamHealth.ProbeResult.healthy(),
+            )
             call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
             call.response.header(HttpHeaders.CacheControl, "no-cache")
             call.respondBytes(bytes, ContentType("application", "vnd.apple.mpegurl"))
         } catch (_: TimeoutCancellationException) {
-            respondError(call, HttpStatusCode.GatewayTimeout, "dlhd event upstream timeout")
+            supplementSource.recordDlhdEventStreamHealth(
+                token,
+                DlhdEventStreamHealth.ProbeResult.unhealthy("upstream_timeout"),
+            )
+            respondError(
+                call,
+                HttpStatusCode.GatewayTimeout,
+                "dlhd event upstream timeout — retry shortly",
+                retryAfter = "3",
+            )
         } catch (exc: CancellationException) {
             throw exc
         } catch (exc: Exception) {
+            val transient = exc.message?.contains("timeout", ignoreCase = true) == true
+            supplementSource.recordDlhdEventStreamHealth(
+                token,
+                DlhdEventStreamHealth.ProbeResult.unhealthy(exc.message ?: "upstream_error"),
+            )
             respondError(
                 call,
-                if (exc.message?.contains("timeout", ignoreCase = true) == true) {
+                if (transient) {
                     HttpStatusCode.GatewayTimeout
                 } else {
                     HttpStatusCode.BadGateway
                 },
                 exc.message ?: "dlhd_event_upstream_error",
+                retryAfter = if (transient) "3" else null,
             )
         }
     }
@@ -217,7 +237,15 @@ class DlhdEventStreamRoutes(
         )
     }
 
-    private suspend fun respondError(call: ApplicationCall, status: HttpStatusCode, message: String) {
+    private suspend fun respondError(
+        call: ApplicationCall,
+        status: HttpStatusCode,
+        message: String,
+        retryAfter: String? = null,
+    ) {
+        if (retryAfter != null) {
+            call.response.header(HttpHeaders.RetryAfter, retryAfter)
+        }
         call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
         call.response.header(HttpHeaders.CacheControl, "no-cache")
         call.respondText(

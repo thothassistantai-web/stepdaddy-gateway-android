@@ -69,6 +69,7 @@ class MainActivity : AppCompatActivity() {
     private val mainUpdateListener: (AppUpdateInfo?) -> Unit = { onUpdateAvailability(it) }
     private var pendingUpdateInfo: AppUpdateInfo? = null
     private var lastGatewayOnline = false
+    private var pollTicks = 0
     private lateinit var bottomPanel: DashboardBottomPanel
     private lateinit var statCards: DashboardStatCards
     private var lastGoodHealth: HealthResponse? = null
@@ -127,7 +128,13 @@ class MainActivity : AppCompatActivity() {
         bottomPanel = DashboardBottomPanel(this, binding.root, environment, lifecycleScope)
         bottomPanel.attach()
         GatewayMessageBus.post("Dashboard opened — health polling will begin when server starts")
-        scrollDashboardToTop()
+        if (savedInstanceState == null) {
+            scrollDashboardToTop(requestFocus = true)
+        } else {
+            savedInstanceState.getInt(STATE_SCROLL_Y, 0).takeIf { it > 0 }?.let { y ->
+                views.scrollDashboard.post { views.scrollDashboard.scrollTo(0, y) }
+            }
+        }
         hydrateDashboardFromCache()
         updateStatus()
         updateEpgStatus()
@@ -147,24 +154,29 @@ class MainActivity : AppCompatActivity() {
         GatewayHud.attachHost(gatewayHudHost)
         hydrateDashboardFromCache()
         updateStatus()
-        updateTiviMatePlaylistState()
         bindNetworkMode()
         bindUrls()
-        updateEpgStatus()
         startStatusPolling()
         startClock()
-        maybeScanLanPeers()
-        scrollDashboardToTop()
+        lifecycleScope.launch {
+            delay(PEER_SCAN_DEFER_MS)
+            if (isInForeground) maybeScanLanPeers()
+        }
     }
 
-    private fun scrollDashboardToTop() {
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        if (::views.isInitialized) {
+            outState.putInt(STATE_SCROLL_Y, views.scrollDashboard.scrollY)
+        }
+    }
+
+    private fun scrollDashboardToTop(requestFocus: Boolean = false) {
         val scroll = views.scrollDashboard
         scroll.post {
             scroll.scrollTo(0, 0)
-            scroll.post {
-                scroll.fullScroll(View.FOCUS_UP)
-                scroll.scrollTo(0, 0)
-                views.buttonHeaderSettings.requestFocus()
+            if (requestFocus) {
+                scroll.post { views.buttonHeaderSettings.requestFocus() }
             }
         }
     }
@@ -303,7 +315,7 @@ class MainActivity : AppCompatActivity() {
         views.buttonLaunchTivimate.setOnClickListener { tivimateLaunchCoordinator.launchOrPromptInstall() }
         views.buttonInstallTivimate.setOnClickListener { showTivimateInstallPicker() }
         views.buttonFooterScrollTop.setOnClickListener {
-            scrollDashboardToTop()
+            scrollDashboardToTop(requestFocus = true)
         }
     }
 
@@ -550,16 +562,23 @@ class MainActivity : AppCompatActivity() {
                 if (active != lastActive) {
                     updateStatus()
                     lastActive = active
+                    if (active) pollTicks = 0
                 }
                 if (active) {
-                    val live = statusMonitor.fetch()
+                    val requestFull = pollTicks == 0 || pollTicks % FULL_HEALTH_EVERY_N == 0
+                    val live = statusMonitor.fetch(requestFull)
                     renderDashboard(live)
-                    updateEpgStatus()
+                    if (pollTicks == 0 || pollTicks % EPG_STATUS_EVERY_N == 0) {
+                        updateEpgStatus()
+                    }
+                    if (pollTicks == 0 || pollTicks % TIVIMATE_STATE_EVERY_N == 0) {
+                        updateTiviMatePlaylistState()
+                    }
+                    pollTicks++
                 } else {
                     renderDashboard(null)
                 }
                 updateFooterMetrics(if (active) environment.lastServiceStartMs else null)
-                updateTiviMatePlaylistState()
                 delay(STATUS_POLL_MS)
             }
         }
@@ -575,6 +594,7 @@ class MainActivity : AppCompatActivity() {
             views.textActivity.text = getString(R.string.dashboard_activity_idle)
             views.textErrors.visibility = if (live?.fetchError != null) View.VISIBLE else View.GONE
             views.textErrors.text = live?.fetchError.orEmpty()
+            renderSpecialEventsHealth(null)
             DashboardBarRenderer.renderProviders(this, views.containerProviderBars, null)
             views.textProvidersTotal.text = ""
             DashboardBarRenderer.renderCategories(this, views.containerCategoryBars, emptyList())
@@ -611,7 +631,11 @@ class MainActivity : AppCompatActivity() {
             fetchError != null -> fetchError
             health.channels == 0 && (health.providers?.total ?: 0) == 0 && health.ok ->
                 getString(R.string.dashboard_health_starting)
-            health.ok && !health.starting -> getString(R.string.dashboard_health_ok_detail)
+            health.ok && !health.starting -> {
+                val specialSummary = SpecialEventsDashboardRenderer.healthSummaryLine(this, health.supplement)
+                if (specialSummary.isNotBlank()) specialSummary
+                else getString(R.string.dashboard_health_ok_detail)
+            }
             else -> getString(R.string.dashboard_health_starting)
         }
         views.textActivity.text = getString(
@@ -619,6 +643,7 @@ class MainActivity : AppCompatActivity() {
             live?.activityLabel ?: GatewayLiveStatus().activityLabel,
             health.upstreamBaseUrl,
         )
+        renderSpecialEventsHealth(health.supplement)
 
         DashboardBarRenderer.renderProviders(this, views.containerProviderBars, health.providers)
         val total = health.providers?.total ?: health.channels
@@ -645,6 +670,7 @@ class MainActivity : AppCompatActivity() {
                     ),
                 )
             }
+            SpecialEventsDashboardRenderer.staleWarning(this@MainActivity, health.supplement)?.let { add(it) }
             fetchError?.let { add(it) }
         }
         if (errors.isEmpty()) {
@@ -705,6 +731,19 @@ class MainActivity : AppCompatActivity() {
         return String.format(Locale.US, "%02d:%02d:%02d", hours, minutes, seconds)
     }
 
+    private fun renderSpecialEventsHealth(supplement: com.thothassistant.stepdaddy.gateway.model.SupplementStatus?) {
+        val showPanel = supplement?.sportsEnabled == true ||
+            environment.supplementSportsEnabled
+        views.layoutSpecialEventsHealth.visibility = if (showPanel) View.VISIBLE else View.GONE
+        if (!showPanel) return
+        views.textSpecialEventsStatus.text = SpecialEventsDashboardRenderer.statusLabel(this, supplement)
+        views.textSpecialEventsStatus.setTextColor(
+            SpecialEventsDashboardRenderer.statusColor(this, supplement),
+        )
+        views.textSpecialEventsCounts.text = SpecialEventsDashboardRenderer.countsLine(this, supplement)
+        views.textSpecialEventsLastScrape.text = SpecialEventsDashboardRenderer.lastScrapeLine(this, supplement)
+    }
+
     private fun showInAppHud(message: String, durationMs: Long) {
         if (!::views.isInitialized) return
         runOnUiThread {
@@ -749,6 +788,11 @@ class MainActivity : AppCompatActivity() {
         private const val STATUS_POLL_MS = 3_000L
         private const val CLOCK_TICK_MS = 30_000L
         private const val RESTART_DELAY_MS = 1_500L
+        private const val PEER_SCAN_DEFER_MS = 2_500L
+        private const val FULL_HEALTH_EVERY_N = 5
+        private const val EPG_STATUS_EVERY_N = 10
+        private const val TIVIMATE_STATE_EVERY_N = 6
+        private const val STATE_SCROLL_Y = "scroll_y"
 
         @Volatile
         var isInForeground: Boolean = false

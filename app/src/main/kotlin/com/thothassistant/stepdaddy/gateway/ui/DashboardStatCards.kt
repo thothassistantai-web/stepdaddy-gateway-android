@@ -69,7 +69,14 @@ class DashboardStatCards(
         }
 
         val total = health.providers?.total ?: health.channels
-        channelsCard.bind(activity, progress?.channels, numberFormat.format(total))
+        val ready = health.providers?.playlistReady?.takeIf { it > 0 }
+            ?: if (!health.starting && total > 0) total else health.channels + health.supplementChannels
+        val channelsValue = if (total > 0) {
+            "${numberFormat.format(ready)} / ${numberFormat.format(total)}"
+        } else {
+            numberFormat.format(0)
+        }
+        channelsCard.bind(activity, progress?.channels, channelsValue)
         programsCard.bind(
             activity,
             progress?.programs,
@@ -137,7 +144,6 @@ class DashboardStatCards(
         var count = 1
         val supplement = health.supplement
         if (supplement != null) {
-            if (supplement.sidecarEnabled) count++
             if (supplement.sportsEnabled) count++
             if (supplement.iptvOrgEnabled) count++
             if (supplement.ntvCxEnabled) count++

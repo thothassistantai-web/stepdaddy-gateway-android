@@ -226,6 +226,8 @@ class PlaylistBuilderTest {
 
     @Test
     fun `special events guide precedes streams in same category`() {
+        val futureDateKey = "Monday 29th June 2026 - Schedule Time UK GMT"
+        val nowMs = java.time.Instant.parse("2026-06-28T12:00:00Z").toEpochMilli()
         val supplements = listOf(
             SupplementChannel(
                 id = "dlhd-event:swim1",
@@ -233,7 +235,7 @@ class PlaylistBuilderTest {
                 groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
                 streamUrl = "",
                 providerTag = "SWIMMING",
-                eventSourceUrl = "Swimming|Sunday|14:00|Swimming : Final Heat",
+                eventSourceUrl = "Swimming|$futureDateKey|14:00|Swimming : Final Heat",
                 dlhdEventStreamKey = "tv|201",
             ),
             SupplementChannel(
@@ -250,7 +252,7 @@ class PlaylistBuilderTest {
                 groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
                 streamUrl = "",
                 providerTag = "GOLF",
-                eventSourceUrl = "Golf|Sunday|15:00|Golf : Round 1",
+                eventSourceUrl = "Golf|$futureDateKey|15:00|Golf : Round 1",
                 dlhdEventStreamKey = "tv|202",
             ),
             SupplementChannel(
@@ -269,15 +271,16 @@ class PlaylistBuilderTest {
             dlhdOrigin = "https://daddylive.org",
             supplements = supplements,
             titleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
+            nowMs = nowMs,
         )
 
         val golfGuide = playlist.indexOf("GOLF SCHEDULE")
         val golfEvent = playlist.indexOf("ROUND 1")
         val swimGuide = playlist.indexOf("SWIMMING SCHEDULE")
         val swimEvent = playlist.indexOf("FINAL HEAT")
-        assertTrue(playlist.contains("dlhd-event-guide/golf.mp4|"))
-        assertTrue(playlist.contains("dlhd-event-guide/swimming.mp4|"))
-        assertFalse(playlist.contains("dlhd-event-guide/golf.m3u8"))
+        assertTrue(playlist.contains("dlhd-event-guide/golf.m3u8|"))
+        assertTrue(playlist.contains("dlhd-event-guide/swimming.m3u8|"))
+        assertFalse(playlist.contains("dlhd-event-guide/golf.mp4|"))
         assertTrue(golfGuide >= 0 && golfEvent > golfGuide)
         assertTrue(swimGuide >= 0 && swimEvent > swimGuide)
         assertTrue(golfGuide < swimGuide)
@@ -311,6 +314,88 @@ class PlaylistBuilderTest {
     fun `empty epg url omits tvg attributes`() {
         val playlist = PlaylistBuilder.minimalPlaylist("http://127.0.0.1:3000", null)
         assertEquals("#EXTM3U\n", playlist)
+    }
+
+    @Test
+    fun `tva sports dlhd event emits french title label tvg-language and ca tvg-country`() {
+        val supplements = listOf(
+            SupplementChannel(
+                id = "dlhd-event:nhl-tva",
+                name = "NHL : Canadiens vs Maple Leafs (TVA Sports)",
+                groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+                streamUrl = "",
+                providerTag = "NHL",
+                eventSourceUrl = "Hockey|Monday 29th June 2026 - Schedule Time UK GMT|19:00|NHL : Canadiens vs Maple Leafs",
+                dlhdEventStreamKey = "tv|401",
+                languageCode = "fr",
+                regionCode = "CA",
+            ),
+        )
+
+        val playlist = PlaylistBuilder.tivimatePlaylist(
+            channels = emptyList(),
+            baseUrl = "http://127.0.0.1:3000",
+            dlhdOrigin = "https://daddylive.org",
+            supplements = supplements,
+            titleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
+            nowMs = java.time.Instant.parse("2026-06-28T12:00:00Z").toEpochMilli(),
+        )
+        assertTrue(playlist.contains("""tvg-language="fra""""))
+        assertTrue(playlist.contains("""tvg-country="CA""""))
+        assertTrue(playlist.contains("CA: NHL CANADIENS VS MAPLE LEAFS"))
+    }
+
+    @Test
+    fun `explicit uk prefix emits tvg-country on sport supplement`() {
+        val supplements = listOf(
+            SupplementChannel(
+                id = "sport:uk-soccer",
+                name = "UK: Premier League : Arsenal vs Chelsea",
+                groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+                streamUrl = "https://example.com/epl.m3u8",
+                providerTag = "EPL",
+                regionCode = "UK",
+            ),
+        )
+
+        val playlist = PlaylistBuilder.tivimatePlaylist(
+            channels = emptyList(),
+            baseUrl = "http://127.0.0.1:3000",
+            dlhdOrigin = "https://daddylive.org",
+            supplements = supplements,
+            titleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
+        )
+
+        assertTrue(playlist.contains("""tvg-country="UK""""))
+        assertTrue(playlist.contains("UK: EPL"))
+        assertTrue(playlist.contains("ARSENAL VS CHELSEA"))
+    }
+
+    @Test
+    fun `us nfl event emits tvg-country and english tvg-language when language set`() {
+        val supplements = listOf(
+            SupplementChannel(
+                id = "sport:nfl",
+                name = "Chiefs vs Bills",
+                groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+                streamUrl = "https://example.com/nfl.m3u8",
+                providerTag = "NFL",
+                languageCode = "en",
+                regionCode = "US",
+            ),
+        )
+
+        val playlist = PlaylistBuilder.tivimatePlaylist(
+            channels = emptyList(),
+            baseUrl = "http://127.0.0.1:3000",
+            dlhdOrigin = "https://daddylive.org",
+            supplements = supplements,
+            titleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
+        )
+
+        assertTrue(playlist.contains("""tvg-country="US""""))
+        assertTrue(playlist.contains("US: NFL CHIEFS VS BILLS"))
+        assertTrue(playlist.contains("""tvg-language="eng""""))
     }
 
     @Test

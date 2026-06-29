@@ -134,7 +134,9 @@ class GatewayEnvironment(context: Context) {
      * with category [GroupTitleResolver] groups; [PlaylistTitleStyle.LEGACY] uses flag suffixes.
      */
     var playlistTitleStyle: PlaylistTitleStyle
-        get() = PlaylistTitleStyle.fromPref(prefs.getString(KEY_PLAYLIST_TITLE_STYLE, null))
+        get() = PlaylistTitleStyle.fromPref(
+            prefs.getString(KEY_PLAYLIST_TITLE_STYLE, BuildConfig.DEFAULT_PLAYLIST_TITLE_STYLE),
+        )
         set(value) {
             prefs.edit().putString(KEY_PLAYLIST_TITLE_STYLE, value.name).apply()
         }
@@ -143,26 +145,6 @@ class GatewayEnvironment(context: Context) {
         get() = prefs.getBoolean(KEY_SERVER_RUNNING, false)
         set(value) {
             prefs.edit().putBoolean(KEY_SERVER_RUNNING, value).apply()
-        }
-
-    /**
-     * When true, the gateway APK runs a minimal MoveOnJoy sidecar on loopback :4124.
-     */
-    var embeddedSidecarEnabled: Boolean
-        get() = prefs.getBoolean(KEY_EMBEDDED_SIDECAR_ENABLED, BuildConfig.DEFAULT_EMBEDDED_SIDECAR_ENABLED)
-        set(value) {
-            prefs.edit().putBoolean(KEY_EMBEDDED_SIDECAR_ENABLED, value).apply()
-        }
-
-    /**
-     * Optional LAN URL for TVApp2-style supplement (e.g. http://192.168.1.50:4124).
-     * Empty disables sidecar fetch; MoveOnJoy-only when set. TheTvApp linear entries are filtered out.
-     */
-    var supplementBaseUrl: String
-        get() = prefs.getString(KEY_SUPPLEMENT_BASE_URL, BuildConfig.DEFAULT_SUPPLEMENT_BASE_URL)
-            ?: BuildConfig.DEFAULT_SUPPLEMENT_BASE_URL
-        set(value) {
-            prefs.edit().putString(KEY_SUPPLEMENT_BASE_URL, value.trim().trimEnd('/')).apply()
         }
 
     /**
@@ -212,22 +194,10 @@ class GatewayEnvironment(context: Context) {
      */
     var supplementAdultSwimImportMode: SupplementImportMode
         get() = SupplementImportMode.fromPref(
-            prefs.getString(KEY_SUPPLEMENT_ADULT_SWIM_IMPORT_MODE, null),
+            prefs.getString(KEY_SUPPLEMENT_ADULT_SWIM_IMPORT_MODE, BuildConfig.DEFAULT_SUPPLEMENT_IMPORT_MODE),
         )
         set(value) {
             prefs.edit().putString(KEY_SUPPLEMENT_ADULT_SWIM_IMPORT_MODE, value.name).apply()
-        }
-
-    /**
-     * How MoveOnJoy sidecar channels are merged.
-     * [SupplementImportMode.FULL_CATALOG] imports the full sidecar catalog (default).
-     */
-    var supplementSidecarImportMode: SupplementImportMode
-        get() = SupplementImportMode.fromPref(
-            prefs.getString(KEY_SUPPLEMENT_SIDECAR_IMPORT_MODE, null),
-        )
-        set(value) {
-            prefs.edit().putString(KEY_SUPPLEMENT_SIDECAR_IMPORT_MODE, value.name).apply()
         }
 
     /**
@@ -236,7 +206,7 @@ class GatewayEnvironment(context: Context) {
      */
     var supplementIptvOrgImportMode: SupplementImportMode
         get() = SupplementImportMode.fromPref(
-            prefs.getString(KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE, null),
+            prefs.getString(KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE, BuildConfig.DEFAULT_SUPPLEMENT_IMPORT_MODE),
         )
         set(value) {
             prefs.edit().putString(KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE, value.name).apply()
@@ -252,9 +222,7 @@ class GatewayEnvironment(context: Context) {
             return if (raw != null) {
                 SupplementImportMode.fromPref(raw)
             } else {
-                SupplementImportMode.fromSkipDuplicatesPref(
-                    BuildConfig.DEFAULT_SUPPLEMENT_NTV_CX_SUPPLEMENT_ONLY,
-                )
+                SupplementImportMode.fromPref(BuildConfig.DEFAULT_SUPPLEMENT_IMPORT_MODE)
             }
         }
         set(value) {
@@ -430,23 +398,6 @@ class GatewayEnvironment(context: Context) {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
     }
 
-    /** Point supplement fetch at the embedded loopback sidecar when enabled. */
-    fun ensureEmbeddedSidecarUrl() {
-        if (!embeddedSidecarEnabled) return
-        val local = com.thothassistant.stepdaddy.gateway.sidecar.SidecarConfig.LOOPBACK_BASE
-        val current = supplementBaseUrl.trim()
-        if (current.isBlank() || isRemoteSidecarUrl(current)) {
-            supplementBaseUrl = local
-        }
-    }
-
-    private fun isRemoteSidecarUrl(url: String): Boolean {
-        val lower = url.lowercase()
-        return lower.contains(":4124") &&
-            !lower.contains("127.0.0.1") &&
-            !lower.contains("localhost")
-    }
-
     companion object {
         private const val PREFS_NAME = "stepdaddy_gateway"
         private const val KEY_PORT = "port"
@@ -468,14 +419,11 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_SERVER_RUNNING = "server_running"
         private const val KEY_READY_BANNER_SHOWN = "ready_banner_shown"
         private const val KEY_LAST_SERVICE_START_MS = "last_service_start_ms"
-        private const val KEY_SUPPLEMENT_BASE_URL = "supplement_base_url"
-        private const val KEY_EMBEDDED_SIDECAR_ENABLED = "embedded_sidecar_enabled"
         private const val KEY_SUPPLEMENT_SPORTS_ENABLED = "supplement_sports_enabled"
         private const val KEY_SUPPLEMENT_IPTV_ORG_ENABLED = "supplement_iptv_org_enabled"
         private const val KEY_SUPPLEMENT_NTV_CX_ENABLED = "supplement_ntv_cx_enabled"
         private const val KEY_SUPPLEMENT_ADULT_SWIM_ENABLED = "supplement_adult_swim_enabled"
         private const val KEY_SUPPLEMENT_ADULT_SWIM_IMPORT_MODE = "supplement_adult_swim_import_mode"
-        private const val KEY_SUPPLEMENT_SIDECAR_IMPORT_MODE = "supplement_sidecar_import_mode"
         private const val KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE = "supplement_iptv_org_import_mode"
         private const val KEY_SUPPLEMENT_NTV_CX_MERGE_MODE = "supplement_ntv_cx_merge_mode"
         private const val KEY_GATEWAY_EPG_ENABLED = "gateway_epg_enabled"

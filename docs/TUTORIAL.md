@@ -49,12 +49,14 @@ Open TiviMate. The patch:
 2. Launches playlist wizard with returned URL
 3. Auto-advances the URL step for gateway playlists
 
-Force setup if needed:
+Force setup if needed (DaddyLive TV 2.3.0+, package `com.thothassistant.daddylive`):
 
 ```bash
-adb shell am broadcast -a ar.tvplayer.tv.action.STEPDADDY_SETUP \
-  --es gateway_base 'http://127.0.0.1:3000' ar.tvplayer.tv
+adb shell am broadcast -a com.thothassistant.daddylive.action.STEPDADDY_SETUP \
+  --es gateway_base 'http://127.0.0.1:3000' com.thothassistant.daddylive
 ```
+
+Legacy fleet (≤2.0.0, package `ar.tvplayer.tv`): use `ar.tvplayer.tv.action.STEPDADDY_SETUP` with target package `ar.tvplayer.tv`.
 
 ### Step 4 — Boot behavior
 

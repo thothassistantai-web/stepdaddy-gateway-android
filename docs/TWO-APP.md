@@ -5,9 +5,10 @@ StepDaddy is a **two-app system** on Android TV. Each app works **alone** or **t
 | App | Package | Role |
 |-----|---------|------|
 | **StepDaddy Gateway** | `com.thothassistant.stepdaddy.gateway` | On-device IPTV server — M3U playlist, XMLTV EPG, HLS stream proxy on port **3000** |
-| **TiviMate Daddy** (patched mod) | `ar.tvplayer.tv` | IPTV player with StepDaddy bridge — auto-setup, tune, loopback HTTP on port **4617** |
+| **DaddyLive TV** (StepDaddy patch, 2.3.0+) | `com.thothassistant.daddylive` | IPTV player with StepDaddy bridge — auto-setup, tune, loopback HTTP on port **4617**. Coexists with stock TiviMate. |
+| **TiviMate Daddy** (legacy, ≤2.0.0 published) | `ar.tvplayer.tv` | Older fleet builds; **cannot** coexist with stock TiviMate (same package ID). |
 
-Stock **official TiviMate** (`ar.tvplayer.tv`, 5.x) is also supported as a **playlist-only** client with no programmatic control.
+Stock **official TiviMate** (`ar.tvplayer.tv`, 5.x) is supported as a **playlist-only** client with no programmatic control and can run **alongside** DaddyLive TV (2.3.0+).
 
 ---
 
@@ -69,7 +70,7 @@ Track **both** version strings when debugging fleet sticks.
 | TiViMate base | `4.6.1` (`versionCode` 4610, ONN USB mod) |
 | Runtime check | `GET http://127.0.0.1:4617/status` or `/state` → `patchVersion` |
 
-**Current patch:** `2.0.0` — see [tivimate-daddy](https://github.com/thothassistantai-web/tivimate-daddy) patch version history.
+**Current patch:** `2.1.0` — see [tivimate-daddy](https://github.com/thothassistantai-web/tivimate-daddy) patch version history.
 
 ### Fleet probe (one-liner)
 
@@ -91,7 +92,7 @@ curl -s http://127.0.0.1:3000/tivimate-handshake | jq .
 
 Gateway **Install apps** screen can sideload the Daddy APK when a catalog URL is configured. Default catalog does not ship the binary — build locally or host the signed APK.
 
-**Signature rule:** Uninstall any existing `ar.tvplayer.tv` before switching between mod / Daddy / official unless replacing with the same signing key (`adb install -r`).
+**Signature / package rule:** DaddyLive TV 2.3.0+ uses `com.thothassistant.daddylive` and installs beside stock TiviMate. Legacy StepDaddy builds on `ar.tvplayer.tv` still require uninstalling any other `ar.tvplayer.tv` app before switching variants (`adb install -r` only works with the same signing key).
 
 ---
 

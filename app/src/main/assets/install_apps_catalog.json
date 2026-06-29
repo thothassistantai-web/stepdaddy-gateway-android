@@ -4,12 +4,22 @@
     {
       "id": "stepdaddy-TiviMate-4.6.1-StepDaddy",
       "name": "TiviMate Daddy (StepDaddy)",
-      "description": "TiViMate 4.6.1 premium mod with StepDaddy patch — bidirectional gateway control, HTTP API :4617, auto-setup from /tivimate-setup. Recommended for StepDaddy fleet sticks.",
+      "description": "TiViMate 4.6.1 premium mod with StepDaddy patch — bidirectional gateway control, HTTP API :4617, auto-setup from /tivimate-setup.",
       "iconUrl": "https://www.google.com/s2/favicons?domain=tivimate.com&sz=128",
-      "apkUrl": "https://github.com/thothassistantai-web/tivimate-daddy/releases/download/tivimate-daddy-v2.0.0/TiviMate-4.6.1-StepDaddy-2.0.0.apk",
+      "apkUrl": "https://github.com/thothassistantai-web/tivimate-daddy/releases/download/tivimate-daddy-v2.3.7-tier4/TiviMate-4.6.1-StepDaddy-2.3.7-tier4.apk",
       "source": "stepdaddy",
-      "packageName": "ar.tvplayer.tv",
-      "version": "2.0.0"
+      "packageName": "com.thothassistant.daddylive",
+      "version": "2.3.7-tier4"
+    },
+    {
+      "id": "stepdaddy-TiviMate-2.1.5-ONN-daddyliveTV",
+      "name": "DaddyLive TV (StepDaddy)",
+      "description": "TiViMate 2.1.5 ONN premium mod with StepDaddy patch — bidirectional gateway control, HTTP API :4617, auto-setup from /tivimate-setup. Installs as com.thothassistant.daddyliveTV so stock TiviMate can stay installed.",
+      "iconUrl": "https://www.google.com/s2/favicons?domain=tivimate.com&sz=128",
+      "apkUrl": "https://github.com/thothassistantai-web/tivimate-daddy/releases/download/tivimate-daddy-v3.1.5/TiviMate-2.1.5-ONN-daddyliveTV-3.1.5.apk",
+      "source": "stepdaddy",
+      "packageName": "com.thothassistant.daddyliveTV",
+      "version": "3.1.5"
     },
     {
       "id": "tv2024-+++++Tivimate_v1.3.0_(Premium)",
@@ -99,7 +109,7 @@
       "apkUrl": "https://raw.githubusercontent.com/jk2024988/TV2024/main/New_Sparkle_TV_2.3.1_Plus.apk",
       "source": "tv2024",
       "packageName": "com.liskovsoft.sparkle",
-      "version": "2.3.1"
+      "version": "2.3.2"
     },
     {
       "id": "tv2024-OTTNavigatorIPTV1.7.1.5Alpha[Mod]",
@@ -169,7 +179,7 @@
       "apkUrl": "https://raw.githubusercontent.com/jk2024988/TV2024/main/SparkleTV_v2.3.0_PlusMod.apk",
       "source": "tv2024",
       "packageName": "com.liskovsoft.sparkle",
-      "version": "2.3.0"
+      "version": "2.3.2"
     },
     {
       "id": "tv2024-TiviMate__2.1.5_-_Premium付费破解版",
@@ -214,7 +224,7 @@
     {
       "id": "tv2024-TiviMate_5.2.0",
       "name": "TiviMate_5.2.0",
-      "description": "IPTV / streaming app from TV2024 catalog",
+      "description": "IPTV / streaming app from TV2024 catalog. Uses DexProtector — not suitable as StepDaddy patch base.",
       "iconUrl": null,
       "apkUrl": "https://raw.githubusercontent.com/jk2024988/TV2024/main/TiviMate_5.2.0.apk",
       "source": "tv2024",
@@ -284,7 +294,7 @@
     {
       "id": "tv2024-tivimate5.1.0",
       "name": "tivimate5.1.0",
-      "description": "IPTV / streaming app from TV2024 catalog",
+      "description": "IPTV / streaming app from TV2024 catalog. Uses DexProtector — not suitable as StepDaddy patch base.",
       "iconUrl": null,
       "apkUrl": "https://raw.githubusercontent.com/jk2024988/TV2024/main/tivimate5.1.0.apk",
       "source": "tv2024",
@@ -294,7 +304,7 @@
     {
       "id": "tv2024-tivimate510",
       "name": "tivimate510",
-      "description": "IPTV / streaming app from TV2024 catalog",
+      "description": "IPTV / streaming app from TV2024 catalog. Uses DexProtector — not suitable as StepDaddy patch base.",
       "iconUrl": null,
       "apkUrl": "https://raw.githubusercontent.com/jk2024988/TV2024/main/tivimate510.apk",
       "source": "tv2024",
@@ -729,7 +739,7 @@
       "apkUrl": "https://www.docsquiffy.com/objects/uploads/42059ad4-9a9b-4681-ba42-51feecc5d82b",
       "source": "docsquiffy",
       "packageName": null,
-      "version": "2.3.9"
+      "version": "2.3.2"
     },
     {
       "id": "docsquiffy-260",
@@ -2259,7 +2269,7 @@
       "apkUrl": "https://files.catbox.moe/yn4kqm.apk",
       "source": "docsquiffy",
       "packageName": null,
-      "version": "2.3.0"
+      "version": "2.3.2"
     },
     {
       "id": "docsquiffy-76",
@@ -2729,7 +2739,7 @@
       "apkUrl": "https://download2359.mediafire.com/z9d00e5m77qgssoDMbLVUtDSi5ajbw9yvPXRUeOLMFb_pUkHuiDhqH-PfNF-asJQ0VMq1HwUFfLq3sGhKJw3W4mPZg6RONBdf_qWH9ML1_tjSubAHkq0UdojdyDixsTLcUI9Jwjsa_7TktyPauDO_n1yHMavOtJQhUCiiUjZVOXb6A/qg975quxfn3j2bf/Filmplus+2.3.9r.apk",
       "source": "docsquiffy",
       "packageName": null,
-      "version": "2.3.9"
+      "version": "2.3.2"
     },
     {
       "id": "docsquiffy-13",

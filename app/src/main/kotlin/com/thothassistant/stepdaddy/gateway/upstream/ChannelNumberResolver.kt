@@ -377,7 +377,8 @@ object ChannelNumberResolver {
     private fun specialEventsSupplementComparator(group: String): Comparator<SupplementChannel> =
         if (group == GroupTitleResolver.SPECIAL_EVENTS) {
             compareBy(
-                { SpecialEventSort.supplementPlaylistOrder(it) },
+                { SpecialEventSort.guideBlockSortKey(it) },
+                { SpecialEventSort.supplementIntraSlot(it) },
                 { it.name.lowercase() },
             )
         } else {
@@ -385,6 +386,21 @@ object ChannelNumberResolver {
         }
 
     private fun supplementCountryCode(supplement: SupplementChannel): String {
+        if (supplement.id.startsWith("sport:") ||
+            supplement.id.startsWith("dlhd-guide:") ||
+            supplement.id.startsWith("dlhd-event:")
+        ) {
+            supplement.regionCode?.trim()?.takeIf { it.isNotEmpty() }?.let {
+                return ChannelCountrySort.normalizeCode(it)
+            }
+            return ChannelCountrySort.normalizeCode(
+                SpecialEventRegionIdentifier.identifyFromSupplement(
+                    name = supplement.name,
+                    providerTag = supplement.providerTag,
+                    eventSourceUrl = supplement.eventSourceUrl,
+                ) ?: "US",
+            )
+        }
         val resolution = GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id)
         val code = resolution.countryCode
             .takeIf { it.isNotBlank() && it != "INT" }

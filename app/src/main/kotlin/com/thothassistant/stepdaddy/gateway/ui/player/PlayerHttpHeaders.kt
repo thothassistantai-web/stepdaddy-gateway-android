@@ -1,6 +1,7 @@
 package com.thothassistant.stepdaddy.gateway.ui.player
 
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
+import com.thothassistant.stepdaddy.gateway.network.GatewayUrlBuilder
 import com.thothassistant.stepdaddy.gateway.upstream.GatewayConfig
 import okhttp3.Request
 
@@ -10,10 +11,8 @@ object PlayerHttpHeaders {
         return "$base/tivimate-stream/$channelId.m3u8"
     }
 
-    fun playlistUrl(environment: GatewayEnvironment): String {
-        val base = environment.loopbackBase().trimEnd('/')
-        return "$base/tivimate-playlist.m3u8"
-    }
+    fun playlistUrl(environment: GatewayEnvironment): String =
+        GatewayUrlBuilder.tivimatePlaylistUrl(environment)
 
     fun requestProperties(environment: GatewayEnvironment): Map<String, String> {
         val origin = environment.dlhdBaseUrl.trimEnd('/')

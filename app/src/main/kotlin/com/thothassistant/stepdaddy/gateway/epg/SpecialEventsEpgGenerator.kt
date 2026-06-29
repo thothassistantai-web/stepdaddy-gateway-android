@@ -1,9 +1,9 @@
 package com.thothassistant.stepdaddy.gateway.epg
 
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
-import com.thothassistant.stepdaddy.gateway.upstream.DlhdEventSourceMeta
-import com.thothassistant.stepdaddy.gateway.upstream.DlhdScheduleTime
+import com.thothassistant.stepdaddy.gateway.upstream.EventScheduleTimesResolver
 import com.thothassistant.stepdaddy.gateway.upstream.SpecialEventLifecycle
+import com.thothassistant.stepdaddy.gateway.upstream.SpecialEventRegionIdentifier
 import com.thothassistant.stepdaddy.gateway.upstream.SpecialEventsMerger
 import java.io.File
 import java.time.Instant
@@ -22,6 +22,8 @@ object SpecialEventsEpgGenerator {
         val title: String,
         val start: Instant,
         val stop: Instant,
+        val regionCode: String? = null,
+        val languageCode: String? = null,
     )
 
     fun programmesForBundle(
@@ -38,16 +40,23 @@ object SpecialEventsEpgGenerator {
                     val rows = guideProgrammes[channel.id].orEmpty()
                         .filter { row -> SpecialEventLifecycle.isActive(row.startMs, row.stopMs, now.toEpochMilli()) }
                         .sortedBy { it.startMs }
-                    if (rows.isEmpty()) {
-                        out += placeholderGuideProgramme(tvgId, channel.name, "No upcoming events", now)
-                    } else {
-                        rows.mapNotNullTo(out) { row ->
-                            guideProgramme(tvgId, channel.name, row, now)
+                    when {
+                        rows.isEmpty() -> {
+                            out += placeholderGuideProgramme(tvgId, channel.name, "No upcoming events", now)
+                        }
+                        rows.size == 1 -> {
+                            guideProgramme(tvgId, channel.name, rows.single(), now)?.let { out += it }
+                        }
+                        else -> {
+                            rows.mapNotNullTo(out) { row ->
+                                guideProgramme(tvgId, channel.name, row, now)
+                            }
                         }
                     }
                 }
                 channel.id.startsWith("dlhd-event:") -> {
-                    programmeForStream(channel, now)?.let { out += it }
+                    val schedule = EventScheduleTimesResolver.fromChannel(channel) ?: return@forEach
+                    DlhdEventEpgProgrammes.programmeForChannel(channel, schedule, now)?.let { out += it }
                 }
                 channel.id.startsWith("sport:") -> {
                     programmeForLiveStream(channel, now)?.let { out += it }
@@ -72,6 +81,7 @@ object SpecialEventsEpgGenerator {
             title = row.title.substringAfter(": ", row.title).trim().ifEmpty { row.title },
             start = start,
             stop = stop,
+            regionCode = row.regionCode,
         )
     }
 
@@ -91,41 +101,40 @@ object SpecialEventsEpgGenerator {
         )
     }
 
-    private fun programmeForStream(channel: SupplementChannel, now: Instant): EventProgramme? {
-        val tvgId = channel.tvgId?.trim().orEmpty()
-        if (tvgId.isEmpty()) return null
-        val meta = DlhdEventSourceMeta.parse(channel.eventSourceUrl)
-        val title = meta?.displayTitle()?.ifEmpty { null }
-            ?: channel.name.substringAfter(": ", channel.name).trim().ifEmpty { channel.name }
-        val dateKey = meta?.dateKey.orEmpty()
-        val timeLabel = meta?.timeLabel.orEmpty()
-        val (start, stop) = DlhdScheduleTime.parseWindow(dateKey, timeLabel)
-        if (!SpecialEventLifecycle.isActive(start, stop, now)) return null
-        return EventProgramme(
-            channelId = tvgId,
-            displayName = channel.name,
-            title = title,
-            start = start,
-            stop = stop,
-        )
-    }
-
     private fun programmeForLiveStream(channel: SupplementChannel, now: Instant): EventProgramme? {
         val tvgId = channel.tvgId?.trim().orEmpty()
         if (tvgId.isEmpty()) return null
-        val start = now.truncatedTo(ChronoUnit.MINUTES)
+        val startMs = channel.eventStartMs
+        val stopMs = channel.eventStopMs
+        val (start, stop) = if (startMs != null && stopMs != null && stopMs > startMs) {
+            Instant.ofEpochMilli(startMs) to Instant.ofEpochMilli(stopMs)
+        } else {
+            val anchor = now.truncatedTo(ChronoUnit.MINUTES)
+            anchor to anchor.plus(LIVE_EVENT_HOURS, ChronoUnit.HOURS)
+        }
+        if (!SpecialEventLifecycle.isActive(start, stop, now)) return null
         val title = channel.name.trim().ifEmpty { "Live event" }
         return EventProgramme(
             channelId = tvgId,
             displayName = channel.name,
             title = title,
             start = start,
-            stop = start.plus(LIVE_EVENT_HOURS, ChronoUnit.HOURS),
+            stop = stop,
+            regionCode = channel.regionCode,
+            languageCode = channel.languageCode,
         )
     }
 
     fun writeXml(events: List<EventProgramme>, output: File) {
         output.parentFile?.mkdirs()
+        val channelMeta = linkedMapOf<String, Pair<String?, String?>>()
+        events.forEach { event ->
+            val existing = channelMeta[event.channelId]
+            channelMeta[event.channelId] = Pair(
+                event.regionCode?.takeIf { it.isNotBlank() } ?: existing?.first,
+                event.languageCode?.takeIf { it.isNotBlank() } ?: existing?.second,
+            )
+        }
         output.bufferedWriter(Charsets.UTF_8).use { writer ->
             writer.write("""<?xml version="1.0" encoding="UTF-8"?>""")
             writer.write("\n<tv generator-info-name=\"StepDaddy Special Events\">")
@@ -134,6 +143,12 @@ object SpecialEventsEpgGenerator {
                 if (writtenChannels.add(event.channelId)) {
                     writer.write("\n<channel id=\"${escape(event.channelId)}\">")
                     writer.write("<display-name>${escape(event.displayName)}</display-name>")
+                    channelMeta[event.channelId]?.first?.let { region ->
+                        writer.write("<country>${escape(SpecialEventRegionIdentifier.normalizeCode(region))}</country>")
+                    }
+                    channelMeta[event.channelId]?.second?.let { lang ->
+                        writer.write("<language>${escape(lang)}</language>")
+                    }
                     writer.write("</channel>")
                 }
                 writer.write(
@@ -141,6 +156,12 @@ object SpecialEventsEpgGenerator {
                         "channel=\"${escape(event.channelId)}\">",
                 )
                 writer.write("<title>${escape(event.title)}</title>")
+                event.regionCode?.takeIf { it.isNotBlank() }?.let { region ->
+                    writer.write("<country>${escape(SpecialEventRegionIdentifier.normalizeCode(region))}</country>")
+                }
+                event.languageCode?.takeIf { it.isNotBlank() }?.let { lang ->
+                    writer.write("<language>${escape(lang)}</language>")
+                }
                 writer.write("</programme>")
             }
             writer.write("\n</tv>\n")

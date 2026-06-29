@@ -8,6 +8,7 @@ import com.thothassistant.stepdaddy.gateway.epg.FastChannelTvgIdResolver
 import com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex
 import com.thothassistant.stepdaddy.gateway.epg.SpecialEventsEpgGenerator
 import com.thothassistant.stepdaddy.gateway.model.Channel
+import com.thothassistant.stepdaddy.gateway.model.EventMetadata
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -22,6 +23,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
@@ -55,12 +57,22 @@ class SupplementSource(
 
     private val adultSwimSource = AdultSwimStreamsSource(AdultSwimStreamsSource.defaultClient())
     private val dlhdEventResolver = DaddyLiveEventResolver(httpClient)
+    private val dlhdEventHealthStore = DlhdEventStreamHealthStore()
+    private val dlhdEventProber = DlhdEventStreamProber(httpClient = httpClient)
+    private val eventStreamHealthMonitor by lazy {
+        EventStreamHealthMonitor(
+            channelProvider = { cached.filter { it.id.startsWith("dlhd-event:") } },
+            store = dlhdEventHealthStore,
+            prober = dlhdEventProber,
+            sportsEnabled = { sportsEnabled() },
+            onStatesChanged = { onDlhdEventHealthChanged?.invoke() },
+        )
+    }
 
     data class SyncSnapshot(
         val blockedTheTvApp: Int = 0,
         val blockedTvPass: Int = 0,
         val blockedTokenProxy: Int = 0,
-        val moveOnJoyChannels: Int = 0,
         val sportsChannels: Int = 0,
         val specialEventGuides: Int = 0,
         val dlhdEventStreams: Int = 0,
@@ -77,6 +89,7 @@ class SupplementSource(
     )
 
     private val store = SupplementStore(context)
+    private val eventMetadataStore = EventMetadataStore(context)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val refreshMutex = Mutex()
     private val specialEventsMutex = Mutex()
@@ -85,11 +98,29 @@ class SupplementSource(
     @Volatile
     private var lastSpecialEventsSyncMs = 0L
     @Volatile
-    private var cached: List<SupplementChannel> = store.readChannels()
+    private var lastVerifyTriggeredSyncMs = 0L
+    @Volatile
+    private var cached: List<SupplementChannel> = store.readChannels().filterNot { it.id.startsWith("sup:") }
     @Volatile
     private var guideSchedules: Map<String, List<SpecialEventsMerger.GuideEventRow>> = store.readGuideSchedules()
     @Volatile
     private var lastSync = SyncSnapshot()
+    @Volatile
+    private var eventMetadata: Map<String, EventMetadata> = eventMetadataStore.readAll()
+
+    init {
+        if (sportsEnabled()) {
+            pruneExpiredSpecialEvents()
+        }
+        if (sportsCount() > 0) {
+            lastSpecialEventsSyncMs = store.guideSchedulesSyncedAtMs()
+                .takeIf { it > 0L }
+                ?: store.lastSyncedAtMs()
+            if (eventMetadata.isEmpty()) {
+                syncEventMetadata(cached.filter { EventLifecycleManager.isSpecialEventChannel(it.id) })
+            }
+        }
+    }
 
     @Volatile
     var onRefreshComplete: (() -> Unit)? = null
@@ -98,13 +129,10 @@ class SupplementSource(
     var onSpecialEventsChanged: (() -> Unit)? = null
 
     fun enabled(): Boolean =
-        environment.supplementBaseUrl.isNotBlank() ||
-            environment.supplementSportsEnabled ||
+        environment.supplementSportsEnabled ||
             environment.supplementIptvOrgEnabled ||
             environment.supplementNtvCxEnabled ||
             environment.supplementAdultSwimEnabled
-
-    fun sidecarEnabled(): Boolean = environment.supplementBaseUrl.isNotBlank()
 
     fun sportsEnabled(): Boolean = environment.supplementSportsEnabled
 
@@ -124,8 +152,6 @@ class SupplementSource(
     fun channels(): List<SupplementChannel> = cached
 
     fun channelCount(): Int = cached.size
-
-    fun moveOnJoyCount(): Int = cached.count { it.id.startsWith("sup:") }
 
     fun sportsCount(): Int = cached.count {
         it.id.startsWith("sport:") ||
@@ -149,6 +175,8 @@ class SupplementSource(
     fun syncSnapshot(): SyncSnapshot = lastSync
 
     fun syncInFlight(): Boolean = refreshInFlight
+
+    fun specialEventsLastSyncMs(): Long = lastSpecialEventsSyncMs.takeIf { it > 0L } ?: 0L
 
     fun epgXmlFile(): File? = store.epgFile()
 
@@ -240,6 +268,39 @@ class SupplementSource(
         }
     }
 
+    fun dlhdEventStreamHealth(token: String): DlhdEventStreamHealth.Status =
+        dlhdEventHealthStore.status(token)
+
+    fun isDlhdEventStreamHealthy(token: String): Boolean =
+        dlhdEventHealthStore.isHealthy(token)
+
+    fun dlhdEventStreamHealthSummary(): DlhdEventStreamHealth.Summary =
+        dlhdEventHealthStore.summary(dlhdEventStreamCount())
+
+    fun recordDlhdEventStreamHealth(token: String, result: DlhdEventStreamHealth.ProbeResult) {
+        val before = dlhdEventHealthStore.revision()
+        dlhdEventHealthStore.record(token, result)
+        if (dlhdEventHealthStore.revision() != before) {
+            onDlhdEventHealthChanged?.invoke()
+        }
+    }
+
+    fun dlhdEventHealthStore(): DlhdEventStreamHealthStore = dlhdEventHealthStore
+
+    fun eventStreamHealthMonitor(): EventStreamHealthMonitor = eventStreamHealthMonitor
+
+    var onDlhdEventHealthChanged: (() -> Unit)? = null
+
+    fun scheduleDlhdEventStreamHealthProbes(
+        tvStreamProbe: suspend (channelId: String) -> Boolean,
+    ) {
+        eventStreamHealthMonitor.start(tvStreamProbe)
+    }
+
+    fun stopDlhdEventStreamHealthProbes() {
+        eventStreamHealthMonitor.stop()
+    }
+
     fun dlhdGuideChannel(slug: String): SupplementChannel? {
         val normalized = slug.trim().trim('/')
         if (normalized.isEmpty()) return null
@@ -247,6 +308,12 @@ class SupplementSource(
             it.id == "dlhd-guide:$normalized" || it.id.removePrefix("dlhd-guide:") == normalized
         }
     }
+
+    fun eventMetadata(channelId: String): EventMetadata? = eventMetadata[channelId.trim()]
+
+    fun eventMetadataMap(): Map<String, EventMetadata> = eventMetadata
+
+    fun eventMetadataCount(): Int = eventMetadata.size
 
     fun guideSchedule(guideId: String): List<SpecialEventsMerger.GuideEventRow> =
         guideSchedules[guideId].orEmpty()
@@ -335,12 +402,38 @@ class SupplementSource(
             delay(30_000)
             while (isActive) {
                 if (sportsEnabled()) {
-                    val pruned = pruneExpiredSpecialEvents()
-                    val age = System.currentTimeMillis() - lastSpecialEventsSyncMs
-                    if (age >= SupplementConfig.SPECIAL_EVENTS_SYNC_INTERVAL_MS) {
-                        refreshSpecialEventsOnly(dlhdBaseProvider())
-                    } else if (pruned) {
-                        onSpecialEventsChanged?.invoke()
+                    val now = System.currentTimeMillis()
+                    val plan = EventLifecycleManager.planMaintenanceTick(
+                        state = catalogState(),
+                        lastSpecialEventsSyncMs = lastSpecialEventsSyncMs,
+                        lastVerifyTriggeredSyncMs = lastVerifyTriggeredSyncMs,
+                        nowMs = now,
+                    )
+                    if (!refreshInFlight && specialEventsMutex.tryLock()) {
+                        try {
+                            applyLifecyclePrune(plan.pruned)
+                        } finally {
+                            specialEventsMutex.unlock()
+                        }
+                    }
+                    when {
+                        plan.shouldRefresh -> {
+                            if (plan.mergeWithExisting) {
+                                Log.i(
+                                    TAG,
+                                    "Special Events verify refresh: missingLive=${plan.verify.missingLiveStreams} " +
+                                        "upcomingSoon=${plan.verify.upcomingWithoutStreams}",
+                                )
+                            }
+                            val refreshed = refreshSpecialEventsOnly(
+                                dlhdScheduleBaseUrl = dlhdBaseProvider(),
+                                mergeWithExisting = plan.mergeWithExisting,
+                            )
+                            if (plan.mergeWithExisting && refreshed) {
+                                lastVerifyTriggeredSyncMs = now
+                            }
+                        }
+                        plan.notifyCatalogChanged -> onSpecialEventsChanged?.invoke()
                     }
                 }
                 delay(SupplementConfig.SPECIAL_EVENTS_PRUNE_INTERVAL_MS)
@@ -352,28 +445,7 @@ class SupplementSource(
         if (!sportsEnabled() || refreshInFlight) return false
         if (!specialEventsMutex.tryLock()) return false
         return try {
-            val result = SpecialEventCatalogMaintainer.prune(cached, guideSchedules)
-            if (!result.changed) return false
-            cached = result.channels
-            guideSchedules = result.guideSchedules
-            store.writeChannels(cached)
-            if (result.guideSchedules.isEmpty()) {
-                store.clearGuideSchedules()
-            } else {
-                store.writeGuideSchedules(result.guideSchedules)
-            }
-            rewriteSportsEpg()
-            lastSync = lastSync.copy(
-                sportsChannels = sportsCount(),
-                specialEventGuides = specialEventGuideCount(),
-                dlhdEventStreams = dlhdEventStreamCount(),
-            )
-            Log.i(
-                TAG,
-                "Special Events prune: -${result.removedStreams} streams, " +
-                    "-${result.removedGuides} guides, -${result.removedScheduleRows} schedule rows",
-            )
-            true
+            applyLifecyclePrune(EventLifecycleManager.pruneExpired(catalogState()))
         } finally {
             specialEventsMutex.unlock()
         }
@@ -386,7 +458,10 @@ class SupplementSource(
         }
     }
 
-    suspend fun refreshSpecialEventsOnly(dlhdScheduleBaseUrl: String?): Boolean {
+    suspend fun refreshSpecialEventsOnly(
+        dlhdScheduleBaseUrl: String?,
+        mergeWithExisting: Boolean = false,
+    ): Boolean {
         if (!sportsEnabled() || refreshInFlight) return false
         return specialEventsMutex.withLock {
             if (refreshInFlight) return false
@@ -394,18 +469,45 @@ class SupplementSource(
                 val scheduleBase = dlhdScheduleBaseUrl?.trim()?.trimEnd('/').orEmpty()
                     .ifEmpty { environment.dlhdBaseUrl.trimEnd('/') }
                 val (tvAppStats, bundle) = fetchSpecialEventsBundle(scheduleBase)
-                val nonSpecial = cached.filter {
-                    !SpecialEventCatalogMaintainer.isSpecialEventChannel(it.id)
-                }
                 val enriched = enrichSupplementLogos(bundle.channels)
-                cached = nonSpecial + enriched
-                store.writeChannels(cached)
-                applySpecialEventsBundle(bundle, tvAppStats.eventsScanned)
+                if (mergeWithExisting) {
+                    val mergedState = EventLifecycleManager.mergeFetched(
+                        existing = catalogState(),
+                        fetchedChannels = enriched,
+                        fetchedGuideSchedules = bundle.guideProgrammes,
+                    )
+                    cached = mergedState.channels
+                    guideSchedules = mergedState.guideSchedules
+                    store.writeChannels(cached)
+                    if (mergedState.guideSchedules.isEmpty()) {
+                        store.clearGuideSchedules()
+                    } else {
+                        store.writeGuideSchedules(mergedState.guideSchedules)
+                    }
+                    rewriteSportsEpg(cached.filter {
+                        EventLifecycleManager.isSpecialEventChannel(it.id)
+                    }, mergedState.guideSchedules)
+                    syncEventMetadata(cached.filter { EventLifecycleManager.isSpecialEventChannel(it.id) })
+                } else {
+                    val nonSpecial = cached.filter {
+                        !EventLifecycleManager.isSpecialEventChannel(it.id)
+                    }
+                    cached = nonSpecial + enriched
+                    store.writeChannels(cached)
+                    applySpecialEventsBundle(bundle, tvAppStats.eventsScanned)
+                }
                 lastSpecialEventsSyncMs = System.currentTimeMillis()
+                lastSync = lastSync.copy(
+                    sportsEventsScanned = tvAppStats.eventsScanned,
+                    sportsChannels = sportsCount(),
+                    specialEventGuides = specialEventGuideCount(),
+                    dlhdEventStreams = dlhdEventStreamCount(),
+                )
                 Log.i(
                     TAG,
                     "Special Events refresh: guides=${specialEventGuideCount()} " +
-                        "streams=${dlhdEventStreamCount()} (tvApp scanned=${tvAppStats.eventsScanned})",
+                        "streams=${dlhdEventStreamCount()} (tvApp scanned=${tvAppStats.eventsScanned}, " +
+                        "merge=${mergeWithExisting})",
                 )
                 onSpecialEventsChanged?.invoke()
                 true
@@ -426,34 +528,101 @@ class SupplementSource(
             if (refreshInFlight) return
             if (!force && !store.isStale() && cached.isNotEmpty()) return
             refreshInFlight = true
-            try {
-                val merged = withContext(Dispatchers.IO) {
+            if (cached.isEmpty()) {
+                retainOrRecoverCache(daddyChannels)
+            }
+            coroutineScope {
+                val mergeJob = async(Dispatchers.IO) {
                     mergeSupplements(daddyChannels, dlhdScheduleBaseUrl)
                 }
-                val supplements = enrichSupplementLogos(merged)
-                cached = supplements
-                store.writeChannels(supplements)
-                applyNameEpgOverrides()
-                Log.i(
-                    TAG,
-                    "Supplement sync: ${supplements.size} total " +
-                        "(moveonjoy=${moveOnJoyCount()}, sports=${sportsCount()}, " +
-                        "iptv-org=${iptvOrgCount()}, ntv.cx=${ntvCxCount()}, " +
-                        "adultswim=${adultSwimCount()}, " +
-                        "blocked_thetvapp=${lastSync.blockedTheTvApp})",
-                )
-                onRefreshComplete?.invoke()
-            } catch (exc: Exception) {
-                Log.w(TAG, "Supplement sync failed — keeping cache", exc)
-                if (cached.isEmpty()) {
-                    cached = store.readChannels()
-                } else {
-                    Unit
+                try {
+                    val merged = withTimeoutOrNull(SYNC_MAX_MS) { mergeJob.await() }
+                    if (merged == null) {
+                        mergeJob.cancel()
+                        Log.w(TAG, "Supplement sync timed out after ${SYNC_MAX_MS}ms — keeping cache")
+                        retainOrRecoverCache(daddyChannels)
+                        onRefreshComplete?.invoke()
+                        return@coroutineScope
+                    }
+                    val supplements = enrichSupplementLogos(merged)
+                    if (supplements.isEmpty()) {
+                        Log.w(TAG, "Supplement sync returned 0 channels — not overwriting cache")
+                        retainOrRecoverCache(daddyChannels)
+                        onRefreshComplete?.invoke()
+                        return@coroutineScope
+                    }
+                    cached = supplements
+                    store.writeChannels(supplements)
+                    applyNameEpgOverrides()
+                    Log.i(
+                        TAG,
+                        "Supplement sync: ${supplements.size} total " +
+                            "(sports=${sportsCount()}, " +
+                            "iptv-org=${iptvOrgCount()}, ntv.cx=${ntvCxCount()}, " +
+                            "adultswim=${adultSwimCount()}, " +
+                            "blocked_thetvapp=${lastSync.blockedTheTvApp})",
+                    )
+                    onRefreshComplete?.invoke()
+                } catch (exc: Exception) {
+                    mergeJob.cancel()
+                    Log.w(TAG, "Supplement sync failed — keeping cache", exc)
+                    retainOrRecoverCache(daddyChannels)
+                } finally {
+                    refreshInFlight = false
                 }
-            } finally {
-                refreshInFlight = false
             }
         }
+    }
+
+    fun recoverFromDiskIfNeeded(daddyChannels: List<Channel>): Int {
+        if (cached.isNotEmpty()) return cached.size
+        retainOrRecoverCache(daddyChannels)
+        if (cached.isNotEmpty()) {
+            onRefreshComplete?.invoke()
+        }
+        return cached.size
+    }
+
+    /** Keep in-memory/disk cache or rebuild NTV.cx rows from [NtvCxCatalogStore] after slow sync. */
+    private fun retainOrRecoverCache(daddyChannels: List<Channel>) {
+        if (cached.isNotEmpty()) return
+        val disk = store.readChannels().filterNot { it.id.startsWith("sup:") }
+        if (disk.isNotEmpty()) {
+            cached = disk
+            Log.i(TAG, "Restored ${disk.size} supplement channels from channels.json")
+            return
+        }
+        val recovered = recoverChannelsFromDiskCaches(daddyChannels)
+        if (recovered.isEmpty()) {
+            Log.w(TAG, "No supplement channels to recover from disk caches")
+            return
+        }
+        cached = recovered
+        store.writeChannels(recovered)
+        lastSync = lastSync.copy(
+            ntvCxChannels = ntvCxCount(),
+            iptvOrgChannels = iptvOrgCount(),
+            adultSwimChannels = adultSwimCount(),
+            sportsChannels = sportsCount(),
+        )
+        Log.i(TAG, "Recovered ${recovered.size} supplement channels from disk caches")
+    }
+
+    private fun recoverChannelsFromDiskCaches(daddyChannels: List<Channel>): List<SupplementChannel> {
+        if (!enabled()) return emptyList()
+        val recovered = mutableListOf<SupplementChannel>()
+        if (ntvCxEnabled()) {
+            val catalog = ntvCxCatalogStore.loadCatalog()
+            if (catalog.isNotEmpty()) {
+                recovered += NtvCxCdnLiveSource.buildChannels(
+                    catalog = catalog,
+                    daddyChannels = daddyChannels,
+                    mergeMode = environment.supplementNtvCxImportMode,
+                    nameIndex = null,
+                )
+            }
+        }
+        return recovered
     }
 
     private suspend fun mergeSupplements(
@@ -461,33 +630,6 @@ class SupplementSource(
         dlhdScheduleBaseUrl: String? = null,
     ): List<SupplementChannel> =
         coroutineScope {
-        var filterResult = SupplementProviderFilter.Result(allowed = emptyList())
-        val sidecar = if (sidecarEnabled()) {
-            val base = environment.supplementBaseUrl.trimEnd('/')
-            val m3uText = downloadText(
-                SupplementConfig.playlistUrl(base),
-                SupplementConfig.MAX_M3U_BYTES,
-            )
-            if (m3uText != null) {
-                if (environment.gatewayEpgEnabled) {
-                    downloadEpg(base)
-                }
-                val entries = M3uParser.parse(m3uText)
-                filterResult = SupplementProviderFilter.filter(entries)
-                SupplementDedup.filterNewChannels(
-                    entries = filterResult.allowed,
-                    daddyChannels = daddyChannels,
-                    maxChannels = SupplementConfig.MAX_CHANNELS,
-                    importMode = environment.supplementSidecarImportMode,
-                )
-            } else {
-                Log.w(TAG, "Sidecar playlist fetch failed — skipping TVApp2 supplement")
-                emptyList()
-            }
-        } else {
-            emptyList()
-        }
-
         var tvAppEventsScanned = 0
         var specialEventGuides = 0
         var dlhdEventStreams = 0
@@ -588,10 +730,6 @@ class SupplementSource(
         }
 
         lastSync = SyncSnapshot(
-            blockedTheTvApp = filterResult.blockedTheTvApp,
-            blockedTvPass = filterResult.blockedTvPass,
-            blockedTokenProxy = filterResult.blockedTokenProxy,
-            moveOnJoyChannels = sidecar.size,
             sportsChannels = specialEvents.size,
             specialEventGuides = specialEventGuides,
             dlhdEventStreams = dlhdEventStreams,
@@ -607,7 +745,7 @@ class SupplementSource(
             adultSwimProbeOk = adultSwimStats.probeOk,
         )
 
-        sidecar + specialEvents + iptvOrg + ntvCx + adultSwim
+        specialEvents + iptvOrg + ntvCx + adultSwim
     }
 
     private suspend fun fetchSpecialEventsBundle(
@@ -630,7 +768,7 @@ class SupplementSource(
         }
         val (tvChannels, tvStats) = tvAppDeferred.await()
         val (dlhdEvents, dlhdStats) = dlhdDeferred.await()
-        val bundle = if (dlhdEvents.isEmpty()) {
+        val rawBundle = if (dlhdEvents.isEmpty()) {
             SpecialEventsMerger.EpgBundle(
                 channels = tvChannels.map { it.copy(groupTitle = GroupTitleResolver.SPECIAL_EVENTS) },
             )
@@ -642,6 +780,7 @@ class SupplementSource(
                 maxStreams = SupplementConfig.MAX_SPECIAL_EVENT_STREAMS,
             )
         }
+        val bundle = EventLifecycleManager.dedupeBundle(rawBundle)
         tvStats to bundle
     }
 
@@ -664,11 +803,65 @@ class SupplementSource(
             specialEventGuides = bundle.channels.count { it.id.startsWith("dlhd-guide:") },
             dlhdEventStreams = bundle.channels.count { it.id.startsWith("dlhd-event:") },
         )
+        syncEventMetadata(bundle.channels)
+    }
+
+    private fun syncEventMetadata(channels: List<SupplementChannel>) {
+        if (channels.isEmpty()) {
+            eventMetadata = emptyMap()
+            eventMetadataStore.clear()
+            return
+        }
+        val scraped = EventMetadataScraper.scrapeChannels(channels)
+        eventMetadata = scraped
+        eventMetadataStore.writeAll(scraped)
+        Log.d(TAG, "Event metadata synced: ${scraped.size} entries")
+    }
+
+    private fun retainEventMetadataForChannels(channels: List<SupplementChannel>) {
+        val ids = channels
+            .filter { EventLifecycleManager.isSpecialEventChannel(it.id) }
+            .map { it.id }
+            .toSet()
+        eventMetadataStore.retainOnly(ids)
+        eventMetadata = eventMetadata.filterKeys { it in ids }
+    }
+
+    private fun catalogState(): EventLifecycleManager.CatalogState =
+        EventLifecycleManager.CatalogState(
+            channels = cached,
+            guideSchedules = guideSchedules,
+        )
+
+    private fun applyLifecyclePrune(outcome: EventLifecycleManager.PruneOutcome): Boolean {
+        if (!outcome.changed) return false
+        cached = outcome.state.channels
+        guideSchedules = outcome.state.guideSchedules
+        store.writeChannels(cached)
+        if (outcome.state.guideSchedules.isEmpty()) {
+            store.clearGuideSchedules()
+        } else {
+            store.writeGuideSchedules(outcome.state.guideSchedules)
+        }
+        rewriteSportsEpg()
+        retainEventMetadataForChannels(cached)
+        lastSync = lastSync.copy(
+            sportsChannels = sportsCount(),
+            specialEventGuides = specialEventGuideCount(),
+            dlhdEventStreams = dlhdEventStreamCount(),
+        )
+        Log.i(
+            TAG,
+            "Special Events prune: -${outcome.removedStreams} streams, " +
+                "-${outcome.removedGuides} guides, -${outcome.removedScheduleRows} schedule rows, " +
+                "-${outcome.dedupeRemoved} deduped",
+        )
+        return true
     }
 
     private fun rewriteSportsEpg(
         channels: List<SupplementChannel> = cached.filter {
-            SpecialEventCatalogMaintainer.isSpecialEventChannel(it.id)
+            EventLifecycleManager.isSpecialEventChannel(it.id)
         },
         programmes: Map<String, List<SpecialEventsMerger.GuideEventRow>> = guideSchedules,
     ) {
@@ -711,76 +904,10 @@ class SupplementSource(
         return emptyList<DaddyLiveEventResolver.ParsedEvent>() to DaddyLiveEventResolver.ResolveStats()
     }
 
-    private fun downloadEpg(base: String) {
-        val gzipOk = downloadToFile(
-            SupplementConfig.epgGzipUrl(base),
-            store.epgGzipFile,
-            SupplementConfig.MAX_EPG_BYTES,
-        )
-        if (gzipOk) {
-            store.epgPlainFile.delete()
-            return
-        }
-        downloadToFile(
-            SupplementConfig.epgXmlUrl(base),
-            store.epgPlainFile,
-            SupplementConfig.MAX_EPG_BYTES,
-        )
-    }
-
-    private fun downloadText(url: String, maxBytes: Int): String? {
-        val request = Request.Builder()
-            .url(url)
-            .header("User-Agent", SupplementConfig.USER_AGENT)
-            .get()
-            .build()
-        httpClient.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) return null
-            val body = response.body ?: return null
-            val bytes = body.bytes()
-            if (bytes.size > maxBytes) return null
-            return bytes.toString(Charsets.UTF_8)
-        }
-    }
-
-    private fun downloadToFile(url: String, target: File, maxBytes: Int): Boolean {
-        val request = Request.Builder()
-            .url(url)
-            .header("User-Agent", SupplementConfig.USER_AGENT)
-            .get()
-            .build()
-        val tmp = File(target.parentFile, "${target.name}.part")
-        return runCatching {
-            httpClient.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return false
-                val body = response.body ?: return false
-                var total = 0L
-                tmp.outputStream().use { sink ->
-                    body.byteStream().use { input ->
-                        val buffer = ByteArray(64 * 1024)
-                        while (true) {
-                            val read = input.read(buffer)
-                            if (read <= 0) break
-                            total += read
-                            if (total > maxBytes) error("supplement_epg_too_large")
-                            sink.write(buffer, 0, read)
-                        }
-                    }
-                }
-            }
-            if (!tmp.renameTo(target)) {
-                target.writeBytes(tmp.readBytes())
-                tmp.delete()
-            }
-            true
-        }.getOrElse {
-            tmp.delete()
-            false
-        }
-    }
-
     companion object {
         private const val TAG = "SupplementSource"
+        /** iptv-org fetches 39 playlists + FAST EPG on slow STBs (e.g. MiTV) can exceed 2 min. */
+        private const val SYNC_MAX_MS = 900_000L
 
         private fun defaultClient(): OkHttpClient =
             OkHttpClient.Builder()

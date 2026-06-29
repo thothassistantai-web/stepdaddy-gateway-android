@@ -9,15 +9,17 @@ object GatewayConfig {
     const val RESPORTZ_STREAM_TEMPLATE = "https://resportz.cfd/live/stream-%s.php"
     /** dlhd.pk relay paths used by daddylive embed when resportz.cfd is unreachable. */
     val DLHD_PK_STREAM_PATHS = listOf("watch", "cast", "plus", "player", "casting")
+    /** Wizard/setup M3U cap — full catalog (~5k ch) blocks FUSA for minutes; bootstrap must be fast. */
+    const val SETUP_BOOTSTRAP_MAX_CHANNELS = 50
     const val CHANNEL_REFRESH_INTERVAL_MS = 600_000L
-    const val STREAM_CACHE_TTL_MS = 30_000L
+    const val STREAM_CACHE_TTL_MS = 60_000L
     const val UPSTREAM_CACHE_TTL_MS = 120_000L
     const val UPSTREAM_STALE_TTL_MS = 600_000L
     const val STALE_STREAM_TTL_MS = 600_000L
     /** Total budget for one stream resolve (all mirrors). */
     const val STREAM_FETCH_TIMEOUT_MS = 45_000L
-    /** Per-mirror attempt — matches Python STREAM_MIRROR_ATTEMPT_TIMEOUT_SECONDS (18). */
-    const val MIRROR_ATTEMPT_TIMEOUT_MS = 18_000L
+    /** Per-mirror attempt — fail fast on dead mirrors, then rotate. */
+    const val MIRROR_ATTEMPT_TIMEOUT_MS = 12_000L
     const val UPSTREAM_FETCH_MAX_CONCURRENT = 2
     /** Max wait for a fetch slot when TiviMate requests several channels at once. */
     const val UPSTREAM_FETCH_WAIT_MS = 20_000L
@@ -33,7 +35,7 @@ object GatewayConfig {
     const val OUTAGE_STREAM_FETCH_TIMEOUT_MS = 12_000L
     const val OUTAGE_PROBE_TIMEOUT_MS = 8_000L
     const val INVALIDATE_COOLDOWN_MS = 180_000L
-    const val UPSTREAM_CONNECT_TIMEOUT_SEC = 8L
+    const val UPSTREAM_CONNECT_TIMEOUT_SEC = 5L
     const val UPSTREAM_READ_TIMEOUT_SEC = 20L
     const val UPSTREAM_WRITE_TIMEOUT_SEC = 20L
     const val UPSTREAM_CALL_TIMEOUT_SEC = 22L
@@ -51,4 +53,15 @@ object GatewayConfig {
     const val HEALING_LOG_MAX = 20
 
     val DADDYLIVE_HOSTS = setOf("daddylive.org", "daddylive.li", "daddylive.eu")
+    /** EMA weight for mirror/path latency samples (higher = more reactive). */
+    const val MIRROR_LATENCY_EMA_ALPHA = 0.35
+    /** Sort rank for mirrors with no latency history yet. */
+    const val MIRROR_UNKNOWN_LATENCY_MS = 30_000.0
+    /** Penalty sample applied when a mirror/path attempt fails. */
+    const val MIRROR_FAILURE_PENALTY_MS = 120_000L
+    /** Concurrent dlhd.pk relay paths to race within one mirror attempt. */
+    const val DLHD_PK_PARALLEL_PROBE_COUNT = 3
+    /** Hedged mirror race: max wait for the first successful mirror. */
+    const val HEDGED_MIRROR_RACE_TIMEOUT_MS = 8_000L
+    const val HEDGED_MIRROR_RACE_ENABLED = true
 }

@@ -19,7 +19,7 @@ User-facing two-app overview: [docs/TWO-APP.md](docs/TWO-APP.md).
 ```mermaid
 flowchart TB
     subgraph device [ONN Android TV Stick]
-        TM[TiviMate Daddy ar.tvplayer.tv]
+        TM[DaddyLive TV com.thothassistant.daddylive]
         PatchHTTP[StepDaddy HTTP :4617]
         FGS[ServerService FGS]
         Ktor[Ktor GatewayServer :3000]
@@ -73,7 +73,11 @@ Runtime: `GET /health` (gateway), `GET :4617/status` (patch), `GET /tivimate-han
 |----------------------|--------|--------|
 | `GET /health` | `HealthRoutes.health` | ✅ |
 | `GET /tivimate-setup` | `HealthRoutes.tivimateSetup` | ✅ |
-| `GET /tivimate-playlist.m3u8` | `PlaylistRoutes.tivimatePlaylist` | ✅ |
+| `GET /tivimate.m3u` | `PlaylistRoutes.tivimateUserPlaylist` | ✅ user (canonical) |
+| `GET /tivimate-playlist.m3u8` | `PlaylistRoutes.tivimatePlaylist` | ✅ diagnostic alias |
+| `GET /tivimate-setup-playlist.m3u8` | `PlaylistRoutes.tivimateSetupPlaylist` | ✅ diagnostic (50-ch bootstrap) |
+| `GET /streamvault.m3u` | `PlaylistRoutes.streamVaultUserPlaylist` | ✅ user (canonical) |
+| `GET /vlc.m3u` | `PlaylistRoutes.vlcUserPlaylist` | ✅ user (canonical) |
 | `GET /tivimate-stream/{id}.m3u8` | `StreamRoutes.tivimateStream` | ✅ |
 | `GET /stream/{id}.m3u8` | `StreamRoutes.genericStream` | ✅ |
 | `GET /epg.xml` | `EpgRoutes.epgXml` | ✅ Light EPG |

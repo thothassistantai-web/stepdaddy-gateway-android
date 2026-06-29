@@ -22,9 +22,12 @@ data class EpgMeta(
     val channelsWithPlaceholders: Int = 0,
 )
 
-class EpgStore(context: Context) {
+class EpgStore private constructor(
+    private val root: File,
+) {
+  constructor(context: Context) : this(File(context.filesDir, "epg").also { it.mkdirs() })
+
   private val json = Json { ignoreUnknownKeys = true }
-  private val root = File(context.filesDir, "epg").also { it.mkdirs() }
   private val feedsDir = File(root, "feeds").also { it.mkdirs() }
   val servedXml: File = File(root, "epg.xml")
   private val metaFile = File(root, "meta.json")
@@ -170,5 +173,12 @@ class EpgStore(context: Context) {
     val digest = java.security.MessageDigest.getInstance("SHA-256")
     val bytes = digest.digest(toByteArray(Charsets.UTF_8))
     return bytes.joinToString("") { "%02x".format(it) }
+  }
+
+  companion object {
+    fun forTest(root: File): EpgStore {
+      root.mkdirs()
+      return EpgStore(root)
+    }
   }
 }

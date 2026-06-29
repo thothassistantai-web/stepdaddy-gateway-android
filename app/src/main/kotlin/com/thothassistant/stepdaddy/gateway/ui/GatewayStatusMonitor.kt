@@ -24,6 +24,13 @@ data class GatewayLiveStatus(
             health.healing?.outageMode == true -> "Upstream outage mode"
             health.healing?.cacheServeMode == true -> "Serving from cache"
             health.epgExternal -> "External EPG (TiviMate)"
+            health.supplement?.specialEventsStale == true -> "Special Events scrape stale"
+            health.ok && !health.starting && (health.channels > 0 || (health.providers?.total ?: 0) > 0) ->
+                if (health.gatewayEpgEnabled && !health.epgReady) {
+                    "Serving playlist · EPG building"
+                } else {
+                    "Serving playlist"
+                }
             !health.epgReady -> "Building EPG…"
             else -> "Serving playlist"
         }
@@ -34,12 +41,24 @@ class GatewayStatusMonitor(
 ) {
     private val http = OkHttpClient.Builder()
         .connectTimeout(5, TimeUnit.SECONDS)
-        .readTimeout(8, TimeUnit.SECONDS)
+        .readTimeout(12, TimeUnit.SECONDS)
         .build()
     private val json = Json { ignoreUnknownKeys = true }
 
-    suspend fun fetch(): GatewayLiveStatus = withContext(Dispatchers.IO) {
-        val url = healthUrl()
+    @Volatile
+    private var lastFullHealth: HealthResponse? = null
+
+    /**
+     * @param requestFull when true, fetches full /health (categories, healing, coverage).
+     *        Lite polls carry dashboard stats; expensive fields are merged from the last full snapshot.
+     */
+    suspend fun fetch(requestFull: Boolean = false): GatewayLiveStatus = withContext(Dispatchers.IO) {
+        val base = healthUrl()
+        val url = if (requestFull) {
+            base
+        } else {
+            if (base.contains("?")) "$base&lite=1" else "$base?lite=1"
+        }
         val result = runCatching {
             val request = Request.Builder().url(url).get().build()
             http.newCall(request).execute().use { response ->
@@ -51,7 +70,13 @@ class GatewayStatusMonitor(
                     )
                 } else {
                     val health = json.decodeFromString<HealthResponse>(body)
-                    GatewayLiveStatus(health = health, lastFetchMs = System.currentTimeMillis())
+                    val merged = if (requestFull) {
+                        lastFullHealth = health
+                        health
+                    } else {
+                        mergeDashboardHealth(health, lastFullHealth)
+                    }
+                    GatewayLiveStatus(health = merged, lastFetchMs = System.currentTimeMillis())
                 }
             }
         }.getOrElse { exc ->
@@ -63,6 +88,16 @@ class GatewayStatusMonitor(
         }
         lastCachedStatus = result
         result
+    }
+
+    private fun mergeDashboardHealth(lite: HealthResponse, full: HealthResponse?): HealthResponse {
+        if (full == null) return lite
+        return lite.copy(
+            topCategories = full.topCategories.ifEmpty { lite.topCategories },
+            healing = full.healing ?: lite.healing,
+            epgCoverage = full.epgCoverage ?: lite.epgCoverage,
+            epgSourceCount = if (lite.epgSourceCount > 0) lite.epgSourceCount else full.epgSourceCount,
+        )
     }
 
     companion object {

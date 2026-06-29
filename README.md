@@ -2,12 +2,12 @@
 
 **Native Android TV IPTV gateway** — Kotlin + Ktor on port **3000**, built for ONN sticks, Google TV, and sideload installs. Replaces the Termux/Python stack with a single APK that serves TiviMate-compatible playlists and XMLTV EPG on-device.
 
-Works **standalone** (any IPTV client) or **with [TiviMate Daddy](https://github.com/thothassistantai-web/tivimate-daddy)** for auto-setup, channel tune, and bidirectional telemetry. See [docs/TWO-APP.md](docs/TWO-APP.md).
+Works **standalone** (any IPTV client) or **with [TiviMate Daddy](https://github.com/thothassistantai-web/tivimate-daddy)** / **[StreamVault](https://github.com/thothassistantai-web/StreamVault-IPTV)** for auto-setup, channel tune, and bidirectional telemetry. See [docs/TWO-APP.md](docs/TWO-APP.md).
 
 | | |
 |---|---|
-| **Gateway version** | 2.0.0 (`versionCode` 20000) |
-| **TiviMate Daddy patch** | `2.0.0` (on TiViMate 4.6.1) |
+| **Gateway version** | 3.0.0 (`versionCode` 30000) |
+| **TiviMate Daddy patch** | aligned with gateway suite |
 | **Package** | `com.thothassistant.stepdaddy.gateway` |
 | **License** | [MIT](LICENSE) — see [LEGAL.md](LEGAL.md) / [DISCLAIMER.md](DISCLAIMER.md) |
 | **Upstream parity** | [stepdaddy-livehd](https://github.com/thothassistantai-web/stepdaddy-livehd) (Linux/web gateway) |
@@ -35,7 +35,9 @@ Works **standalone** (any IPTV client) or **with [TiviMate Daddy](https://github
 
 | URL | Purpose |
 |-----|---------|
-| `http://127.0.0.1:3000/tivimate-playlist.m3u8` | M3U playlist |
+| `http://127.0.0.1:3000/tivimate.m3u` | M3U playlist (TiviMate, full catalog) |
+| `http://127.0.0.1:3000/streamvault.m3u` | M3U playlist (StreamVault / plain URLs) |
+| `http://127.0.0.1:3000/vlc.m3u` | M3U playlist (VLC / generic players) |
 | `http://127.0.0.1:3000/epg.xml` | XMLTV guide |
 | `http://127.0.0.1:3000/tivimate-stream/{id}.m3u8` | Per-channel HLS |
 | `http://127.0.0.1:3000/health` | JSON status |
@@ -166,9 +168,14 @@ research/tivimate-apk/stepdaddy-patch/   # TiviMate Daddy smali patch
 | [docs/ONN-QUICK-START.md](docs/ONN-QUICK-START.md) | Fastest ONN stick setup |
 | [docs/TWO-APP.md](docs/TWO-APP.md) | Gateway + TiviMate Daddy architecture |
 | [docs/INSTALL.md](docs/INSTALL.md) | APK install, TiviMate options, permissions |
+| [docs/TIVIMATE-UPDATE-EXAMPLES.md](../docs/TIVIMATE-UPDATE-EXAMPLES.md) | TiviMate Settings → About update path, verify, fleet rollout |
 | [docs/TUTORIAL.md](docs/TUTORIAL.md) | TiviMate setup walkthrough |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Boot, EPG, stream, patch diagnostics |
 | [docs/RELEASE.md](docs/RELEASE.md) | Version bump, signing, GitHub release |
+| [docs/GATEWAY.md](docs/GATEWAY.md) | HTTP API, playlists, health endpoints |
+| [docs/PLUGIN_API.md](docs/PLUGIN_API.md) | StreamVault embedded plugin |
+| [docs/TIER-RELEASES.md](docs/TIER-RELEASES.md) | Special Events tier rollout |
+| [docs/STREAMVAULT-GATEWAY-PLAN.md](docs/STREAMVAULT-GATEWAY-PLAN.md) | StreamVault integration plan |
 | [docs/NETWORK-MODES.md](docs/NETWORK-MODES.md) | Default / Local / Remote access |
 | [docs/REMOTE-ACCESS.md](docs/REMOTE-ACCESS.md) | Cloudflare Tunnel, Tailscale, access token |
 | [.cursor/skills/tivimate-control/SKILL.md](.cursor/skills/tivimate-control/SKILL.md) | Agent skill — patch + bidirectional API |
@@ -185,3 +192,4 @@ research/tivimate-apk/stepdaddy-patch/   # TiviMate Daddy smali patch
 | Linux / web gateway | [stepdaddy-livehd](https://github.com/thothassistantai-web/stepdaddy-livehd) |
 | Android TV remote (Linux) | [android-tv-connect](https://github.com/thothassistantai-web/android-tv-connect) |
 | TiviMate Daddy patch | `research/tivimate-apk/stepdaddy-patch/` |
+| **StreamVault IPTV player** | [StreamVault-IPTV](https://github.com/thothassistantai-web/StreamVault-IPTV) |

@@ -27,12 +27,23 @@ internal object DashboardLoadProgressCalculator {
 
     fun channelsProgress(health: HealthResponse): LoadProgress {
         val total = health.providers?.total ?: health.channels
-        if (total > 0) {
+        val ready = health.providers?.playlistReady?.takeIf { it > 0 }
+            ?: if (!health.starting && total > 0) total else health.channels + health.supplementChannels
+        if (total > 0 && ready >= total) {
             return LoadProgress(
                 phase = "ready",
                 percent = 100,
                 etaSeconds = 0L,
-                detail = "$total channels loaded",
+                detail = "$ready / $total channels ready to stream",
+            )
+        }
+        if (total > 0 && ready > 0) {
+            val percent = min(99, max(10, (ready * 100) / total))
+            return LoadProgress(
+                phase = "loading",
+                percent = percent,
+                etaSeconds = max(15L, ((total - ready) / 40).toLong()),
+                detail = "$ready / $total channels in playlist",
             )
         }
         if (!health.ok) {
@@ -71,6 +82,14 @@ internal object DashboardLoadProgressCalculator {
                 detail = "${health.epgProgrammeCount} programmes in guide",
             )
         }
+        if (health.epgProgrammeCount > 0) {
+            return LoadProgress(
+                phase = "ready",
+                percent = 100,
+                etaSeconds = 0L,
+                detail = "${health.epgProgrammeCount} programmes (refreshing guide)",
+            )
+        }
         val meta = epgManager.meta
         if (meta.state == "error") {
             return LoadProgress(
@@ -82,14 +101,6 @@ internal object DashboardLoadProgressCalculator {
         }
         if (epgManager.isBuilding() || meta.state == "building" || meta.state == "pending") {
             return epgBuildingProgress(meta, epgManager.buildStartedAtMs)
-        }
-        if (health.epgProgrammeCount > 0) {
-            return LoadProgress(
-                phase = "ready",
-                percent = 100,
-                etaSeconds = 0L,
-                detail = "${health.epgProgrammeCount} programmes",
-            )
         }
         return LoadProgress(
             phase = "building",
@@ -136,9 +147,6 @@ internal object DashboardLoadProgressCalculator {
 
         val slots = buildList {
             add(sourceSlot("DaddyLive", daddylivePercent(providers.daddylive, health)))
-            if (supplement?.sidecarEnabled == true) {
-                add(sourceSlot("MoveOnJoy", sidecarPercent(providers.moveOnJoy, supplement)))
-            }
             if (supplement?.sportsEnabled == true) {
                 add(sourceSlot("Sports", sportsPercent(providers.sports, supplement)))
             }
@@ -159,12 +167,17 @@ internal object DashboardLoadProgressCalculator {
 
         val avgPercent = slots.map { it.percent }.average().toInt().coerceIn(0, 100)
         val allReady = slots.all { it.percent >= 100 }
+        val syncInFlight = supplement?.supplementSyncInFlight == true
         if (allReady) {
             return LoadProgress(
                 phase = "ready",
                 percent = 100,
                 etaSeconds = 0L,
-                detail = "${slots.size} sources synced · ${providers.total} channels",
+                detail = if (syncInFlight) {
+                    "${slots.size} sources synced · ${providers.total} channels (refreshing)"
+                } else {
+                    "${slots.size} sources synced · ${providers.total} channels"
+                },
             )
         }
 
@@ -190,18 +203,11 @@ internal object DashboardLoadProgressCalculator {
 
     private fun daddylivePercent(count: Int, health: HealthResponse): Int = when {
         count > 0 -> 100
+        health.channels > 0 -> 100
         health.starting -> 12
         health.ok -> 55
         else -> 5
     }
-
-    private fun sidecarPercent(count: Int, supplement: SupplementStatus): Int =
-        when {
-            count > 0 -> 100
-            supplement.moveOnJoyChannels > 0 -> 100
-            supplement.supplementSyncInFlight -> 45
-            else -> 15
-        }
 
     private fun sportsPercent(count: Int, supplement: SupplementStatus): Int =
         when {
@@ -248,19 +254,22 @@ internal object DashboardLoadProgressCalculator {
                 phase = "ready",
                 percent = 100,
                 etaSeconds = 0L,
-                detail = "Gateway serving playlist and streams",
+                detail = if (health.gatewayEpgEnabled && !health.epgReady) {
+                    "Channels ready · EPG building in background"
+                } else {
+                    "Gateway serving playlist and streams"
+                },
             )
             serviceActive && health.ok -> {
                 val total = health.providers?.total ?: health.channels
                 val percent = when {
                     health.starting || total == 0 -> 35
-                    !health.epgReady && health.gatewayEpgEnabled -> 75
-                    else -> 90
+                    else -> 85
                 }
                 return LoadProgress(
                     phase = "loading",
                     percent = percent,
-                    etaSeconds = if (total == 0) 45L else 20L,
+                    etaSeconds = if (total == 0) 45L else 15L,
                     detail = if (health.starting) "Loading channels…" else "Finishing startup…",
                 )
             }

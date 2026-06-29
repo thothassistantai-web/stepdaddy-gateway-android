@@ -64,7 +64,7 @@ See `scripts/fusa-boot-test.sh` for automated boot verification.
 
 | Symptom | Fix |
 |---------|-----|
-| TiviMate never opens | Enable toggle on dashboard; confirm `ar.tvplayer.tv` installed |
+| TiviMate never opens | Enable toggle on dashboard; confirm DaddyLive TV (`com.thothassistant.daddylive`) or legacy Daddy (`ar.tvplayer.tv`) installed |
 | Opens too early / empty guide | Normal on first seconds — patch boot-tune waits +5 s after resume |
 | Opens every time you open Gateway | Only once per boot (`tivimateLaunchedThisBoot`) |
 | Boot-tune wrong channel | Default is 51; change `tivimate_boot_tune_channel` via admin API (UI pending) |
@@ -97,7 +97,7 @@ adb install -r ../TiviMate-4.6.1-StepDaddy.apk
 | Cause | Fix |
 |-------|-----|
 | Gateway not ready | Wait for HUD / health `channels` > 0 |
-| Gateway started after TiviMate | Restart TiviMate or broadcast `STEPDADDY_SETUP` |
+| Gateway started after TiviMate | Restart TiviMate or broadcast `com.thothassistant.daddylive.action.STEPDADDY_SETUP` (legacy: `ar.tvplayer.tv.action.STEPDADDY_SETUP`) |
 | Wrong URL | Use `127.0.0.1:3000` on same device |
 | Stock TiviMate | Add URLs manually — no auto-setup |
 | EPG 503 | First EPG build up to ~5 min; stale cache returns 200 when available |
@@ -110,7 +110,7 @@ adb install -r ../TiviMate-4.6.1-StepDaddy.apk
 |-------|-----|
 | TiviMate not in foreground | Open TiviMate — service starts on `MainActivity` |
 | Stock/official build | Install Daddy patch APK |
-| Wrong package | `adb shell pm path ar.tvplayer.tv` |
+| Wrong package | `adb shell pm path com.thothassistant.daddylive` (legacy: `ar.tvplayer.tv`) |
 
 ```bash
 adb forward tcp:4617 tcp:4617

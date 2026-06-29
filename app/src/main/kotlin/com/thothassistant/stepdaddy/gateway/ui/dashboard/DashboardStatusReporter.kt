@@ -34,7 +34,6 @@ internal object DashboardStatusReporter {
                 add(
                     buildString {
                         append("Providers: DL ${stats.daddylive}")
-                        if (stats.moveOnJoy > 0) append(" · MOJ ${stats.moveOnJoy}")
                         if (stats.iptvOrg > 0) append(" · IPTV ${stats.iptvOrg}")
                         if (stats.sports > 0) append(" · Sports ${stats.sports}")
                         if (stats.ntvCx > 0) append(" · NTV ${stats.ntvCx}")

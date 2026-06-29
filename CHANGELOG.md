@@ -7,6 +7,22 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-06-28
+
+### Added
+
+- **Stable suite release** — Gateway `3.0.0` / `versionCode` 30000 aligned with StreamVault `3.0.0`
+- **App-named playlists** — canonical user URLs: `streamvault.m3u`, `tivimate.m3u`, `vlc.m3u` (+ `.m3u8` aliases); legacy setup paths kept as diagnostics
+- **StreamVault embedded plugin** — `provider.m3u` returns `streamvault.m3u` + `epg.xml`; `MSG_ENSURE_GATEWAY` readiness gate
+- **Special Events tiers 1–5** — alphabetical guides, language/region metadata, schedule times + EPG programmes, stream health dots (🟢🔴🟡⚪), auto lifecycle add/remove
+- **Event metadata pipeline** — scraper, schedule resolver, HLS manifest probes, mirror latency tracking, dashboard status
+- **Health endpoints** — `/health` and `/health?lite=1` expose special-events summary, load progress, StreamVault/TiviMate setup blocks
+
+### Changed
+
+- **Documentation** — `docs/GATEWAY.md`, `PLUGIN_API.md`, `TIER-RELEASES.md`, `STREAMVAULT-GATEWAY-PLAN.md`; cross-link [StreamVault-IPTV](https://github.com/thothassistantai-web/StreamVault-IPTV)
+- **Release signing** — `keystore.properties` + `assembleRelease` signing config for self-signed sideload APKs
+
 ## [2.0.0] - 2026-06-23
 
 ### Changed

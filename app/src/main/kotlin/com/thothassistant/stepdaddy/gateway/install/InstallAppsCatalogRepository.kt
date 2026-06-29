@@ -1,6 +1,7 @@
 package com.thothassistant.stepdaddy.gateway.install
 
 import android.content.Context
+import com.thothassistant.stepdaddy.gateway.TiviMateController
 import com.thothassistant.stepdaddy.gateway.upstream.getText
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -246,8 +247,8 @@ class InstallAppsCatalogRepository(
                 iconUrl = "https://www.google.com/s2/favicons?domain=tivimate.com&sz=128",
                 apkUrl = overrideUrl,
                 source = SOURCE_STEPDADDY,
-                packageName = "ar.tvplayer.tv",
-                version = "1.2.1-boot-tune-safe",
+                packageName = TiviMateController.DADDY_LIVE_PACKAGE,
+                version = com.thothassistant.stepdaddy.gateway.BuildConfig.DEFAULT_TIVIMATE_PATCH_VERSION,
             )
         }
         return null
@@ -316,7 +317,8 @@ class InstallAppsCatalogRepository(
         }
 
         private val KNOWN_PACKAGES = mapOf(
-            "tivimate" to "ar.tvplayer.tv",
+            "daddylive" to TiviMateController.DADDY_LIVE_PACKAGE,
+            "tivimate" to TiviMateController.LEGACY_TIVIMATE_PACKAGE,
             "sparkle" to "com.liskovsoft.sparkle",
             "iptv pro" to "ru.iptvremote.android.iptv.pro",
             "ott navigator" to "studio.scillarium.ottnavigator",

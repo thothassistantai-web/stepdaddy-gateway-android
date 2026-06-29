@@ -12,6 +12,7 @@ import com.thothassistant.stepdaddy.gateway.routes.EpgRoutes
 import com.thothassistant.stepdaddy.gateway.routes.HealthRoutes
 import com.thothassistant.stepdaddy.gateway.routes.LogoRoutes
 import com.thothassistant.stepdaddy.gateway.routes.NtvStreamRoutes
+import com.thothassistant.stepdaddy.gateway.routes.PlaylistPaths
 import com.thothassistant.stepdaddy.gateway.routes.PlaylistRoutes
 import com.thothassistant.stepdaddy.gateway.routes.StreamRoutes
 import com.thothassistant.stepdaddy.gateway.routes.TiviMateRoutes
@@ -62,7 +63,14 @@ class GatewayServer(
 
     fun start() {
         if (engine != null) return
-        val healthRoutes = HealthRoutes(appContext, environment, client, epgManager, supplementSource)
+        val healthRoutes = HealthRoutes(
+            appContext,
+            environment,
+            client,
+            epgManager,
+            supplementSource,
+            playlistCache,
+        )
         val tiviMateRoutes = TiviMateRoutes(appContext, environment)
         val routes = PlaylistRoutes(
             environment,
@@ -71,6 +79,7 @@ class GatewayServer(
             channelMetaStore,
             supplementSource,
             playlistCache,
+            supplementSource.dlhdEventHealthStore(),
         )
         playlistRoutes = routes
         val streamRoutes = StreamRoutes(environment, client)
@@ -108,6 +117,9 @@ class GatewayServer(
                 get("/tivimate-setup") {
                     healthRoutes.tivimateSetup(call)
                 }
+                get("/streamvault-setup") {
+                    healthRoutes.streamvaultSetup(call)
+                }
                 post("/tivimate-events") {
                     tiviMateRoutes.postEvent(call)
                 }
@@ -120,9 +132,45 @@ class GatewayServer(
                 get("/tivimate-state") {
                     tiviMateRoutes.state(call)
                 }
-                route("/tivimate-playlist.m3u8") {
+                route(PlaylistPaths.TIVIMATE) {
+                    get { routes.tivimateUserPlaylist(call) }
+                    head { routes.tivimateUserPlaylist(call) }
+                }
+                route(PlaylistPaths.TIVIMATE_M3U8) {
+                    get { routes.tivimateUserPlaylist(call) }
+                    head { routes.tivimateUserPlaylist(call) }
+                }
+                route(PlaylistPaths.STREAMVAULT) {
+                    get { routes.streamVaultUserPlaylist(call) }
+                    head { routes.streamVaultUserPlaylist(call) }
+                }
+                route(PlaylistPaths.STREAMVAULT_M3U8) {
+                    get { routes.streamVaultUserPlaylist(call) }
+                    head { routes.streamVaultUserPlaylist(call) }
+                }
+                route(PlaylistPaths.VLC) {
+                    get { routes.vlcUserPlaylist(call) }
+                    head { routes.vlcUserPlaylist(call) }
+                }
+                route(PlaylistPaths.VLC_M3U8) {
+                    get { routes.vlcUserPlaylist(call) }
+                    head { routes.vlcUserPlaylist(call) }
+                }
+                route(PlaylistPaths.TIVIMATE_LEGACY) {
                     get { routes.tivimatePlaylist(call) }
                     head { routes.tivimatePlaylist(call) }
+                }
+                route(PlaylistPaths.TIVIMATE_SETUP) {
+                    get { routes.tivimateSetupPlaylist(call) }
+                    head { routes.tivimateSetupPlaylist(call) }
+                }
+                route(PlaylistPaths.STREAMVAULT_SETUP) {
+                    get { routes.streamVaultSetupPlaylist(call) }
+                    head { routes.streamVaultSetupPlaylist(call) }
+                }
+                route(PlaylistPaths.STREAMVAULT_LEGACY) {
+                    get { routes.streamVaultPlaylist(call) }
+                    head { routes.streamVaultPlaylist(call) }
                 }
                 route("/tivimate-stream/{channelId}.m3u8") {
                     get { streamRoutes.tivimateStream(call, call.parameters["channelId"].orEmpty()) }

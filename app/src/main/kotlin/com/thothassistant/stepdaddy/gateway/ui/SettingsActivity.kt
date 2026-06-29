@@ -28,6 +28,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySettingsBinding
     private lateinit var environment: com.thothassistant.stepdaddy.gateway.GatewayEnvironment
     private lateinit var updateCoordinator: AppUpdateCoordinator
+    private var specialEventsPollJob: Job? = null
     private val settingsUpdateListener: (AppUpdateInfo?) -> Unit = { info ->
         binding.textUpdateStatus.text = when {
             info == null -> getString(R.string.settings_update_none, BuildConfig.VERSION_NAME)
@@ -58,6 +59,21 @@ class SettingsActivity : AppCompatActivity() {
         binding.buttonRegenerateAccessToken.setOnClickListener { regenerateAccessToken() }
         binding.toggleNetworkMode.addOnButtonCheckedListener(networkModeListener)
         binding.buttonSave.requestFocus()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        specialEventsPollJob = SettingsSpecialEventsStatus.startPolling(
+            activity = this,
+            binding = binding,
+            healthUrl = { "${environment.loopbackBase()}/health" },
+        )
+    }
+
+    override fun onStop() {
+        specialEventsPollJob?.cancel()
+        specialEventsPollJob = null
+        super.onStop()
     }
 
     override fun onDestroy() {
@@ -105,6 +121,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.editMirrorUrls.setText(environment.mirrorUrls.joinToString(","))
         SettingsSupplementControls.load(binding, environment)
         SettingsSupplementControls.wireListeners(binding)
+        SettingsSpecialEventsStatus.wire(binding)
         binding.switchGatewayEpg.isChecked = environment.gatewayEpgEnabled
         binding.editExternalEpgUrl.setText(environment.externalEpgUrlForDisplay())
         updateExternalEpgVisibility()

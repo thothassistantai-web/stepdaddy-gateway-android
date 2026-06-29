@@ -1,7 +1,7 @@
 {
-  "versionCode": 20000,
-  "versionName": "2.0.0",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v2.0.0/stepdaddy-gateway-2.0.0-debug.apk",
-  "releaseNotes": "See CHANGELOG.md",
+  "versionCode": 30000,
+  "versionName": "3.0.0",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.0/stepdaddy-gateway-3.0.0-debug.apk",
+  "releaseNotes": "Stable v3.0.0 — Special Events tiers 1-5, StreamVault plugin, app-named playlists. See CHANGELOG.md.",
   "mandatory": false
 }

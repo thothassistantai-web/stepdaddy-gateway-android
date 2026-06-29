@@ -67,7 +67,7 @@ class EpgChannelMapper(context: Context) {
     if (trimmed.isEmpty()) return emptyList()
     val variants = linkedSetOf(trimmed)
     val stripped = trimmed.replace(
-        Regex("\\s+(CDN|Falcon|Mena|\\(MOJ\\))\\s*$", RegexOption.IGNORE_CASE),
+        Regex("\\s+(CDN|Falcon|Mena)\\s*$", RegexOption.IGNORE_CASE),
         "",
     ).trim()
     if (stripped.isNotEmpty()) variants += stripped

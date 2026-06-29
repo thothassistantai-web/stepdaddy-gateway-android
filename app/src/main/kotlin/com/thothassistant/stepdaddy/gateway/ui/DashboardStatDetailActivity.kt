@@ -185,8 +185,16 @@ class DashboardStatDetailActivity : AppCompatActivity() {
                 appendLine("IPTV-org: ${numberFormat.format(p.iptvOrg)}")
                 appendLine("NTV.cx: ${numberFormat.format(p.ntvCx)}")
                 appendLine("Sports: ${numberFormat.format(p.sports)}")
-                appendLine("MoveOnJoy: ${numberFormat.format(p.moveOnJoy)}")
                 append("Adult Swim: ${numberFormat.format(p.adultSwim)}")
+            }
+            health.supplement?.let { s ->
+                if (s.sportsEnabled) {
+                    appendLine()
+                    appendLine()
+                    appendLine("Special Events: ${s.specialEventsStatus}")
+                    appendLine("Guides: ${s.specialEventGuides} · Live: ${s.dlhdEventStreams}")
+                    append("Last scrape: ${s.specialEventsScrapeAgeSeconds?.let { "${it}s ago" } ?: "never"}")
+                }
             }
         }
     }
@@ -221,8 +229,14 @@ class DashboardStatDetailActivity : AppCompatActivity() {
             }
             DashboardStatType.SOURCES -> buildString {
                 health.supplement?.let { s ->
-                    appendLine("sidecarEnabled=${s.sidecarEnabled}")
                     appendLine("sportsEnabled=${s.sportsEnabled}")
+                    appendLine("specialEventGuides=${s.specialEventGuides}")
+                    appendLine("dlhdEventStreams=${s.dlhdEventStreams}")
+                    appendLine("sportsEventsScanned=${s.sportsEventsScanned}")
+                    appendLine("specialEventsStatus=${s.specialEventsStatus}")
+                    appendLine("specialEventsStale=${s.specialEventsStale}")
+                    appendLine("lastSpecialEventsSyncMs=${s.lastSpecialEventsSyncMs}")
+                    appendLine("specialEventsScrapeAgeSeconds=${s.specialEventsScrapeAgeSeconds}")
                     appendLine("iptvOrgEnabled=${s.iptvOrgEnabled}")
                     appendLine("iptvOrgPlaylistsFetched=${s.iptvOrgPlaylistsFetched}")
                     appendLine("iptvOrgPlaylistsFailed=${s.iptvOrgPlaylistsFailed}")

@@ -4,6 +4,13 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
+import java.io.FileInputStream
+import java.util.Properties
+
+System.getenv("STEPDADDY_ISOLATED_BUILD_DIR")?.trim()?.takeIf { it.isNotEmpty() }?.let { dir ->
+    layout.buildDirectory.set(file(dir))
+}
+
 val ktorVersion = "2.3.12"
 
 val gitHash: String = runCatching {
@@ -27,8 +34,14 @@ fun readStepdaddyVersionProp(name: String, default: String): String {
         ?.trim()
         ?: default
 }
-val stepdaddyVersionName = readStepdaddyVersionProp("STEPDADDY_VERSION", "2.0.0")
-val stepdaddyVersionCode = readStepdaddyVersionProp("VERSION_CODE", "20000").toInt()
+val stepdaddyVersionName = readStepdaddyVersionProp("STEPDADDY_VERSION", "3.0.0")
+val stepdaddyVersionCode = readStepdaddyVersionProp("VERSION_CODE", "30000").toInt()
+
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) {
+    FileInputStream(keystorePropertiesFile).use(keystoreProperties::load)
+}
 val tiviMateApkUrl =
     "https://github.com/thothassistantai-web/tivimate-daddy/releases/download/" +
         "tivimate-daddy-v${stepdaddyVersionName}/TiviMate-4.6.1-StepDaddy-${stepdaddyVersionName}.apk"
@@ -51,8 +64,6 @@ android {
             "DEFAULT_DLHD_BASE_URL",
             "\"https://daddylive.eu\"",
         )
-        buildConfigField("String", "DEFAULT_SUPPLEMENT_BASE_URL", "\"\"")
-        buildConfigField("boolean", "DEFAULT_EMBEDDED_SIDECAR_ENABLED", "false")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_SPORTS_ENABLED", "true")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_IPTV_ORG_ENABLED", "true")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_NTV_CX_ENABLED", "true")
@@ -70,6 +81,8 @@ android {
         buildConfigField("String", "DEFAULT_IPTV_ORG_EPG_URL", "\"\"")
         buildConfigField("boolean", "DEFAULT_AUTO_CHECK_UPDATES", "true")
         buildConfigField("boolean", "DEFAULT_AUTO_DOWNLOAD_UPDATES", "false")
+        buildConfigField("String", "DEFAULT_PLAYLIST_TITLE_STYLE", "\"XTREAM_CATEGORY\"")
+        buildConfigField("String", "DEFAULT_SUPPLEMENT_IMPORT_MODE", "\"FULL_CATALOG\"")
         buildConfigField(
             "String",
             "DEFAULT_UPDATE_MANIFEST_URL",
@@ -93,6 +106,17 @@ android {
         buildConfigField("long", "BUILD_TIME", "${buildTime}L")
     }
 
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -100,6 +124,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         debug {
             applicationIdSuffix = ".debug"
@@ -108,6 +135,7 @@ android {
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -124,7 +152,10 @@ android {
 }
 
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")

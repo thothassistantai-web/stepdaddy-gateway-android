@@ -59,6 +59,11 @@ class SupplementStore(context: Context) {
             json.decodeFromString<SupplementCache>(channelsFile.readText()).syncedAtMs
         }.getOrDefault(0L)
 
+    fun guideSchedulesSyncedAtMs(): Long =
+        runCatching {
+            json.decodeFromString<GuideScheduleCache>(guideSchedulesFile.readText()).syncedAtMs
+        }.getOrDefault(0L)
+
     fun readGuideSchedules(): Map<String, List<SpecialEventsMerger.GuideEventRow>> {
         if (!guideSchedulesFile.exists()) return emptyMap()
         return runCatching {

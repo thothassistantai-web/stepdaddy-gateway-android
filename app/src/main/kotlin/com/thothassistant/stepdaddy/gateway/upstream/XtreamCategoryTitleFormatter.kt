@@ -16,7 +16,7 @@ object XtreamCategoryTitleFormatter {
     )
 
     private val providerTagRe = Regex(
-        """\s+(?:Samsung|Pluto|Roku|Plex|Tubi|Distro|Xumo|Stirr|LocalNow|BBC|CDN|MOJ|FAST|Peacock|Hulu|Netflix|Prime|Paramount\+?)$""",
+        """\s+(?:Samsung|Pluto|Roku|Plex|Tubi|Distro|Xumo|Stirr|LocalNow|BBC|CDN|FAST|Peacock|Hulu|Netflix|Prime|Paramount\+?)$""",
         RegexOption.IGNORE_CASE,
     )
 
@@ -59,24 +59,34 @@ object XtreamCategoryTitleFormatter {
         return "US: 24/7 : Adultswim ${core.uppercase()} ᴿᴬᵂ"
     }
 
-    fun formatSpecialEvent(channelName: String, league: String?): String {
+    fun formatSpecialEvent(
+        channelName: String,
+        league: String?,
+        countryCode: String = "US",
+        endedGrace: Boolean = false,
+    ): String {
         val core = sanitizeCore(channelName)
         val leagueLabel = league?.trim()?.uppercase().orEmpty().ifBlank { "EVENT" }
-        if (core.isEmpty()) return "US: $leagueLabel ${channelName.trim()} ᴸᴵⱽᴱ"
-        return "US: $leagueLabel ${core.uppercase()} ᴸᴵⱽᴱ"
+        val prefix = countryPrefix(countryCode)
+        val statusPrefix = if (endedGrace) "🔴 " else ""
+        if (core.isEmpty()) {
+            return "${statusPrefix}$prefix: $leagueLabel ${channelName.trim()} ᴸᴵⱽᴱ"
+        }
+        return "${statusPrefix}$prefix: $leagueLabel ${core.uppercase()} ᴸᴵⱽᴱ"
     }
 
-    fun formatGuideSchedule(category: String, league: String?): String {
+    fun formatGuideSchedule(category: String, league: String?, countryCode: String = "US"): String {
         val core = sanitizeCore(SpecialEventCategoryEmoji.stripLeadingEmoji(category))
             .ifEmpty { category.trim() }
         val emoji = SpecialEventCategoryEmoji.forCategory(core, league)
         val leagueLabel = league?.trim()?.uppercase().orEmpty()
-        val prefix = if (leagueLabel.isNotEmpty() && !core.uppercase().contains(leagueLabel)) {
+        val prefix = countryPrefix(countryCode)
+        val label = if (leagueLabel.isNotEmpty() && !core.uppercase().contains(leagueLabel)) {
             "$leagueLabel "
         } else {
             ""
         }
-        return "US: $emoji ${prefix}${core.uppercase()} SCHEDULE ᴸᴵⱽᴱ"
+        return "$prefix: $emoji ${label}${core.uppercase()} SCHEDULE ᴸᴵⱽᴱ"
     }
 
     private fun formatAdult(channelName: String): String {

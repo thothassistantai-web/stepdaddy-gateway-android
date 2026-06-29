@@ -47,22 +47,23 @@ On Android TV: **Settings → Security & restrictions → Unknown sources** → 
 
 ## Install TiviMate — three options
 
-All options use package `ar.tvplayer.tv`. **Only one** can be installed at a time.
+**DaddyLive TV** (2.3.0+) uses package `com.thothassistant.daddylive` and coexists with stock TiviMate. **Mod** and **official** use `ar.tvplayer.tv` — only one `ar.tvplayer.tv` app at a time. Legacy Daddy (≤2.0.0 published) also used `ar.tvplayer.tv`.
 
-| Option | APK source | StepDaddy control | Best for |
-|--------|------------|-------------------|----------|
-| **Daddy** (recommended) | `research/tivimate-apk/TiviMate-4.6.1-StepDaddy.apk` | Auto-setup, tune, `:4617` HTTP, bidirectional events | ONN fleet sticks |
-| **Mod** (4.6.1 ONN) | `research/tivimate-apk/tivimate-usb.apk` | Manual playlist URLs only | RE / testing without patch |
-| **Official** (5.3.x) | `https://files.tivimate.com/tivimate.apk` | Gateway playlist only; no tune API | Play Store parity, premium |
+| Option | APK source | Package | StepDaddy control | Best for |
+|--------|------------|---------|-------------------|----------|
+| **DaddyLive TV** (recommended) | `research/tivimate-apk/TiviMate-4.6.1-StepDaddy.apk` | `com.thothassistant.daddylive` | Auto-setup, tune, `:4617` HTTP, bidirectional events | ONN fleet sticks |
+| **Mod** (4.6.1 ONN) | `research/tivimate-apk/tivimate-usb.apk` | `ar.tvplayer.tv` | Manual playlist URLs only | RE / testing without patch |
+| **Official** (5.3.x) | `https://files.tivimate.com/tivimate.apk` | `ar.tvplayer.tv` | Gateway playlist only; no tune API | Play Store parity, premium |
 
-### Build & install TiviMate Daddy
+### Build & install DaddyLive TV
 
 ```bash
 cd research/tivimate-apk/stepdaddy-patch
 ./build.sh
 
 DEV=<serial>
-adb -s $DEV uninstall ar.tvplayer.tv || true
+adb -s $DEV uninstall com.thothassistant.daddylive || true
+# Legacy fleet (≤2.0.0): adb -s $DEV uninstall ar.tvplayer.tv || true
 adb -s $DEV install -r ../TiviMate-4.6.1-StepDaddy.apk
 ```
 
@@ -84,8 +85,8 @@ Add playlist URLs manually in TiviMate (see [TUTORIAL.md](TUTORIAL.md)).
 
 | Error | Fix |
 |-------|-----|
-| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | `adb uninstall ar.tvplayer.tv` then reinstall |
-| Switching Daddy ↔ official | Always uninstall first (different signing keys) |
+| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | `adb uninstall com.thothassistant.daddylive` (or `ar.tvplayer.tv` for mod/official/legacy) then reinstall |
+| Switching DaddyLive ↔ mod/official | Uninstall conflicting `ar.tvplayer.tv` app first (different signing keys) |
 
 ---
 
@@ -155,6 +156,8 @@ curl -s http://127.0.0.1:4617/status | jq '{patchVersion, setupDone}'
 ```
 
 ### In-app updates (About screen)
+
+Step-by-step examples (TiviMate **Settings → About → Check for new version**, Gateway About, ADB): [`docs/TIVIMATE-UPDATE-EXAMPLES.md`](../../docs/TIVIMATE-UPDATE-EXAMPLES.md).
 
 Open **About** from the dashboard management card or **Settings → About**. The gateway checks GitHub for the latest `tivimate-daddy-v*` release on `thothassistantai-web/tivimate-daddy`, compares your installed `patchVersion` from `:4617/status`, and offers **Update now** when a newer manifest is published. Release assets include `update-manifest.json` with `versionCode`, `versionName`, and `apkUrl`.
 

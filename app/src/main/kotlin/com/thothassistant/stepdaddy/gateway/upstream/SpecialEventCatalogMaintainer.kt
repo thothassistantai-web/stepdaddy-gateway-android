@@ -16,6 +16,135 @@ object SpecialEventCatalogMaintainer {
             get() = removedStreams > 0 || removedGuides > 0 || removedScheduleRows > 0
     }
 
+    data class VerifyResult(
+        val needsRefresh: Boolean,
+        val missingLiveStreams: Int,
+        val upcomingWithoutStreams: Int,
+    )
+
+    /** Schedule rows that are live or starting soon but lack a matching `dlhd-event:` stream. */
+    fun verifyStartedEvents(
+        channels: List<SupplementChannel>,
+        guideSchedules: Map<String, List<SpecialEventsMerger.GuideEventRow>>,
+        nowMs: Long = System.currentTimeMillis(),
+        preStartWindowMs: Long = SupplementConfig.SPECIAL_EVENTS_PRE_START_WINDOW_MS,
+    ): VerifyResult {
+        val cachedTitleKeys = channels.asSequence()
+            .filter { it.id.startsWith("dlhd-event:") }
+            .mapNotNull { DlhdEventSourceMeta.parse(it.eventSourceUrl)?.title }
+            .map { SpecialEventsMerger.normalizeTitleKey(it) }
+            .toSet()
+
+        var missingLive = 0
+        var upcomingSoon = 0
+        guideSchedules.values.forEach { rows ->
+            rows.forEach { row ->
+                if (!SpecialEventLifecycle.isActive(row.startMs, row.stopMs, nowMs)) return@forEach
+                val titleKey = SpecialEventsMerger.normalizeTitleKey(row.title)
+                if (titleKey in cachedTitleKeys) return@forEach
+                when {
+                    row.startMs <= nowMs -> missingLive++
+                    row.startMs - nowMs <= preStartWindowMs -> upcomingSoon++
+                }
+            }
+        }
+        return VerifyResult(
+            needsRefresh = missingLive > 0 || upcomingSoon > 0,
+            missingLiveStreams = missingLive,
+            upcomingWithoutStreams = upcomingSoon,
+        )
+    }
+
+    /** Merge freshly fetched special-event rows into the existing catalog without dropping other sources. */
+    fun mergeFetchedSpecialEvents(
+        existing: List<SupplementChannel>,
+        fetched: List<SupplementChannel>,
+        fetchedGuideSchedules: Map<String, List<SpecialEventsMerger.GuideEventRow>>,
+        existingGuideSchedules: Map<String, List<SpecialEventsMerger.GuideEventRow>>,
+    ): Pair<List<SupplementChannel>, Map<String, List<SpecialEventsMerger.GuideEventRow>>> {
+        val nonSpecial = existing.filter { !isSpecialEventChannel(it.id) }
+        val existingSpecial = existing.filter { isSpecialEventChannel(it.id) }
+        val fetchedSpecial = fetched.filter { isSpecialEventChannel(it.id) }
+
+        val mergedSpecialById = linkedMapOf<String, SupplementChannel>()
+        existingSpecial.forEach { mergedSpecialById[it.id] = it }
+        fetchedSpecial.forEach { mergedSpecialById[it.id] = it }
+
+        val mergedGuides = linkedMapOf<String, List<SpecialEventsMerger.GuideEventRow>>()
+        existingGuideSchedules.forEach { (guideId, rows) -> mergedGuides[guideId] = rows.toList() }
+        fetchedGuideSchedules.forEach { (guideId, rows) ->
+            if (rows.isEmpty()) return@forEach
+            val prior = mergedGuides[guideId].orEmpty()
+            val combined = (prior + rows).distinctBy { "${it.title}|${it.startMs}|${it.stopMs}" }
+                .sortedBy { it.startMs }
+            mergedGuides[guideId] = combined
+        }
+
+        val orderedSpecial = buildOrderedSpecialChannels(
+            mergedSpecialById.values.toList(),
+            mergedGuides,
+        )
+        return nonSpecial + orderedSpecial to mergedGuides
+    }
+
+    private fun buildOrderedSpecialChannels(
+        channels: List<SupplementChannel>,
+        guideSchedules: Map<String, List<SpecialEventsMerger.GuideEventRow>>,
+    ): List<SupplementChannel> {
+        val guides = channels.filter { it.id.startsWith("dlhd-guide:") }
+        val streams = channels.filter { it.id.startsWith("dlhd-event:") }
+        val sports = channels.filter { it.id.startsWith("sport:") }
+        if (guides.isEmpty() && streams.isEmpty()) return sports
+
+        val streamsByCategory = streams.groupBy { channel ->
+            categorySlug(channel).orEmpty()
+        }
+        val orderedGuides = guides.sortedWith(
+            compareBy(
+                {
+                    SpecialEventSort.categoryBlockSortKey(
+                        it.name.removeSuffix(" Schedule"),
+                        it.providerTag,
+                    )
+                },
+                { it.name.lowercase() },
+            ),
+        )
+        val result = mutableListOf<SupplementChannel>()
+        var streamCount = 0
+        val maxStreams = SupplementConfig.MAX_SPECIAL_EVENT_STREAMS
+        for (guide in orderedGuides) {
+            val slug = guide.id.removePrefix("dlhd-guide:")
+            val categoryStreams = streamsByCategory[slug].orEmpty().sortedBy { it.name.lowercase() }
+            if (categoryStreams.isEmpty() &&
+                guideSchedules[guide.id].orEmpty().isEmpty()
+            ) {
+                continue
+            }
+            result += guide
+            if (streamCount >= maxStreams) continue
+            for (stream in categoryStreams) {
+                if (streamCount >= maxStreams) break
+                result += stream
+                streamCount++
+            }
+        }
+        if (streamCount < maxStreams) {
+            val orphanSports = sports.sortedWith(
+                compareBy(
+                    { SpecialEventSort.sortKey(it.providerTag, it.name, it.eventSourceUrl) },
+                    { it.name.lowercase() },
+                ),
+            )
+            for (stream in orphanSports) {
+                if (streamCount >= maxStreams) break
+                result += stream
+                streamCount++
+            }
+        }
+        return result
+    }
+
     fun isSpecialEventChannel(id: String): Boolean =
         id.startsWith("sport:") ||
             id.startsWith("dlhd-guide:") ||
@@ -83,7 +212,7 @@ object SpecialEventCatalogMaintainer {
         if (!channel.id.startsWith("dlhd-event:")) return true
         val meta = DlhdEventSourceMeta.parse(channel.eventSourceUrl) ?: return true
         val (start, stop) = DlhdScheduleTime.parseWindow(meta.dateKey, meta.timeLabel)
-        return SpecialEventLifecycle.isActive(start, stop, now)
+        return SpecialEventLifecycle.isPlaylistVisible(start, stop, now)
     }
 
     fun categorySlug(channel: SupplementChannel): String? {
