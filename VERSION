@@ -1,3 +1,3 @@
 # Deprecated — use STEPDADDY_VERSION at repo root (wired in app/build.gradle.kts)
-STEPDADDY_VERSION=3.0.4
-VERSION_CODE=30004
+STEPDADDY_VERSION=3.0.5
+VERSION_CODE=30005

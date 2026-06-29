@@ -24,8 +24,8 @@ object TvtvUsEpgConfig {
 
     const val BRIDGE_ASSET = "tvtv_id_bridge.json"
 
-    /** Re-download grid JSON after this age. */
-    const val GRID_CACHE_TTL_MS = 3600_000L
+    /** Re-download grid JSON after this age (successful responses persist longer). */
+    const val GRID_CACHE_TTL_MS = 6 * 3600_000L
 
     /** Max bytes per grid response. */
     const val MAX_GRID_BYTES = 4 * 1024 * 1024
@@ -36,17 +36,23 @@ object TvtvUsEpgConfig {
     /** tvtv.us also rejects trailing partial windows shorter than 24 hours. */
     const val MIN_GRID_WINDOW_HOURS = 24L
 
-    /** Cap grid fetches per build; tvtv.us rate-limits above ~20–30 rapid requests. */
-    const val MAX_CHANNELS_PER_BUILD = 24
+    /** Eastern premium ids always fetched first with a dedicated budget. */
+    const val MAX_EASTERN_CHANNELS_PER_BUILD = 4
+
+    /** General cable gap-fill cap per build (after Eastern pass). */
+    const val MAX_GENERAL_CHANNELS_PER_BUILD = 12
 
     /** Pause between grid HTTP calls to avoid 429 rate limits. */
-    const val GRID_REQUEST_DELAY_MS = 2_000L
+    const val GRID_REQUEST_DELAY_MS = 3_000L
 
     /** Retries when tvtv.us returns HTTP 429 (rate limit). */
-    const val MAX_GRID_429_RETRIES = 3
+    const val MAX_GRID_429_RETRIES = 4
 
-    /** Initial backoff after 429; doubles each retry. */
-    const val GRID_429_BACKOFF_MS = 5_000L
+    /** Initial backoff after 429; doubles each retry (8s → 16s → 32s → 64s). */
+    const val GRID_429_BACKOFF_MS = 8_000L
+
+    /** Pause entire pass after sustained 429 before one final attempt. */
+    const val GRID_429_PAUSE_MS = 60_000L
 
     const val DOWNLOAD_TIMEOUT_MS = 45_000L
 

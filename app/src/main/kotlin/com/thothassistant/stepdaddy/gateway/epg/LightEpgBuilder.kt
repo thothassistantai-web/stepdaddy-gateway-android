@@ -56,10 +56,10 @@ class LightEpgBuilder(
       writer.write("""<?xml version="1.0" encoding="UTF-8"?>""")
       writer.write("\n<tv generator-info-name=\"StepDaddy Gateway\">")
 
-      val easternPreferredIds = tvgIds.filter { playlistId ->
-          playlistId in TvtvUsEpgConfig.EASTERN_PREFERRED_PLAYLIST_IDS &&
-              tvtvFetcher?.bridgeEntry(playlistId) != null
+      val easternPreferredIds = playlistIdsForEasternTvtvPass(tvgIds) { playlistId ->
+          tvtvFetcher?.bridgeEntry(playlistId) != null
       }
+      tvtvFetcher?.resetBuildState()
       if (tvtvGapFillEnabled && tvtvFetcher != null && easternPreferredIds.isNotEmpty()) {
         val beforeProgrammes = programmeCount
         tvtvFetcher.mergeGapFill(
@@ -74,6 +74,7 @@ class LightEpgBuilder(
             programmeCountRef = { programmeCount = it },
             getChannelCount = { channelCount },
             getProgrammeCount = { programmeCount },
+            maxChannels = TvtvUsEpgConfig.MAX_EASTERN_CHANNELS_PER_BUILD,
         )
         if (programmeCount > beforeProgrammes) {
           android.util.Log.i(
@@ -131,25 +132,22 @@ class LightEpgBuilder(
         }
       }
 
-      val tvtvGapIds = (
-          tvgIds.filter { it !in idsWithProgrammes } +
-              supplementTvgIds.filter { it !in idsWithProgrammes } +
-              sportsTvgIds.filter { it !in idsWithProgrammes } +
-              fastEpgTvgIds.filter { it !in idsWithProgrammes }
-          ).toSet()
       val tvtvBridgeIds = tvtvFetcher?.let { fetcher ->
-          val bridged = tvtvGapIds.filter { fetcher.bridgeEntry(it) != null }
-          val prioritized = buildList {
-              addAll(
-                  tvgIds.filter {
-                      it in bridged && it !in TvtvUsEpgConfig.EASTERN_PREFERRED_PLAYLIST_IDS
-                  },
-              )
-              addAll(bridged.filter { it !in tvgIds })
-          }.distinct().take(TvtvUsEpgConfig.MAX_CHANNELS_PER_BUILD)
-          prioritized
+          playlistIdsForGeneralTvtvGapFill(
+              tvgIds = tvgIds,
+              supplementTvgIds = supplementTvgIds,
+              sportsTvgIds = sportsTvgIds,
+              fastEpgTvgIds = fastEpgTvgIds,
+              idsWithProgrammes = idsWithProgrammes,
+              hasTvtvBridge = { fetcher.bridgeEntry(it) != null },
+          )
       }.orEmpty()
-      if (tvtvGapFillEnabled && tvtvFetcher != null && tvtvBridgeIds.isNotEmpty()) {
+      if (
+          tvtvGapFillEnabled &&
+              tvtvFetcher != null &&
+              tvtvBridgeIds.isNotEmpty() &&
+              !tvtvFetcher.isRateLimitExhausted()
+      ) {
         val beforeProgrammes = programmeCount
         tvtvFetcher.mergeGapFill(
             writer = writer,
@@ -163,6 +161,7 @@ class LightEpgBuilder(
             programmeCountRef = { programmeCount = it },
             getChannelCount = { channelCount },
             getProgrammeCount = { programmeCount },
+            maxChannels = TvtvUsEpgConfig.MAX_GENERAL_CHANNELS_PER_BUILD,
         )
         if (programmeCount > beforeProgrammes) {
           android.util.Log.i(
@@ -170,6 +169,11 @@ class LightEpgBuilder(
               "tvtv.us EPG: +${programmeCount - beforeProgrammes} programmes for ${tvtvBridgeIds.size} cable ids",
           )
         }
+      } else if (tvtvGapFillEnabled && tvtvFetcher?.isRateLimitExhausted() == true) {
+        android.util.Log.w(
+            "LightEpgBuilder",
+            "tvtv.us general gap-fill skipped (rate limit exhausted after Eastern pass)",
+        )
       }
 
       val gapFillIds = tvgIds.filter { it !in idsWithProgrammes }.toSet()
@@ -469,6 +473,41 @@ class LightEpgBuilder(
             playlistId !in TvtvUsEpgConfig.EASTERN_PREFERRED_PLAYLIST_IDS ||
                 !hasTvtvBridge(playlistId)
         }.toSet()
+
+    /** Eastern premium ids first, in fixed preferred order, with dedicated rate budget. */
+    fun playlistIdsForEasternTvtvPass(
+        tvgIds: Set<String>,
+        hasTvtvBridge: (String) -> Boolean,
+    ): List<String> =
+        TvtvUsEpgConfig.EASTERN_PREFERRED_PLAYLIST_IDS
+            .filter { it in tvgIds && hasTvtvBridge(it) }
+            .take(TvtvUsEpgConfig.MAX_EASTERN_CHANNELS_PER_BUILD)
+
+    /** General tvtv gap-fill: playlist ids first, then supplements; never Eastern preferred. */
+    fun playlistIdsForGeneralTvtvGapFill(
+        tvgIds: Set<String>,
+        supplementTvgIds: Set<String>,
+        sportsTvgIds: Set<String>,
+        fastEpgTvgIds: Set<String>,
+        idsWithProgrammes: Set<String>,
+        hasTvtvBridge: (String) -> Boolean,
+    ): List<String> {
+        val tvtvGapIds = (
+            tvgIds.filter { it !in idsWithProgrammes } +
+                supplementTvgIds.filter { it !in idsWithProgrammes } +
+                sportsTvgIds.filter { it !in idsWithProgrammes } +
+                fastEpgTvgIds.filter { it !in idsWithProgrammes }
+            ).toSet()
+        val bridged = tvtvGapIds.filter(hasTvtvBridge)
+        return buildList {
+            addAll(
+                tvgIds.filter {
+                    it in bridged && it !in TvtvUsEpgConfig.EASTERN_PREFERRED_PLAYLIST_IDS
+                },
+            )
+            addAll(bridged.filter { it !in tvgIds })
+        }.distinct().take(TvtvUsEpgConfig.MAX_GENERAL_CHANNELS_PER_BUILD)
+    }
 
     fun groupTvgIdsByFeed(tvgIds: Set<String>): Map<String, Set<String>> {
       val grouped = linkedMapOf<String, MutableSet<String>>()

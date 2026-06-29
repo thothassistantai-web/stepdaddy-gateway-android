@@ -23,6 +23,8 @@ class TvtvUsEpgFetcher(
     private val httpClient: OkHttpClient = defaultClient(),
 ) {
     private val bridgeByPlaylistId: Map<String, BridgeEntry> = loadBundled(context)
+    @Volatile
+    private var rateLimitExhausted = false
 
     init {
         Log.i(TAG, "tvtv.us EPG bridge: ${bridgeByPlaylistId.size} playlist ids")
@@ -31,6 +33,12 @@ class TvtvUsEpgFetcher(
     fun bridgeSize(): Int = bridgeByPlaylistId.size
 
     fun bridgeEntry(playlistTvgId: String): BridgeEntry? = bridgeByPlaylistId[playlistTvgId.trim()]
+
+    fun resetBuildState() {
+        rateLimitExhausted = false
+    }
+
+    fun isRateLimitExhausted(): Boolean = rateLimitExhausted
 
     fun mergeGapFill(
         writer: BufferedWriter,
@@ -44,17 +52,21 @@ class TvtvUsEpgFetcher(
         programmeCountRef: (Int) -> Unit,
         getChannelCount: () -> Int,
         getProgrammeCount: () -> Int,
+        maxChannels: Int,
     ) {
+        if (rateLimitExhausted) return
+
         val wanted = playlistIds.mapNotNull { playlistId ->
             val entry = bridgeByPlaylistId[playlistId] ?: return@mapNotNull null
             playlistId to entry
-        }.take(TvtvUsEpgConfig.MAX_CHANNELS_PER_BUILD)
+        }.take(maxChannels)
         if (wanted.isEmpty()) return
 
         var channelCount = getChannelCount()
         var programmeCount = getProgrammeCount()
 
         wanted.forEachIndexed { index, (playlistId, entry) ->
+            if (rateLimitExhausted) return@forEachIndexed
             if (index > 0) {
                 Thread.sleep(TvtvUsEpgConfig.GRID_REQUEST_DELAY_MS)
             }
@@ -145,39 +157,69 @@ class TvtvUsEpgFetcher(
         var attempt = 0
         var backoffMs = TvtvUsEpgConfig.GRID_429_BACKOFF_MS
         while (true) {
+            var wroteTmp = false
             val response = httpClient.newCall(request).execute()
             response.use {
-                if (it.code == 429 && attempt < TvtvUsEpgConfig.MAX_GRID_429_RETRIES) {
-                    attempt++
-                    Log.w(TAG, "tvtv.us grid rate-limited (429), retry $attempt after ${backoffMs}ms")
-                    Thread.sleep(backoffMs)
-                    backoffMs *= 2
-                    return@use
-                }
-                if (!it.isSuccessful) error("tvtv_grid_download_failed:${it.code}")
-                val body = it.body ?: error("tvtv_grid_empty")
-                val sink = tmp.outputStream()
-                val max = TvtvUsEpgConfig.MAX_GRID_BYTES.toLong()
-                var total = 0L
-                body.byteStream().use { input ->
-                    val buffer = ByteArray(64 * 1024)
-                    while (true) {
-                        val read = input.read(buffer)
-                        if (read <= 0) break
-                        total += read
-                        if (total > max) error("tvtv_grid_exceeded_max_bytes")
-                        sink.write(buffer, 0, read)
+                when {
+                    it.code == 429 && attempt < TvtvUsEpgConfig.MAX_GRID_429_RETRIES -> {
+                        attempt++
+                        Log.w(TAG, "tvtv.us grid rate-limited (429), retry $attempt after ${backoffMs}ms")
+                        Thread.sleep(backoffMs)
+                        backoffMs *= 2
+                    }
+                    it.code == 429 -> {
+                        Log.w(
+                            TAG,
+                            "tvtv.us sustained 429, pausing ${TvtvUsEpgConfig.GRID_429_PAUSE_MS}ms before final attempt",
+                        )
+                        Thread.sleep(TvtvUsEpgConfig.GRID_429_PAUSE_MS)
+                        val finalResponse = httpClient.newCall(request).execute()
+                        finalResponse.use { final ->
+                            if (final.code == 429) {
+                                rateLimitExhausted = true
+                                if (cache.exists()) {
+                                    Log.w(TAG, "tvtv.us 429 after pause, using stale grid cache for $url")
+                                    return cache.readText(Charsets.UTF_8)
+                                }
+                                error("tvtv_grid_download_failed:429")
+                            }
+                            if (!final.isSuccessful) error("tvtv_grid_download_failed:${final.code}")
+                            writeGridResponseToTmp(final, tmp)
+                            wroteTmp = true
+                        }
+                    }
+                    !it.isSuccessful -> error("tvtv_grid_download_failed:${it.code}")
+                    else -> {
+                        writeGridResponseToTmp(it, tmp)
+                        wroteTmp = true
                     }
                 }
-                sink.close()
             }
-            if (tmp.exists()) break
+            if (wroteTmp) break
         }
         if (!tmp.renameTo(cache)) {
             cache.writeBytes(tmp.readBytes())
             tmp.delete()
         }
         return cache.readText(Charsets.UTF_8)
+    }
+
+    private fun writeGridResponseToTmp(response: okhttp3.Response, tmp: java.io.File) {
+        val body = response.body ?: error("tvtv_grid_empty")
+        val sink = tmp.outputStream()
+        val max = TvtvUsEpgConfig.MAX_GRID_BYTES.toLong()
+        var total = 0L
+        body.byteStream().use { input ->
+            val buffer = ByteArray(64 * 1024)
+            while (true) {
+                val read = input.read(buffer)
+                if (read <= 0) break
+                total += read
+                if (total > max) error("tvtv_grid_exceeded_max_bytes")
+                sink.write(buffer, 0, read)
+            }
+        }
+        sink.close()
     }
 
     private fun isGridFresh(file: java.io.File): Boolean {

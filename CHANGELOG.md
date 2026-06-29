@@ -7,6 +7,13 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.5] - 2026-06-29
+
+### Fixed
+
+- **Eastern EPG prioritization** — HBO 2, Showtime, STARZ in Black, and STARZ Kids & Family fetch in a dedicated first tvtv.us pass (fixed preferred order, separate rate budget) before general cable gap-fill
+- **tvtv.us rate limits** — general pass capped at 12 channels/build; stronger 429 backoff (8s→64s), 60s pause on sustained 429, skip general pass when exhausted; 6h grid JSON disk cache with stale fallback
+
 ## [3.0.4] - 2026-06-29
 
 ### Fixed
