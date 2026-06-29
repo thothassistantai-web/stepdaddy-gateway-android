@@ -6,12 +6,12 @@ import org.junit.Test
 
 class GuideScheduleHlsManifestTest {
     @Test
-    fun `manifest wraps mp4 as hls event playlist`() {
+    fun `manifest wraps mp4 as hls master playlist`() {
         val manifest = GuideScheduleHlsManifest.build("http://127.0.0.1:3000/dlhd-event-guide/nba.mp4")
-        assertTrue(manifest.contains("#EXT-X-PLAYLIST-TYPE:EVENT"))
-        assertTrue(manifest.contains("#EXTINF:120.0,schedule"))
+        assertTrue(manifest.contains("#EXT-X-STREAM-INF:BANDWIDTH=1500000"))
         assertTrue(manifest.contains("http://127.0.0.1:3000/dlhd-event-guide/nba.mp4"))
-        assertTrue(manifest.contains("#EXT-X-ENDLIST"))
+        assertFalse(manifest.contains("#EXT-X-PLAYLIST-TYPE:EVENT"))
+        assertFalse(manifest.contains("#EXTINF:"))
     }
 
     @Test

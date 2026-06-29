@@ -19,11 +19,13 @@ class PlaylistPathsTest {
     }
 
     @Test
-    fun `legacy diagnostic paths preserved`() {
+    fun `legacy playlist paths alias canonical user playlists`() {
         assertEquals("/tivimate-setup-playlist.m3u8", PlaylistPaths.TIVIMATE_SETUP)
         assertEquals("/streamvault-setup-playlist.m3u8", PlaylistPaths.STREAMVAULT_SETUP)
         assertEquals("/tivimate-playlist.m3u8", PlaylistPaths.TIVIMATE_LEGACY)
         assertEquals("/streamvault-playlist.m3u8", PlaylistPaths.STREAMVAULT_LEGACY)
+        assertTrue(PlaylistPaths.USER.contains(PlaylistPaths.TIVIMATE_LEGACY))
+        assertTrue(PlaylistPaths.USER.contains(PlaylistPaths.STREAMVAULT_LEGACY))
     }
 
     @Test

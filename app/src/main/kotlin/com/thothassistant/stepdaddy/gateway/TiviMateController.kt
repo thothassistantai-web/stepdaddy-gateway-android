@@ -33,6 +33,10 @@ object TiviMateController {
     const val PACKAGE = DADDY_LIVE_PACKAGE
 
     const val MAIN_ACTIVITY_CLASS = "ar.tvplayer.tv.ui.MainActivity"
+    /** x2 Premium / AndyHax dex-locked mod launcher (5.x). */
+    const val HAX_LAUNCH_ACTIVITY_CLASS = "com.andyhax.haxsplash.LaunchActivity"
+    const val PLAYLIST_WIZARD_ACTIVITY_CLASS =
+        "ar.tvplayer.tv.settings.ui.playlists.wizard.PlaylistWizardActivity"
     const val BRIDGE_ACTIVITY_CLASS = "ar.tvplayer.tv.stepdaddy.StepDaddyBridgeActivity"
     const val COMMAND_RECEIVER_CLASS = "ar.tvplayer.tv.stepdaddy.StepDaddyCommandReceiver"
 
@@ -56,6 +60,10 @@ object TiviMateController {
     const val EXTRA_CHANNEL_ID = "channel_id"
     const val EXTRA_STREAM_URL = "stream_url"
     const val EXTRA_GATEWAY_BASE = "gateway_base"
+    const val PLAYLIST_ARGS_KEY = "ar.tvplayer.tv.settings.Args"
+
+    const val MIME_M3U = "application/vnd.apple.mpegurl"
+    const val MIME_XMLTV = "application/xml"
 
     const val SCHEME = "stepdaddy"
     const val HOST_SETUP = "setup"
@@ -204,7 +212,7 @@ object TiviMateController {
             if (hasStepDaddyBridge(context, LEGACY_TIVIMATE_PACKAGE)) {
                 return TiviMateVariantProbe(TiviMateInstalledVariant.STEP_DADDY, versionName = versionName)
             }
-            if (isLikely461Mod(versionName)) {
+            if (isLikelyPremiumMod(versionName)) {
                 return TiviMateVariantProbe(TiviMateInstalledVariant.PLAIN_MOD, versionName = versionName)
             }
             return TiviMateVariantProbe(TiviMateInstalledVariant.UNKNOWN, versionName = versionName)
@@ -228,7 +236,16 @@ object TiviMateController {
                 viaSetup || viaMain
             }
             TiviMateInstalledVariant.NOT_INSTALLED -> false
-            else -> launch(context)
+            TiviMateInstalledVariant.PLAIN_MOD,
+            TiviMateInstalledVariant.UNKNOWN,
+            -> {
+                val base = normalizeGatewayBase(gatewayBase)
+                val playlistUrl = "$base${com.thothassistant.stepdaddy.gateway.routes.PlaylistPaths.TIVIMATE}"
+                val epgUrl = "$base/epg.xml"
+                val viaImport = triggerModPlaylistImport(context, playlistUrl, epgUrl)
+                val viaMain = launch(context)
+                viaImport || viaMain
+            }
         }
     }
 
@@ -269,12 +286,13 @@ object TiviMateController {
             normalized.contains("daddy")
     }
 
-    private fun isLikely461Mod(versionName: String?): Boolean {
+    private fun isLikelyPremiumMod(versionName: String?): Boolean {
         val name = versionName?.trim().orEmpty()
         if (name.isEmpty()) return false
-        return name.startsWith("4.6.") || name.contains("4.6.1")
+        return name.startsWith("4.6.") ||
+            name.startsWith("5.") ||
+            name.contains("premium", ignoreCase = true)
     }
-
     private fun isPackageInstalled(context: Context, packageName: String): Boolean {
         val pm = context.packageManager
         return runCatching {
@@ -312,7 +330,7 @@ object TiviMateController {
     /** `adb shell am start -n` component for the installed TiViMate-family player. */
     fun launchComponent(context: Context): String {
         val pkg = playerPackage(context) ?: DADDY_LIVE_PACKAGE
-        return "$pkg/$MAIN_ACTIVITY_CLASS"
+        return "$pkg/${launchActivityClass(context, pkg)}"
     }
 
     fun launch(context: Context): Boolean {
@@ -321,6 +339,27 @@ object TiviMateController {
             Log.w(TAG, "TiviMate not installed ($DADDY_LIVE_PACKAGE / $LEGACY_TIVIMATE_PACKAGE)")
             return false
         }
+        val activityClass = launchActivityClass(context, targetPackage)
+        val intent = Intent(Intent.ACTION_MAIN).apply {
+            component = ComponentName(targetPackage, activityClass)
+            addCategory(Intent.CATEGORY_LAUNCHER)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        return runCatching {
+            context.startActivity(intent)
+            Log.i(TAG, "Launched TiViMate via $targetPackage/$activityClass")
+            true
+        }.getOrElse { exc ->
+            if (activityClass != MAIN_ACTIVITY_CLASS) {
+                Log.w(TAG, "TiViMate launch via $activityClass failed, retry MainActivity")
+                return launchMainActivity(context, targetPackage)
+            }
+            Log.w(TAG, "TiViMate launch failed: ${exc.message}")
+            false
+        }
+    }
+
+    private fun launchMainActivity(context: Context, targetPackage: String): Boolean {
         val intent = Intent(Intent.ACTION_MAIN).apply {
             component = ComponentName(targetPackage, MAIN_ACTIVITY_CLASS)
             addCategory(Intent.CATEGORY_LAUNCHER)
@@ -328,12 +367,88 @@ object TiviMateController {
         }
         return runCatching {
             context.startActivity(intent)
-            Log.i(TAG, "Launched TiViMate via $targetPackage/.ui.MainActivity")
+            Log.i(TAG, "Launched TiViMate via $targetPackage/$MAIN_ACTIVITY_CLASS")
             true
         }.getOrElse { exc ->
-            Log.w(TAG, "TiViMate launch failed: ${exc.message}")
+            Log.w(TAG, "TiViMate MainActivity launch failed: ${exc.message}")
             false
         }
+    }
+
+    private fun launchActivityClass(context: Context, packageName: String): String {
+        if (packageName == LEGACY_TIVIMATE_PACKAGE && controlPackage(context) == null &&
+            isActivityExported(context, packageName, HAX_LAUNCH_ACTIVITY_CLASS)
+        ) {
+            return HAX_LAUNCH_ACTIVITY_CLASS
+        }
+        return MAIN_ACTIVITY_CLASS
+    }
+
+    /**
+     * Programmatic M3U + EPG import for premium mods that block the manual add-playlist UI.
+     * Uses TiViMate's VIEW handler on [MAIN_ACTIVITY_CLASS] (works on x2 Premium 5.x).
+     */
+    fun triggerModPlaylistImport(
+        context: Context,
+        playlistUrl: String,
+        epgUrl: String? = null,
+    ): Boolean {
+        val targetPackage = playerPackage(context) ?: return false
+        if (controlPackage(context) != null) return false
+        val trimmedPlaylist = playlistUrl.trim()
+        if (trimmedPlaylist.isEmpty()) return false
+
+        val playlistIntent = Intent(Intent.ACTION_VIEW, Uri.parse(trimmedPlaylist)).apply {
+            component = ComponentName(targetPackage, MAIN_ACTIVITY_CLASS)
+            setDataAndType(Uri.parse(trimmedPlaylist), MIME_M3U)
+            addCategory(Intent.CATEGORY_DEFAULT)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+        val playlistStarted = runCatching {
+            context.startActivity(playlistIntent)
+            Log.i(TAG, "Triggered TiViMate mod playlist import: $trimmedPlaylist")
+            true
+        }.getOrElse { exc ->
+            Log.w(TAG, "TiViMate mod playlist import failed: ${exc.message}")
+            false
+        }
+
+        val trimmedEpg = epgUrl?.trim().orEmpty()
+        if (trimmedEpg.isEmpty()) return playlistStarted
+
+        val epgIntent = Intent(Intent.ACTION_VIEW, Uri.parse(trimmedEpg)).apply {
+            component = ComponentName(targetPackage, MAIN_ACTIVITY_CLASS)
+            setDataAndType(Uri.parse(trimmedEpg), MIME_XMLTV)
+            addCategory(Intent.CATEGORY_DEFAULT)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+        val epgStarted = runCatching {
+            context.startActivity(epgIntent)
+            Log.i(TAG, "Triggered TiViMate mod EPG import: $trimmedEpg")
+            true
+        }.getOrElse { exc ->
+            Log.w(TAG, "TiViMate mod EPG import failed: ${exc.message}")
+            false
+        }
+        return playlistStarted || epgStarted
+    }
+
+    private fun isActivityExported(context: Context, packageName: String, activityClass: String): Boolean {
+        return runCatching {
+            val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getActivityInfo(
+                    ComponentName(packageName, activityClass),
+                    PackageManager.ComponentInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()),
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getActivityInfo(
+                    ComponentName(packageName, activityClass),
+                    PackageManager.MATCH_DEFAULT_ONLY,
+                )
+            }
+            info.exported
+        }.getOrDefault(false)
     }
 
     /** Persist boot-tune for next MainActivity resume (patched TiViMate HTTP :4617). */

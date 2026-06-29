@@ -35,7 +35,10 @@ class LightEpgBuilder(
     }
     val primaryExpansion = idBridge?.expandWantedIds(tvgIds)
         ?: EpgTvgIdMatcher.expandWantedIds(tvgIds)
-    val grouped = groupTvgIdsByFeed(tvgIds)
+    val epgshareTvgIds = playlistIdsForEpgshareMerge(tvgIds) { playlistId ->
+        tvtvFetcher?.bridgeEntry(playlistId) != null
+    }
+    val grouped = groupTvgIdsByFeed(epgshareTvgIds)
     grouped.keys.forEach { url -> ensureFeedCached(url) }
 
     val windowStart = Instant.now().minusSeconds(EpgConfig.PROGRAMME_PAST_MINUTES * 60L)
@@ -52,6 +55,33 @@ class LightEpgBuilder(
     output.bufferedWriter(Charsets.UTF_8).use { writer ->
       writer.write("""<?xml version="1.0" encoding="UTF-8"?>""")
       writer.write("\n<tv generator-info-name=\"StepDaddy Gateway\">")
+
+      val easternPreferredIds = tvgIds.filter { playlistId ->
+          playlistId in TvtvUsEpgConfig.EASTERN_PREFERRED_PLAYLIST_IDS &&
+              tvtvFetcher?.bridgeEntry(playlistId) != null
+      }
+      if (tvtvGapFillEnabled && tvtvFetcher != null && easternPreferredIds.isNotEmpty()) {
+        val beforeProgrammes = programmeCount
+        tvtvFetcher.mergeGapFill(
+            writer = writer,
+            playlistIds = easternPreferredIds,
+            channelNamesByTvgId = channelNamesByTvgId,
+            writtenChannelIds = writtenChannelIds,
+            idsWithProgrammes = idsWithProgrammes,
+            windowStart = windowStart,
+            windowEnd = windowEnd,
+            channelCountRef = { channelCount = it },
+            programmeCountRef = { programmeCount = it },
+            getChannelCount = { channelCount },
+            getProgrammeCount = { programmeCount },
+        )
+        if (programmeCount > beforeProgrammes) {
+          android.util.Log.i(
+              "LightEpgBuilder",
+              "tvtv.us Eastern EPG: +${programmeCount - beforeProgrammes} programmes for ${easternPreferredIds.size} ids",
+          )
+        }
+      }
 
       grouped.forEach { (url, playlistIds) ->
         val cache = store.feedCacheFile(url)
@@ -110,7 +140,11 @@ class LightEpgBuilder(
       val tvtvBridgeIds = tvtvFetcher?.let { fetcher ->
           val bridged = tvtvGapIds.filter { fetcher.bridgeEntry(it) != null }
           val prioritized = buildList {
-              addAll(tvgIds.filter { it in bridged })
+              addAll(
+                  tvgIds.filter {
+                      it in bridged && it !in TvtvUsEpgConfig.EASTERN_PREFERRED_PLAYLIST_IDS
+                  },
+              )
               addAll(bridged.filter { it !in tvgIds })
           }.distinct().take(TvtvUsEpgConfig.MAX_CHANNELS_PER_BUILD)
           prioritized
@@ -425,6 +459,16 @@ class LightEpgBuilder(
     fun emptyXml(): ByteArray =
         """<?xml version="1.0" encoding="UTF-8"?><tv generator-info-name="StepDaddy Gateway"></tv>"""
             .toByteArray(Charsets.UTF_8)
+
+    /** Skip epgshare US2 for Eastern cable ids that have a tvtv.us East bridge row. */
+    fun playlistIdsForEpgshareMerge(
+        tvgIds: Set<String>,
+        hasTvtvBridge: (String) -> Boolean,
+    ): Set<String> =
+        tvgIds.filter { playlistId ->
+            playlistId !in TvtvUsEpgConfig.EASTERN_PREFERRED_PLAYLIST_IDS ||
+                !hasTvtvBridge(playlistId)
+        }.toSet()
 
     fun groupTvgIdsByFeed(tvgIds: Set<String>): Map<String, Set<String>> {
       val grouped = linkedMapOf<String, MutableSet<String>>()

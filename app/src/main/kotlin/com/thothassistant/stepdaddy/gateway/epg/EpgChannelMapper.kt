@@ -237,11 +237,13 @@ class EpgChannelMapper(context: Context) {
     private val AUTHORITATIVE_ID_MAPPINGS = mapOf(
         "326" to "LifetimeNetwork.us",
         "389" to "LifetimeMovieNetwork.us",
+        "689" to "HBO2.us",
     )
 
     private val STALE_RUNTIME_ID_VALUES = mapOf(
         "326" to setOf("USANetwork.us", "USA.Network.HD.us2", "USA.Network.HD.(Pacific).us2"),
         "389" to setOf("LifetimeNetwork.us"),
+        "689" to setOf("HBO2.HD.(Pacific).us2", "HBO2.ca", "HBO2.HD.us2"),
     )
 
     fun runtimeNameOverridesFile(context: Context): File =

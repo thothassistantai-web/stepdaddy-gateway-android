@@ -240,14 +240,15 @@ object EventMetadataScraper {
     ): String {
         regionPrefixRe.find(title)?.groupValues?.getOrNull(1)?.uppercase()?.let { return it }
         regionPrefixRe.find(category)?.groupValues?.getOrNull(1)?.uppercase()?.let { return it }
-        dateKey?.let { scheduleRegionRe.find(it)?.groupValues?.getOrNull(1)?.uppercase() }?.let { return it }
-        if (dateKey?.contains("UK GMT", ignoreCase = true) == true) return "UK"
-        if (dateKey?.contains("US ", ignoreCase = true) == true) return "US"
 
         val corpus = listOf(category, title, streamLabel.orEmpty()).joinToString(" ").lowercase()
         for ((hint, code) in categoryRegionHints) {
             if (hint in corpus) return code
         }
+
+        dateKey?.let { scheduleRegionRe.find(it)?.groupValues?.getOrNull(1)?.uppercase() }?.let { return it }
+        if (dateKey?.contains("UK GMT", ignoreCase = true) == true) return "UK"
+        if (dateKey?.contains("US ", ignoreCase = true) == true) return "US"
 
         languageCode?.trim()?.lowercase()?.let { lang ->
             when {

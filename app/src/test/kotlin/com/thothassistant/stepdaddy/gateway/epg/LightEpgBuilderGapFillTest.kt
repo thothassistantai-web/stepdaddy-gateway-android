@@ -7,6 +7,24 @@ import org.junit.Test
 
 class LightEpgBuilderGapFillTest {
     @Test
+    fun `playlistIdsForEpgshareMerge skips eastern preferred when tvtv bridge exists`() {
+        val filtered = LightEpgBuilder.playlistIdsForEpgshareMerge(
+            setOf("HBO2.us", "Showtime.us", "StarzInBlack.us", "StarzKidsFamily.us", "ESPN.us"),
+        ) { id ->
+            id in setOf("HBO2.us", "Showtime.us", "StarzInBlack.us", "StarzKidsFamily.us")
+        }
+        assertEquals(setOf("ESPN.us"), filtered)
+    }
+
+    @Test
+    fun `playlistIdsForEpgshareMerge keeps eastern id when no tvtv bridge`() {
+        val filtered = LightEpgBuilder.playlistIdsForEpgshareMerge(
+            setOf("HBO2.us", "ESPN.us"),
+        ) { false }
+        assertEquals(setOf("HBO2.us", "ESPN.us"), filtered)
+    }
+
+    @Test
     fun `groupTvgIdsByFeed uses primary feeds only`() {
         val grouped = LightEpgBuilder.groupTvgIdsByFeed(
             setOf("ESPN.us", "WNYW-DT.us_locals1", "FS1.us"),

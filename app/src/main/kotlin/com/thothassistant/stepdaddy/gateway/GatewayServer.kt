@@ -157,8 +157,8 @@ class GatewayServer(
                     head { routes.vlcUserPlaylist(call) }
                 }
                 route(PlaylistPaths.TIVIMATE_LEGACY) {
-                    get { routes.tivimatePlaylist(call) }
-                    head { routes.tivimatePlaylist(call) }
+                    get { routes.tivimateUserPlaylist(call) }
+                    head { routes.tivimateUserPlaylist(call) }
                 }
                 route(PlaylistPaths.TIVIMATE_SETUP) {
                     get { routes.tivimateSetupPlaylist(call) }
@@ -169,8 +169,8 @@ class GatewayServer(
                     head { routes.streamVaultSetupPlaylist(call) }
                 }
                 route(PlaylistPaths.STREAMVAULT_LEGACY) {
-                    get { routes.streamVaultPlaylist(call) }
-                    head { routes.streamVaultPlaylist(call) }
+                    get { routes.streamVaultUserPlaylist(call) }
+                    head { routes.streamVaultUserPlaylist(call) }
                 }
                 route("/tivimate-stream/{channelId}.m3u8") {
                     get { streamRoutes.tivimateStream(call, call.parameters["channelId"].orEmpty()) }

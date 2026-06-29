@@ -7,6 +7,16 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.1] - 2026-06-29
+
+### Fixed
+
+- **Eastern premium movie EPG** — HBO 2 HD, Showtime HD/RAW, STARZ in Black, and STARZ Kids & Family no longer use epgshare `US2` Pacific/west offsets; playlist ids (`HBO2.us`, `Showtime.us`, `StarzInBlack.us`, `StarzKidsFamily.us`) prefer tvtv.us East site rows before epgshare merge
+- **Legacy playlist alias** — `/tivimate-playlist.m3u8` serves the same full catalog body as `/tivimate.m3u8` (not the diagnostic 50-channel bootstrap)
+- **Special Events guide playback** — guide HLS wrappers use master-playlist `EXT-X-STREAM-INF` (fixes ExoPlayer `UnexpectedLoaderException` on TiViMate 5.x mods)
+- **TiViMate x2 Premium mod** — Launch opens `com.andyhax.haxsplash.LaunchActivity`; gateway sends VIEW intents to import M3U + EPG when manual add-playlist is blocked
+- **EPG HEAD** — `/epg.xml` HEAD returns a single accurate `Content-Length` (TiViMate silent EPG update failure)
+
 ## [3.0.0] - 2026-06-28
 
 ### Added

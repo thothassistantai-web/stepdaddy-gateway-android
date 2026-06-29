@@ -7,6 +7,18 @@ package com.thothassistant.stepdaddy.gateway.epg
 object TvtvUsEpgConfig {
     const val LINEUP_ID = "USA-NY71652-X"
 
+    /**
+     * Premium US cable feeds where epgshare `US2` ids use Pacific/west offsets
+     * ([`.HD.(Pacific).us2`]) but DaddyLive/Xtream streams are Eastern.
+     * Prefer tvtv.us East site_ids (see [tvtv_id_bridge.json]) before epgshare merge.
+     */
+    val EASTERN_PREFERRED_PLAYLIST_IDS: Set<String> = setOf(
+        "HBO2.us",
+        "Showtime.us",
+        "StarzInBlack.us",
+        "StarzKidsFamily.us",
+    )
+
     const val GRID_URL_TEMPLATE =
         "https://www.tvtv.us/api/v1/lineup/$LINEUP_ID/grid/{start}/{end}/{site_id}"
 

@@ -42,12 +42,12 @@ object PlaylistPaths {
         TIVIMATE_M3U8,
         VLC,
         VLC_M3U8,
+        TIVIMATE_LEGACY,
+        STREAMVAULT_LEGACY,
     )
 
     val DIAGNOSTIC = listOf(
         TIVIMATE_SETUP,
         STREAMVAULT_SETUP,
-        TIVIMATE_LEGACY,
-        STREAMVAULT_LEGACY,
     )
 }
