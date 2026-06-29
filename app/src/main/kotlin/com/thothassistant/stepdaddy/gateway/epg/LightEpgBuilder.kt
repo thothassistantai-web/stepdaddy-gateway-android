@@ -75,6 +75,7 @@ class LightEpgBuilder(
             getChannelCount = { channelCount },
             getProgrammeCount = { programmeCount },
             maxChannels = TvtvUsEpgConfig.MAX_EASTERN_CHANNELS_PER_BUILD,
+            passKind = TvtvUsEpgFetcher.TvtvPassKind.EASTERN,
         )
         if (programmeCount > beforeProgrammes) {
           android.util.Log.i(
@@ -162,6 +163,7 @@ class LightEpgBuilder(
             getChannelCount = { channelCount },
             getProgrammeCount = { programmeCount },
             maxChannels = TvtvUsEpgConfig.MAX_GENERAL_CHANNELS_PER_BUILD,
+            passKind = TvtvUsEpgFetcher.TvtvPassKind.GENERAL,
         )
         if (programmeCount > beforeProgrammes) {
           android.util.Log.i(

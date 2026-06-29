@@ -34,7 +34,7 @@ fun readStepdaddyVersionProp(name: String, default: String): String {
         ?.trim()
         ?: default
 }
-val stepdaddyVersionName = readStepdaddyVersionProp("STEPDADDY_VERSION", "3.0.5")
+val stepdaddyVersionName = readStepdaddyVersionProp("STEPDADDY_VERSION", "3.0.6")
 val stepdaddyVersionCode = readStepdaddyVersionProp("VERSION_CODE", "30000").toInt()
 
 val keystorePropertiesFile = rootProject.file("keystore.properties")

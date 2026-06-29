@@ -7,6 +7,12 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.6] - 2026-06-29
+
+### Fixed
+
+- **Eastern EPG pass** — sustained tvtv.us 429 no longer aborts remaining HBO 2 / Showtime / STARZ fetches; only the general gap-fill pass is skipped
+
 ## [3.0.5] - 2026-06-29
 
 ### Fixed

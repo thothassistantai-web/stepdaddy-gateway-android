@@ -24,7 +24,7 @@ class TvtvUsEpgFetcher(
 ) {
     private val bridgeByPlaylistId: Map<String, BridgeEntry> = loadBundled(context)
     @Volatile
-    private var rateLimitExhausted = false
+    private var skipGeneralTvtvPass = false
 
     init {
         Log.i(TAG, "tvtv.us EPG bridge: ${bridgeByPlaylistId.size} playlist ids")
@@ -35,10 +35,10 @@ class TvtvUsEpgFetcher(
     fun bridgeEntry(playlistTvgId: String): BridgeEntry? = bridgeByPlaylistId[playlistTvgId.trim()]
 
     fun resetBuildState() {
-        rateLimitExhausted = false
+        skipGeneralTvtvPass = false
     }
 
-    fun isRateLimitExhausted(): Boolean = rateLimitExhausted
+    fun isRateLimitExhausted(): Boolean = skipGeneralTvtvPass
 
     fun mergeGapFill(
         writer: BufferedWriter,
@@ -53,8 +53,9 @@ class TvtvUsEpgFetcher(
         getChannelCount: () -> Int,
         getProgrammeCount: () -> Int,
         maxChannels: Int,
+        passKind: TvtvPassKind,
     ) {
-        if (rateLimitExhausted) return
+        if (passKind == TvtvPassKind.GENERAL && skipGeneralTvtvPass) return
 
         val wanted = playlistIds.mapNotNull { playlistId ->
             val entry = bridgeByPlaylistId[playlistId] ?: return@mapNotNull null
@@ -66,7 +67,7 @@ class TvtvUsEpgFetcher(
         var programmeCount = getProgrammeCount()
 
         wanted.forEachIndexed { index, (playlistId, entry) ->
-            if (rateLimitExhausted) return@forEachIndexed
+            if (passKind == TvtvPassKind.GENERAL && skipGeneralTvtvPass) return@forEachIndexed
             if (index > 0) {
                 Thread.sleep(TvtvUsEpgConfig.GRID_REQUEST_DELAY_MS)
             }
@@ -76,7 +77,12 @@ class TvtvUsEpgFetcher(
                 Log.w(TAG, "tvtv.us grid failed for $playlistId (${entry.siteId}): ${exc.message}")
                 emptyList()
             }
-            if (programmes.isEmpty()) return@forEachIndexed
+            if (programmes.isEmpty()) {
+                if (passKind == TvtvPassKind.EASTERN && skipGeneralTvtvPass) {
+                    Thread.sleep(TvtvUsEpgConfig.GRID_429_PAUSE_MS)
+                }
+                return@forEachIndexed
+            }
 
             val channelId = playlistId
             if (writtenChannelIds.add(channelId)) {
@@ -176,7 +182,7 @@ class TvtvUsEpgFetcher(
                         val finalResponse = httpClient.newCall(request).execute()
                         finalResponse.use { final ->
                             if (final.code == 429) {
-                                rateLimitExhausted = true
+                                skipGeneralTvtvPass = true
                                 if (cache.exists()) {
                                     Log.w(TAG, "tvtv.us 429 after pause, using stale grid cache for $url")
                                     return cache.readText(Charsets.UTF_8)
@@ -240,6 +246,11 @@ class TvtvUsEpgFetcher(
         val siteId: String,
         val xmltvId: String,
     )
+
+    enum class TvtvPassKind {
+        EASTERN,
+        GENERAL,
+    }
 
     companion object {
         @Serializable
