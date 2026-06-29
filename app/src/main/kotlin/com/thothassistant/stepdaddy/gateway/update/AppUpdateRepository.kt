@@ -1,5 +1,6 @@
 package com.thothassistant.stepdaddy.gateway.update
 
+import com.thothassistant.stepdaddy.gateway.BuildConfig
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.upstream.getText
 import kotlinx.serialization.json.Json
@@ -38,7 +39,10 @@ class AppUpdateRepository(
         } else {
             json.decodeFromString(UpdateManifest.serializer(), text)
         }
-        return manifest?.takeIf { it.apkUrl.isNotBlank() }?.let { AppUpdateInfo(it, sourceLabel) }
+        return manifest
+            ?.forCurrentBuild(isDebugBuild())
+            ?.takeIf { it.apkUrl.isNotBlank() }
+            ?.let { AppUpdateInfo(it, sourceLabel) }
     }
 
     private suspend fun parseGitHubRelease(text: String): UpdateManifest? {
@@ -51,13 +55,11 @@ class AppUpdateRepository(
                 .build()
             val manifestText = runCatching { httpClient.getText(manifestRequest) }.getOrNull().orEmpty()
             if (manifestText.isNotBlank()) {
-                return json.decodeFromString(UpdateManifest.serializer(), manifestText)
+                val manifest = json.decodeFromString(UpdateManifest.serializer(), manifestText)
+                return manifest.forCurrentBuild(isDebugBuild())
             }
         }
-        val apkAsset = release.assets.firstOrNull {
-            it.name.endsWith("-debug.apk", ignoreCase = true)
-        } ?: release.assets.firstOrNull { it.name.endsWith(".apk", ignoreCase = true) }
-            ?: return null
+        val apkAsset = selectApkAsset(release.assets) ?: return null
         val versionName = release.tagName.removePrefix("v").ifBlank { release.name.orEmpty() }
         val versionCode = parseVersionCodeFromBody(release.body)
             ?: parseVersionCodeFromTag(release.tagName)
@@ -81,6 +83,21 @@ class AppUpdateRepository(
     private fun isGitHubReleasesUrl(url: String): Boolean {
         val lower = url.lowercase()
         return lower.contains("api.github.com") && lower.contains("/releases")
+    }
+
+    private fun isDebugBuild(): Boolean = BuildConfig.APPLICATION_ID.endsWith(".debug")
+
+    private fun selectApkAsset(assets: List<GitHubReleaseAsset>): GitHubReleaseAsset? {
+        if (isDebugBuild()) {
+            return assets.firstOrNull { it.name.endsWith("-debug.apk", ignoreCase = true) }
+                ?: assets.firstOrNull { it.name.endsWith(".apk", ignoreCase = true) }
+        }
+        return assets.firstOrNull { it.name.endsWith("-release.apk", ignoreCase = true) }
+            ?: assets.firstOrNull {
+                it.name.endsWith(".apk", ignoreCase = true) &&
+                    !it.name.endsWith("-debug.apk", ignoreCase = true)
+            }
+            ?: assets.firstOrNull { it.name.endsWith(".apk", ignoreCase = true) }
     }
 
     private fun resolveManifestUrl(): String = environment.updateManifestUrl.trim()

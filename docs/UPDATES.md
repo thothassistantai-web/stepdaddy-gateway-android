@@ -10,7 +10,8 @@ The app reads a JSON file with this shape:
 {
   "versionCode": 2,
   "versionName": "1.0.0",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.0/stepdaddy-gateway-1.0.0-debug.apk",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.0/stepdaddy-gateway-1.0.0-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.0/stepdaddy-gateway-1.0.0-debug.apk",
   "releaseNotes": "Initial public release."
 }
 ```
@@ -19,7 +20,8 @@ The app reads a JSON file with this shape:
 |-------|----------|-------|
 | `versionCode` | Yes | Must be greater than the installed build to prompt |
 | `versionName` | Yes | Shown in the update dialog |
-| `apkUrl` | Yes | Direct HTTPS link to an `.apk` |
+| `apkUrl` | Yes | Stable / release package (`com.thothassistant.stepdaddy.gateway`) |
+| `apkUrlDebug` | No | Debug package (`com.thothassistant.stepdaddy.gateway.debug`); used when the installed app is a debug build |
 | `releaseNotes` | No | Markdown/plain text in the dialog |
 
 Example file in repo: [release/update-manifest.example.json](../release/update-manifest.example.json).
@@ -28,7 +30,7 @@ Example file in repo: [release/update-manifest.example.json](../release/update-m
 
 1. Settings → **Update manifest URL** → paste the GitHub API releases URL or latest release page API endpoint, e.g.  
    `https://api.github.com/repos/thothassistantai-web/stepdaddy-gateway-android/releases/latest`
-2. The app parses release assets: prefers `update-manifest.json`, else the first `.apk` asset plus `versionCode` from the release body (`versionCode: 2`) or tag (`v1.0.0+2`).
+2. The app parses release assets: prefers `update-manifest.json`, else the first matching `.apk` asset (`*-release.apk` on stable builds, `*-debug.apk` on debug builds) plus `versionCode` from the release body (`versionCode: 2`) or tag (`v1.0.0+2`).
 
 See [RELEASE.md](RELEASE.md) for maintainer release steps.
 

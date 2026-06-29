@@ -61,6 +61,7 @@ check_contains "${ROOT}/app/build.gradle.kts" "tivimate-daddy-v\${stepdaddyVersi
 check_contains "${ROOT}/release/update-manifest.json" "\"versionName\": \"${EXPECTED_VERSION}\"" "update-manifest versionName"
 check_contains "${ROOT}/release/update-manifest.json" "\"versionCode\": ${EXPECTED_CODE}" "update-manifest versionCode"
 check_contains "${ROOT}/release/update-manifest.json" "/v${EXPECTED_VERSION}/" "update-manifest apkUrl tag"
+check_contains "${ROOT}/release/update-manifest.json" "stepdaddy-gateway-${EXPECTED_VERSION}-release.apk" "update-manifest stable apkUrl"
 check_contains "${ROOT}/app/src/main/assets/install_apps_catalog.json" "\"version\": \"${EXPECTED_VERSION}\"" "install_apps_catalog TiviMate version"
 check_contains "${ROOT}/app/src/main/assets/install_apps_catalog.json" "tivimate-daddy-v${EXPECTED_VERSION}" "install_apps_catalog apkUrl tag"
 

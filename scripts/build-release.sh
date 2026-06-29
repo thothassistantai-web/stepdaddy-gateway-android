@@ -53,21 +53,22 @@ VERSION_CODE="$(grep -E '^VERSION_CODE=' "${_version_file}" | head -1 | cut -d= 
 DEBUG_APK_DIR="${ROOT}/app/build/outputs/apk/debug"
 DEBUG_APK="${DEBUG_APK_DIR}/app-debug.apk"
 DEBUG_RELEASE_NAME="stepdaddy-gateway-${VERSION_NAME}-debug.apk"
+RELEASE_RELEASE_NAME="stepdaddy-gateway-${VERSION_NAME}-release.apk"
 
 if [[ -f "${DEBUG_APK}" ]]; then
   cp "${DEBUG_APK}" "${RELEASE_DIR}/${DEBUG_RELEASE_NAME}"
-  echo "==> Debug APK (sideload/updater): ${RELEASE_DIR}/${DEBUG_RELEASE_NAME}"
+  echo "==> Debug APK (dev channel): ${RELEASE_DIR}/${DEBUG_RELEASE_NAME}"
 else
   echo "ERROR: Debug APK not found at ${DEBUG_APK}" >&2
   exit 1
 fi
 
 if [[ -f "${APK_DIR}/app-release.apk" ]]; then
-  cp "${APK_DIR}/app-release.apk" "${RELEASE_DIR}/stepdaddy-gateway-${VERSION_NAME}.apk"
-  echo "==> Signed APK: ${RELEASE_DIR}/stepdaddy-gateway-${VERSION_NAME}.apk"
+  cp "${APK_DIR}/app-release.apk" "${RELEASE_DIR}/${RELEASE_RELEASE_NAME}"
+  echo "==> Signed release APK: ${RELEASE_DIR}/${RELEASE_RELEASE_NAME}"
 elif [[ -f "${APK_DIR}/app-release-unsigned.apk" ]]; then
-  cp "${APK_DIR}/app-release-unsigned.apk" "${RELEASE_DIR}/stepdaddy-gateway-${VERSION_NAME}-unsigned.apk"
-  echo "==> Unsigned APK: ${RELEASE_DIR}/stepdaddy-gateway-${VERSION_NAME}-unsigned.apk"
+  cp "${APK_DIR}/app-release-unsigned.apk" "${RELEASE_DIR}/stepdaddy-gateway-${VERSION_NAME}-release-unsigned.apk"
+  echo "==> Unsigned release APK: ${RELEASE_DIR}/stepdaddy-gateway-${VERSION_NAME}-release-unsigned.apk"
 else
   echo "ERROR: No release APK found in ${APK_DIR}" >&2
   exit 1
@@ -78,14 +79,16 @@ if [[ -f "${BUNDLE_DIR}/app-release.aab" ]]; then
   echo "==> AAB: ${RELEASE_DIR}/stepdaddy-gateway-${VERSION_NAME}.aab"
 fi
 
-# Generate update manifest for GitHub Releases (debug APK — matches sideload package ID)
+# Generate update manifest for GitHub Releases (stable OTA → release APK; debug via apkUrlDebug)
 MANIFEST="${RELEASE_DIR}/update-manifest.json"
-APK_URL_PLACEHOLDER="https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v${VERSION_NAME}/${DEBUG_RELEASE_NAME}"
+RELEASE_APK_URL="https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v${VERSION_NAME}/${RELEASE_RELEASE_NAME}"
+DEBUG_APK_URL="https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v${VERSION_NAME}/${DEBUG_RELEASE_NAME}"
 cat > "${MANIFEST}" <<EOF
 {
   "versionCode": ${VERSION_CODE},
   "versionName": "${VERSION_NAME}",
-  "apkUrl": "${APK_URL_PLACEHOLDER}",
+  "apkUrl": "${RELEASE_APK_URL}",
+  "apkUrlDebug": "${DEBUG_APK_URL}",
   "releaseNotes": "See CHANGELOG.md",
   "mandatory": false
 }
@@ -94,6 +97,7 @@ echo "==> Update manifest: ${MANIFEST}"
 
 echo ""
 echo "Build complete."
-echo "  Debug APK (dev):  app/build/outputs/apk/debug/app-debug.apk"
-echo "  Sideload APK:     ${RELEASE_DIR}/${DEBUG_RELEASE_NAME}"
-echo "  Release outputs:  ${RELEASE_DIR}/"
+echo "  Debug APK (dev):    app/build/outputs/apk/debug/app-debug.apk"
+echo "  Debug sideload:     ${RELEASE_DIR}/${DEBUG_RELEASE_NAME}"
+echo "  Release sideload:     ${RELEASE_DIR}/${RELEASE_RELEASE_NAME}"
+echo "  Release outputs:    ${RELEASE_DIR}/"

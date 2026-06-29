@@ -94,9 +94,10 @@ When updating `install_apps_catalog.json` for a new TiviMate release, confirm si
 1. Tag: `git tag -a v1.0.1 -m "StepDaddy Gateway 1.0.1"`
 2. Push tag: `git push origin v1.0.1`
 3. Create release via `gh release create` with assets:
-   - `stepdaddy-gateway-<version>-debug.apk` (**required** for sideload / in-app updater — matches `com.thothassistant.stepdaddy.gateway.debug`)
-   - `update-manifest.json` (for in-app updater; `apkUrl` must point at the debug APK above)
-   - Optional: signed `app-release.apk` / `app-release.aab` for Play Console
+   - `stepdaddy-gateway-<version>-release.apk` (**required** for stable sideload / in-app updater — matches `com.thothassistant.stepdaddy.gateway`)
+   - `stepdaddy-gateway-<version>-debug.apk` (dev package `com.thothassistant.stepdaddy.gateway.debug`)
+   - `update-manifest.json` (for in-app updater; `apkUrl` → release APK, `apkUrlDebug` → debug APK)
+   - Optional: `app-release.aab` for Play Console
 
 ### `update-manifest.json` schema
 
@@ -104,7 +105,8 @@ When updating `install_apps_catalog.json` for a new TiviMate release, confirm si
 {
   "versionCode": 3,
   "versionName": "1.0.1",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.4/stepdaddy-gateway-1.0.4-debug.apk",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.4/stepdaddy-gateway-1.0.4-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.4/stepdaddy-gateway-1.0.4-debug.apk",
   "releaseNotes": "Boot reliability fixes.",
   "mandatory": false
 }

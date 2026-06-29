@@ -8,10 +8,20 @@ data class UpdateManifest(
     val versionCode: Int,
     val versionName: String,
     val minVersionCode: Int? = null,
+    /** Stable / release package OTA URL (`com.thothassistant.stepdaddy.gateway`). */
     val apkUrl: String,
+    /** Debug package OTA URL (`com.thothassistant.stepdaddy.gateway.debug`). */
+    val apkUrlDebug: String? = null,
     val releaseNotes: String? = null,
     val mandatory: Boolean = false,
-)
+) {
+    fun forCurrentBuild(isDebugBuild: Boolean): UpdateManifest {
+        if (!isDebugBuild) return this
+        val debugUrl = apkUrlDebug?.trim().orEmpty()
+        if (debugUrl.isBlank() || debugUrl == apkUrl) return this
+        return copy(apkUrl = debugUrl)
+    }
+}
 
 @Serializable
 data class GitHubRelease(
