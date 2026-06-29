@@ -78,6 +78,8 @@ class EventLifecycleManagerTest {
 
     @Test
     fun mergeFetched_dedupesCanonicalUpstreamUrls() {
+        val now = Instant.parse("2026-06-22T20:00:00Z")
+        val dateKey = "Monday 22nd June 2026 - Schedule Time UK GMT"
         val guide = SupplementChannel(
             id = "dlhd-guide:baseball-mlb",
             name = "Baseball MLB Schedule",
@@ -90,19 +92,19 @@ class EventLifecycleManagerTest {
             dlhdEventStreamKey = "tv|shared",
             providerTag = "MLB",
             tvgId = "DLHD.Event.1",
-            eventSourceUrl = "Baseball MLB|22nd June 2026|14:00|Existing Game",
+            eventSourceUrl = "Baseball MLB|$dateKey|19:00|Existing Game",
         )
         val fetchedDup = stream(
             id = "dlhd-event:fetched-dup",
             name = "Link - 1",
             dlhdEventStreamKey = "tv|shared",
-            eventSourceUrl = "Baseball MLB|22nd June 2026|14:00|Link - 1",
+            eventSourceUrl = "Baseball MLB|$dateKey|19:00|Link - 1",
         )
         val fetchedNew = stream(
             id = "dlhd-event:new",
             name = "New Game",
             dlhdEventStreamKey = "tv|new",
-            eventSourceUrl = "Baseball MLB|22nd June 2026|16:00|New Game",
+            eventSourceUrl = "Baseball MLB|$dateKey|19:30|New Game",
         )
         val existingState = EventLifecycleManager.CatalogState(
             channels = listOf(guide, existing),
@@ -113,6 +115,7 @@ class EventLifecycleManagerTest {
             existing = existingState,
             fetchedChannels = listOf(guide, existing, fetchedDup, fetchedNew),
             fetchedGuideSchedules = emptyMap(),
+            nowMs = now.toEpochMilli(),
         )
 
         assertEquals(3, merged.channels.size)

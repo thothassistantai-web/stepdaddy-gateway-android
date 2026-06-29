@@ -4,6 +4,7 @@ import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Instant
 
 class SpecialEventSortTest {
     @Test
@@ -20,6 +21,65 @@ class SpecialEventSortTest {
                 "https://thetvapp.link/mlb/boston-red-sox-toronto-blue-jays/43112409480",
             ),
         )
+    }
+
+    @Test
+    fun eventWindowSortKey_liveBeforeUpcoming() {
+        val now = 1_000_000L
+        val live = SpecialEventSort.eventWindowSortKey(
+            startMs = now - 60_000L,
+            stopMs = now + 3_600_000L,
+            nowMs = now,
+        )
+        val upcoming = SpecialEventSort.eventWindowSortKey(
+            startMs = now + 3_600_000L,
+            stopMs = now + 7_200_000L,
+            nowMs = now,
+        )
+        assertTrue(live < upcoming)
+    }
+
+    @Test
+    fun eventWindowSortKey_ordersUpcomingByStartTime() {
+        val now = 1_000_000L
+        val sooner = SpecialEventSort.eventWindowSortKey(
+            startMs = now + 600_000L,
+            stopMs = now + 3_600_000L,
+            nowMs = now,
+        )
+        val later = SpecialEventSort.eventWindowSortKey(
+            startMs = now + 3_600_000L,
+            stopMs = now + 7_200_000L,
+            nowMs = now,
+        )
+        assertTrue(sooner < later)
+    }
+
+    @Test
+    fun guideBlockEventSortKey_prefersEarliestActiveRow() {
+        val now = Instant.parse("2026-07-06T18:00:00Z").toEpochMilli()
+        val guideId = "dlhd-guide:tennis"
+        val programmes = mapOf(
+            guideId to listOf(
+                SpecialEventsMerger.GuideEventRow(
+                    title = "Later",
+                    startMs = now + 3_600_000L,
+                    stopMs = now + 7_200_000L,
+                    category = "Tennis",
+                    league = "ATP",
+                ),
+                SpecialEventsMerger.GuideEventRow(
+                    title = "Live Now",
+                    startMs = now - 600_000L,
+                    stopMs = now + 3_600_000L,
+                    category = "Tennis",
+                    league = "ATP",
+                ),
+            ),
+        )
+        val key = SpecialEventSort.guideBlockEventSortKey(guideId, programmes, now)
+        val liveKey = SpecialEventSort.eventWindowSortKey(now - 600_000L, now + 3_600_000L, now)
+        assertEquals(liveKey, key)
     }
 
     @Test

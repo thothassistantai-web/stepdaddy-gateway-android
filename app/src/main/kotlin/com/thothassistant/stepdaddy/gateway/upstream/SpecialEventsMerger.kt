@@ -117,7 +117,8 @@ object SpecialEventsMerger {
                 ),
             )
 
-            event.streams.forEachIndexed { linkIndex, stream ->
+            val cappedStreams = limitStreamLinks(event.streams)
+            cappedStreams.forEachIndexed { linkIndex, stream ->
                 val streamKey = "${stream.source.name}|${stream.channelId}"
                 if (!occupiedStreamKeys.add(streamKey)) return@forEachIndexed
                 val titleKey = normalizeTitleKey(event.title)
@@ -183,6 +184,12 @@ object SpecialEventsMerger {
         )
     }
 
+    /** Keeps primary link plus at most one backup per schedule event. */
+    fun limitStreamLinks(
+        streams: List<DaddyLiveEventResolver.ParsedStream>,
+        maxLinks: Int = SupplementConfig.MAX_STREAM_LINKS_PER_EVENT,
+    ): List<DaddyLiveEventResolver.ParsedStream> = streams.take(maxLinks.coerceAtLeast(1))
+
     /** Guide channel first, then that category's live streams; repeats per schedule category. */
     private fun interleaveGuidesAndStreams(
         guides: Map<String, SupplementChannel>,
@@ -191,14 +198,23 @@ object SpecialEventsMerger {
         guideProgrammes: Map<String, List<GuideEventRow>>,
         maxStreams: Int,
     ): List<SupplementChannel> {
+        val nowMs = System.currentTimeMillis()
         val orderedGuides = guides.values.sortedWith(
-            compareBy { SpecialEventSort.guideDisplayName(it).lowercase() },
+            compareBy(
+                { SpecialEventSort.guideBlockEventSortKey(it.id, guideProgrammes, nowMs) },
+                { SpecialEventSort.guideDisplayName(it).lowercase() },
+            ),
         )
         val result = mutableListOf<SupplementChannel>()
         var streamCount = 0
         for (guide in orderedGuides) {
             val slug = guide.id.removePrefix("dlhd-guide:")
-            val streams = streamsByCategory[slug].orEmpty().sortedBy { it.name.lowercase() }
+            val streams = streamsByCategory[slug].orEmpty().sortedWith(
+                compareBy(
+                    { SpecialEventSort.streamWindowSortKey(it, nowMs) },
+                    { it.name.lowercase() },
+                ),
+            )
             if (streams.isEmpty() && guideProgrammes[guide.id].orEmpty().isEmpty()) continue
             result += guide
             if (streamCount >= maxStreams) continue
@@ -211,6 +227,7 @@ object SpecialEventsMerger {
         if (streamCount < maxStreams) {
             val orphans = theTvAppStreams.sortedWith(
                 compareBy(
+                    { SpecialEventSort.streamWindowSortKey(it, nowMs) },
                     { SpecialEventSort.sortKey(it.providerTag, it.name, it.eventSourceUrl) },
                     { it.name.lowercase() },
                 ),

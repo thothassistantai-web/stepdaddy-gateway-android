@@ -230,6 +230,51 @@ class SpecialEventCatalogMaintainerTest {
     }
 
     @Test
+    fun `merge prunes expired existing before applying cap`() {
+        val now = Instant.parse("2026-06-22T20:00:00Z")
+        val dateKey = "Monday 22nd June 2026 - Schedule Time UK GMT"
+        val expired = SupplementChannel(
+            id = "dlhd-event:expired",
+            name = "Expired Game",
+            groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+            streamUrl = "",
+            eventSourceUrl = "Brazil|$dateKey|10:00|Brazil : Old Match",
+            eventStartMs = now.minus(5, ChronoUnit.HOURS).toEpochMilli(),
+            eventStopMs = now.minus(2, ChronoUnit.HOURS).toEpochMilli(),
+        )
+        val guide = SupplementChannel(
+            id = "dlhd-guide:brazil",
+            name = "Brazil Schedule",
+            groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+            streamUrl = "",
+        )
+        val japanGuide = SupplementChannel(
+            id = "dlhd-guide:japan",
+            name = "Japan Schedule",
+            groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+            streamUrl = "",
+        )
+        val fresh = SupplementChannel(
+            id = "dlhd-event:fresh",
+            name = "Japan Live",
+            groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
+            streamUrl = "",
+            eventSourceUrl = "Japan|$dateKey|19:00|Japan : Live Match",
+            eventStartMs = now.minus(30, ChronoUnit.MINUTES).toEpochMilli(),
+            eventStopMs = now.plus(2, ChronoUnit.HOURS).toEpochMilli(),
+        )
+        val (merged, _) = SpecialEventCatalogMaintainer.mergeFetchedSpecialEvents(
+            existing = listOf(guide, expired),
+            fetched = listOf(japanGuide, fresh),
+            fetchedGuideSchedules = emptyMap(),
+            existingGuideSchedules = emptyMap(),
+            nowMs = now.toEpochMilli(),
+        )
+        assertTrue(merged.none { it.id == "dlhd-event:expired" })
+        assertTrue(merged.any { it.id == "dlhd-event:fresh" })
+    }
+
+    @Test
     fun `merge adds fetched stream while keeping existing guide order`() {
         val guide = SupplementChannel(
             id = "dlhd-guide:tennis",

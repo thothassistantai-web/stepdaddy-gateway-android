@@ -61,9 +61,15 @@ object SpecialEventCatalogMaintainer {
         fetched: List<SupplementChannel>,
         fetchedGuideSchedules: Map<String, List<SpecialEventsMerger.GuideEventRow>>,
         existingGuideSchedules: Map<String, List<SpecialEventsMerger.GuideEventRow>>,
+        nowMs: Long = System.currentTimeMillis(),
     ): Pair<List<SupplementChannel>, Map<String, List<SpecialEventsMerger.GuideEventRow>>> {
-        val nonSpecial = existing.filter { !isSpecialEventChannel(it.id) }
-        val existingSpecial = existing.filter { isSpecialEventChannel(it.id) }
+        val pruned = prune(
+            channels = existing,
+            guideSchedules = existingGuideSchedules,
+            nowMs = nowMs,
+        )
+        val nonSpecial = pruned.channels.filter { !isSpecialEventChannel(it.id) }
+        val existingSpecial = pruned.channels.filter { isSpecialEventChannel(it.id) }
         val fetchedSpecial = fetched.filter { isSpecialEventChannel(it.id) }
 
         val mergedSpecialById = linkedMapOf<String, SupplementChannel>()
@@ -71,7 +77,7 @@ object SpecialEventCatalogMaintainer {
         fetchedSpecial.forEach { mergedSpecialById[it.id] = it }
 
         val mergedGuides = linkedMapOf<String, List<SpecialEventsMerger.GuideEventRow>>()
-        existingGuideSchedules.forEach { (guideId, rows) -> mergedGuides[guideId] = rows.toList() }
+        pruned.guideSchedules.forEach { (guideId, rows) -> mergedGuides[guideId] = rows.toList() }
         fetchedGuideSchedules.forEach { (guideId, rows) ->
             if (rows.isEmpty()) return@forEach
             val prior = mergedGuides[guideId].orEmpty()
@@ -83,6 +89,7 @@ object SpecialEventCatalogMaintainer {
         val orderedSpecial = buildOrderedSpecialChannels(
             mergedSpecialById.values.toList(),
             mergedGuides,
+            nowMs = nowMs,
         )
         return nonSpecial + orderedSpecial to mergedGuides
     }
@@ -90,9 +97,13 @@ object SpecialEventCatalogMaintainer {
     private fun buildOrderedSpecialChannels(
         channels: List<SupplementChannel>,
         guideSchedules: Map<String, List<SpecialEventsMerger.GuideEventRow>>,
+        nowMs: Long = System.currentTimeMillis(),
     ): List<SupplementChannel> {
         val guides = channels.filter { it.id.startsWith("dlhd-guide:") }
-        val streams = channels.filter { it.id.startsWith("dlhd-event:") }
+        val streams = channels.filter { channel ->
+            channel.id.startsWith("dlhd-event:") &&
+                isDlhdEventActive(channel, Instant.ofEpochMilli(nowMs))
+        }
         val sports = channels.filter { it.id.startsWith("sport:") }
         if (guides.isEmpty() && streams.isEmpty()) return sports
 
@@ -101,13 +112,8 @@ object SpecialEventCatalogMaintainer {
         }
         val orderedGuides = guides.sortedWith(
             compareBy(
-                {
-                    SpecialEventSort.categoryBlockSortKey(
-                        it.name.removeSuffix(" Schedule"),
-                        it.providerTag,
-                    )
-                },
-                { it.name.lowercase() },
+                { SpecialEventSort.guideBlockEventSortKey(it.id, guideSchedules, nowMs) },
+                { SpecialEventSort.guideDisplayName(it).lowercase() },
             ),
         )
         val result = mutableListOf<SupplementChannel>()
@@ -115,7 +121,12 @@ object SpecialEventCatalogMaintainer {
         val maxStreams = SupplementConfig.MAX_SPECIAL_EVENT_STREAMS
         for (guide in orderedGuides) {
             val slug = guide.id.removePrefix("dlhd-guide:")
-            val categoryStreams = streamsByCategory[slug].orEmpty().sortedBy { it.name.lowercase() }
+            val categoryStreams = streamsByCategory[slug].orEmpty().sortedWith(
+                compareBy(
+                    { SpecialEventSort.streamWindowSortKey(it, nowMs) },
+                    { it.name.lowercase() },
+                ),
+            )
             if (categoryStreams.isEmpty() &&
                 guideSchedules[guide.id].orEmpty().isEmpty()
             ) {
@@ -132,6 +143,7 @@ object SpecialEventCatalogMaintainer {
         if (streamCount < maxStreams) {
             val orphanSports = sports.sortedWith(
                 compareBy(
+                    { SpecialEventSort.streamWindowSortKey(it, nowMs) },
                     { SpecialEventSort.sortKey(it.providerTag, it.name, it.eventSourceUrl) },
                     { it.name.lowercase() },
                 ),

@@ -56,6 +56,32 @@ object SpecialEventSort {
         return normalizeLeague(category)
     }
 
+    /**
+     * Sort key for live/upcoming event rows — live (on-air) before upcoming, then by start time.
+     * Lower values sort first.
+     */
+    fun eventWindowSortKey(startMs: Long, stopMs: Long, nowMs: Long): Long {
+        if (!SpecialEventLifecycle.isActive(startMs, stopMs, nowMs)) return Long.MAX_VALUE
+        val isLive = startMs <= nowMs
+        val tier = if (isLive) 0L else 1L
+        return (tier shl 48) or (startMs and 0x0000_FFFF_FFFF_FFFFL)
+    }
+
+    fun streamWindowSortKey(channel: SupplementChannel, nowMs: Long): Long {
+        val start = channel.eventStartMs ?: return Long.MAX_VALUE
+        val stop = channel.eventStopMs ?: return Long.MAX_VALUE
+        return eventWindowSortKey(start, stop, nowMs)
+    }
+
+    fun guideBlockEventSortKey(
+        guideId: String,
+        guideProgrammes: Map<String, List<SpecialEventsMerger.GuideEventRow>>,
+        nowMs: Long,
+    ): Long {
+        val rows = guideProgrammes[guideId].orEmpty()
+        return rows.minOfOrNull { eventWindowSortKey(it.startMs, it.stopMs, nowMs) } ?: Long.MAX_VALUE
+    }
+
     fun sortKey(providerTag: String?, channelName: String, eventUrl: String? = null): Int {
         val leagueIndex = leagueSortIndex(providerTag, channelName, eventUrl)
         return leagueIndex * 10_000 + channelName.lowercase().hashCode().and(0xFFF)

@@ -108,33 +108,34 @@ class SpecialEventsMergerTest {
     }
 
     @Test
-    fun merge_ordersGuideBlocksAlphabeticallyByDisplayName() {
+    fun merge_ordersGuideBlocksByActiveEventStartNotAlphabet() {
+        val dateKey = futureDateKey
         val dlhdEvents = listOf(
             DaddyLiveEventResolver.ParsedEvent(
-                category = "Tennis",
-                dateKey = futureDateKey,
+                category = "Zebra Late",
+                dateKey = dateKey,
                 timeLabel = "live",
-                title = "Tennis : Semifinal",
-                league = "TENNIS",
-                streams = listOf(
-                    DaddyLiveEventResolver.ParsedStream(
-                        label = "Link - 1",
-                        channelId = "301",
-                        source = DaddyLiveEventResolver.StreamSource.TV,
-                    ),
-                ),
-                live = false,
-            ),
-            DaddyLiveEventResolver.ParsedEvent(
-                category = "PPV Events",
-                dateKey = futureDateKey,
-                timeLabel = "live",
-                title = "PPV Events : Main Card",
+                title = "Zebra Late : Match",
                 league = "OTHER",
                 streams = listOf(
                     DaddyLiveEventResolver.ParsedStream(
                         label = "Link - 1",
-                        channelId = "302",
+                        channelId = "z1",
+                        source = DaddyLiveEventResolver.StreamSource.TV,
+                    ),
+                ),
+                live = true,
+            ),
+            DaddyLiveEventResolver.ParsedEvent(
+                category = "Alpha Early",
+                dateKey = dateKey,
+                timeLabel = "17:00",
+                title = "Alpha Early : Match",
+                league = "OTHER",
+                streams = listOf(
+                    DaddyLiveEventResolver.ParsedStream(
+                        label = "Link - 1",
+                        channelId = "a1",
                         source = DaddyLiveEventResolver.StreamSource.TV,
                     ),
                 ),
@@ -148,9 +149,98 @@ class SpecialEventsMergerTest {
             maxStreams = 10,
         )
         val ids = bundle.channels.map { it.id }
-        val ppvGuide = ids.indexOf("dlhd-guide:ppv-events")
-        val tennisGuide = ids.indexOf("dlhd-guide:tennis")
-        assertTrue(ppvGuide >= 0 && tennisGuide > ppvGuide)
+        val zebraGuide = ids.indexOf("dlhd-guide:zebra-late")
+        val alphaGuide = ids.indexOf("dlhd-guide:alpha-early")
+        assertTrue(zebraGuide >= 0 && alphaGuide > zebraGuide)
+    }
+
+    @Test
+    fun limitStreamLinks_capsAtTwoPerEvent() {
+        val streams = (1..5).map { index ->
+            DaddyLiveEventResolver.ParsedStream(
+                label = "Link - $index",
+                channelId = "ch-$index",
+                source = DaddyLiveEventResolver.StreamSource.TV,
+            )
+        }
+        val capped = SpecialEventsMerger.limitStreamLinks(streams)
+        assertEquals(2, capped.size)
+        assertEquals("ch-1", capped[0].channelId)
+        assertEquals("ch-2", capped[1].channelId)
+    }
+
+    @Test
+    fun merge_capsStreamLinksPerEvent() {
+        val streams = (1..4).map { index ->
+            DaddyLiveEventResolver.ParsedStream(
+                label = "Link - $index",
+                channelId = "multi-$index",
+                source = DaddyLiveEventResolver.StreamSource.TV,
+            )
+        }
+        val bundle = SpecialEventsMerger.buildFromParsed(
+            dlhdEvents = listOf(
+                DaddyLiveEventResolver.ParsedEvent(
+                    category = "Boxing",
+                    dateKey = futureDateKey,
+                    timeLabel = "live",
+                    title = "Boxing : Main Event",
+                    league = "BOXING",
+                    streams = streams,
+                    live = false,
+                ),
+            ),
+            dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = 1, streamLinks = 4),
+            theTvAppChannels = emptyList(),
+            maxStreams = 10,
+        )
+        assertEquals(2, bundle.channels.count { it.id.startsWith("dlhd-event:") })
+    }
+
+    @Test
+    fun merge_prioritizesLiveEventsUnderStreamCap() {
+        val dateKey = futureDateKey
+        val manyBrazil = (1..30).map { index ->
+            DaddyLiveEventResolver.ParsedEvent(
+                category = "Brazil",
+                dateKey = dateKey,
+                timeLabel = "%02d:%02d".format(20 + (index % 3), index % 60),
+                title = "Brazil : Match $index",
+                league = "SOCCER",
+                streams = listOf(
+                    DaddyLiveEventResolver.ParsedStream(
+                        label = "Link - 1",
+                        channelId = "br-$index",
+                        source = DaddyLiveEventResolver.StreamSource.TV,
+                    ),
+                ),
+                live = false,
+            )
+        }
+        val japanLive = DaddyLiveEventResolver.ParsedEvent(
+            category = "Japan",
+            dateKey = dateKey,
+            timeLabel = "live",
+            title = "Japan : Live Match",
+            league = "SOCCER",
+            streams = listOf(
+                DaddyLiveEventResolver.ParsedStream(
+                    label = "Link - 1",
+                    channelId = "jp-live",
+                    source = DaddyLiveEventResolver.StreamSource.TV,
+                ),
+            ),
+            live = true,
+        )
+        val bundle = SpecialEventsMerger.buildFromParsed(
+            dlhdEvents = manyBrazil + japanLive,
+            dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = 31, streamLinks = 31),
+            theTvAppChannels = emptyList(),
+            maxStreams = 5,
+        )
+        val eventStreams = bundle.channels.filter { it.id.startsWith("dlhd-event:") }
+        assertTrue(eventStreams.size <= 5)
+        assertTrue(eventStreams.any { it.eventSourceUrl?.startsWith("Japan|") == true })
     }
 
     @Test

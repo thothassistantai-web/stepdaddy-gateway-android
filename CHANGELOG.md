@@ -7,6 +7,12 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.7] - 2026-06-29
+
+### Fixed
+
+- **Special Events cap** — max 2 upstream links per schedule event; live/on-air rows prioritized by start time instead of category A–Z; expired rows pruned before merge; stream cap raised to 120
+
 ## [3.0.6] - 2026-06-29
 
 ### Fixed

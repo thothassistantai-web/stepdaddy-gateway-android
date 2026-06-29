@@ -96,12 +96,14 @@ object EventLifecycleManager {
         existing: CatalogState,
         fetchedChannels: List<SupplementChannel>,
         fetchedGuideSchedules: Map<String, List<SpecialEventsMerger.GuideEventRow>>,
+        nowMs: Long = System.currentTimeMillis(),
     ): CatalogState {
         val (mergedChannels, mergedGuides) = SpecialEventCatalogMaintainer.mergeFetchedSpecialEvents(
             existing = existing.channels,
             fetched = fetchedChannels,
             fetchedGuideSchedules = fetchedGuideSchedules,
             existingGuideSchedules = existing.guideSchedules,
+            nowMs = nowMs,
         )
         val deduped = SpecialEventStreamDedup.dedupeChannels(mergedChannels)
         return CatalogState(

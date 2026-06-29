@@ -2,7 +2,10 @@ package com.thothassistant.stepdaddy.gateway.upstream
 
 object SupplementConfig {
     /** Max playable event streams (DaddyLive + TheTvApp combined). */
-    const val MAX_SPECIAL_EVENT_STREAMS = 60
+    const val MAX_SPECIAL_EVENT_STREAMS = 120
+
+    /** Max upstream links kept per schedule event (primary + optional backup). */
+    const val MAX_STREAM_LINKS_PER_EVENT = 2
 
     /** Re-fetch DaddyLive schedule + TheTvApp embeds for Special Events only. */
     const val SPECIAL_EVENTS_SYNC_INTERVAL_MS = 15 * 60_000L
