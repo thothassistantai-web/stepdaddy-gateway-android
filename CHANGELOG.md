@@ -7,6 +7,12 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.9] - 2026-06-29
+
+### Fixed
+
+- **Mirror health observability** — `/health` `mirrorStats` is populated when Special Events mirrors exist; per-mirror probe cache and event-level fallback drive `specialEventMirrorsHealthy` counts instead of always reporting zero
+
 ## [3.0.8] - 2026-06-29
 
 ### Added

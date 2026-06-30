@@ -23,6 +23,8 @@ object SpecialEventsMirrorHealth {
     fun summarize(
         channels: List<SupplementChannel>,
         activeMirrorIndexByEvent: Map<String, Int> = emptyMap(),
+        eventHealthByKey: Map<String, DlhdEventStreamHealth.Status> = emptyMap(),
+        mirrorProbeStore: DlhdEventMirrorProbeStore? = null,
         maxEventDetails: Int = 32,
     ): Summary {
         val events = channels.filter { it.id.startsWith("dlhd-event:") }
@@ -36,14 +38,25 @@ object SpecialEventsMirrorHealth {
             val mirrors = mirrorsFor(channel)
             if (mirrors.isEmpty()) return@forEach
             val eventKey = channel.dlhdEventKey ?: channel.id.removePrefix("dlhd-event:")
-            val healthy = mirrors.count { it.healthy == true }
+            val eventStatus = eventHealthByKey[eventKey] ?: DlhdEventStreamHealth.Status.UNKNOWN
+            val activeIndex = activeMirrorIndexByEvent[eventKey] ?: 0
+            val healthy = mirrors.withIndex().count { (mirrorIndex, mirror) ->
+                isMirrorHealthy(
+                    mirror = mirror,
+                    eventKey = eventKey,
+                    eventStatus = eventStatus,
+                    activeIndex = activeIndex,
+                    mirrorIndex = mirrorIndex,
+                    mirrorProbeStore = mirrorProbeStore,
+                )
+            }
             totalMirrors += mirrors.size
             healthyMirrors += healthy
             details += EventMirrorStatus(
                 eventKey = eventKey,
                 mirrorsTotal = mirrors.size,
                 mirrorsHealthy = healthy,
-                activeMirrorIndex = activeMirrorIndexByEvent[eventKey] ?: 0,
+                activeMirrorIndex = activeIndex,
             )
         }
 
@@ -63,5 +76,25 @@ object SpecialEventsMirrorHealth {
         val key = channel.dlhdEventStreamKey?.trim().orEmpty()
         if (key.isEmpty()) return emptyList()
         return listOf(DlhdEventMirror(streamKey = key, label = channel.name))
+    }
+
+    internal fun isMirrorHealthy(
+        mirror: DlhdEventMirror,
+        eventKey: String,
+        eventStatus: DlhdEventStreamHealth.Status,
+        activeIndex: Int,
+        mirrorIndex: Int,
+        mirrorProbeStore: DlhdEventMirrorProbeStore?,
+    ): Boolean {
+        when (mirror.healthy) {
+            true -> return true
+            false -> return false
+            null -> Unit
+        }
+        mirrorProbeStore?.isHealthy(eventKey, mirror.streamKey)?.let { return it }
+        if (eventStatus == DlhdEventStreamHealth.Status.HEALTHY && mirrorIndex == activeIndex) {
+            return true
+        }
+        return false
     }
 }

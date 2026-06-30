@@ -13,18 +13,23 @@ import okhttp3.Request
 class DlhdEventStreamProber(
     private val resolver: DlhdEventStreamResolver = DlhdEventStreamResolver(),
     private val httpClient: OkHttpClient = ResportzParser.defaultClient(),
+    private val mirrorProbeStore: DlhdEventMirrorProbeStore? = null,
 ) {
     suspend fun probe(
         channel: SupplementChannel,
         tvStreamProbe: suspend (channelId: String) -> Boolean,
     ): DlhdEventStreamHealth.ProbeResult {
         val mirrors = SpecialEventsMirrorHealth.mirrorsFor(channel)
+        val eventKey = channel.dlhdEventKey ?: channel.id.removePrefix("dlhd-event:")
         if (mirrors.isEmpty()) {
             val key = channel.dlhdEventStreamKey?.trim().orEmpty()
             if (key.isEmpty()) {
                 return DlhdEventStreamHealth.ProbeResult.unhealthy("missing_stream_key")
             }
-            return probeMirror(channel, DlhdEventMirror(streamKey = key), tvStreamProbe)
+            val mirror = DlhdEventMirror(streamKey = key)
+            val result = probeMirror(channel, mirror, tvStreamProbe)
+            recordMirrorProbe(eventKey, mirror.streamKey, result)
+            return result
         }
 
         val ranked = SpecialEventMirrorRanker.rankMirrors(mirrors)
@@ -32,12 +37,28 @@ class DlhdEventStreamProber(
         var lastResult = DlhdEventStreamHealth.ProbeResult.unhealthy("all_mirrors_failed")
         for (mirror in candidates) {
             val result = probeMirror(channel, mirror, tvStreamProbe)
+            recordMirrorProbe(eventKey, mirror.streamKey, result)
             if (result.status == DlhdEventStreamHealth.Status.HEALTHY) {
                 return result
             }
             lastResult = result
         }
         return lastResult
+    }
+
+    private fun recordMirrorProbe(
+        eventKey: String,
+        streamKey: String,
+        result: DlhdEventStreamHealth.ProbeResult,
+    ) {
+        val store = mirrorProbeStore ?: return
+        when (result.status) {
+            DlhdEventStreamHealth.Status.HEALTHY ->
+                store.record(eventKey, streamKey, healthy = true)
+            DlhdEventStreamHealth.Status.UNHEALTHY ->
+                store.record(eventKey, streamKey, healthy = false, error = result.error)
+            else -> Unit
+        }
     }
 
     private suspend fun probeMirror(

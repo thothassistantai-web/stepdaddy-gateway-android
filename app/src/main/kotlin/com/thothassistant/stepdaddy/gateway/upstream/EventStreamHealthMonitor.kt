@@ -29,6 +29,7 @@ class EventStreamHealthMonitor(
     private val channelProvider: () -> List<SupplementChannel>,
     private val store: DlhdEventStreamHealthStore,
     private val prober: DlhdEventStreamProber,
+    private val mirrorProbeStore: DlhdEventMirrorProbeStore? = null,
     private val sportsEnabled: () -> Boolean = { true },
     private val onStatesChanged: () -> Unit = {},
     private val nowProvider: () -> Instant = { Instant.now() },
@@ -92,6 +93,7 @@ class EventStreamHealthMonitor(
         jobs.awaitAll()
         val beforeRevision = store.revision()
         store.pruneTokens(activeTokens)
+        mirrorProbeStore?.pruneEvents(activeTokens)
         if (changed.get() || store.revision() != beforeRevision) {
             runCatching {
                 Log.i(TAG, "Event stream health updated (revision=${store.revision()})")

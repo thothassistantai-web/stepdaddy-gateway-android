@@ -132,11 +132,24 @@ data class EpgCoverage(
 )
 
 @Serializable
+data class SpecialEventMirrorEventStats(
+    val eventKey: String,
+    val mirrorsTotal: Int,
+    val mirrorsHealthy: Int,
+    val activeMirrorIndex: Int,
+)
+
+@Serializable
 data class MirrorStats(
     val activeBaseUrl: String = "",
     val fastestMirrorEmaMs: Double? = null,
     val streamCacheHitRate: Double? = null,
     val mirrorLatenciesMs: Map<String, Double> = emptyMap(),
+    val specialEventMirrorsTotal: Int = 0,
+    val specialEventMirrorsHealthy: Int = 0,
+    val specialEventMirrorEvents: Int = 0,
+    val specialEventAvgMirrorsPerEvent: Float = 0f,
+    val specialEventMirrorDetails: List<SpecialEventMirrorEventStats> = emptyList(),
 )
 
 @Serializable

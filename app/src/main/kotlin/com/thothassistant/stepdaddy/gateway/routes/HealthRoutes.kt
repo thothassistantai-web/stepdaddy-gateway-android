@@ -16,6 +16,7 @@ import com.thothassistant.stepdaddy.gateway.model.ProviderStats
 import com.thothassistant.stepdaddy.gateway.model.SupplementStatus
 import com.thothassistant.stepdaddy.gateway.model.HealingStatus
 import com.thothassistant.stepdaddy.gateway.model.MirrorStats
+import com.thothassistant.stepdaddy.gateway.model.SpecialEventMirrorEventStats
 import com.thothassistant.stepdaddy.gateway.model.HealthResponse
 import com.thothassistant.stepdaddy.gateway.model.TiviMateHealthEvents
 import com.thothassistant.stepdaddy.gateway.model.StreamVaultSetup
@@ -83,7 +84,6 @@ class HealthRoutes(
             providers = providerStats,
         )
         val gatewayOnline = totalChannels > 0 && !basePayload.starting
-        val mirrorStats = client.mirrorStatsSnapshot()
         return basePayload.copy(
             loadProgress = DashboardLoadProgressCalculator.snapshot(
                 health = basePayload,
@@ -91,12 +91,7 @@ class HealthRoutes(
                 gatewayOnline = gatewayOnline,
                 serviceActive = true,
             ),
-            mirrorStats = MirrorStats(
-                activeBaseUrl = mirrorStats.activeBaseUrl,
-                fastestMirrorEmaMs = mirrorStats.fastestMirrorEmaMs,
-                streamCacheHitRate = mirrorStats.streamCacheHitRate,
-                mirrorLatenciesMs = mirrorStats.mirrorLatenciesMs,
-            ),
+            mirrorStats = buildMirrorStats(),
         )
     }
 
@@ -207,6 +202,36 @@ class HealthRoutes(
                 lastEvent = lastTiviMateEvent?.event,
                 lastTimestamp = lastTiviMateEvent?.timestamp,
             ),
+            mirrorStats = buildMirrorStats(),
+        )
+    }
+
+    private fun buildMirrorStats(): MirrorStats? {
+        val upstream = client.mirrorStatsSnapshot()
+        val mirrorHealth = supplementSource.specialEventsMirrorSummary()
+        val hasSpecialEvents = mirrorHealth.eventsWithMirrors > 0
+        val hasUpstreamMirrors = upstream.mirrorLatenciesMs.isNotEmpty() ||
+            upstream.activeBaseUrl.isNotBlank()
+        if (!hasSpecialEvents && !hasUpstreamMirrors) {
+            return null
+        }
+        return MirrorStats(
+            activeBaseUrl = upstream.activeBaseUrl,
+            fastestMirrorEmaMs = upstream.fastestMirrorEmaMs,
+            streamCacheHitRate = upstream.streamCacheHitRate,
+            mirrorLatenciesMs = upstream.mirrorLatenciesMs,
+            specialEventMirrorsTotal = mirrorHealth.totalMirrors,
+            specialEventMirrorsHealthy = mirrorHealth.healthyMirrors,
+            specialEventMirrorEvents = mirrorHealth.eventsWithMirrors,
+            specialEventAvgMirrorsPerEvent = mirrorHealth.avgMirrorsPerEvent,
+            specialEventMirrorDetails = mirrorHealth.events.map { event ->
+                SpecialEventMirrorEventStats(
+                    eventKey = event.eventKey,
+                    mirrorsTotal = event.mirrorsTotal,
+                    mirrorsHealthy = event.mirrorsHealthy,
+                    activeMirrorIndex = event.activeMirrorIndex,
+                )
+            },
         )
     }
 

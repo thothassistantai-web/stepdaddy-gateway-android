@@ -6,6 +6,7 @@ import com.thothassistant.stepdaddy.gateway.model.DlhdEventMirror
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
 import com.thothassistant.stepdaddy.gateway.upstream.DlhdEventActiveMirrorStore
+import com.thothassistant.stepdaddy.gateway.upstream.DlhdEventMirrorProbeStore
 import com.thothassistant.stepdaddy.gateway.upstream.DlhdEventStreamHealth
 import com.thothassistant.stepdaddy.gateway.upstream.DlhdEventStreamResolver
 import com.thothassistant.stepdaddy.gateway.upstream.GuideScheduleHlsManifest
@@ -42,6 +43,7 @@ class DlhdEventStreamRoutes(
     private val client: DaddyLiveClient,
     private val resolver: DlhdEventStreamResolver = DlhdEventStreamResolver(),
     private val activeMirrorStore: DlhdEventActiveMirrorStore = supplementSource.dlhdEventActiveMirrorStore(),
+    private val mirrorProbeStore: DlhdEventMirrorProbeStore = supplementSource.dlhdEventMirrorProbeStore(),
 ) {
     private val appContext = context.applicationContext
     private val guideMediaCache = GuideScheduleMediaCache(appContext)
@@ -260,11 +262,12 @@ class DlhdEventStreamRoutes(
     ): String {
         val ordered = buildFailoverOrder(mirrors, preferredIndex)
         var lastError: Exception? = null
-        for ((index, _) in ordered) {
+        for ((index, mirror) in ordered) {
+            val eventKey = supplement.dlhdEventKey ?: supplement.id.removePrefix("dlhd-event:")
             runCatching {
                 val playlist = resolveMirrorPlaylist(supplement, mirrors, index)
-                val eventKey = supplement.dlhdEventKey ?: supplement.id.removePrefix("dlhd-event:")
                 activeMirrorStore.recordActive(eventKey, index)
+                mirrorProbeStore.record(eventKey, mirror.streamKey, healthy = true)
                 supplementSource.recordDlhdEventStreamHealth(
                     eventKey,
                     DlhdEventStreamHealth.ProbeResult.healthy(),
@@ -272,6 +275,12 @@ class DlhdEventStreamRoutes(
                 return playlist
             }.onFailure { exc ->
                 if (exc is CancellationException) throw exc
+                mirrorProbeStore.record(
+                    eventKey,
+                    mirror.streamKey,
+                    healthy = false,
+                    error = exc.message,
+                )
                 lastError = exc as? Exception ?: Exception(exc.message)
             }
         }

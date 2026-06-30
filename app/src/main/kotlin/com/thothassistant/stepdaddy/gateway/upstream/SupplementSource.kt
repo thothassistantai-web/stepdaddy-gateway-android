@@ -59,12 +59,17 @@ class SupplementSource(
     private val dlhdEventResolver = DaddyLiveEventResolver(httpClient)
     private val dlhdEventHealthStore = DlhdEventStreamHealthStore()
     private val dlhdEventActiveMirrorStore = DlhdEventActiveMirrorStore()
-    private val dlhdEventProber = DlhdEventStreamProber(httpClient = httpClient)
+    private val dlhdEventMirrorProbeStore = DlhdEventMirrorProbeStore()
+    private val dlhdEventProber = DlhdEventStreamProber(
+        httpClient = httpClient,
+        mirrorProbeStore = dlhdEventMirrorProbeStore,
+    )
     private val eventStreamHealthMonitor by lazy {
         EventStreamHealthMonitor(
             channelProvider = { cached.filter { it.id.startsWith("dlhd-event:") } },
             store = dlhdEventHealthStore,
             prober = dlhdEventProber,
+            mirrorProbeStore = dlhdEventMirrorProbeStore,
             sportsEnabled = { sportsEnabled() },
             onStatesChanged = { onDlhdEventHealthChanged?.invoke() },
         )
@@ -290,10 +295,14 @@ class SupplementSource(
 
     fun dlhdEventActiveMirrorStore(): DlhdEventActiveMirrorStore = dlhdEventActiveMirrorStore
 
+    fun dlhdEventMirrorProbeStore(): DlhdEventMirrorProbeStore = dlhdEventMirrorProbeStore
+
     fun specialEventsMirrorSummary(): SpecialEventsMirrorHealth.Summary =
         SpecialEventsMirrorHealth.summarize(
             channels = cached,
             activeMirrorIndexByEvent = dlhdEventActiveMirrorStore.snapshot(),
+            eventHealthByKey = dlhdEventHealthStore.snapshot().mapValues { it.value.status },
+            mirrorProbeStore = dlhdEventMirrorProbeStore,
         )
 
     fun eventStreamHealthMonitor(): EventStreamHealthMonitor = eventStreamHealthMonitor
