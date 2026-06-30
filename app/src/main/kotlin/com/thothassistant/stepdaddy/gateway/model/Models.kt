@@ -195,7 +195,7 @@ data class TivimateSetup(
     val playerVersion: String? = null,
     val playerVersionCode: Long? = null,
     val playerLikelyActive: Boolean = false,
-    val launchComponent: String = "com.thothassistant.daddyliveTV/ar.tvplayer.tv.ui.MainActivity",
+    val launchComponent: String = "ar.tvplayer.tv/com.andyhax.haxsplash.LaunchActivity",
 )
 
 @Serializable

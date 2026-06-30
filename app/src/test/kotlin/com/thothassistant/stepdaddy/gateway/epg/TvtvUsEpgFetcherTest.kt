@@ -36,6 +36,17 @@ class TvtvUsEpgFetcherTest {
     }
 
     @Test
+    fun parseGridJson_readsBundledSnapshotFormat() {
+        val body = """
+            [[{"title":"How to Make a Killing","subtitle":null,"startTime":"2026-06-29T23:19:00Z","duration":106}]]
+        """.trimIndent()
+        val windowStart = Instant.parse("2026-06-29T20:00:00Z")
+        val windowEnd = Instant.parse("2026-06-30T04:00:00Z")
+        val titles = TvtvUsEpgFetcher.programmeTitlesFromGridJson(body, windowStart, windowEnd)
+        assertEquals(listOf("How to Make a Killing"), titles)
+    }
+
+    @Test
     fun formatApiInstant_truncatesToSeconds() {
         val instant = Instant.parse("2026-06-21T04:00:00.123Z")
         assertEquals("2026-06-21T04:00:00Z", TvtvUsEpgFetcher.formatApiInstant(instant))

@@ -96,6 +96,11 @@ android {
         )
         buildConfigField(
             "String",
+            "GATEWAY_GITHUB_RELEASE_REPO",
+            "\"thothassistantai-web/stepdaddy-gateway-android\"",
+        )
+        buildConfigField(
+            "String",
             "TIVIMATE_GITHUB_RELEASE_REPO",
             "\"thothassistantai-web/tivimate-daddy\"",
         )

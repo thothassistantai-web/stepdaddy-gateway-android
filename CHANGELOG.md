@@ -7,6 +7,15 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.10] - 2026-06-29
+
+### Fixed
+
+- **Special Events parser errors** — error HLS manifests no longer emit fake `#EXTINF` / `unavailable.ts` segments that trigger ExoPlayer `ParserException` on TiViMate 5.x mods
+- **HBO 2 Eastern EPG** — bundled `tvtv_bundled_grids/HBO2.us.json` fallback when tvtv.us returns HTTP 429 (real programme titles instead of "Live programming" placeholders)
+- **View gateway release** — About → View gateway release opens `stepdaddy-gateway-android` GitHub releases (not `tivimate-daddy`)
+- **TiViMate x2 mod UI** — dashboard/About strings and Launch flow target `ar.tvplayer.tv` x2 Premium mod (`com.andyhax.haxsplash.LaunchActivity`)
+
 ## [3.0.9] - 2026-06-29
 
 ### Fixed

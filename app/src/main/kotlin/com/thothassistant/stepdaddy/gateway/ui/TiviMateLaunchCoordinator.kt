@@ -138,15 +138,19 @@ object TiviMateInstallPickerDialog {
             val modEntry = catalog?.let { catalogRepository.find461ModTiviMateEntry(it) }
 
             val choices = buildList {
-                add(TiviMateInstallChoice.CatalogDownload(daddyEntry ?: InstallAppEntry(
-                    id = InstallAppsCatalogRepository.STEPDADDY_TIVIMATE_CATALOG_ID,
-                    name = activity.getString(R.string.tivimate_option_daddy_title),
-                    description = activity.getString(R.string.tivimate_option_daddy_desc),
-                    apkUrl = "",
-                    source = InstallAppsCatalogRepository.SOURCE_STEPDADDY,
-                )))
                 if (modEntry != null) {
                     add(TiviMateInstallChoice.CatalogDownload(modEntry))
+                }
+                if (daddyEntry != null) {
+                    add(TiviMateInstallChoice.CatalogDownload(daddyEntry))
+                } else {
+                    add(TiviMateInstallChoice.CatalogDownload(InstallAppEntry(
+                        id = InstallAppsCatalogRepository.STEPDADDY_TIVIMATE_CATALOG_ID,
+                        name = activity.getString(R.string.tivimate_option_legacy_daddy_title),
+                        description = activity.getString(R.string.tivimate_option_legacy_daddy_desc),
+                        apkUrl = "",
+                        source = InstallAppsCatalogRepository.SOURCE_STEPDADDY,
+                    )))
                 }
                 add(TiviMateInstallChoice.OfficialSite)
             }
@@ -155,15 +159,22 @@ object TiviMateInstallPickerDialog {
                 when (choice) {
                     is TiviMateInstallChoice.CatalogDownload -> {
                         val title = when {
+                            choice.entry.packageName == "ar.tvplayer.tv" ||
+                                choice.entry.name.contains("x2", ignoreCase = true) ||
+                                choice.entry.name.contains("5.", ignoreCase = true) ->
+                                activity.getString(R.string.tivimate_option_x2_title)
                             choice.entry.id == InstallAppsCatalogRepository.STEPDADDY_TIVIMATE_CATALOG_ID ||
                                 choice.entry.name.contains("daddy", ignoreCase = true) ->
-                                activity.getString(R.string.tivimate_option_daddy_title)
+                                activity.getString(R.string.tivimate_option_legacy_daddy_title)
                             else -> activity.getString(R.string.tivimate_option_mod_title)
                         }
                         val desc = when {
+                            choice.entry.packageName == "ar.tvplayer.tv" ||
+                                choice.entry.name.contains("x2", ignoreCase = true) ->
+                                activity.getString(R.string.tivimate_option_x2_desc)
                             choice.entry.id == InstallAppsCatalogRepository.STEPDADDY_TIVIMATE_CATALOG_ID ||
                                 choice.entry.name.contains("daddy", ignoreCase = true) ->
-                                activity.getString(R.string.tivimate_option_daddy_desc)
+                                activity.getString(R.string.tivimate_option_legacy_daddy_desc)
                             else -> activity.getString(R.string.tivimate_option_mod_desc)
                         }
                         "$title\n$desc"

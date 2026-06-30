@@ -22,7 +22,9 @@ class TvtvUsEpgFetcher(
     private val store: EpgStore,
     private val httpClient: OkHttpClient = defaultClient(),
 ) {
-    private val bridgeByPlaylistId: Map<String, BridgeEntry> = loadBundled(context)
+    private val appContext = context.applicationContext
+    private val bridgeByPlaylistId: Map<String, BridgeEntry> = loadBundled(appContext)
+    private val bundledGridBodies: Map<String, String> = loadBundledGrids(appContext)
     @Volatile
     private var skipGeneralTvtvPass = false
 
@@ -71,11 +73,23 @@ class TvtvUsEpgFetcher(
             if (index > 0) {
                 Thread.sleep(TvtvUsEpgConfig.GRID_REQUEST_DELAY_MS)
             }
-            val programmes = runCatching {
-                fetchProgrammesChunked(windowStart, windowEnd, entry.siteId)
+            var programmes = runCatching {
+                fetchProgrammesChunked(
+                    windowStart = windowStart,
+                    windowEnd = windowEnd,
+                    siteId = entry.siteId,
+                    playlistId = playlistId,
+                )
             }.getOrElse { exc ->
                 Log.w(TAG, "tvtv.us grid failed for $playlistId (${entry.siteId}): ${exc.message}")
                 emptyList()
+            }
+            if (programmes.isEmpty()) {
+                programmes = fetchBundledProgrammes(playlistId, windowStart, windowEnd).also { bundled ->
+                    if (bundled.isNotEmpty()) {
+                        Log.i(TAG, "tvtv.us bundled grid fallback for $playlistId (${bundled.size} programmes)")
+                    }
+                }
             }
             if (programmes.isEmpty()) {
                 if (passKind == TvtvPassKind.EASTERN && skipGeneralTvtvPass) {
@@ -118,6 +132,7 @@ class TvtvUsEpgFetcher(
         windowStart: Instant,
         windowEnd: Instant,
         siteId: String,
+        playlistId: String,
     ): List<ParsedProgramme> {
         val merged = linkedMapOf<String, ParsedProgramme>()
         var chunkStart = windowStart
@@ -135,7 +150,7 @@ class TvtvUsEpgFetcher(
                 formatApiInstant(chunkEnd),
                 siteId,
             )
-            val body = downloadGridJson(url)
+            val body = downloadGridJson(url, playlistId)
             parseGridJson(body, windowStart, windowEnd).forEach { programme ->
                 val key = "${programme.startXml}|${programme.title}"
                 merged[key] = programme
@@ -148,7 +163,16 @@ class TvtvUsEpgFetcher(
         return merged.values.sortedBy { it.startXml }
     }
 
-    private fun downloadGridJson(url: String): String {
+    private fun fetchBundledProgrammes(
+        playlistId: String,
+        windowStart: Instant,
+        windowEnd: Instant,
+    ): List<ParsedProgramme> {
+        val body = bundledGridBodies[playlistId] ?: return emptyList()
+        return parseGridJson(body, windowStart, windowEnd)
+    }
+
+    private fun downloadGridJson(url: String, playlistId: String): String {
         val cache = store.feedCacheFile(url)
         if (isGridFresh(cache)) {
             return cache.readText(Charsets.UTF_8)
@@ -186,6 +210,10 @@ class TvtvUsEpgFetcher(
                                 if (cache.exists()) {
                                     Log.w(TAG, "tvtv.us 429 after pause, using stale grid cache for $url")
                                     return cache.readText(Charsets.UTF_8)
+                                }
+                                bundledGridBodies[playlistId]?.let { bundled ->
+                                    Log.w(TAG, "tvtv.us 429 after pause, using bundled grid for $playlistId")
+                                    return bundled
                                 }
                                 error("tvtv_grid_download_failed:429")
                             }
@@ -242,6 +270,24 @@ class TvtvUsEpgFetcher(
             emptyMap()
         }
 
+    private fun loadBundledGrids(context: Context): Map<String, String> {
+        val loaded = linkedMapOf<String, String>()
+        TvtvUsEpgConfig.BUNDLED_GRID_PLAYLIST_IDS.forEach { playlistId ->
+            val assetPath = "${TvtvUsEpgConfig.BUNDLED_GRIDS_ASSET_DIR}/$playlistId.json"
+            runCatching {
+                context.assets.open(assetPath).bufferedReader().use { it.readText() }
+            }.onSuccess { body ->
+                if (body.isNotBlank()) loaded[playlistId] = body
+            }.onFailure { exc ->
+                Log.w(TAG, "bundled tvtv grid missing for $playlistId: ${exc.message}")
+            }
+        }
+        if (loaded.isNotEmpty()) {
+            Log.i(TAG, "tvtv.us bundled grid fallback: ${loaded.size} playlist ids")
+        }
+        return loaded
+    }
+
     data class BridgeEntry(
         val siteId: String,
         val xmltvId: String,
@@ -289,6 +335,13 @@ class TvtvUsEpgFetcher(
 
         fun formatApiInstant(instant: Instant): String =
             DateTimeFormatter.ISO_INSTANT.format(instant.truncatedTo(ChronoUnit.SECONDS))
+
+        /** Test hook for bundled grid JSON snapshots. */
+        fun programmeTitlesFromGridJson(
+            body: String,
+            windowStart: Instant,
+            windowEnd: Instant,
+        ): List<String> = parseGridJson(body, windowStart, windowEnd).map { it.title }
 
         private fun parseBridge(raw: Map<String, BridgeEntryDto>): Map<String, BridgeEntry> =
             raw.mapNotNull { (playlistId, entry) ->

@@ -12,8 +12,6 @@ class HlsErrorManifestParserTest {
             #EXTM3U
             #EXT-X-VERSION:3
             # StepDaddy: upstream timeout — retry shortly
-            #EXTINF:1.0,unavailable
-            unavailable.ts
         """.trimIndent()
         assertEquals("upstream timeout — retry shortly", HlsErrorManifestParser.extractMessage(body))
         assertTrue(HlsErrorManifestParser.isErrorManifest(body))

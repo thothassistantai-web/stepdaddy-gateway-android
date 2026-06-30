@@ -17,7 +17,7 @@ import com.thothassistant.stepdaddy.gateway.TiviMatePlaylistStateHelper
 import com.thothassistant.stepdaddy.gateway.install.ApkInstallManager
 import com.thothassistant.stepdaddy.gateway.update.TiviMateUpdateCheckResult
 import com.thothassistant.stepdaddy.gateway.update.TiviMateUpdateCoordinator
-import com.thothassistant.stepdaddy.gateway.update.TiviMateUpdateRepository
+import com.thothassistant.stepdaddy.gateway.update.AppUpdateRepository
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -134,7 +134,7 @@ class AboutActivity : AppCompatActivity() {
                 )
             TiviMateInstalledVariant.PLAIN_MOD ->
                 getString(
-                    R.string.about_tivimate_plain_mod,
+                    R.string.about_tivimate_x2_mod,
                     probe.versionName.orEmpty(),
                 )
             TiviMateInstalledVariant.UNKNOWN ->
@@ -152,21 +152,34 @@ class AboutActivity : AppCompatActivity() {
         )
 
         textTiviMateUpdateBadge.visibility =
-            if (result.updateAvailable) View.VISIBLE else View.GONE
+            if (result.updateAvailable && probe.variant == TiviMateInstalledVariant.STEP_DADDY) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
         buttonUpdateTiviMateNow.visibility =
-            if (result.updateAvailable) View.VISIBLE else View.GONE
+            if (result.updateAvailable && probe.variant == TiviMateInstalledVariant.STEP_DADDY) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
+        buttonCheckTiviMateUpdate.visibility =
+            if (probe.variant == TiviMateInstalledVariant.STEP_DADDY) View.VISIBLE else View.GONE
 
         textTiviMateStatus.text = when {
             result.updateAvailable && probe.variant == TiviMateInstalledVariant.NOT_INSTALLED ->
                 getString(R.string.about_tivimate_status_install_available)
             result.updateAvailable && probe.variant == TiviMateInstalledVariant.PLAIN_MOD ->
-                getString(R.string.about_tivimate_status_upgrade_from_mod)
+                getString(R.string.about_tivimate_status_x2_mod_ready)
             result.updateAvailable && probe.variant == TiviMateInstalledVariant.UNKNOWN ->
-                getString(R.string.about_tivimate_status_upgrade_unknown)
+                getString(R.string.about_tivimate_status_x2_mod_ready)
             result.updateAvailable ->
                 getString(R.string.about_tivimate_status_update_available)
             probe.variant == TiviMateInstalledVariant.NOT_INSTALLED ->
                 getString(R.string.about_tivimate_status_not_installed_latest)
+            probe.variant == TiviMateInstalledVariant.PLAIN_MOD ||
+                probe.variant == TiviMateInstalledVariant.UNKNOWN ->
+                getString(R.string.about_tivimate_status_x2_mod_ready)
             else -> getString(R.string.about_tivimate_status_up_to_date)
         }
         refreshTiviMatePlaylistState()
@@ -202,7 +215,7 @@ class AboutActivity : AppCompatActivity() {
     }
 
     private fun openReleasesPage() {
-        val url = TiviMateUpdateRepository.releasesPageUrl()
+        val url = AppUpdateRepository.releasesPageUrl()
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
         runCatching { startActivity(intent) }.onFailure {
             Toast.makeText(this, R.string.about_open_releases_failed, Toast.LENGTH_SHORT).show()

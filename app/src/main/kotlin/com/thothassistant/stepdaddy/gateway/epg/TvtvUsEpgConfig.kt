@@ -24,6 +24,11 @@ object TvtvUsEpgConfig {
 
     const val BRIDGE_ASSET = "tvtv_id_bridge.json"
 
+    /** Offline tvtv.us grid snapshots when live API returns 429 (see assets/tvtv_bundled_grids/). */
+    const val BUNDLED_GRIDS_ASSET_DIR = "tvtv_bundled_grids"
+
+    val BUNDLED_GRID_PLAYLIST_IDS: Set<String> = EASTERN_PREFERRED_PLAYLIST_IDS
+
     /** Re-download grid JSON after this age (successful responses persist longer). */
     const val GRID_CACHE_TTL_MS = 6 * 3600_000L
 

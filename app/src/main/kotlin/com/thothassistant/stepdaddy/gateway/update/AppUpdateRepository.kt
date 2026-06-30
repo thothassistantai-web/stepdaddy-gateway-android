@@ -119,6 +119,11 @@ class AppUpdateRepository(
         private val VERSION_CODE_BODY_REGEX = Regex("""versionCode\s*[:=]\s*(\d+)""", RegexOption.IGNORE_CASE)
         private val VERSION_CODE_TAG_REGEX = Regex("""(?:\+|\()(\d+)\)?$""")
 
+        fun releasesPageUrl(): String {
+            val repo = BuildConfig.GATEWAY_GITHUB_RELEASE_REPO.trim()
+            return "https://github.com/$repo/releases"
+        }
+
         private fun defaultClient(): OkHttpClient =
             OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
