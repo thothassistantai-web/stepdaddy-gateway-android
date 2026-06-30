@@ -5,6 +5,7 @@ import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
+import com.thothassistant.stepdaddy.gateway.audio.PlayerAudioApplicator
 import com.thothassistant.stepdaddy.gateway.ui.dashboard.TuneChannel
 import com.thothassistant.stepdaddy.gateway.upstream.GatewayConfig
 
@@ -25,5 +26,6 @@ object PlayerStreamSource {
         exo.setMediaSource(mediaSource)
         exo.prepare()
         exo.playWhenReady = autoplay
+        PlayerAudioApplicator.apply(exo, environment)
     }
 }

@@ -2,6 +2,7 @@ package com.thothassistant.stepdaddy.gateway
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.thothassistant.stepdaddy.gateway.audio.AudioPlaybackSettings
 import com.thothassistant.stepdaddy.gateway.epg.EpgConfig
 import com.thothassistant.stepdaddy.gateway.network.NetworkAccessMode
 import com.thothassistant.stepdaddy.gateway.upstream.PlaylistTitleStyle
@@ -127,6 +128,28 @@ class GatewayEnvironment(context: Context) {
         get() = prefs.getBoolean(KEY_TIVIMATE_WATCH, true)
         set(value) {
             prefs.edit().putBoolean(KEY_TIVIMATE_WATCH, value).apply()
+        }
+
+    /**
+     * Request loudness normalization from companion players (TiviMate, StreamVault).
+     * Embedded ExoPlayer preview applies [amplificationGainDb] only; full LUFS normalization
+     * requires player-side support.
+     */
+    var volumeNormalizationEnabled: Boolean
+        get() = prefs.getBoolean(KEY_VOLUME_NORMALIZATION, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_VOLUME_NORMALIZATION, value).apply()
+        }
+
+    /** Playback amplification in dB for embedded preview (-12 … +12). Default 0 dB. */
+    var amplificationGainDb: Float
+        get() = AudioPlaybackSettings.clampGainDb(
+            prefs.getFloat(KEY_AMPLIFICATION_GAIN_DB, AudioPlaybackSettings.DEFAULT_GAIN_DB),
+        )
+        set(value) {
+            prefs.edit()
+                .putFloat(KEY_AMPLIFICATION_GAIN_DB, AudioPlaybackSettings.clampGainDb(value))
+                .apply()
         }
 
     /**
@@ -415,6 +438,8 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_TIVIMATE_BOOT_TUNE = "tivimate_boot_tune_channel"
         private const val DEFAULT_TIVIMATE_BOOT_TUNE = 51
         private const val KEY_TIVIMATE_WATCH = "tivimate_watch"
+        private const val KEY_VOLUME_NORMALIZATION = "volume_normalization_enabled"
+        private const val KEY_AMPLIFICATION_GAIN_DB = "amplification_gain_db"
         private const val KEY_PLAYLIST_TITLE_STYLE = "playlist_title_style"
         private const val KEY_SERVER_RUNNING = "server_running"
         private const val KEY_READY_BANNER_SHOWN = "ready_banner_shown"

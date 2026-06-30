@@ -29,6 +29,7 @@ internal object StreamVaultPluginPlaybackPrepare {
         val headersJson: String? = null,
         val userAgent: String? = null,
         val message: String? = null,
+        val audioJson: String? = null,
     )
 
     fun prepare(
@@ -125,6 +126,7 @@ internal object StreamVaultPluginPlaybackPrepare {
             headersJson = headersJson,
             userAgent = userAgent,
             message = warmup.exceptionOrNull()?.message,
+            audioJson = StreamVaultPluginSupport.audioJson(environment),
         )
     }
 

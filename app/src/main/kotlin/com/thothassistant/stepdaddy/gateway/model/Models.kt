@@ -153,6 +153,12 @@ data class MirrorStats(
 )
 
 @Serializable
+data class AudioPlaybackPrefs(
+    val volumeNormalization: Boolean = false,
+    val amplificationGainDb: Float = 0f,
+)
+
+@Serializable
 data class HealthResponse(
     val ok: Boolean,
     /** True while HTTP is up but the channel list is still empty (disk cache / upstream pending). */
@@ -178,6 +184,7 @@ data class HealthResponse(
     val loadProgress: DashboardLoadProgress? = null,
     val tivimateEvents: TiviMateHealthEvents? = null,
     val mirrorStats: MirrorStats? = null,
+    val audio: AudioPlaybackPrefs? = null,
 )
 
 @Serializable
@@ -196,6 +203,7 @@ data class TivimateSetup(
     val playerVersionCode: Long? = null,
     val playerLikelyActive: Boolean = false,
     val launchComponent: String = "ar.tvplayer.tv/com.andyhax.haxsplash.LaunchActivity",
+    val audio: AudioPlaybackPrefs = AudioPlaybackPrefs(),
 )
 
 @Serializable
@@ -215,4 +223,5 @@ data class StreamVaultSetup(
     val playerVersion: String? = null,
     val playerVersionCode: Long? = null,
     val launchComponent: String = "com.streamvault.app/com.streamvault.app.MainActivity",
+    val audio: AudioPlaybackPrefs = AudioPlaybackPrefs(),
 )

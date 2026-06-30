@@ -10,6 +10,8 @@ import com.thothassistant.stepdaddy.gateway.streamvault.StreamVaultPluginContrac
 import com.thothassistant.stepdaddy.gateway.epg.EpgManager
 import com.thothassistant.stepdaddy.gateway.epg.EpgCoverageCalculator
 import com.thothassistant.stepdaddy.gateway.epg.EpgPlaylistUrlResolver
+import com.thothassistant.stepdaddy.gateway.audio.AudioPlaybackSettings
+import com.thothassistant.stepdaddy.gateway.model.AudioPlaybackPrefs
 import com.thothassistant.stepdaddy.gateway.model.CanaryStatus
 import com.thothassistant.stepdaddy.gateway.model.CategoryCount
 import com.thothassistant.stepdaddy.gateway.model.ProviderStats
@@ -82,6 +84,7 @@ class HealthRoutes(
             supplementChannels = supplementCount,
             supplement = supplementStatus,
             providers = providerStats,
+            audio = buildAudioPlaybackPrefs(),
         )
         val gatewayOnline = totalChannels > 0 && !basePayload.starting
         return basePayload.copy(
@@ -187,6 +190,7 @@ class HealthRoutes(
                 ),
                 recentActions = healing.recentActions.takeLast(5),
             ),
+            audio = buildAudioPlaybackPrefs(),
         )
         val gatewayOnline = totalChannels > 0 && !basePayload.starting
         val lastTiviMateEvent = TiviMateEventStore.lastEvent()
@@ -277,6 +281,7 @@ class HealthRoutes(
             playerVersionCode = player.versionCode,
             playerLikelyActive = player.likelyActive,
             launchComponent = TiviMateController.launchComponent(appContext),
+            audio = buildAudioPlaybackPrefs(),
         )
     }
 
@@ -310,8 +315,12 @@ class HealthRoutes(
             playerVersion = player.versionName,
             playerVersionCode = player.versionCode,
             launchComponent = StreamVaultController.launchComponent(appContext),
+            audio = buildAudioPlaybackPrefs(),
         )
     }
+
+    private fun buildAudioPlaybackPrefs(): AudioPlaybackPrefs =
+        AudioPlaybackSettings.fromEnvironment(environment)
 
     private fun buildSupplementStatus(
         sync: SupplementSource.SyncSnapshot,

@@ -121,6 +121,8 @@ class SettingsActivity : AppCompatActivity() {
         binding.editMirrorUrls.setText(environment.mirrorUrls.joinToString(","))
         SettingsSupplementControls.load(binding, environment)
         SettingsSupplementControls.wireListeners(binding)
+        SettingsAudioControls.load(binding, environment)
+        SettingsAudioControls.wireListeners(binding)
         SettingsSpecialEventsStatus.wire(binding)
         binding.switchGatewayEpg.isChecked = environment.gatewayEpgEnabled
         binding.editExternalEpgUrl.setText(environment.externalEpgUrlForDisplay())
@@ -187,6 +189,7 @@ class SettingsActivity : AppCompatActivity() {
             ?.filter { it.isNotEmpty() }
             .orEmpty()
         SettingsSupplementControls.save(binding, environment)
+        SettingsAudioControls.save(binding, environment)
         environment.gatewayEpgEnabled = binding.switchGatewayEpg.isChecked
         environment.externalEpgUrl = binding.editExternalEpgUrl.text?.toString().orEmpty()
         environment.iptvOrgEpgEnabled = binding.switchIptvOrgEpg.isChecked

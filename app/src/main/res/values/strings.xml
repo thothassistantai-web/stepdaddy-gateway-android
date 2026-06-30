@@ -287,6 +287,13 @@
     <string name="settings_saved_restart_hint">Settings saved. Restart the server to apply.</string>
     <string name="settings_build_info">Version %1$s (%2$d)\nGit %3$s · %4$s build\nBuilt %5$s</string>
     <string name="settings_section_gateway">Gateway</string>
+    <string name="settings_section_audio">Audio</string>
+    <string name="settings_audio_intro">Normalization is passed to TiviMate and StreamVault. Amplification applies to the gateway preview player.</string>
+    <string name="settings_volume_normalization">Volume normalization</string>
+    <string name="settings_volume_normalization_hint">Request loudness normalization from companion players (EBU R128 style when supported).</string>
+    <string name="settings_amplification_gain">Amplification gain</string>
+    <string name="settings_amplification_gain_default">0 dB</string>
+    <string name="settings_amplification_gain_hint">Boost or reduce preview volume (−12 to +12 dB). Does not alter proxied stream data.</string>
     <string name="settings_section_launch">Launch</string>
     <string name="settings_section_updates">Updates</string>
     <string name="settings_auto_check_updates">Auto-check for updates on app open</string>

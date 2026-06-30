@@ -7,6 +7,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
+import com.thothassistant.stepdaddy.gateway.audio.PlayerAudioApplicator
 import com.thothassistant.stepdaddy.gateway.ui.player.PlayerChannelList
 import com.thothassistant.stepdaddy.gateway.ui.player.PlayerErrorHandler
 import com.thothassistant.stepdaddy.gateway.ui.player.PlayerErrorState
@@ -61,6 +62,7 @@ class CompactPlayerController(
         playerView.player = exo
         player = exo
         errorHandler.attach(exo)
+        PlayerAudioApplicator.apply(exo, environment)
     }
 
     fun release() {

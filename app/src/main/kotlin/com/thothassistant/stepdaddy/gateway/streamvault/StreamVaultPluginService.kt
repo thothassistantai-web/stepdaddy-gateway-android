@@ -123,6 +123,9 @@ class StreamVaultPluginService : Service() {
                         prepared.message?.let {
                             putString(StreamVaultPluginContract.KEY_MESSAGE, it)
                         }
+                        prepared.audioJson?.let {
+                            putString(StreamVaultPluginContract.KEY_AUDIO_JSON, it)
+                        }
                     }
                 }
             }

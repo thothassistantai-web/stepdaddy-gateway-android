@@ -61,4 +61,8 @@ internal object StreamVaultPluginContract {
     const val CONFIG_KEY_GATEWAY_BASE = "gatewayBaseUrl"
     const val CONFIG_KEY_LAN_MODE = "lanMode"
     const val CONFIG_KEY_STATUS = "status"
+    const val CONFIG_KEY_VOLUME_NORMALIZATION = "volumeNormalization"
+    const val CONFIG_KEY_AMPLIFICATION_GAIN_DB = "amplificationGainDb"
+
+    const val KEY_AUDIO_JSON = "audio_json"
 }

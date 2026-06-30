@@ -35,6 +35,14 @@ Cross-app wake from StreamVault also targets `ServerService` via `com.thothassis
 
 Handles loopback URLs under `/tivimate-stream/`, `/stream/`, `/dlhd-event-stream/`, etc. Ensures gateway HTTP is ready and returns enriched headers when needed.
 
+When gateway audio settings are configured, the response may include:
+
+| Key | Value |
+|-----|-------|
+| `audio_json` | `{"volumeNormalization":false,"amplificationGainDb":0.0}` |
+
+Companion players (StreamVault host) can read this to apply loudness normalization and gain. The gateway HTTP proxy does not decode audio.
+
 ## Configuration schema
 
 Host-rendered fields:
@@ -44,6 +52,10 @@ Host-rendered fields:
 | `gatewayBaseUrl` | url | Loopback or LAN gateway base |
 | `lanMode` | boolean | Substitute device LAN IP |
 | `status` | info | Last health probe label |
+| `volumeNormalization` | info | Read-only mirror of gateway Settings → Audio |
+| `amplificationGainDb` | info | Read-only gain label (e.g. `0 dB`, `+6 dB`) |
+
+Audio preferences are edited in **StepDaddy Gateway → Settings → Audio**, not in the StreamVault plugin form.
 
 Action `testConnection` runs `GET /health?lite=1` and refreshes status.
 

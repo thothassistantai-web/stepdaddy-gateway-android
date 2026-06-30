@@ -1,8 +1,8 @@
 {
-  "versionCode": 30009,
-  "versionName": "3.0.10",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.10/stepdaddy-gateway-3.0.10-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.10/stepdaddy-gateway-3.0.10-debug.apk",
-  "releaseNotes": "See CHANGELOG.md",
+  "versionCode": 30010,
+  "versionName": "3.0.11",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.11/stepdaddy-gateway-3.0.11-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.11/stepdaddy-gateway-3.0.11-debug.apk",
+  "releaseNotes": "Volume normalization settings and amplification gain for preview player; exposed via /health and StreamVault plugin.",
   "mandatory": false
 }

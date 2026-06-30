@@ -7,6 +7,14 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.11] - 2026-06-30
+
+### Added
+
+- **Volume normalization settings** — Settings → Audio toggle; exposed via `/health` `audio`, setup JSON, and StreamVault plugin `audio_json` on playback prepare (companion players apply loudness processing when supported)
+- **Amplification gain** — Settings → Audio slider (−12 … +12 dB, default 0 dB); applied to embedded ExoPlayer preview via `Player.setVolume`
+- **Unit tests** — `AudioPlaybackSettingsTest` for gain clamping and dB→linear conversion
+
 ## [3.0.10] - 2026-06-29
 
 ### Fixed

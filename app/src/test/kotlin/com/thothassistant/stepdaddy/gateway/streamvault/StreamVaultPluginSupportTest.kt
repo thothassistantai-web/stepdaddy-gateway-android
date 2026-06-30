@@ -29,6 +29,13 @@ class StreamVaultPluginSupportTest {
     }
 
     @Test
+    fun `configuration schema includes audio section`() {
+        val schema = StreamVaultPluginSupport.configurationSchemaJson()
+        assertTrue(schema.contains(StreamVaultPluginContract.CONFIG_KEY_VOLUME_NORMALIZATION))
+        assertTrue(schema.contains(StreamVaultPluginContract.CONFIG_KEY_AMPLIFICATION_GAIN_DB))
+    }
+
+    @Test
     fun `apply configuration rejects invalid gateway url`() {
         val prefs = FakePluginSettings()
         val error = StreamVaultPluginSupport.applyConfigurationValues(

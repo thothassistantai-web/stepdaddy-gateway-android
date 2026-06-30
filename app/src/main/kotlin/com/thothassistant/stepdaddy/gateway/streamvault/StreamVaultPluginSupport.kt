@@ -2,6 +2,7 @@ package com.thothassistant.stepdaddy.gateway.streamvault
 
 import com.thothassistant.stepdaddy.gateway.BuildConfig
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
+import com.thothassistant.stepdaddy.gateway.audio.AudioPlaybackSettings
 import com.thothassistant.stepdaddy.gateway.network.GatewayUrlBuilder
 import com.thothassistant.stepdaddy.gateway.network.LanAddressResolver
 import com.thothassistant.stepdaddy.gateway.routes.PlaylistPaths
@@ -72,6 +73,25 @@ internal object StreamVaultPluginSupport {
                   "readOnly": true
                 }
               ]
+            },
+            {
+              "id": "audio",
+              "title": "Audio",
+              "description": "Managed in StepDaddy Gateway Settings → Audio.",
+              "fields": [
+                {
+                  "key": "${StreamVaultPluginContract.CONFIG_KEY_VOLUME_NORMALIZATION}",
+                  "type": "info",
+                  "label": "Volume normalization",
+                  "readOnly": true
+                },
+                {
+                  "key": "${StreamVaultPluginContract.CONFIG_KEY_AMPLIFICATION_GAIN_DB}",
+                  "type": "info",
+                  "label": "Amplification gain",
+                  "readOnly": true
+                }
+              ]
             }
           ],
           "actions": [
@@ -91,11 +111,18 @@ internal object StreamVaultPluginSupport {
     ): String {
         val base = resolveGatewayBase(prefs, environment)
         val status = probeGatewayStatus(base)
+        val audio = environment?.let { AudioPlaybackSettings.fromEnvironment(it) }
+        val gainLabel = audio?.let {
+            AudioPlaybackSettings.formatGainDbForDisplay(it.amplificationGainDb)
+        } ?: "0 dB"
+        val normLabel = if (audio?.volumeNormalization == true) "On" else "Off"
         return """
         {
           "${StreamVaultPluginContract.CONFIG_KEY_GATEWAY_BASE}": "$base",
           "${StreamVaultPluginContract.CONFIG_KEY_LAN_MODE}": ${prefs.lanMode},
-          "${StreamVaultPluginContract.CONFIG_KEY_STATUS}": "${status.label.replace("\"", "\\\"")}"
+          "${StreamVaultPluginContract.CONFIG_KEY_STATUS}": "${status.label.replace("\"", "\\\"")}",
+          "${StreamVaultPluginContract.CONFIG_KEY_VOLUME_NORMALIZATION}": "$normLabel",
+          "${StreamVaultPluginContract.CONFIG_KEY_AMPLIFICATION_GAIN_DB}": "$gainLabel"
         }
         """.trimIndent()
     }
@@ -163,6 +190,16 @@ internal object StreamVaultPluginSupport {
         }
         val port = environment?.port ?: BuildConfig.DEFAULT_PORT
         return "http://$lanIp:$port"
+    }
+
+    fun audioJson(environment: GatewayEnvironment?): String? {
+        val audio = environment?.let { AudioPlaybackSettings.fromEnvironment(it) } ?: return null
+        return """
+        {
+          "volumeNormalization": ${audio.volumeNormalization},
+          "amplificationGainDb": ${audio.amplificationGainDb}
+        }
+        """.trimIndent().replace("\n", "")
     }
 
     fun probeGatewayStatus(baseUrl: String): GatewayProbe =
