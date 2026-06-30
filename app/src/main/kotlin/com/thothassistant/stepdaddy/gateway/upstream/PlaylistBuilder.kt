@@ -243,6 +243,7 @@ object PlaylistBuilder {
         val title = if (supplement.id.startsWith("iptv:") || supplement.id.startsWith("ntv:") ||
             supplement.id.startsWith("adultswim:") || supplement.id.startsWith("sport:") ||
             supplement.id.startsWith("dlhd-guide:") || supplement.id.startsWith("dlhd-event:") ||
+            supplement.id.startsWith(TmdbVodConfig.ID_PREFIX) ||
             titleStyle == PlaylistTitleStyle.XTREAM_CATEGORY
         ) {
             ChannelTitleNormalizer.supplementDisplayTitle(
@@ -325,6 +326,7 @@ object PlaylistBuilder {
         supplement.id.startsWith("dlhd-guide:") -> PlaylistTitleSource.SPECIAL_EVENT_GUIDE
         supplement.id.startsWith("sport:") || supplement.id.startsWith("dlhd-event:") -> PlaylistTitleSource.SPECIAL_EVENT
         supplement.id.startsWith("iptv:") || supplement.id.startsWith("ntv:") -> PlaylistTitleSource.FAST
+        supplement.id.startsWith(TmdbVodConfig.ID_PREFIX) -> PlaylistTitleSource.SIDECAR
         else -> PlaylistTitleSource.SIDECAR
     }
 
@@ -337,6 +339,16 @@ object PlaylistBuilder {
     private fun supplementResolution(supplement: SupplementChannel): GroupTitleResolver.Resolution {
         if (supplement.id.startsWith("iptv:")) {
             return GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id)
+        }
+        if (supplement.id.startsWith(TmdbVodConfig.ID_PREFIX)) {
+            return GroupTitleResolver.Resolution(
+                groupTitle = TmdbVodConfig.GROUP_TITLE,
+                categoryLabel = GroupTitleResolver.MOVIES,
+                countryCode = "US",
+                flagEmoji = "🇺🇸",
+                isAdult = false,
+                appendCountrySuffix = false,
+            )
         }
         if (supplement.id.startsWith("adultswim:")) {
             return GroupTitleResolver.Resolution(
@@ -433,6 +445,18 @@ object PlaylistBuilder {
                 ?: NtvCxCdnLiveConfig.ORIGIN
             return "$stream|User-Agent=$TIVIMATE_USER_AGENT|Referer=$referer|Origin=$origin"
         }
+        if (supplement.id.startsWith(TmdbVodConfig.ID_PREFIX)) {
+            val tmdbId = supplement.id.removePrefix(TmdbVodConfig.ID_PREFIX)
+            // TiviMate classifies .mp4 URLs as VOD; plain/VLC use HLS master.
+            val extension = if (streamUrlStyle == StreamUrlStyle.PLAIN) "m3u8" else "mp4"
+            val stream = "${base.trimEnd('/')}/vod/movie/$tmdbId.$extension"
+            if (streamUrlStyle == StreamUrlStyle.PLAIN) {
+                return stream
+            }
+            val referer = supplement.referer?.trim()?.takeIf { it.isNotEmpty() }
+                ?: TmdbVodConfig.VIDSRC_REFERER
+            return "$stream|User-Agent=$TIVIMATE_USER_AGENT|Referer=$referer"
+        }
         val referer = supplement.referer?.trim()?.takeIf { it.isNotEmpty() }
         if (referer == null) {
             return supplement.streamUrl
@@ -474,6 +498,9 @@ object PlaylistBuilder {
         supplementLanguageCode(supplement)?.let { code ->
             attrs += """tvg-language="${escape(toTvgLanguageCode(code))}""""
         }
+        supplement.plot?.trim()?.takeIf { it.isNotEmpty() }?.let { plot ->
+            attrs += """tvg-desc="${escape(plot.take(240))}""""
+        }
         return attrs.joinToString(" ")
     }
 
@@ -507,6 +534,7 @@ object PlaylistBuilder {
         supplement: SupplementChannel,
         resolution: GroupTitleResolver.Resolution = supplementResolution(supplement),
     ): String = when {
+        supplement.id.startsWith(TmdbVodConfig.ID_PREFIX) -> TmdbVodConfig.GROUP_TITLE
         supplement.id.startsWith("adultswim:") -> GroupTitleResolver.ENTERTAINMENT
         supplement.id.startsWith("sport:") ||
             supplement.id.startsWith("dlhd-guide:") ||

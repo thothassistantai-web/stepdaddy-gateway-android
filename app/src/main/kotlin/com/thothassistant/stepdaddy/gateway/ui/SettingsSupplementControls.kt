@@ -12,6 +12,7 @@ internal object SettingsSupplementControls {
         binding.switchSupplementIptvOrg.isChecked = environment.supplementIptvOrgEnabled
         binding.switchSupplementNtvCx.isChecked = environment.supplementNtvCxEnabled
         binding.switchSupplementAdultSwim.isChecked = environment.supplementAdultSwimEnabled
+        binding.switchSupplementTmdbMovies.isChecked = environment.supplementTmdbMoviesEnabled
         binding.switchIptvOrgSkipDuplicates.isChecked =
             environment.supplementIptvOrgImportMode == SupplementImportMode.SKIP_DUPLICATES
         binding.switchNtvCxSkipDuplicates.isChecked =
@@ -30,6 +31,7 @@ internal object SettingsSupplementControls {
         binding.switchSupplementIptvOrg.setOnCheckedChangeListener(skipListener)
         binding.switchSupplementNtvCx.setOnCheckedChangeListener(skipListener)
         binding.switchSupplementAdultSwim.setOnCheckedChangeListener(skipListener)
+        binding.switchSupplementTmdbMovies.setOnCheckedChangeListener(skipListener)
         binding.switchEnableAllSupplements.setOnCheckedChangeListener { _, checked ->
             if (syncingMaster) return@setOnCheckedChangeListener
             syncingMaster = true
@@ -37,6 +39,7 @@ internal object SettingsSupplementControls {
             binding.switchSupplementIptvOrg.isChecked = checked
             binding.switchSupplementNtvCx.isChecked = checked
             binding.switchSupplementAdultSwim.isChecked = checked
+            binding.switchSupplementTmdbMovies.isChecked = checked
             syncingMaster = false
             updateSkipDuplicateVisibility(binding)
         }
@@ -48,6 +51,7 @@ internal object SettingsSupplementControls {
         environment.supplementIptvOrgEnabled = binding.switchSupplementIptvOrg.isChecked
         environment.supplementNtvCxEnabled = binding.switchSupplementNtvCx.isChecked
         environment.supplementAdultSwimEnabled = binding.switchSupplementAdultSwim.isChecked
+        environment.supplementTmdbMoviesEnabled = binding.switchSupplementTmdbMovies.isChecked
         environment.supplementIptvOrgImportMode = importMode(binding.switchIptvOrgSkipDuplicates.isChecked)
         environment.supplementNtvCxImportMode = importMode(binding.switchNtvCxSkipDuplicates.isChecked)
         environment.supplementAdultSwimImportMode = importMode(binding.switchAdultSwimSkipDuplicates.isChecked)
@@ -63,7 +67,8 @@ internal object SettingsSupplementControls {
         val allOn = binding.switchSupplementSports.isChecked &&
             binding.switchSupplementIptvOrg.isChecked &&
             binding.switchSupplementNtvCx.isChecked &&
-            binding.switchSupplementAdultSwim.isChecked
+            binding.switchSupplementAdultSwim.isChecked &&
+            binding.switchSupplementTmdbMovies.isChecked
         binding.switchEnableAllSupplements.isChecked = allOn
         syncingMaster = false
     }

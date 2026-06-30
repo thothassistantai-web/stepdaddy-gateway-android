@@ -35,4 +35,8 @@ data class SupplementChannel(
     val languageCode: String? = null,
     /** Region / country code for Special Events (`US`, `UK`, `CA`, …). */
     val regionCode: String? = null,
+    /** Plot / overview for TMDB VOD rows (EXTINF `tvg-desc`). */
+    val plot: String? = null,
+    /** IMDB tt-id when known (`tt0111161`). */
+    val imdbId: String? = null,
 )

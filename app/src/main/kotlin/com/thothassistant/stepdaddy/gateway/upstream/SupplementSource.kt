@@ -56,6 +56,9 @@ class SupplementSource(
     )
 
     private val adultSwimSource = AdultSwimStreamsSource(AdultSwimStreamsSource.defaultClient())
+    private val tmdbVodCatalogStore = TmdbVodCatalogStore(context)
+    private val tmdbVodCatalog = TmdbVodCatalog(httpClient) { environment.effectiveTmdbApiKey() }
+    private val tmdbVodSource = TmdbVodSource(tmdbVodCatalog, tmdbVodCatalogStore)
     private val dlhdEventResolver = DaddyLiveEventResolver(httpClient)
     private val dlhdEventHealthStore = DlhdEventStreamHealthStore()
     private val dlhdEventActiveMirrorStore = DlhdEventActiveMirrorStore()
@@ -92,6 +95,7 @@ class SupplementSource(
         val adultSwimChannels: Int = 0,
         val adultSwimProbed: Int = 0,
         val adultSwimProbeOk: Int = 0,
+        val tmdbVodMovies: Int = 0,
     )
 
     private val store = SupplementStore(context)
@@ -138,7 +142,8 @@ class SupplementSource(
         environment.supplementSportsEnabled ||
             environment.supplementIptvOrgEnabled ||
             environment.supplementNtvCxEnabled ||
-            environment.supplementAdultSwimEnabled
+            environment.supplementAdultSwimEnabled ||
+            environment.supplementTmdbMoviesEnabled
 
     fun sportsEnabled(): Boolean = environment.supplementSportsEnabled
 
@@ -147,6 +152,8 @@ class SupplementSource(
     fun ntvCxEnabled(): Boolean = environment.supplementNtvCxEnabled
 
     fun adultSwimEnabled(): Boolean = environment.supplementAdultSwimEnabled
+
+    fun tmdbMoviesEnabled(): Boolean = environment.supplementTmdbMoviesEnabled
 
     fun adultSwimImportMode(): SupplementImportMode = environment.supplementAdultSwimImportMode
 
@@ -174,6 +181,18 @@ class SupplementSource(
     fun ntvCxCount(): Int = cached.count { it.id.startsWith("ntv:") }
 
     fun adultSwimCount(): Int = cached.count { it.id.startsWith("adultswim:") }
+
+    fun tmdbVodCount(): Int = cached.count { it.id.startsWith(TmdbVodConfig.ID_PREFIX) }
+
+    fun vodMovie(tmdbId: String): SupplementChannel? =
+        cached.firstOrNull { it.id == "${TmdbVodConfig.ID_PREFIX}$tmdbId" }
+
+    fun vodMovieOrCached(tmdbId: String): SupplementChannel? {
+        vodMovie(tmdbId)?.let { return it }
+        return tmdbVodCatalogStore.read()
+            .firstOrNull { it.tmdbId.toString() == tmdbId }
+            ?.let { tmdbVodSource.toSupplementChannel(it) }
+    }
 
     fun ntvChannel(token: String): SupplementChannel? =
         cached.firstOrNull { it.id == "ntv:$token" }
@@ -719,9 +738,22 @@ class SupplementSource(
             }
         }
 
+        val tmdbVodDeferred = async {
+            if (tmdbMoviesEnabled()) {
+                runCatching { tmdbVodSource.fetchChannels() }
+                    .getOrElse { exc ->
+                        Log.w(TAG, "TMDB VOD fetch failed", exc)
+                        emptyList<SupplementChannel>() to TmdbVodSource.FetchStats()
+                    }
+            } else {
+                emptyList<SupplementChannel>() to TmdbVodSource.FetchStats()
+            }
+        }
+
         val (iptvOrg, iptvStats) = iptvOrgDeferred.await()
         var (ntvCx, ntvStats) = ntvCxDeferred.await()
         var (adultSwim, adultSwimStats) = adultSwimDeferred.await()
+        val (tmdbVod, tmdbVodStats) = tmdbVodDeferred.await()
 
         if (ntvCx.isEmpty() && ntvCxEnabled()) {
             val cachedNtv = cached.filter { it.id.startsWith("ntv:") }
@@ -736,6 +768,15 @@ class SupplementSource(
             if (cachedAdultSwim.isNotEmpty()) {
                 Log.w(TAG, "adult swim probe empty — keeping ${cachedAdultSwim.size} cached channels")
                 adultSwim = cachedAdultSwim
+            }
+        }
+
+        var publishedTmdbVod = tmdbVod
+        if (publishedTmdbVod.isEmpty() && tmdbMoviesEnabled()) {
+            val cachedVod = cached.filter { it.id.startsWith(TmdbVodConfig.ID_PREFIX) }
+            if (cachedVod.isNotEmpty()) {
+                Log.w(TAG, "TMDB VOD fetch empty — keeping ${cachedVod.size} cached movies")
+                publishedTmdbVod = cachedVod
             }
         }
 
@@ -761,9 +802,10 @@ class SupplementSource(
             adultSwimChannels = adultSwim.size,
             adultSwimProbed = adultSwimStats.probed,
             adultSwimProbeOk = adultSwimStats.probeOk,
+            tmdbVodMovies = publishedTmdbVod.size,
         )
 
-        specialEvents + iptvOrg + ntvCx + adultSwim
+        specialEvents + iptvOrg + ntvCx + adultSwim + publishedTmdbVod
     }
 
     private suspend fun fetchSpecialEventsBundle(

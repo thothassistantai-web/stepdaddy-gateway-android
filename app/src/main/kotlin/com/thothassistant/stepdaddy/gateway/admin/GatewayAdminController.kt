@@ -109,6 +109,7 @@ class GatewayAdminController(
         patch.supplementIptvOrgEnabled?.let { environment.supplementIptvOrgEnabled = it }
         patch.supplementNtvCxEnabled?.let { environment.supplementNtvCxEnabled = it }
         patch.supplementAdultSwimEnabled?.let { environment.supplementAdultSwimEnabled = it }
+        patch.supplementTmdbMoviesEnabled?.let { environment.supplementTmdbMoviesEnabled = it }
         patch.gatewayEpgEnabled?.let { environment.gatewayEpgEnabled = it }
         patch.externalEpgUrl?.let { environment.externalEpgUrl = it }
         patch.iptvOrgEpgEnabled?.let { environment.iptvOrgEpgEnabled = it }
@@ -581,6 +582,7 @@ class GatewayAdminController(
         supplementIptvOrgEnabled = environment.supplementIptvOrgEnabled,
         supplementNtvCxEnabled = environment.supplementNtvCxEnabled,
         supplementAdultSwimEnabled = environment.supplementAdultSwimEnabled,
+        supplementTmdbMoviesEnabled = environment.supplementTmdbMoviesEnabled,
         gatewayEpgEnabled = environment.gatewayEpgEnabled,
         externalEpgUrl = environment.externalEpgUrlForDisplay(),
         iptvOrgEpgEnabled = environment.iptvOrgEpgEnabled,

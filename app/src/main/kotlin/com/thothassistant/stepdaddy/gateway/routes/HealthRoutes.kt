@@ -368,6 +368,8 @@ class HealthRoutes(
             ntvCxResolveProbeOk = sync.ntvCxResolveProbeOk,
             adultSwimProbed = sync.adultSwimProbed,
             adultSwimProbeOk = sync.adultSwimProbeOk,
+            tmdbMoviesEnabled = supplementSource.tmdbMoviesEnabled(),
+            tmdbVodMovies = supplementSource.tmdbVodCount().takeIf { it > 0 } ?: sync.tmdbVodMovies,
             iptvOrgPlaylistsFetched = sync.iptvOrgPlaylistsFetched,
             iptvOrgPlaylistsFailed = sync.iptvOrgPlaylistsFailed,
             blockedTheTvApp = sync.blockedTheTvApp,

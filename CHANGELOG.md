@@ -7,6 +7,17 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.12] - 2026-06-30
+
+### Added
+
+- **IMDB / TMDB Movies (VOD)** — trending & popular movies in `🎬 Movies` group on `tivimate.m3u`, `streamvault.m3u`, and `vlc.m3u`
+- **VOD stream proxy** — `/vod/movie/{tmdbId}.m3u8` (and `.mp4` for TiviMate VOD classification) resolves playable HLS via vidsrc-embed (StreamFlix-compatible)
+- **Movies JSON API** — `GET /movies` lists catalog metadata, posters, and stream URLs
+- **Settings toggle** — Settings → supplements → enable IMDB/TMDB movies catalog (on by default)
+- **Cinemeta catalog** — metadata from Stremio Cinemeta when no TMDB API key is configured; optional TMDB enrichment via `TMDB_API_KEY` in `local.properties`
+- **Unit tests** — `TmdbVodSourceTest`, `TmdbVodPlaylistTest`, `TmdbVodCatalogParseTest`
+
 ## [3.0.11] - 2026-06-30
 
 ### Added

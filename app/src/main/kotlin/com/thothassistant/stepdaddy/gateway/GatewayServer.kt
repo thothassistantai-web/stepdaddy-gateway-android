@@ -11,7 +11,11 @@ import com.thothassistant.stepdaddy.gateway.routes.DlhdEventStreamRoutes
 import com.thothassistant.stepdaddy.gateway.routes.EpgRoutes
 import com.thothassistant.stepdaddy.gateway.routes.HealthRoutes
 import com.thothassistant.stepdaddy.gateway.routes.LogoRoutes
+import com.thothassistant.stepdaddy.gateway.routes.MoviesRoutes
 import com.thothassistant.stepdaddy.gateway.routes.NtvStreamRoutes
+import com.thothassistant.stepdaddy.gateway.routes.VodStreamRoutes
+import com.thothassistant.stepdaddy.gateway.upstream.VidsrcMovieResolver
+import com.thothassistant.stepdaddy.gateway.upstream.VodStreamCache
 import com.thothassistant.stepdaddy.gateway.routes.PlaylistPaths
 import com.thothassistant.stepdaddy.gateway.routes.PlaylistRoutes
 import com.thothassistant.stepdaddy.gateway.routes.StreamRoutes
@@ -89,6 +93,15 @@ class GatewayServer(
             supplementSource,
             NtvCxCdnLiveResolver(NtvCxCdnLiveResolver.defaultClient()),
         )
+        val vodStreamCache = VodStreamCache()
+        val vodStreamRoutes = VodStreamRoutes(
+            environment,
+            supplementSource,
+            VidsrcMovieResolver(VidsrcMovieResolver.defaultClient()),
+            vodStreamCache,
+            VidsrcMovieResolver.defaultClient(),
+        )
+        val moviesRoutes = MoviesRoutes(environment, supplementSource)
         val contentRoutes = ContentRoutes(environment, client, ResportzParser.defaultClient())
         val epgRoutes = EpgRoutes(client, epgManager, supplementSource)
         val adminRoutes = adminActions?.let { AdminRoutes(it) }
@@ -207,6 +220,21 @@ class GatewayServer(
                 route("/ntv-stream/{token}.m3u8") {
                     get { ntvStreamRoutes.tivimateStream(call, call.parameters["token"].orEmpty()) }
                     head { ntvStreamRoutes.tivimateStream(call, call.parameters["token"].orEmpty()) }
+                }
+                route("/vod/movie/{tmdbId}.m3u8") {
+                    get { vodStreamRoutes.movieStream(call, call.parameters["tmdbId"].orEmpty()) }
+                    head { vodStreamRoutes.movieStream(call, call.parameters["tmdbId"].orEmpty()) }
+                }
+                route("/vod/movie/{tmdbId}.mp4") {
+                    get { vodStreamRoutes.movieStream(call, call.parameters["tmdbId"].orEmpty()) }
+                    head { vodStreamRoutes.movieStream(call, call.parameters["tmdbId"].orEmpty()) }
+                }
+                get("/movies") {
+                    if (gatewayEnvironment.supplementTmdbMoviesEnabled) {
+                        moviesRoutes.list(call)
+                    } else {
+                        moviesRoutes.disabled(call)
+                    }
                 }
                 route("/dlhd-event-stream/{token}.m3u8") {
                     get { dlhdEventStreamRoutes.eventStream(call, call.parameters["token"].orEmpty()) }

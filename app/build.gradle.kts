@@ -37,6 +37,16 @@ fun readStepdaddyVersionProp(name: String, default: String): String {
 val stepdaddyVersionName = readStepdaddyVersionProp("STEPDADDY_VERSION", "3.0.6")
 val stepdaddyVersionCode = readStepdaddyVersionProp("VERSION_CODE", "30000").toInt()
 
+val localProps = Properties()
+val localPropsFile = rootProject.file("local.properties")
+if (localPropsFile.isFile) {
+    localPropsFile.inputStream().use { localProps.load(it) }
+}
+val defaultTmdbApiKey = sequenceOf(
+    System.getenv("TMDB_API_KEY"),
+    localProps.getProperty("TMDB_API_KEY"),
+).firstOrNull { !it.isNullOrBlank() }?.trim().orEmpty()
+
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
@@ -68,6 +78,8 @@ android {
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_IPTV_ORG_ENABLED", "true")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_NTV_CX_ENABLED", "true")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_ADULT_SWIM_ENABLED", "true")
+        buildConfigField("boolean", "DEFAULT_SUPPLEMENT_TMDB_MOVIES_ENABLED", "true")
+        buildConfigField("String", "DEFAULT_TMDB_API_KEY", "\"$defaultTmdbApiKey\"")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_NTV_CX_SUPPLEMENT_ONLY", "false")
         buildConfigField("boolean", "DEFAULT_GATEWAY_EPG_ENABLED", "true")
         buildConfigField(

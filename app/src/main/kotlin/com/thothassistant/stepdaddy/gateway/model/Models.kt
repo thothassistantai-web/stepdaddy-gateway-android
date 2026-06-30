@@ -79,6 +79,8 @@ data class SupplementStatus(
     val adultSwimImportMode: String = "FULL_CATALOG",
     val adultSwimProbed: Int = 0,
     val adultSwimProbeOk: Int = 0,
+    val tmdbMoviesEnabled: Boolean = false,
+    val tmdbVodMovies: Int = 0,
     /** Epoch ms of the last DaddyLive + TheTvApp Special Events scrape. */
     val lastSpecialEventsSyncMs: Long? = null,
     /** Seconds since [lastSpecialEventsSyncMs]; null when never scraped. */

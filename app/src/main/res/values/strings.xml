@@ -265,6 +265,8 @@
     <string name="settings_provider_iptv_org">iptv-org (Pluto, Plex, Xumo, …)</string>
     <string name="settings_provider_ntv_cx">ntv.cx 24/7</string>
     <string name="settings_provider_adult_swim">Adult Swim 24/7</string>
+    <string name="settings_provider_tmdb_movies">IMDB / TMDB Movies (VOD)</string>
+    <string name="settings_supplement_tmdb_movies_enable">Enable trending &amp; popular movies (🎬 Movies group)</string>
     <string name="settings_supplement_adult_swim_enable">Enable Adult Swim marathon streams</string>
     <string name="settings_provider_sports">Live sports events</string>
     <string name="settings_supplement_iptv_org_enable">Enable iptv-org streams</string>

@@ -213,6 +213,33 @@ class GatewayEnvironment(context: Context) {
         }
 
     /**
+     * When true, merges TMDB trending / popular movies as VOD rows under 🎬 Movies.
+     */
+    var supplementTmdbMoviesEnabled: Boolean
+        get() = prefs.getBoolean(
+            KEY_SUPPLEMENT_TMDB_MOVIES_ENABLED,
+            BuildConfig.DEFAULT_SUPPLEMENT_TMDB_MOVIES_ENABLED,
+        )
+        set(value) {
+            prefs.edit().putBoolean(KEY_SUPPLEMENT_TMDB_MOVIES_ENABLED, value).apply()
+        }
+
+    /** TMDB API v3 key — empty uses [BuildConfig.DEFAULT_TMDB_API_KEY]. */
+    var tmdbApiKey: String
+        get() {
+            if (!prefs.contains(KEY_TMDB_API_KEY)) {
+                return BuildConfig.DEFAULT_TMDB_API_KEY
+            }
+            return prefs.getString(KEY_TMDB_API_KEY, "").orEmpty()
+                .ifBlank { BuildConfig.DEFAULT_TMDB_API_KEY }
+        }
+        set(value) {
+            prefs.edit().putString(KEY_TMDB_API_KEY, value.trim()).apply()
+        }
+
+    fun effectiveTmdbApiKey(): String = tmdbApiKey.trim().ifBlank { BuildConfig.DEFAULT_TMDB_API_KEY }
+
+    /**
      * How Adult Swim marathon rows are merged.
      */
     var supplementAdultSwimImportMode: SupplementImportMode
@@ -448,6 +475,8 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_SUPPLEMENT_IPTV_ORG_ENABLED = "supplement_iptv_org_enabled"
         private const val KEY_SUPPLEMENT_NTV_CX_ENABLED = "supplement_ntv_cx_enabled"
         private const val KEY_SUPPLEMENT_ADULT_SWIM_ENABLED = "supplement_adult_swim_enabled"
+        private const val KEY_SUPPLEMENT_TMDB_MOVIES_ENABLED = "supplement_tmdb_movies_enabled"
+        private const val KEY_TMDB_API_KEY = "tmdb_api_key"
         private const val KEY_SUPPLEMENT_ADULT_SWIM_IMPORT_MODE = "supplement_adult_swim_import_mode"
         private const val KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE = "supplement_iptv_org_import_mode"
         private const val KEY_SUPPLEMENT_NTV_CX_MERGE_MODE = "supplement_ntv_cx_merge_mode"
