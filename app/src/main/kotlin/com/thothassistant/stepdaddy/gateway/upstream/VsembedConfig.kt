@@ -2,11 +2,10 @@ package com.thothassistant.stepdaddy.gateway.upstream
 
 object VsembedConfig {
     /** Primary embed + list JSON hosts (vidsrc successor domains). */
+    /** Working embed hosts only (vidsrc-embed.* often 522). */
     val EMBED_MIRRORS = listOf(
         "https://vsembed.ru",
         "https://vsembed.su",
-        "https://vidsrc-embed.ru",
-        "https://vidsrc-embed.su",
     )
 
     const val LIST_MOVIES_PATH = "/movies/latest/page-%d.json"

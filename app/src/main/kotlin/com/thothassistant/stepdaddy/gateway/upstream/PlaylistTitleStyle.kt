@@ -18,6 +18,8 @@ enum class PlaylistTitleSource {
     CABLE,
     FAST,
     SIDECAR,
+    /** Movies / series VOD — keep Xtream-style `Title (Year)` / `Show - S01E01` as-is. */
+    VOD,
     ADULT,
     ADULT_SWIM_247,
     SPECIAL_EVENT,

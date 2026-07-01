@@ -28,6 +28,15 @@ class VsembedListCatalog(
     )
 
     @Serializable
+    data class TvShowListEntry(
+        val imdb_id: String? = null,
+        val tmdb_id: String? = null,
+        val title: String = "",
+        val quality: String? = null,
+        val time_added: String? = null,
+    )
+
+    @Serializable
     data class EpisodeListEntry(
         val imdb_id: String? = null,
         val tmdb_id: String? = null,
@@ -76,6 +85,57 @@ class VsembedListCatalog(
             }
         }
         return merged.values.toList()
+    }
+
+    data class ShowRow(
+        val showTmdbId: Int,
+        val showImdbId: String?,
+        val showTitle: String,
+        val quality: String?,
+    )
+
+    fun fetchLatestTvShows(pages: Int = VsembedConfig.SERIES_CATALOG_LIST_PAGES): List<ShowRow> {
+        val merged = linkedMapOf<Int, ShowRow>()
+        val pageCount = pages.coerceIn(1, 10)
+        for (page in 1..pageCount) {
+            for (base in VsembedConfig.EMBED_MIRRORS) {
+                val url = base + VsembedConfig.LIST_TVSHOWS_PATH.format(page)
+                val rows = runCatching { fetchTvShowPage(url) }
+                    .getOrElse { exc ->
+                        Log.w(TAG, "vsembed tvshows list failed: $url", exc)
+                        emptyList()
+                    }
+                if (rows.isNotEmpty()) {
+                    rows.forEach { row -> merged.putIfAbsent(row.showTmdbId, row) }
+                    break
+                }
+            }
+        }
+        return merged.values.toList()
+    }
+
+    private fun fetchTvShowPage(url: String): List<ShowRow> {
+        val request = Request.Builder().url(url).get().build()
+        httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) error("HTTP ${response.code}")
+            val body = response.body?.string().orEmpty()
+            @Serializable
+            data class TvShowListResponse(
+                val result: List<TvShowListEntry> = emptyList(),
+            )
+            val parsed = json.decodeFromString<TvShowListResponse>(body)
+            return parsed.result.mapNotNull { entry ->
+                val showTmdbId = entry.tmdb_id?.trim()?.toIntOrNull() ?: return@mapNotNull null
+                if (showTmdbId <= 0) return@mapNotNull null
+                val showTitle = TmdbVodConfig.parseListTitle(entry.title).title.ifBlank { return@mapNotNull null }
+                ShowRow(
+                    showTmdbId = showTmdbId,
+                    showImdbId = entry.imdb_id?.trim()?.takeIf { it.startsWith("tt") },
+                    showTitle = showTitle,
+                    quality = entry.quality?.trim()?.takeIf { it.isNotEmpty() },
+                )
+            }
+        }
     }
 
     fun fetchLatestEpisodes(pages: Int = VsembedConfig.SERIES_CATALOG_LIST_PAGES): List<EpisodeRow> {

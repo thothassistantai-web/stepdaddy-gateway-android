@@ -7,6 +7,16 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.14] - 2026-07-01
+
+### Added
+
+- **Xtream live API** — `player_api.php` `get_live_categories` and `get_live_streams` so TiviMate Xtream login imports live channels (not just VOD)
+
+### Changed
+
+- **Xtream player_api auth** — live actions work when Movies (VOD) supplement is disabled; VOD actions still require VOD enabled
+
 ## [3.0.13] - 2026-07-01
 
 ### Added
@@ -21,10 +31,16 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 - **Series JSON API** — `GET /series` lists episode metadata and stream URLs
 - **vsembed stream resolver** — mirror failover across vsembed + legacy vidsrc-embed hosts; IMDB + TMDB embed paths
 - **Moviebox SDK fallback** — Kotlin port of moviebox-js-sdk search + `/subject/play` when vsembed fails
+- **VOD genre shelves** — movies grouped by Cinemeta genre (`🎬 Action`, `🎬 Comedy`, …); series by genre or per-show shelf (`📺 {Show Title}`) when listed in vsembed `/tvshows/latest/`
+- **Xtream Codes VOD API** — `GET /player_api.php` with `get_vod_categories`, `get_vod_streams`, `get_vod_info`, `get_series_categories`, `get_series`, `get_series_info`; `/movie/{user}/{pass}/{id}.mp4` redirects to VOD proxy
 
 ### Changed
 
 - VOD settings label → **Movies (VOD)**; provider tag `VOD` instead of `TMDB`
+- **VOD metadata (Xtream-style)** — movies titled `Title (Year)`; episodes `Show - S01E01`; Metahub large + TMDB `w600_and_h900` posters; Cinemeta enrichment for all catalog rows (plot, genre, cast in `tvg-desc`); one meta lookup per show (fixes wrong/duplicate covers)
+- **VOD playlist titles** — VOD rows no longer get live-channel `US: TITLE ᴸᴵⱽᴱ` formatting; posters bypass iptv-org logo resolver (fixes wrong covers like Avatar → Pluto logo)
+- **vsembed playback** — drop dead vidsrc-embed mirrors; fix `/prorcp/` script path parsing; resolve new `master_urls` + `generate.php` token flow; shorter HTTP timeouts so Moviebox fallback runs when embed hosts fail
+- **TiviMate VOD tabs** — `tvg-type="movie"` / `tvg-type="series"` (+ season/episode metadata) routes rows to Movies vs Series tabs; stream URLs use `.m3u8` (`.mp4` requests redirect to HLS)
 
 ## [3.0.12] - 2026-06-30
 

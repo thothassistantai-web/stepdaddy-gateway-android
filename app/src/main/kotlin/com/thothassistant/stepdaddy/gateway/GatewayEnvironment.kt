@@ -8,6 +8,7 @@ import com.thothassistant.stepdaddy.gateway.network.NetworkAccessMode
 import com.thothassistant.stepdaddy.gateway.upstream.IptvOrgStreamsConfig
 import com.thothassistant.stepdaddy.gateway.upstream.PlaylistTitleStyle
 import com.thothassistant.stepdaddy.gateway.upstream.SupplementImportMode
+import com.thothassistant.stepdaddy.gateway.xtream.XtreamCredentials
 import java.security.SecureRandom
 import java.util.Base64
 
@@ -495,6 +496,25 @@ class GatewayEnvironment(context: Context) {
 
     fun loopbackBase(): String = "http://127.0.0.1:$port"
 
+    /** Xtream Codes username for TiviMate login and get.php auth. */
+    var xtreamUsername: String
+        get() = prefs.getString(KEY_XTREAM_USERNAME, XtreamCredentials.DEFAULT_USERNAME)
+            ?: XtreamCredentials.DEFAULT_USERNAME
+        set(value) {
+            prefs.edit().putString(KEY_XTREAM_USERNAME, value.trim()).apply()
+        }
+
+    /** Xtream Codes password for TiviMate login and get.php auth. */
+    var xtreamPassword: String
+        get() = prefs.getString(KEY_XTREAM_PASSWORD, XtreamCredentials.DEFAULT_PASSWORD)
+            ?: XtreamCredentials.DEFAULT_PASSWORD
+        set(value) {
+            prefs.edit().putString(KEY_XTREAM_PASSWORD, value).apply()
+        }
+
+    fun isXtreamAuthorized(username: String, password: String): Boolean =
+        username == xtreamUsername && password == xtreamPassword
+
     fun displayGatewayName(): String =
         gatewayName.trim().ifBlank { "StepDaddy Gateway" }
 
@@ -552,6 +572,8 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_DISMISSED_UPDATE_VERSION_CODE = "dismissed_update_version_code"
         private const val KEY_PENDING_UPDATE_APK_PATH = "pending_update_apk_path"
         private const val KEY_PENDING_TIVIMATE_UPDATE_APK_PATH = "pending_tivimate_update_apk_path"
+        private const val KEY_XTREAM_USERNAME = "xtream_username"
+        private const val KEY_XTREAM_PASSWORD = "xtream_password"
         private const val CRASH_RECOVERY_BANNER_SKIP_MS = 10 * 60 * 1000L
         private const val DEFAULT_MIRRORS_CSV =
             "https://daddylive.li,https://daddylive.org"

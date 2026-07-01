@@ -82,11 +82,24 @@ class VidsrcMovieResolver(
             ?: error("vidsrc_iframe_missing")
 
         val playerPage = httpGet(iframeSrc, referer = embedUrl)
-        val prorcpPath = Regex("""src:\s*'(/prorcp/[^']+)'""")
+        val prorcpPath = Regex("""src:\s*['"](/prorcp/[^'"]+)['"]""")
             .find(playerPage)?.groupValues?.get(1)
             ?: error("vidsrc_prorcp_missing")
-        val prorcpUrl = iframeSrc.substringBefore("/rcp") + prorcpPath
+        val rcpBase = iframeSrc.substringBefore("/rcp").ifBlank { iframeSrc.substringBefore("/prorcp") }
+        val prorcpUrl = rcpBase.trimEnd('/') + prorcpPath
         val script = httpGet(prorcpUrl, referer = iframeSrc)
+
+        extractMasterUrls(script)?.let { template ->
+            val streamUrl = resolveMasterUrl(template, referer = iframeSrc)
+            if (streamUrl.isNotEmpty()) {
+                return ResolvedStream(
+                    url = streamUrl,
+                    referer = iframeSrc,
+                    isHls = streamUrl.contains(".m3u8", ignoreCase = true),
+                    provider = "vsembed",
+                )
+            }
+        }
 
         val playerId = Regex("""Playerjs.*file:\s*([a-zA-Z0-9]+)\s*,""")
             .find(script)?.groupValues?.get(1).orEmpty()
@@ -116,6 +129,23 @@ class VidsrcMovieResolver(
             isHls = isHls,
             provider = "vsembed",
         )
+    }
+
+    private fun extractMasterUrls(script: String): String? =
+        Regex("""(?:var|let|const)\s+master_urls\s*=\s*"([^"]+)"""")
+            .find(script)?.groupValues?.get(1)
+
+    private fun resolveMasterUrl(template: String, referer: String): String {
+        val first = template.split(" or ").firstOrNull()?.trim().orEmpty()
+        if (first.isEmpty()) return ""
+        val host = runCatching { URI(first).host }.getOrNull().orEmpty()
+        if (host.isEmpty()) return ""
+        val token = runCatching {
+            httpGet("https://$host/generate.php", referer = referer).trim()
+        }.getOrElse { return "" }
+        return first.replace("__TOKEN__", token)
+            .replace(Regex("""\{[a-z]\d+\}"""), "quibblezoomfable.com")
+            .trim()
     }
 
     private fun httpGet(url: String, referer: String): String {
@@ -255,9 +285,9 @@ class VidsrcMovieResolver(
         fun defaultClient(): OkHttpClient =
             OkHttpClient.Builder()
                 .retryOnConnectionFailure(true)
-                .connectTimeout(20, TimeUnit.SECONDS)
-                .readTimeout(45, TimeUnit.SECONDS)
-                .callTimeout(60, TimeUnit.SECONDS)
+                .connectTimeout(15, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .callTimeout(35, TimeUnit.SECONDS)
                 .build()
     }
 }

@@ -329,8 +329,8 @@ object PlaylistBuilder {
         supplement.id.startsWith("sport:") || supplement.id.startsWith("dlhd-event:") -> PlaylistTitleSource.SPECIAL_EVENT
         supplement.id.startsWith("iptv:") || supplement.id.startsWith("ntv:") ||
             supplement.id.startsWith("xyz:") -> PlaylistTitleSource.FAST
-        supplement.id.startsWith(TmdbVodConfig.ID_PREFIX) -> PlaylistTitleSource.SIDECAR
-        supplement.id.startsWith(TmdbVodConfig.SERIES_ID_PREFIX) -> PlaylistTitleSource.SIDECAR
+        supplement.id.startsWith(TmdbVodConfig.ID_PREFIX) -> PlaylistTitleSource.VOD
+        supplement.id.startsWith(TmdbVodConfig.SERIES_ID_PREFIX) -> PlaylistTitleSource.VOD
         else -> PlaylistTitleSource.SIDECAR
     }
 
@@ -346,7 +346,7 @@ object PlaylistBuilder {
         }
         if (supplement.id.startsWith(TmdbVodConfig.ID_PREFIX)) {
             return GroupTitleResolver.Resolution(
-                groupTitle = TmdbVodConfig.GROUP_TITLE,
+                groupTitle = supplement.groupTitle.ifBlank { TmdbVodConfig.GROUP_TITLE },
                 categoryLabel = GroupTitleResolver.MOVIES,
                 countryCode = "US",
                 flagEmoji = "🇺🇸",
@@ -356,7 +356,7 @@ object PlaylistBuilder {
         }
         if (supplement.id.startsWith(TmdbVodConfig.SERIES_ID_PREFIX)) {
             return GroupTitleResolver.Resolution(
-                groupTitle = TmdbVodConfig.SERIES_GROUP_TITLE,
+                groupTitle = supplement.groupTitle.ifBlank { TmdbVodConfig.SERIES_GROUP_TITLE },
                 categoryLabel = GroupTitleResolver.SERIES,
                 countryCode = "US",
                 flagEmoji = "🇺🇸",
@@ -473,9 +473,8 @@ object PlaylistBuilder {
         }
         if (supplement.id.startsWith(TmdbVodConfig.ID_PREFIX)) {
             val tmdbId = supplement.id.removePrefix(TmdbVodConfig.ID_PREFIX)
-            // TiviMate classifies .mp4 URLs as VOD; plain/VLC use HLS master.
-            val extension = if (streamUrlStyle == StreamUrlStyle.PLAIN) "m3u8" else "mp4"
-            val stream = "${base.trimEnd('/')}/vod/movie/$tmdbId.$extension"
+            // HLS proxy; tvg-type="movie" in EXTINF puts rows in TiviMate Movies tab (not Live TV).
+            val stream = "${base.trimEnd('/')}/vod/movie/$tmdbId.m3u8"
             if (streamUrlStyle == StreamUrlStyle.PLAIN) {
                 return stream
             }
@@ -485,8 +484,8 @@ object PlaylistBuilder {
         }
         if (supplement.id.startsWith(TmdbVodConfig.SERIES_ID_PREFIX)) {
             val key = TmdbVodConfig.parseSeriesSupplementId(supplement.id) ?: return supplement.streamUrl
-            val extension = if (streamUrlStyle == StreamUrlStyle.PLAIN) "m3u8" else "mp4"
-            val stream = "${base.trimEnd('/')}/vod/series/${key.showTmdbId}/${key.season}/${key.episode}.$extension"
+            val stream =
+                "${base.trimEnd('/')}/vod/series/${key.showTmdbId}/${key.season}/${key.episode}.m3u8"
             if (streamUrlStyle == StreamUrlStyle.PLAIN) {
                 return stream
             }
@@ -521,16 +520,22 @@ object PlaylistBuilder {
             val tvgName = if (titleStyle == PlaylistTitleStyle.XTREAM_CATEGORY) displayTitle else supplement.name
             attrs += """tvg-name="${escape(tvgName)}""""
         }
-        val logo = logoResolver?.resolvePlaylistLogoUrl(
-            apiBase = base,
-            channelName = supplement.name,
-            tvgId = supplement.tvgId,
-            channelLogo = supplement.logo,
-        ) ?: supplement.logo?.takeIf { it.startsWith("http") }
-            ?: "$base/ui/default-channel.svg"
+        val logo = when {
+            supplement.id.startsWith(TmdbVodConfig.ID_PREFIX) ||
+                supplement.id.startsWith(TmdbVodConfig.SERIES_ID_PREFIX) ->
+                TmdbVodConfig.normalizePosterUrl(supplement.logo)
+                    ?: supplement.logo?.takeIf { it.startsWith("http") }
+            else -> logoResolver?.resolvePlaylistLogoUrl(
+                apiBase = base,
+                channelName = supplement.name,
+                tvgId = supplement.tvgId,
+                channelLogo = supplement.logo,
+            ) ?: supplement.logo?.takeIf { it.startsWith("http") }
+        } ?: "$base/ui/default-channel.svg"
         attrs += """tvg-logo="${escape(logo)}""""
         attrs += """group-title="${escape(groupTitle)}""""
         attrs += """tvg-chno="$channelNumber""""
+        vodTypeAttrs(supplement, displayTitle)?.let { attrs += it }
         tvgCountryAttr(resolution.countryCode)?.let { attrs += it }
         supplementLanguageCode(supplement)?.let { code ->
             attrs += """tvg-language="${escape(toTvgLanguageCode(code))}""""
@@ -539,6 +544,37 @@ object PlaylistBuilder {
             attrs += """tvg-desc="${escape(plot.take(240))}""""
         }
         return attrs.joinToString(" ")
+    }
+
+    /** TiviMate TV / Movies / Series tabs use tvg-type (not .mp4 URL suffix). */
+    private fun vodTypeAttrs(supplement: SupplementChannel, displayTitle: String): String? {
+        if (supplement.id.startsWith(TmdbVodConfig.ID_PREFIX)) {
+            return """tvg-type="movie""""
+        }
+        if (!supplement.id.startsWith(TmdbVodConfig.SERIES_ID_PREFIX)) {
+            return null
+        }
+        val key = TmdbVodConfig.parseSeriesSupplementId(supplement.id) ?: return null
+        val showTitle = seriesShowTitle(supplement.name, displayTitle)
+        return buildString {
+            append("""tvg-type="series"""")
+            append(""" tvg-serie="${key.showTmdbId}"""")
+            append(""" tvg-season="${key.season}"""")
+            append(""" tvg-episode="${key.episode}"""")
+            if (showTitle.isNotBlank()) {
+                append(""" serie-title="${escape(showTitle)}"""")
+            }
+        }
+    }
+
+    private fun seriesShowTitle(rawName: String, displayTitle: String): String {
+        Regex("""^(.+?) - S\d{2}E\d{2}$""").find(displayTitle.trim())?.groupValues?.get(1)?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { return it }
+        Regex("""^(.+?) - S\d{2}E\d{2}$""").find(rawName.trim())?.groupValues?.get(1)?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { return it }
+        return rawName.substringBefore(" - S").trim()
     }
 
     private fun supplementLanguageCode(supplement: SupplementChannel): String? {
@@ -571,8 +607,8 @@ object PlaylistBuilder {
         supplement: SupplementChannel,
         resolution: GroupTitleResolver.Resolution = supplementResolution(supplement),
     ): String = when {
-        supplement.id.startsWith(TmdbVodConfig.ID_PREFIX) -> TmdbVodConfig.GROUP_TITLE
-        supplement.id.startsWith(TmdbVodConfig.SERIES_ID_PREFIX) -> TmdbVodConfig.SERIES_GROUP_TITLE
+        supplement.id.startsWith(TmdbVodConfig.ID_PREFIX) -> supplement.groupTitle.ifBlank { TmdbVodConfig.GROUP_TITLE }
+        supplement.id.startsWith(TmdbVodConfig.SERIES_ID_PREFIX) -> supplement.groupTitle.ifBlank { TmdbVodConfig.SERIES_GROUP_TITLE }
         supplement.id.startsWith("adultswim:") -> GroupTitleResolver.ENTERTAINMENT
         supplement.id.startsWith("sport:") ||
             supplement.id.startsWith("dlhd-guide:") ||

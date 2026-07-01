@@ -44,11 +44,15 @@ object XtreamCategoryTitleFormatter {
 
         val countryPrefix = countryPrefix(resolution.countryCode)
         val quality = when {
+            source == PlaylistTitleSource.VOD -> ""
             source == PlaylistTitleSource.ADULT_SWIM_247 -> " ᴿᴬᵂ"
             source == PlaylistTitleSource.SPECIAL_EVENT -> " ᴸᴵⱽᴱ"
             source == PlaylistTitleSource.FAST || hadFastResolution -> " ᴿᴬᵂ"
             source == PlaylistTitleSource.SIDECAR -> " ᴸᴵⱽᴱ"
             else -> " HD"
+        }
+        if (source == PlaylistTitleSource.VOD) {
+            return core
         }
         return "$countryPrefix: ${core.uppercase()}$quality".trim()
     }

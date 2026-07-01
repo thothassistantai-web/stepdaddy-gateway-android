@@ -1,8 +1,8 @@
 {
-  "versionCode": 30013,
-  "versionName": "3.0.13",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.13/stepdaddy-gateway-3.0.13-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.13/stepdaddy-gateway-3.0.13-debug.apk",
-  "releaseNotes": "xyzstreams US live TV + iptv-org playlist picker + VOD series expansion. See CHANGELOG.md.",
+  "versionCode": 30014,
+  "versionName": "3.0.14",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.14/stepdaddy-gateway-3.0.14-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.14/stepdaddy-gateway-3.0.14-debug.apk",
+  "releaseNotes": "See CHANGELOG.md",
   "mandatory": false
 }

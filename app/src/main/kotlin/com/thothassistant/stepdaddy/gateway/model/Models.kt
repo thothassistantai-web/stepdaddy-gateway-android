@@ -206,6 +206,10 @@ data class TivimateSetup(
     val epg: String,
     val health: String,
     val hint: String,
+    /** Xtream Codes login (recommended for separate Movies + Series tabs). */
+    val xtreamServer: String = "",
+    val xtreamUsername: String = "admin",
+    val xtreamPassword: String = "password",
     /** Legacy diagnostic URL (bootstrap or superseded path); still served for backward compatibility. */
     val playlistDiagnostic: String = "",
     val epgReady: Boolean = false,

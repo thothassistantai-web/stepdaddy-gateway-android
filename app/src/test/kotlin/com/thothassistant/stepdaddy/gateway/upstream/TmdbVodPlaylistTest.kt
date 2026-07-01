@@ -1,6 +1,7 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -32,10 +33,39 @@ class TmdbVodPlaylistTest {
         )
 
         assertTrue(playlist.contains("group-title=\"🎬 Movies\""))
-        assertTrue(playlist.contains("tvg-logo=\"https://image.tmdb.org/t/p/w500/poster.jpg\""))
+        assertTrue(playlist.contains("tvg-type=\"movie\""))
+        assertTrue(playlist.contains("tvg-logo=\"https://image.tmdb.org/t/p/w600_and_h900_bestv2/poster.jpg\""))
         assertTrue(playlist.contains("tvg-desc=\"An insomniac office worker"))
-        assertTrue(playlist.contains("http://127.0.0.1:3000/vod/movie/550.mp4"))
+        assertTrue(playlist.contains("http://127.0.0.1:3000/vod/movie/550.m3u8"))
         assertTrue(playlist.contains("Fight Club (1999)"))
+        assertFalse(playlist.contains("US: FIGHT CLUB"))
+        assertFalse(playlist.contains("ᴸᴵⱽᴱ"))
+    }
+
+    @Test
+    fun `xtream category playlist keeps vod titles without live suffix`() {
+        val supplements = listOf(
+            SupplementChannel(
+                id = "vod:tmdb:550",
+                name = "Fight Club (1999)",
+                tvgId = "tt0137523",
+                logo = "https://images.metahub.space/poster/medium/tt0137523/img",
+                groupTitle = TmdbVodConfig.GROUP_TITLE,
+                streamUrl = "",
+                providerTag = "VOD",
+            ),
+        )
+        val playlist = PlaylistBuilder.tivimatePlaylist(
+            channels = emptyList(),
+            baseUrl = "http://127.0.0.1:3000",
+            dlhdOrigin = "https://daddylive.eu",
+            supplements = supplements,
+            titleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
+        )
+        assertTrue(playlist.contains("Fight Club (1999)"))
+        assertFalse(playlist.contains("US: FIGHT CLUB"))
+        assertFalse(playlist.contains("ᴸᴵⱽᴱ"))
+        assertTrue(playlist.contains("poster/large/tt0137523"))
     }
 
     @Test
@@ -89,7 +119,12 @@ class TmdbVodPlaylistTest {
         )
 
         assertTrue(playlist.contains("group-title=\"📺 Shows\""))
-        assertTrue(playlist.contains("http://127.0.0.1:3000/vod/series/1399/1/1.mp4"))
+        assertTrue(playlist.contains("tvg-type=\"series\""))
+        assertTrue(playlist.contains("tvg-serie=\"1399\""))
+        assertTrue(playlist.contains("tvg-season=\"1\""))
+        assertTrue(playlist.contains("tvg-episode=\"1\""))
+        assertTrue(playlist.contains("serie-title=\"Game of Thrones\""))
+        assertTrue(playlist.contains("http://127.0.0.1:3000/vod/series/1399/1/1.m3u8"))
         assertTrue(playlist.contains("Game of Thrones - S01E01"))
     }
 

@@ -99,6 +99,10 @@ object TmdbVodConfig {
                 trimmed.replace("/poster/small/", "/poster/large/")
             trimmed.contains("images.metahub.space/poster/medium/") ->
                 trimmed.replace("/poster/medium/", "/poster/large/")
+            trimmed.contains("live.metahub.space/poster/small/") ->
+                trimmed.replace("/poster/small/", "/poster/large/")
+            trimmed.contains("live.metahub.space/poster/medium/") ->
+                trimmed.replace("/poster/medium/", "/poster/large/")
             else -> trimmed
         }
     }

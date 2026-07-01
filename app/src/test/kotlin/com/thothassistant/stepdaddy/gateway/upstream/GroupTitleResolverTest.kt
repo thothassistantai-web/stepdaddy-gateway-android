@@ -34,6 +34,9 @@ class GroupTitleResolverTest {
     assertEquals(11, GroupTitleResolver.groupSortOrder("🎟️ Special Events"))
     assertEquals(11, GroupTitleResolver.groupSortOrder("🎟️ | Special Events"))
     assertEquals(1, GroupTitleResolver.groupSortOrder(TmdbVodConfig.SERIES_GROUP_TITLE))
+    assertEquals(1, GroupTitleResolver.groupSortOrder("🎬 Action"))
+    assertEquals(1, GroupTitleResolver.groupSortOrder("📺 Drama"))
+    assertEquals(1, GroupTitleResolver.groupSortOrder("📺 Breaking Bad"))
   }
   @Test
   fun `ACC Network USA resolves to Sports with US suffix`() {

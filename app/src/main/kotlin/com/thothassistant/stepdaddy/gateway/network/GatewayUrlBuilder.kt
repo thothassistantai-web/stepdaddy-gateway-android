@@ -3,6 +3,7 @@ package com.thothassistant.stepdaddy.gateway.network
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.epg.EpgPlaylistUrlResolver
 import com.thothassistant.stepdaddy.gateway.routes.PlaylistPaths
+import com.thothassistant.stepdaddy.gateway.xtream.XtreamCredentials
 
 object GatewayUrlBuilder {
     fun effectiveBase(environment: GatewayEnvironment): String =
@@ -56,6 +57,14 @@ object GatewayUrlBuilder {
 
     fun healthUrl(environment: GatewayEnvironment): String =
         appendPath(environment.loopbackBase(), "/health", environment, forceLoopback = true)
+
+    /** Full get.php URL for TiviMate Xtream background import. */
+    fun xtreamImportUrl(environment: GatewayEnvironment): String =
+        XtreamCredentials.getPhpImportUrl(
+            effectiveBase(environment),
+            environment.xtreamUsername,
+            environment.xtreamPassword,
+        )
 
     fun qrBaseUrl(environment: GatewayEnvironment): String? =
         when (environment.networkAccessMode) {

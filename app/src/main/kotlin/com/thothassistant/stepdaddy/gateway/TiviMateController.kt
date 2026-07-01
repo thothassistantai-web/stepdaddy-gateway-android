@@ -13,6 +13,7 @@ import com.thothassistant.stepdaddy.gateway.model.TiviMateChannelsResponse
 import com.thothassistant.stepdaddy.gateway.model.TiviMateEvent
 import com.thothassistant.stepdaddy.gateway.model.TiviMateHttpStatus
 import com.thothassistant.stepdaddy.gateway.model.TiviMatePlayerState
+import com.thothassistant.stepdaddy.gateway.xtream.XtreamCredentials
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
@@ -222,7 +223,12 @@ object TiviMateController {
     }
 
     /** Launch TiViMate for gateway use — setup URI when StepDaddy patch is present. */
-    fun launchForGateway(context: Context, gatewayBase: String? = null): Boolean {
+    fun launchForGateway(
+        context: Context,
+        gatewayBase: String? = null,
+        xtreamUsername: String = XtreamCredentials.DEFAULT_USERNAME,
+        xtreamPassword: String = XtreamCredentials.DEFAULT_PASSWORD,
+    ): Boolean {
         if (!isInstalled(context)) return false
         val probe = detectInstalledVariant(context)
         return when (probe.variant) {
@@ -240,11 +246,19 @@ object TiviMateController {
             TiviMateInstalledVariant.UNKNOWN,
             -> {
                 val base = normalizeGatewayBase(gatewayBase)
-                val playlistUrl = "$base${com.thothassistant.stepdaddy.gateway.routes.PlaylistPaths.TIVIMATE}"
                 val epgUrl = "$base/epg.xml"
-                val viaImport = triggerModPlaylistImport(context, playlistUrl, epgUrl)
+                val viaXtream = triggerModXtreamImport(context, base, xtreamUsername, xtreamPassword, epgUrl)
+                val viaM3u = if (!viaXtream) {
+                    triggerModPlaylistImport(
+                        context,
+                        "$base${com.thothassistant.stepdaddy.gateway.routes.PlaylistPaths.TIVIMATE}",
+                        epgUrl,
+                    )
+                } else {
+                    false
+                }
                 val viaMain = launch(context)
-                viaImport || viaMain
+                viaXtream || viaM3u || viaMain
             }
         }
     }
@@ -431,6 +445,57 @@ object TiviMateController {
             false
         }
         return playlistStarted || epgStarted
+    }
+
+    /**
+     * Programmatic Xtream import for premium mods that block manual add-playlist UI.
+     * Sends a VIEW intent with a full get.php URL — TiviMate detects Xtream from the URL pattern.
+     */
+    fun triggerModXtreamImport(
+        context: Context,
+        gatewayBase: String,
+        username: String = XtreamCredentials.DEFAULT_USERNAME,
+        password: String = XtreamCredentials.DEFAULT_PASSWORD,
+        epgUrl: String? = null,
+    ): Boolean {
+        val targetPackage = playerPackage(context) ?: return false
+        if (controlPackage(context) != null) return false
+        val importUrl = XtreamCredentials.getPhpImportUrl(gatewayBase, username, password)
+        if (!XtreamCredentials.isXtreamImportUrl(importUrl)) return false
+
+        val xtreamIntent = Intent(Intent.ACTION_VIEW, Uri.parse(importUrl)).apply {
+            component = ComponentName(targetPackage, MAIN_ACTIVITY_CLASS)
+            addCategory(Intent.CATEGORY_DEFAULT)
+            addCategory(Intent.CATEGORY_BROWSABLE)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+        val xtreamStarted = runCatching {
+            context.startActivity(xtreamIntent)
+            Log.i(TAG, "Triggered TiViMate mod Xtream import: $importUrl")
+            true
+        }.getOrElse { exc ->
+            Log.w(TAG, "TiViMate mod Xtream import failed: ${exc.message}")
+            false
+        }
+
+        val trimmedEpg = epgUrl?.trim().orEmpty()
+        if (trimmedEpg.isEmpty()) return xtreamStarted
+
+        val epgIntent = Intent(Intent.ACTION_VIEW, Uri.parse(trimmedEpg)).apply {
+            component = ComponentName(targetPackage, MAIN_ACTIVITY_CLASS)
+            setDataAndType(Uri.parse(trimmedEpg), MIME_XMLTV)
+            addCategory(Intent.CATEGORY_DEFAULT)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+        val epgStarted = runCatching {
+            context.startActivity(epgIntent)
+            Log.i(TAG, "Triggered TiViMate mod EPG import: $trimmedEpg")
+            true
+        }.getOrElse { exc ->
+            Log.w(TAG, "TiViMate mod EPG import failed: ${exc.message}")
+            false
+        }
+        return xtreamStarted || epgStarted
     }
 
     private fun isActivityExported(context: Context, packageName: String, activityClass: String): Boolean {

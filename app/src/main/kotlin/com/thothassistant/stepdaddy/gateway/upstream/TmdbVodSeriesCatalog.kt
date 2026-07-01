@@ -23,6 +23,7 @@ class TmdbVodSeriesCatalog(
         val showYear: String? = null,
         val genre: String? = null,
         val cast: String? = null,
+        val showShelf: Boolean = false,
     )
 
     fun fetchCatalog(): List<Episode> {
@@ -31,14 +32,18 @@ class TmdbVodSeriesCatalog(
             Log.w(TAG, "vsembed episodes list empty")
             return emptyList()
         }
+        val showShelfIds = vsembedList.fetchLatestTvShows()
+            .map { it.showTmdbId }
+            .toSet()
         val showMetaCache = mutableMapOf<String, CinemetaMetaClient.EnrichedMeta>()
-        return rows.map { row -> toEpisode(row, showMetaCache) }
+        return rows.map { row -> toEpisode(row, showMetaCache, showShelfIds.contains(row.showTmdbId)) }
             .take(TmdbVodConfig.MAX_SERIES_CATALOG_SIZE)
     }
 
     private fun toEpisode(
         row: VsembedListCatalog.EpisodeRow,
         showMetaCache: MutableMap<String, CinemetaMetaClient.EnrichedMeta>,
+        showShelf: Boolean,
     ): Episode {
         val parsed = TmdbVodConfig.parseListTitle(row.showTitle)
         val imdbId = row.showImdbId
@@ -72,6 +77,7 @@ class TmdbVodSeriesCatalog(
             showYear = meta?.releaseDate ?: parsed.year,
             genre = meta?.genre,
             cast = meta?.cast,
+            showShelf = showShelf,
         )
     }
 

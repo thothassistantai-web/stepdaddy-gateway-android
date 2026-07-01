@@ -187,7 +187,12 @@ object GatewayHud {
         tivimateLaunchedThisBoot = true
         val bootChannel = environment.tivimateBootTuneChannel
         mainHandler.postDelayed({
-            TiviMateLauncher.launchForGateway(context, environment.loopbackBase())
+            TiviMateLauncher.launchForGateway(
+                context,
+                environment.loopbackBase(),
+                environment.xtreamUsername,
+                environment.xtreamPassword,
+            )
             if (bootChannel > 0) {
                 scheduleBootTuneWhenPatchReady(context, bootChannel)
             }

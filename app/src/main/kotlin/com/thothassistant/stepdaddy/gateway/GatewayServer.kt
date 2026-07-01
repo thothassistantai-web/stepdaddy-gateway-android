@@ -13,6 +13,7 @@ import com.thothassistant.stepdaddy.gateway.routes.HealthRoutes
 import com.thothassistant.stepdaddy.gateway.routes.LogoRoutes
 import com.thothassistant.stepdaddy.gateway.routes.MoviesRoutes
 import com.thothassistant.stepdaddy.gateway.routes.SeriesRoutes
+import com.thothassistant.stepdaddy.gateway.routes.XtreamApiRoutes
 import com.thothassistant.stepdaddy.gateway.routes.NtvStreamRoutes
 import com.thothassistant.stepdaddy.gateway.routes.XyzStreamRoutes
 import com.thothassistant.stepdaddy.gateway.routes.VodStreamRoutes
@@ -44,6 +45,9 @@ import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.response.respondRedirect
+import io.ktor.server.response.respondText
 import java.io.File
 import kotlinx.serialization.json.Json
 
@@ -114,6 +118,7 @@ class GatewayServer(
         )
         val moviesRoutes = MoviesRoutes(environment, supplementSource)
         val seriesRoutes = SeriesRoutes(environment, supplementSource)
+        val xtreamApiRoutes = XtreamApiRoutes(environment, client, supplementSource)
         val contentRoutes = ContentRoutes(environment, client, ResportzParser.defaultClient())
         val epgRoutes = EpgRoutes(client, epgManager, supplementSource)
         val adminRoutes = adminActions?.let { AdminRoutes(it) }
@@ -293,6 +298,52 @@ class GatewayServer(
                         seriesRoutes.list(call)
                     } else {
                         seriesRoutes.disabled(call)
+                    }
+                }
+                get("/player_api.php") {
+                    xtreamApiRoutes.playerApi(call)
+                }
+                get("/get.php") {
+                    routes.xtreamGetPhp(call)
+                }
+                head("/get.php") {
+                    routes.xtreamGetPhp(call)
+                }
+                route("/live/{user}/{pass}/{streamId}.{ext}") {
+                    get {
+                        val user = call.parameters["user"].orEmpty()
+                        val pass = call.parameters["pass"].orEmpty()
+                        if (!gatewayEnvironment.isXtreamAuthorized(user, pass)) {
+                            call.respondText("Authentication failed", status = HttpStatusCode.Unauthorized)
+                            return@get
+                        }
+                        val streamId = call.parameters["streamId"].orEmpty()
+                        call.respondRedirect("/tivimate-stream/$streamId.m3u8", permanent = false)
+                    }
+                    head {
+                        val user = call.parameters["user"].orEmpty()
+                        val pass = call.parameters["pass"].orEmpty()
+                        if (!gatewayEnvironment.isXtreamAuthorized(user, pass)) {
+                            call.respondText("", status = HttpStatusCode.Unauthorized)
+                            return@head
+                        }
+                    }
+                }
+                route("/movie/{user}/{pass}/{streamId}.{ext}") {
+                    get {
+                        val id = call.parameters["streamId"].orEmpty()
+                        call.respondRedirect("/vod/movie/$id.m3u8", permanent = false)
+                    }
+                }
+                route("/series/{user}/{pass}/{streamId}.{ext}") {
+                    get {
+                        val parts = call.parameters["streamId"].orEmpty().split('.')
+                        if (parts.size >= 3) {
+                            call.respondRedirect(
+                                "/vod/series/${parts[0]}/${parts[1]}/${parts[2]}.m3u8",
+                                permanent = false,
+                            )
+                        }
                     }
                 }
                 route("/dlhd-event-stream/{token}.m3u8") {

@@ -49,6 +49,19 @@ class PlaylistRoutes(
         }
     }
 
+    /** Xtream Codes get.php — live M3U for TiviMate Xtream login / URL import. */
+    suspend fun xtreamGetPhp(call: ApplicationCall) {
+        val username = call.request.queryParameters["username"].orEmpty()
+        val password = call.request.queryParameters["password"].orEmpty()
+        if (!environment.isXtreamAuthorized(username, password)) {
+            call.respondText("Authentication failed", ContentType.Text.Plain, HttpStatusCode.Unauthorized)
+            return
+        }
+        respondPlaylist(call, PlaylistPaths.KIND_USER, "playlist_unavailable") {
+            buildPlaylistBody()
+        }
+    }
+
     /** Legacy alias — same body as [tivimateUserPlaylist], marked diagnostic. */
     suspend fun tivimatePlaylist(call: ApplicationCall) {
         respondPlaylist(call, PlaylistPaths.KIND_DIAGNOSTIC, "playlist_unavailable") {

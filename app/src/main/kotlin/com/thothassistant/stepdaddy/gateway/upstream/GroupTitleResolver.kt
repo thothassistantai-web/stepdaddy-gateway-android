@@ -45,6 +45,8 @@ object GroupTitleResolver {
             key.equals("Premium", ignoreCase = true) -> GROUP_ORDER.getValue(MOVIES)
             key.startsWith("🌐 | iptv-org") -> GROUP_ORDER.getValue(INTERNATIONAL)
             key.startsWith("🏈 | Sports") -> GROUP_ORDER.getValue(SPECIAL_EVENTS)
+            key.startsWith("🎬") -> GROUP_ORDER.getValue(MOVIES)
+            key.startsWith("📺") -> GROUP_ORDER.getValue(SERIES)
             else -> DEFAULT_GROUP_SORT_ORDER
         }
     }

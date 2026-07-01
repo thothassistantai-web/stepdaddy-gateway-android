@@ -262,12 +262,17 @@ class HealthRoutes(
             playlistDiagnostic = "$base${PlaylistPaths.TIVIMATE_SETUP}",
             epg = playlistEpgUrls.joinToString(","),
             health = "$base/health",
+            xtreamServer = base,
+            xtreamUsername = environment.xtreamUsername,
+            xtreamPassword = environment.xtreamPassword,
             hint = if (gatewayEpgOn) {
-                "Add $base${PlaylistPaths.TIVIMATE} in TiviMate (127.0.0.1 on this device). " +
-                    "Legacy $base${PlaylistPaths.TIVIMATE_SETUP} (50-channel bootstrap) remains for diagnostics."
+                "Xtream login: Server $base, user ${environment.xtreamUsername}, " +
+                    "pass ${environment.xtreamPassword}. Gateway auto-imports on launch for x2 mod. " +
+                    "Or M3U: $base${PlaylistPaths.TIVIMATE}."
             } else {
-                "Add $base${PlaylistPaths.TIVIMATE} in TiviMate. Gateway EPG is disabled — " +
-                    "TiviMate loads EPG from external URLs in the playlist header."
+                "Xtream: Server $base, user ${environment.xtreamUsername}, " +
+                    "pass ${environment.xtreamPassword} (Movies/Series tabs), " +
+                    "or M3U $base${PlaylistPaths.TIVIMATE}."
             },
             epgReady = if (gatewayEpgOn) epgManager.epgReady() else playlistEpgUrls.isNotEmpty(),
             epgProgrammeCount = if (gatewayEpgOn) {

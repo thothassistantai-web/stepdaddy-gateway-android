@@ -57,7 +57,12 @@ class TiviMateLaunchCoordinator(
 
     private fun launchInstalled() {
         val probe = TiviMateLauncher.detectInstalledVariant(activity)
-        val launched = TiviMateLauncher.launchForGateway(activity, environment.loopbackBase())
+        val launched = TiviMateLauncher.launchForGateway(
+            activity,
+            environment.loopbackBase(),
+            environment.xtreamUsername,
+            environment.xtreamPassword,
+        )
         if (!launched) {
             Toast.makeText(activity, R.string.toast_tivimate_launch_failed, Toast.LENGTH_SHORT).show()
             return

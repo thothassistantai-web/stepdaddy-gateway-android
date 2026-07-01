@@ -14,6 +14,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.httpMethod
+import io.ktor.server.request.path
 import io.ktor.server.response.header
 import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondRedirect
@@ -40,6 +41,7 @@ class VodStreamRoutes(
         season: String,
         episode: String,
     ) {
+        if (redirectMp4ToM3u8IfNeeded(call)) return
         if (call.request.httpMethod.value == "HEAD") {
             call.respondText("", ContentType("application", "vnd.apple.mpegurl"))
             return
@@ -92,6 +94,7 @@ class VodStreamRoutes(
     }
 
     suspend fun movieStream(call: ApplicationCall, tmdbId: String) {
+        if (redirectMp4ToM3u8IfNeeded(call)) return
         if (call.request.httpMethod.value == "HEAD") {
             call.respondText("", ContentType("application", "vnd.apple.mpegurl"))
             return
@@ -114,7 +117,11 @@ class VodStreamRoutes(
             return
         }
         val imdbId = catalogRow?.imdbId
-        val title = catalogRow?.name?.substringBefore(" (")
+        val title = catalogRow?.name?.let { name ->
+            name.substringBefore(" (").trim().ifBlank {
+                TmdbVodConfig.parseListTitle(name).title
+            }
+        }
         try {
             val resolved = withContext(Dispatchers.IO) {
                 withTimeout(STREAM_TIMEOUT_MS) {
@@ -166,11 +173,26 @@ class VodStreamRoutes(
         return resolved
     }
 
+    private suspend fun redirectMp4ToM3u8IfNeeded(call: ApplicationCall): Boolean {
+        val path = call.request.path()
+        if (!path.endsWith(".mp4", ignoreCase = true)) return false
+        val m3u8Path = path.replace(Regex("""\.mp4$""", RegexOption.IGNORE_CASE), ".m3u8")
+        call.respondRedirect(m3u8Path, permanent = false)
+        return true
+    }
+
     private suspend fun deliverStream(
         call: ApplicationCall,
         resolved: VidsrcMovieResolver.ResolvedStream,
     ) {
+        val requestPath = call.request.path()
         if (resolved.isHls) {
+            if (requestPath.endsWith(".mp4", ignoreCase = true)) {
+                // TiviMate M3U uses .mp4 for VOD classification; actual media is HLS.
+                val m3u8Path = requestPath.replace(Regex("""\.mp4$""", RegexOption.IGNORE_CASE), ".m3u8")
+                call.respondRedirect(m3u8Path, permanent = false)
+                return
+            }
             val manifest = withContext(Dispatchers.IO) {
                 fetchManifestText(resolved.url, resolved.referer)
             }

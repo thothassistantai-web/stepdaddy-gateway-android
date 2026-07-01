@@ -28,6 +28,7 @@ class TmdbVodCatalog(
         val posterUrl: String? = null,
         val imdbId: String? = null,
         val streamQuality: String? = null,
+        val genre: String? = null,
     )
 
     @Serializable
@@ -132,6 +133,7 @@ class TmdbVodCatalog(
                 releaseDate = meta.releaseDate ?: movie.releaseDate,
                 voteAverage = meta.voteAverage.takeIf { it > 0.0 } ?: movie.voteAverage,
                 posterUrl = meta.posterUrl ?: movie.posterUrl,
+                genre = meta.genre ?: movie.genre,
             )
         }
     }
