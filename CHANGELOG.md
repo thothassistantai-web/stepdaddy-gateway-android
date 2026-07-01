@@ -7,6 +7,25 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.13] - 2026-07-01
+
+### Added
+
+- **xyzstreams supplement** — US cable/broadcast live TV (~69 static channels + EPG-driven discovery probes on 247v2); TV Guide EPG via proxied tvguide.com lineup; stream proxy `/xyz-stream/{id}.m3u8`
+- **xyzstreams EPG discovery toggle** — Settings → probe TV Guide for extra channels (on by default; disable for faster sync)
+- **xyzstreams health logging** — `/health`, dashboard, and logcat report catalog vs discovered channel counts and discovered channel names
+- **iptv-org playlist picker** — enable/disable each of the 39 GitHub FAST playlists individually (Settings → Choose iptv-org playlists…)
+- **vsembed catalog** — latest movies from `vsembed.ru`/`vsembed.su` list JSON (3 pages, up to 150 titles); Cinemeta meta enrichment (no TMDB/IMDB key required)
+- **Series VOD catalog** — latest episodes from vsembed `/episodes/latest/` JSON in `📺 Shows` group; supplement IDs `vod:series:{showTmdbId}:{season}:{episode}`
+- **Series stream proxy** — `/vod/series/{tmdbId}/{season}/{episode}.m3u8` (and `.mp4` for TiviMate); vsembed TV embed + Moviebox TV fallback
+- **Series JSON API** — `GET /series` lists episode metadata and stream URLs
+- **vsembed stream resolver** — mirror failover across vsembed + legacy vidsrc-embed hosts; IMDB + TMDB embed paths
+- **Moviebox SDK fallback** — Kotlin port of moviebox-js-sdk search + `/subject/play` when vsembed fails
+
+### Changed
+
+- VOD settings label → **Movies (VOD)**; provider tag `VOD` instead of `TMDB`
+
 ## [3.0.12] - 2026-06-30
 
 ### Added

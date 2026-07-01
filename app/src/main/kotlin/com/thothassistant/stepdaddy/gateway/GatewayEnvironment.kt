@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import com.thothassistant.stepdaddy.gateway.audio.AudioPlaybackSettings
 import com.thothassistant.stepdaddy.gateway.epg.EpgConfig
 import com.thothassistant.stepdaddy.gateway.network.NetworkAccessMode
+import com.thothassistant.stepdaddy.gateway.upstream.IptvOrgStreamsConfig
 import com.thothassistant.stepdaddy.gateway.upstream.PlaylistTitleStyle
 import com.thothassistant.stepdaddy.gateway.upstream.SupplementImportMode
 import java.security.SecureRandom
@@ -213,6 +214,18 @@ class GatewayEnvironment(context: Context) {
         }
 
     /**
+     * When true, merges xyzstreams.st US cable / broadcast feeds (Sling-backed 24/7).
+     */
+    var supplementXyzStreamsEnabled: Boolean
+        get() = prefs.getBoolean(
+            KEY_SUPPLEMENT_XYZ_STREAMS_ENABLED,
+            BuildConfig.DEFAULT_SUPPLEMENT_XYZ_STREAMS_ENABLED,
+        )
+        set(value) {
+            prefs.edit().putBoolean(KEY_SUPPLEMENT_XYZ_STREAMS_ENABLED, value).apply()
+        }
+
+    /**
      * When true, merges TMDB trending / popular movies as VOD rows under 🎬 Movies.
      */
     var supplementTmdbMoviesEnabled: Boolean
@@ -251,6 +264,27 @@ class GatewayEnvironment(context: Context) {
         }
 
     /**
+     * When true, probes 247v2 for TV Guide callsigns not in the static xyzstreams catalog.
+     */
+    var supplementXyzStreamsEpgDiscoveryEnabled: Boolean
+        get() = prefs.getBoolean(
+            KEY_SUPPLEMENT_XYZ_STREAMS_EPG_DISCOVERY_ENABLED,
+            BuildConfig.DEFAULT_SUPPLEMENT_XYZ_STREAMS_EPG_DISCOVERY_ENABLED,
+        )
+        set(value) {
+            prefs.edit().putBoolean(KEY_SUPPLEMENT_XYZ_STREAMS_EPG_DISCOVERY_ENABLED, value).apply()
+        }
+
+    /** How xyzstreams rows are merged. */
+    var supplementXyzStreamsImportMode: SupplementImportMode
+        get() = SupplementImportMode.fromPref(
+            prefs.getString(KEY_SUPPLEMENT_XYZ_STREAMS_IMPORT_MODE, BuildConfig.DEFAULT_SUPPLEMENT_IMPORT_MODE),
+        )
+        set(value) {
+            prefs.edit().putString(KEY_SUPPLEMENT_XYZ_STREAMS_IMPORT_MODE, value.name).apply()
+        }
+
+    /**
      * How iptv-org FAST playlists are merged.
      * [SupplementImportMode.FULL_CATALOG] imports every playlist row (default).
      */
@@ -261,6 +295,28 @@ class GatewayEnvironment(context: Context) {
         set(value) {
             prefs.edit().putString(KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE, value.name).apply()
         }
+
+    /**
+     * Subset of [IptvOrgStreamsConfig.PLAYLIST_FILES] to fetch when iptv-org is enabled.
+     * Empty or missing pref means all playlists (default).
+     */
+    var iptvOrgEnabledPlaylists: Set<String>
+        get() {
+            val stored = prefs.getStringSet(KEY_IPTV_ORG_ENABLED_PLAYLISTS, null)
+            if (stored == null || stored.isEmpty()) {
+                return IptvOrgStreamsConfig.PLAYLIST_FILES.toSet()
+            }
+            return stored.intersect(IptvOrgStreamsConfig.PLAYLIST_FILES.toSet()).ifEmpty {
+                IptvOrgStreamsConfig.PLAYLIST_FILES.toSet()
+            }
+        }
+        set(value) {
+            val normalized = value.intersect(IptvOrgStreamsConfig.PLAYLIST_FILES.toSet())
+            prefs.edit().putStringSet(KEY_IPTV_ORG_ENABLED_PLAYLISTS, normalized).apply()
+        }
+
+    fun isIptvOrgPlaylistEnabled(filename: String): Boolean =
+        filename in iptvOrgEnabledPlaylists
 
     /**
      * [SupplementImportMode.FULL_CATALOG] includes every 24/7 row (default).
@@ -475,10 +531,15 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_SUPPLEMENT_IPTV_ORG_ENABLED = "supplement_iptv_org_enabled"
         private const val KEY_SUPPLEMENT_NTV_CX_ENABLED = "supplement_ntv_cx_enabled"
         private const val KEY_SUPPLEMENT_ADULT_SWIM_ENABLED = "supplement_adult_swim_enabled"
+        private const val KEY_SUPPLEMENT_XYZ_STREAMS_ENABLED = "supplement_xyz_streams_enabled"
+        private const val KEY_SUPPLEMENT_XYZ_STREAMS_EPG_DISCOVERY_ENABLED =
+            "supplement_xyz_streams_epg_discovery_enabled"
         private const val KEY_SUPPLEMENT_TMDB_MOVIES_ENABLED = "supplement_tmdb_movies_enabled"
         private const val KEY_TMDB_API_KEY = "tmdb_api_key"
         private const val KEY_SUPPLEMENT_ADULT_SWIM_IMPORT_MODE = "supplement_adult_swim_import_mode"
+        private const val KEY_SUPPLEMENT_XYZ_STREAMS_IMPORT_MODE = "supplement_xyz_streams_import_mode"
         private const val KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE = "supplement_iptv_org_import_mode"
+        private const val KEY_IPTV_ORG_ENABLED_PLAYLISTS = "iptv_org_enabled_playlists"
         private const val KEY_SUPPLEMENT_NTV_CX_MERGE_MODE = "supplement_ntv_cx_merge_mode"
         private const val KEY_GATEWAY_EPG_ENABLED = "gateway_epg_enabled"
         private const val KEY_EXTERNAL_EPG_URL = "external_epg_url"

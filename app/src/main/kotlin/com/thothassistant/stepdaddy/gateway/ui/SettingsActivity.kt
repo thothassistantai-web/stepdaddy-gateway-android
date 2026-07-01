@@ -120,7 +120,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.editDlhdUrl.setText(environment.dlhdBaseUrl)
         binding.editMirrorUrls.setText(environment.mirrorUrls.joinToString(","))
         SettingsSupplementControls.load(binding, environment)
-        SettingsSupplementControls.wireListeners(binding)
+        SettingsSupplementControls.wireListeners(binding, this)
         SettingsAudioControls.load(binding, environment)
         SettingsAudioControls.wireListeners(binding)
         SettingsSpecialEventsStatus.wire(binding)

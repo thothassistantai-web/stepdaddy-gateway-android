@@ -242,6 +242,13 @@ class DashboardStatDetailActivity : AppCompatActivity() {
                     appendLine("iptvOrgPlaylistsFailed=${s.iptvOrgPlaylistsFailed}")
                     appendLine("ntvCxEnabled=${s.ntvCxEnabled}")
                     appendLine("adultSwimEnabled=${s.adultSwimEnabled}")
+                    appendLine("xyzStreamsEnabled=${s.xyzStreamsEnabled}")
+                    appendLine("xyzStreamsChannels=${s.xyzStreamsChannels}")
+                    appendLine("xyzStreamsEpgDiscoveryEnabled=${s.xyzStreamsEpgDiscoveryEnabled}")
+                    appendLine("xyzStreamsCatalogPublished=${s.xyzStreamsCatalogPublished}")
+                    appendLine("xyzStreamsDiscoveredPublished=${s.xyzStreamsDiscoveredPublished}")
+                    appendLine("xyzStreamsDiscoveryProbes=${s.xyzStreamsDiscoveryProbes}")
+                    s.xyzStreamsDiscoveredLabels.forEach { appendLine("xyzDiscovered=$it") }
                 }
             }
         }

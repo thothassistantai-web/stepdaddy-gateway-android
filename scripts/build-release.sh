@@ -17,7 +17,11 @@ GRADLE_ARGS=()
 
 if [[ -f "${KEYSTORE_PROPS}" ]]; then
   echo "==> Found keystore.properties — release signing enabled"
-  GRADLE_ARGS+=(-Pandroid.injected.signing.store.file="$(grep -E '^storeFile=' "$KEYSTORE_PROPS" | cut -d= -f2-)")
+  STORE_FILE="$(grep -E '^storeFile=' "$KEYSTORE_PROPS" | cut -d= -f2-)"
+  if [[ "${STORE_FILE}" != /* ]]; then
+    STORE_FILE="${ROOT}/${STORE_FILE}"
+  fi
+  GRADLE_ARGS+=(-Pandroid.injected.signing.store.file="${STORE_FILE}")
   GRADLE_ARGS+=(-Pandroid.injected.signing.store.password="$(grep -E '^storePassword=' "$KEYSTORE_PROPS" | cut -d= -f2-)")
   GRADLE_ARGS+=(-Pandroid.injected.signing.key.alias="$(grep -E '^keyAlias=' "$KEYSTORE_PROPS" | cut -d= -f2-)")
   GRADLE_ARGS+=(-Pandroid.injected.signing.key.password="$(grep -E '^keyPassword=' "$KEYSTORE_PROPS" | cut -d= -f2-)")

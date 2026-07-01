@@ -6,8 +6,26 @@ import org.junit.Test
 class GroupTitleResolverTest {
   @Test
   fun `group sort order matches approved sidebar sequence`() {
-    GroupTitleResolver.PLAYLIST_GROUP_SEQUENCE.forEachIndexed { index, group ->
-      assertEquals(index, GroupTitleResolver.groupSortOrder(group))
+    val expectedOrders = mapOf(
+      GroupTitleResolver.ENTERTAINMENT to 0,
+      GroupTitleResolver.MOVIES to 1,
+      GroupTitleResolver.IMDB_MOVIES to 1,
+      GroupTitleResolver.SERIES to 1,
+      GroupTitleResolver.IMDB_SHOWS to 1,
+      GroupTitleResolver.LOCAL_CHANNELS to 2,
+      GroupTitleResolver.NEWS to 3,
+      GroupTitleResolver.SPORTS to 4,
+      GroupTitleResolver.KIDS to 5,
+      GroupTitleResolver.DOCUMENTARY to 6,
+      GroupTitleResolver.MUSIC to 7,
+      GroupTitleResolver.EXTRA_247 to 8,
+      GroupTitleResolver.INTERNATIONAL to 9,
+      GroupTitleResolver.EN_ESPANOL to 10,
+      GroupTitleResolver.SPECIAL_EVENTS to 11,
+      GroupTitleResolver.ADULT to 12,
+    )
+    GroupTitleResolver.PLAYLIST_GROUP_SEQUENCE.forEach { group ->
+      assertEquals(expectedOrders[group], GroupTitleResolver.groupSortOrder(group))
     }
     assertEquals(2, GroupTitleResolver.groupSortOrder("Locals"))
     assertEquals(1, GroupTitleResolver.groupSortOrder("Premium"))
@@ -15,6 +33,7 @@ class GroupTitleResolverTest {
     assertEquals(11, GroupTitleResolver.groupSortOrder("🏈 | Sports | TheTvApp"))
     assertEquals(11, GroupTitleResolver.groupSortOrder("🎟️ Special Events"))
     assertEquals(11, GroupTitleResolver.groupSortOrder("🎟️ | Special Events"))
+    assertEquals(1, GroupTitleResolver.groupSortOrder(TmdbVodConfig.SERIES_GROUP_TITLE))
   }
   @Test
   fun `ACC Network USA resolves to Sports with US suffix`() {

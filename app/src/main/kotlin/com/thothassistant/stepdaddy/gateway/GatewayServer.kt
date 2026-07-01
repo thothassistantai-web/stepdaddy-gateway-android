@@ -12,9 +12,14 @@ import com.thothassistant.stepdaddy.gateway.routes.EpgRoutes
 import com.thothassistant.stepdaddy.gateway.routes.HealthRoutes
 import com.thothassistant.stepdaddy.gateway.routes.LogoRoutes
 import com.thothassistant.stepdaddy.gateway.routes.MoviesRoutes
+import com.thothassistant.stepdaddy.gateway.routes.SeriesRoutes
 import com.thothassistant.stepdaddy.gateway.routes.NtvStreamRoutes
+import com.thothassistant.stepdaddy.gateway.routes.XyzStreamRoutes
 import com.thothassistant.stepdaddy.gateway.routes.VodStreamRoutes
+import com.thothassistant.stepdaddy.gateway.upstream.MovieboxSession
+import com.thothassistant.stepdaddy.gateway.upstream.MovieboxStreamResolver
 import com.thothassistant.stepdaddy.gateway.upstream.VidsrcMovieResolver
+import com.thothassistant.stepdaddy.gateway.upstream.VodMovieResolver
 import com.thothassistant.stepdaddy.gateway.upstream.VodStreamCache
 import com.thothassistant.stepdaddy.gateway.routes.PlaylistPaths
 import com.thothassistant.stepdaddy.gateway.routes.PlaylistRoutes
@@ -93,15 +98,22 @@ class GatewayServer(
             supplementSource,
             NtvCxCdnLiveResolver(NtvCxCdnLiveResolver.defaultClient()),
         )
+        val xyzStreamRoutes = XyzStreamRoutes(environment, supplementSource)
         val vodStreamCache = VodStreamCache()
+        val vodHttpClient = VidsrcMovieResolver.defaultClient()
+        val vodMovieResolver = VodMovieResolver(
+            VidsrcMovieResolver(vodHttpClient),
+            MovieboxStreamResolver(MovieboxSession(vodHttpClient)),
+        )
         val vodStreamRoutes = VodStreamRoutes(
             environment,
             supplementSource,
-            VidsrcMovieResolver(VidsrcMovieResolver.defaultClient()),
+            vodMovieResolver,
             vodStreamCache,
-            VidsrcMovieResolver.defaultClient(),
+            vodHttpClient,
         )
         val moviesRoutes = MoviesRoutes(environment, supplementSource)
+        val seriesRoutes = SeriesRoutes(environment, supplementSource)
         val contentRoutes = ContentRoutes(environment, client, ResportzParser.defaultClient())
         val epgRoutes = EpgRoutes(client, epgManager, supplementSource)
         val adminRoutes = adminActions?.let { AdminRoutes(it) }
@@ -221,6 +233,10 @@ class GatewayServer(
                     get { ntvStreamRoutes.tivimateStream(call, call.parameters["token"].orEmpty()) }
                     head { ntvStreamRoutes.tivimateStream(call, call.parameters["token"].orEmpty()) }
                 }
+                route("/xyz-stream/{streamId}.m3u8") {
+                    get { xyzStreamRoutes.tivimateStream(call, call.parameters["streamId"].orEmpty()) }
+                    head { xyzStreamRoutes.tivimateStream(call, call.parameters["streamId"].orEmpty()) }
+                }
                 route("/vod/movie/{tmdbId}.m3u8") {
                     get { vodStreamRoutes.movieStream(call, call.parameters["tmdbId"].orEmpty()) }
                     head { vodStreamRoutes.movieStream(call, call.parameters["tmdbId"].orEmpty()) }
@@ -229,11 +245,54 @@ class GatewayServer(
                     get { vodStreamRoutes.movieStream(call, call.parameters["tmdbId"].orEmpty()) }
                     head { vodStreamRoutes.movieStream(call, call.parameters["tmdbId"].orEmpty()) }
                 }
+                route("/vod/series/{tmdbId}/{season}/{episode}.m3u8") {
+                    get {
+                        vodStreamRoutes.seriesStream(
+                            call,
+                            call.parameters["tmdbId"].orEmpty(),
+                            call.parameters["season"].orEmpty(),
+                            call.parameters["episode"].orEmpty(),
+                        )
+                    }
+                    head {
+                        vodStreamRoutes.seriesStream(
+                            call,
+                            call.parameters["tmdbId"].orEmpty(),
+                            call.parameters["season"].orEmpty(),
+                            call.parameters["episode"].orEmpty(),
+                        )
+                    }
+                }
+                route("/vod/series/{tmdbId}/{season}/{episode}.mp4") {
+                    get {
+                        vodStreamRoutes.seriesStream(
+                            call,
+                            call.parameters["tmdbId"].orEmpty(),
+                            call.parameters["season"].orEmpty(),
+                            call.parameters["episode"].orEmpty(),
+                        )
+                    }
+                    head {
+                        vodStreamRoutes.seriesStream(
+                            call,
+                            call.parameters["tmdbId"].orEmpty(),
+                            call.parameters["season"].orEmpty(),
+                            call.parameters["episode"].orEmpty(),
+                        )
+                    }
+                }
                 get("/movies") {
                     if (gatewayEnvironment.supplementTmdbMoviesEnabled) {
                         moviesRoutes.list(call)
                     } else {
                         moviesRoutes.disabled(call)
+                    }
+                }
+                get("/series") {
+                    if (gatewayEnvironment.supplementTmdbMoviesEnabled) {
+                        seriesRoutes.list(call)
+                    } else {
+                        seriesRoutes.disabled(call)
                     }
                 }
                 route("/dlhd-event-stream/{token}.m3u8") {

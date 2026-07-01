@@ -8,7 +8,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 
 /**
- * Resolves TMDB movie ids to playable HLS/MP4 URLs via vidsrc-embed.ru (StreamFlix-compatible).
+ * Resolves movie ids to playable HLS/MP4 URLs via vsembed / vidsrc embed hosts.
  */
 class VidsrcMovieResolver(
     private val httpClient: OkHttpClient,
@@ -17,11 +17,62 @@ class VidsrcMovieResolver(
         val url: String,
         val referer: String,
         val isHls: Boolean,
+        val provider: String = "vsembed",
     )
 
-    fun resolveMovie(tmdbId: String): ResolvedStream {
-        val embedUrl = "${TmdbVodConfig.VIDSRC_EMBED_BASE}/embed/movie?tmdb=${tmdbId.trim()}"
-        val iframeDoc = httpGet(embedUrl, referer = TmdbVodConfig.VIDSRC_REFERER)
+    fun resolveMovie(tmdbId: String, imdbId: String? = null): ResolvedStream {
+        val normalizedTmdb = tmdbId.trim()
+        val normalizedImdb = imdbId?.trim()?.takeIf { it.startsWith("tt") }
+        var lastError: Exception? = null
+        for (base in VsembedConfig.EMBED_MIRRORS) {
+            val referer = VsembedConfig.embedReferer(base)
+            val embedAttempts = buildList {
+                add("$base/embed/movie?tmdb=$normalizedTmdb")
+                if (normalizedImdb != null) {
+                    add("$base/embed/movie?imdb=$normalizedImdb")
+                    add("$base/embed/movie/$normalizedImdb")
+                }
+                add("$base/embed/movie/$normalizedTmdb")
+            }
+            for (embedUrl in embedAttempts) {
+                runCatching { resolveFromEmbed(embedUrl, referer) }
+                    .onSuccess { return it }
+                    .onFailure { lastError = it as? Exception ?: Exception(it.message) }
+            }
+        }
+        throw lastError ?: error("vsembed_resolve_failed")
+    }
+
+    fun resolveEpisode(
+        showTmdbId: String,
+        season: Int,
+        episode: Int,
+        imdbId: String? = null,
+    ): ResolvedStream {
+        val normalizedTmdb = showTmdbId.trim()
+        val normalizedImdb = imdbId?.trim()?.takeIf { it.startsWith("tt") }
+        var lastError: Exception? = null
+        for (base in VsembedConfig.EMBED_MIRRORS) {
+            val referer = VsembedConfig.embedReferer(base)
+            val embedAttempts = buildList {
+                add("$base/embed/tv?tmdb=$normalizedTmdb&season=$season&episode=$episode")
+                if (normalizedImdb != null) {
+                    add("$base/embed/tv?imdb=$normalizedImdb&season=$season&episode=$episode")
+                    add("$base/embed/tv/$normalizedImdb/$season-$episode")
+                }
+                add("$base/embed/tv/$normalizedTmdb/$season-$episode")
+            }
+            for (embedUrl in embedAttempts) {
+                runCatching { resolveFromEmbed(embedUrl, referer) }
+                    .onSuccess { return it }
+                    .onFailure { lastError = it as? Exception ?: Exception(it.message) }
+            }
+        }
+        throw lastError ?: error("vsembed_episode_resolve_failed")
+    }
+
+    private fun resolveFromEmbed(embedUrl: String, referer: String): ResolvedStream {
+        val iframeDoc = httpGet(embedUrl, referer = referer)
         val iframeSrc = Regex("""<iframe[^>]+id=["']player_iframe["'][^>]+src=["']([^"']+)["']""", RegexOption.IGNORE_CASE)
             .find(iframeDoc)?.groupValues?.get(1)
             ?.let { normalizeUrl(it, embedUrl) }
@@ -63,6 +114,7 @@ class VidsrcMovieResolver(
             url = cleaned,
             referer = iframeSrc,
             isHls = isHls,
+            provider = "vsembed",
         )
     }
 

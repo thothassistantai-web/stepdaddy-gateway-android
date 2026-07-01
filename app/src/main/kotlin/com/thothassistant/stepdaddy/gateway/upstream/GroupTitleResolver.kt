@@ -17,6 +17,8 @@ object GroupTitleResolver {
     const val EXTRA_247 = "📡 | Extra | 24/7"
     const val SPECIAL_EVENTS = "🎟️ Special Events"
     const val IMDB_MOVIES = TmdbVodConfig.GROUP_TITLE
+    const val SERIES = "Series"
+    const val IMDB_SHOWS = TmdbVodConfig.SERIES_GROUP_TITLE
 
     /** Default sort slot for unknown / legacy group-title labels. */
     const val DEFAULT_GROUP_SORT_ORDER = 50
@@ -52,6 +54,8 @@ object GroupTitleResolver {
         ENTERTAINMENT,
         MOVIES,
         IMDB_MOVIES,
+        SERIES,
+        IMDB_SHOWS,
         LOCAL_CHANNELS,
         NEWS,
         SPORTS,
@@ -124,6 +128,8 @@ object GroupTitleResolver {
         ENTERTAINMENT to 0,
         MOVIES to 1,
         IMDB_MOVIES to 1,
+        SERIES to 1,
+        IMDB_SHOWS to 1,
         LOCAL_CHANNELS to 2,
         NEWS to 3,
         SPORTS to 4,
@@ -143,6 +149,7 @@ object GroupTitleResolver {
         "🎟️ | Special Events" to SPECIAL_EVENTS,
         "🎬 | Adult Swim | Marathon" to ENTERTAINMENT,
         IMDB_MOVIES to MOVIES,
+        IMDB_SHOWS to SERIES,
     )
 
     private val SPORT_TAGS = setOf(

@@ -78,6 +78,8 @@ android {
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_IPTV_ORG_ENABLED", "true")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_NTV_CX_ENABLED", "true")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_ADULT_SWIM_ENABLED", "true")
+        buildConfigField("boolean", "DEFAULT_SUPPLEMENT_XYZ_STREAMS_ENABLED", "false")
+        buildConfigField("boolean", "DEFAULT_SUPPLEMENT_XYZ_STREAMS_EPG_DISCOVERY_ENABLED", "true")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_TMDB_MOVIES_ENABLED", "true")
         buildConfigField("String", "DEFAULT_TMDB_API_KEY", "\"$defaultTmdbApiKey\"")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_NTV_CX_SUPPLEMENT_ONLY", "false")

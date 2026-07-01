@@ -77,10 +77,20 @@ data class SupplementStatus(
     val adultSwimEnabled: Boolean = false,
     val adultSwimChannels: Int = 0,
     val adultSwimImportMode: String = "FULL_CATALOG",
+    val xyzStreamsEnabled: Boolean = false,
+    val xyzStreamsChannels: Int = 0,
+    val xyzStreamsImportMode: String = "FULL_CATALOG",
+    val xyzStreamsEpgDiscoveryEnabled: Boolean = true,
+    val xyzStreamsCatalogPublished: Int = 0,
+    val xyzStreamsDiscoveredPublished: Int = 0,
+    val xyzStreamsDiscoveryProbes: Int = 0,
+    val xyzStreamsDiscoveredLabels: List<String> = emptyList(),
+    val iptvOrgEnabledPlaylistCount: Int = 0,
     val adultSwimProbed: Int = 0,
     val adultSwimProbeOk: Int = 0,
     val tmdbMoviesEnabled: Boolean = false,
     val tmdbVodMovies: Int = 0,
+    val tmdbVodSeries: Int = 0,
     /** Epoch ms of the last DaddyLive + TheTvApp Special Events scrape. */
     val lastSpecialEventsSyncMs: Long? = null,
     /** Seconds since [lastSpecialEventsSyncMs]; null when never scraped. */
@@ -107,6 +117,7 @@ data class ProviderStats(
     val sports: Int = 0,
     val ntvCx: Int = 0,
     val adultSwim: Int = 0,
+    val xyzStreams: Int = 0,
     val adult: Int = 0,
     /** Channels in the warmed playlist cache (stream-ready); 0 until prewarm completes. */
     val playlistReady: Int = 0,

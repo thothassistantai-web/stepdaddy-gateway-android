@@ -46,14 +46,14 @@ class TmdbVodSource(
         }
         return SupplementChannel(
             id = TmdbVodConfig.supplementId(movie.tmdbId),
-            name = TmdbVodConfig.displayTitle(movie.title, movie.releaseDate),
+            name = TmdbVodConfig.movieDisplayTitle(movie.title, movie.releaseDate),
             tvgId = tvgId,
             logo = movie.posterUrl,
             groupTitle = TmdbVodConfig.GROUP_TITLE,
             streamUrl = "",
             tags = listOf("#movies", "#vod"),
             providerTag = TmdbVodConfig.PROVIDER_TAG,
-            referer = TmdbVodConfig.VIDSRC_REFERER,
+            referer = TmdbVodConfig.EMBED_REFERER,
             plot = movie.overview.takeIf { it.isNotBlank() },
             imdbId = imdbId,
         )

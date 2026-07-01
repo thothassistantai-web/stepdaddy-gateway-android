@@ -20,6 +20,8 @@ class LightEpgBuilder(
       iptvOrgEpgFile: File? = null,
       sportsEpgFile: File? = null,
       sportsTvgIds: Set<String> = emptySet(),
+      xyzStreamsEpgFile: File? = null,
+      xyzStreamsTvgIds: Set<String> = emptySet(),
       fastEpgFiles: List<File> = emptyList(),
       fastEpgTvgIds: Set<String> = emptySet(),
       channelNamesByTvgId: Map<String, String> = emptyMap(),
@@ -255,6 +257,30 @@ class LightEpgBuilder(
             getChannelCount = { channelCount },
             getProgrammeCount = { programmeCount },
         )
+      }
+
+      val xyzIds = xyzStreamsTvgIds.filter { it !in idsWithProgrammes }.toSet()
+      if (xyzStreamsEpgFile != null && xyzIds.isNotEmpty()) {
+        val beforeProgrammes = programmeCount
+        mergeSupplementEpgFile(
+            writer = writer,
+            file = xyzStreamsEpgFile,
+            supplementIds = xyzIds,
+            writtenChannelIds = writtenChannelIds,
+            idsWithProgrammes = idsWithProgrammes,
+            windowStart = windowStart,
+            windowEnd = windowEnd,
+            channelCountRef = { channelCount = it },
+            programmeCountRef = { programmeCount = it },
+            getChannelCount = { channelCount },
+            getProgrammeCount = { programmeCount },
+        )
+        if (programmeCount > beforeProgrammes) {
+          android.util.Log.i(
+              "LightEpgBuilder",
+              "xyzstreams EPG: +${programmeCount - beforeProgrammes} programmes for ${xyzIds.size} ids",
+          )
+        }
       }
 
       realProgrammeCount = programmeCount

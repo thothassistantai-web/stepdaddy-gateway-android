@@ -92,6 +92,16 @@ object IptvOrgStreamsConfig {
         return PROVIDER_TAG_OVERRIDES[raw.lowercase()] ?: formatProviderSlug(raw)
     }
 
+    /** Human-readable label for settings playlist toggles. */
+    fun playlistDisplayName(filename: String): String {
+        val slug = filename.removeSuffix(".m3u")
+        return slug.split('_').joinToString(" ") { part ->
+            part.replaceFirstChar { ch ->
+                if (ch.isLowerCase()) ch.titlecase() else ch.toString()
+            }
+        }
+    }
+
     fun groupTitleFor(filename: String): String {
         val slug = filename.removeSuffix(".m3u")
         val label = slug

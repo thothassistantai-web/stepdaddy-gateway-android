@@ -6,7 +6,7 @@ Works **standalone** (any IPTV client) or **with [TiviMate Daddy](https://github
 
 | | |
 |---|---|
-| **Gateway version** | 3.0.11 (`versionCode` 30010) |
+| **Gateway version** | 3.0.13 (`versionCode` 30013) |
 | **TiviMate Daddy patch** | aligned with gateway suite |
 | **Package** | `com.thothassistant.stepdaddy.gateway` |
 | **License** | [MIT](LICENSE) — see [LEGAL.md](LEGAL.md) / [DISCLAIMER.md](DISCLAIMER.md) |

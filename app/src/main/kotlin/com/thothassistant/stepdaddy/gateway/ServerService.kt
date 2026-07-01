@@ -198,6 +198,20 @@ class ServerService : LifecycleService() {
                                 if (sync.adultSwimProbed > 0) {
                                     append(" (${sync.adultSwimProbeOk}/${sync.adultSwimProbed} probes ok)")
                                 }
+                                if (sync.xyzStreamsChannels > 0) {
+                                    append(" · xyzstreams ${sync.xyzStreamsChannels}")
+                                    append(" (${sync.xyzStreamsCatalogPublished} catalog")
+                                    if (sync.xyzStreamsEpgDiscoveryEnabled) {
+                                        append(" + ${sync.xyzStreamsDiscoveredPublished} discovered")
+                                        append(", ${sync.xyzStreamsDiscoveryProbes} probes)")
+                                    } else {
+                                        append(", discovery off)")
+                                    }
+                                    if (sync.xyzStreamsDiscoveredLabels.isNotEmpty()) {
+                                        append(" · discovered: ")
+                                        append(sync.xyzStreamsDiscoveredLabels.joinToString(", "))
+                                    }
+                                }
                             },
                         )
                         server.prewarmPlaylist()

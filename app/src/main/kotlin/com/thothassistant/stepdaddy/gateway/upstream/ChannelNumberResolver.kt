@@ -236,6 +236,7 @@ object ChannelNumberResolver {
                 GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id).groupTitle
             supplement.id.startsWith("sup:") -> supplement.groupTitle
             supplement.id.startsWith("ntv:") -> supplement.groupTitle
+            supplement.id.startsWith("xyz:") -> supplement.groupTitle
             else -> GroupTitleResolver.ENTERTAINMENT
         }
 

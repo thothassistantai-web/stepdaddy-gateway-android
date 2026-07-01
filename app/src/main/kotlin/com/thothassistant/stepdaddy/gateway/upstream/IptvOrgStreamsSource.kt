@@ -37,11 +37,16 @@ class IptvOrgStreamsSource(
     suspend fun fetchChannels(
         daddyChannels: List<Channel>,
         importMode: SupplementImportMode = SupplementImportMode.FULL_CATALOG,
+        enabledPlaylists: Set<String> = IptvOrgStreamsConfig.PLAYLIST_FILES.toSet(),
     ): Pair<List<SupplementChannel>, FetchStats> =
         withContext(Dispatchers.IO) {
+            val playlistFiles = IptvOrgStreamsConfig.PLAYLIST_FILES.filter { it in enabledPlaylists }
+            if (playlistFiles.isEmpty()) {
+                return@withContext emptyList<SupplementChannel>() to FetchStats()
+            }
             val semaphore = Semaphore(4)
             val parsed = coroutineScope {
-                IptvOrgStreamsConfig.PLAYLIST_FILES.map { filename ->
+                playlistFiles.map { filename ->
                     async {
                         semaphore.withPermit {
                             fetchPlaylist(filename)

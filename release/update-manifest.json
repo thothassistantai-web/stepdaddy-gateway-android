@@ -1,8 +1,8 @@
 {
-  "versionCode": 30012,
-  "versionName": "3.0.12",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.12/stepdaddy-gateway-3.0.12-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.12/stepdaddy-gateway-3.0.12-debug.apk",
-  "releaseNotes": "IMDB/TMDB Movies VOD catalog in 🎬 Movies group on all playlists; /vod/movie proxy and /movies JSON API.",
+  "versionCode": 30013,
+  "versionName": "3.0.13",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.13/stepdaddy-gateway-3.0.13-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.13/stepdaddy-gateway-3.0.13-debug.apk",
+  "releaseNotes": "xyzstreams US live TV + iptv-org playlist picker + VOD series expansion. See CHANGELOG.md.",
   "mandatory": false
 }

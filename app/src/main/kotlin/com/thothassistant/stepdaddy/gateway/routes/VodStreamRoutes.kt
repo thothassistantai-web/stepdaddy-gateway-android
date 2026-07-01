@@ -7,6 +7,7 @@ import com.thothassistant.stepdaddy.gateway.upstream.M3u8Rewriter
 import com.thothassistant.stepdaddy.gateway.upstream.SupplementSource
 import com.thothassistant.stepdaddy.gateway.upstream.TmdbVodConfig
 import com.thothassistant.stepdaddy.gateway.upstream.VidsrcMovieResolver
+import com.thothassistant.stepdaddy.gateway.upstream.VodMovieResolver
 import com.thothassistant.stepdaddy.gateway.upstream.VodStreamCache
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -29,57 +30,52 @@ import okhttp3.Request
 class VodStreamRoutes(
     private val environment: GatewayEnvironment,
     private val supplementSource: SupplementSource,
-    private val resolver: VidsrcMovieResolver,
+    private val resolver: VodMovieResolver,
     private val streamCache: VodStreamCache,
     private val httpClient: OkHttpClient,
 ) {
-    suspend fun movieStream(call: ApplicationCall, tmdbId: String) {
+    suspend fun seriesStream(
+        call: ApplicationCall,
+        showTmdbId: String,
+        season: String,
+        episode: String,
+    ) {
         if (call.request.httpMethod.value == "HEAD") {
             call.respondText("", ContentType("application", "vnd.apple.mpegurl"))
             return
         }
         if (!environment.supplementTmdbMoviesEnabled) {
-            respondError(call, HttpStatusCode.NotFound, "tmdb_movies_disabled")
+            respondError(call, HttpStatusCode.NotFound, "vod_disabled")
             return
         }
-        val normalizedId = tmdbId.trim()
-        if (normalizedId.isEmpty() || !normalizedId.all { it.isDigit() }) {
-            respondError(call, HttpStatusCode.BadRequest, "invalid_tmdb_id")
+        val tmdbId = showTmdbId.trim()
+        val seasonNum = season.trim().toIntOrNull()
+        val episodeNum = episode.trim().toIntOrNull()
+        if (tmdbId.isEmpty() || !tmdbId.all { it.isDigit() } || seasonNum == null || episodeNum == null) {
+            respondError(call, HttpStatusCode.BadRequest, "invalid_series_params")
             return
         }
-        val supplementId = TmdbVodConfig.supplementId(normalizedId.toInt())
-        if (supplementSource.vodMovieOrCached(normalizedId) == null &&
+        if (seasonNum <= 0 || episodeNum <= 0) {
+            respondError(call, HttpStatusCode.BadRequest, "invalid_series_params")
+            return
+        }
+        val supplementId = TmdbVodConfig.seriesSupplementId(tmdbId.toInt(), seasonNum, episodeNum)
+        val catalogRow = supplementSource.vodEpisodeOrCached(tmdbId, seasonNum, episodeNum)
+        if (catalogRow == null &&
             supplementSource.channels().none { it.id == supplementId }
         ) {
-            respondError(call, HttpStatusCode.NotFound, "movie_not_in_catalog")
+            respondError(call, HttpStatusCode.NotFound, "episode_not_in_catalog")
             return
         }
+        val imdbId = catalogRow?.imdbId
+        val showTitle = catalogRow?.let { showTitleFromEpisodeName(it.name) }
         try {
             val resolved = withContext(Dispatchers.IO) {
                 withTimeout(STREAM_TIMEOUT_MS) {
-                    resolveStream(normalizedId)
+                    resolveEpisodeStream(tmdbId, seasonNum, episodeNum, imdbId, showTitle)
                 }
             }
-            if (resolved.isHls) {
-                val manifest = withContext(Dispatchers.IO) {
-                    fetchManifestText(resolved.url, resolved.referer)
-                }
-                val rewritten = M3u8Rewriter.rewrite(
-                    m3u8Text = manifest,
-                    m3u8Url = resolved.url,
-                    refererHost = resolved.referer,
-                    useProxy = false,
-                    apiUrl = environment.loopbackBase(),
-                )
-                call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
-                call.response.header(HttpHeaders.CacheControl, "no-cache")
-                call.respondBytes(
-                    bytes = rewritten.toByteArray(StandardCharsets.UTF_8),
-                    contentType = ContentType("application", "vnd.apple.mpegurl"),
-                )
-            } else {
-                call.respondRedirect(resolved.url, permanent = false)
-            }
+            deliverStream(call, resolved)
         } catch (_: TimeoutCancellationException) {
             respondError(call, HttpStatusCode.GatewayTimeout, "vod_upstream_timeout", retryAfter = "5")
         } catch (exc: CancellationException) {
@@ -95,11 +91,110 @@ class VodStreamRoutes(
         }
     }
 
-    private fun resolveStream(tmdbId: String): VidsrcMovieResolver.ResolvedStream {
-        streamCache.get(tmdbId)?.let { return it }
-        val resolved = resolver.resolveMovie(tmdbId)
-        streamCache.put(tmdbId, resolved)
+    suspend fun movieStream(call: ApplicationCall, tmdbId: String) {
+        if (call.request.httpMethod.value == "HEAD") {
+            call.respondText("", ContentType("application", "vnd.apple.mpegurl"))
+            return
+        }
+        if (!environment.supplementTmdbMoviesEnabled) {
+            respondError(call, HttpStatusCode.NotFound, "tmdb_movies_disabled")
+            return
+        }
+        val normalizedId = tmdbId.trim()
+        if (normalizedId.isEmpty() || !normalizedId.all { it.isDigit() }) {
+            respondError(call, HttpStatusCode.BadRequest, "invalid_tmdb_id")
+            return
+        }
+        val supplementId = TmdbVodConfig.supplementId(normalizedId.toInt())
+        val catalogRow = supplementSource.vodMovieOrCached(normalizedId)
+        if (catalogRow == null &&
+            supplementSource.channels().none { it.id == supplementId }
+        ) {
+            respondError(call, HttpStatusCode.NotFound, "movie_not_in_catalog")
+            return
+        }
+        val imdbId = catalogRow?.imdbId
+        val title = catalogRow?.name?.substringBefore(" (")
+        try {
+            val resolved = withContext(Dispatchers.IO) {
+                withTimeout(STREAM_TIMEOUT_MS) {
+                    resolveStream(normalizedId, imdbId, title)
+                }
+            }
+            deliverStream(call, resolved)
+        } catch (_: TimeoutCancellationException) {
+            respondError(call, HttpStatusCode.GatewayTimeout, "vod_upstream_timeout", retryAfter = "5")
+        } catch (exc: CancellationException) {
+            throw exc
+        } catch (exc: Exception) {
+            val transient = exc.message?.contains("timeout", ignoreCase = true) == true
+            respondError(
+                call,
+                if (transient) HttpStatusCode.GatewayTimeout else HttpStatusCode.BadGateway,
+                exc.message ?: "vod_resolve_failed",
+                retryAfter = if (transient) "5" else null,
+            )
+        }
+    }
+
+    private fun resolveStream(
+        tmdbId: String,
+        imdbId: String?,
+        title: String?,
+    ): VidsrcMovieResolver.ResolvedStream {
+        val cacheKey = buildString {
+            append(tmdbId)
+            imdbId?.let { append('|').append(it) }
+        }
+        streamCache.get(cacheKey)?.let { return it }
+        val resolved = resolver.resolveMovie(tmdbId, imdbId, title)
+        streamCache.put(cacheKey, resolved)
         return resolved
+    }
+
+    private fun resolveEpisodeStream(
+        showTmdbId: String,
+        season: Int,
+        episode: Int,
+        imdbId: String?,
+        showTitle: String?,
+    ): VidsrcMovieResolver.ResolvedStream {
+        val cacheKey = "series:$showTmdbId:$season:$episode:${imdbId.orEmpty()}"
+        streamCache.get(cacheKey)?.let { return it }
+        val resolved = resolver.resolveEpisode(showTmdbId, season, episode, imdbId, showTitle)
+        streamCache.put(cacheKey, resolved)
+        return resolved
+    }
+
+    private suspend fun deliverStream(
+        call: ApplicationCall,
+        resolved: VidsrcMovieResolver.ResolvedStream,
+    ) {
+        if (resolved.isHls) {
+            val manifest = withContext(Dispatchers.IO) {
+                fetchManifestText(resolved.url, resolved.referer)
+            }
+            val rewritten = M3u8Rewriter.rewrite(
+                m3u8Text = manifest,
+                m3u8Url = resolved.url,
+                refererHost = resolved.referer,
+                useProxy = false,
+                apiUrl = environment.loopbackBase(),
+            )
+            call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+            call.response.header(HttpHeaders.CacheControl, "no-cache")
+            call.respondBytes(
+                bytes = rewritten.toByteArray(StandardCharsets.UTF_8),
+                contentType = ContentType("application", "vnd.apple.mpegurl"),
+            )
+        } else {
+            call.respondRedirect(resolved.url, permanent = false)
+        }
+    }
+
+    private fun showTitleFromEpisodeName(name: String): String? {
+        val match = Regex("""^(.+?) S\d{2}E\d{2}$""").find(name.trim()) ?: return null
+        return match.groupValues[1].trim().ifBlank { null }
     }
 
     private fun fetchManifestText(url: String, referer: String): String {

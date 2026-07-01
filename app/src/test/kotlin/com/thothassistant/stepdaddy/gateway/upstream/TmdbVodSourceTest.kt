@@ -26,7 +26,7 @@ class TmdbVodSourceTest {
             streamUrl = "",
             tags = listOf("#movies", "#vod"),
             providerTag = TmdbVodConfig.PROVIDER_TAG,
-            referer = TmdbVodConfig.VIDSRC_REFERER,
+            referer = TmdbVodConfig.EMBED_REFERER,
             plot = movie.overview,
             imdbId = movie.imdbId,
         )

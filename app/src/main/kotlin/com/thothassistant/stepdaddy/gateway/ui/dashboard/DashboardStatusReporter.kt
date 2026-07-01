@@ -38,6 +38,7 @@ internal object DashboardStatusReporter {
                         if (stats.sports > 0) append(" · Sports ${stats.sports}")
                         if (stats.ntvCx > 0) append(" · NTV ${stats.ntvCx}")
                         if (stats.adultSwim > 0) append(" · AS ${stats.adultSwim}")
+                        if (stats.xyzStreams > 0) append(" · XYZ ${stats.xyzStreams}")
                         append(" · total ${stats.total}")
                     },
                 )
@@ -45,6 +46,20 @@ internal object DashboardStatusReporter {
             health.supplement?.let { sup ->
                 if (sup.supplementSyncInFlight) {
                     add("Supplement sync in progress…")
+                }
+                if (sup.xyzStreamsEnabled && sup.xyzStreamsChannels > 0) {
+                    add(
+                        "xyzstreams: ${sup.xyzStreamsCatalogPublished} catalog + " +
+                            "${sup.xyzStreamsDiscoveredPublished} discovered" +
+                            if (sup.xyzStreamsEpgDiscoveryEnabled) {
+                                " (${sup.xyzStreamsDiscoveryProbes} probes)"
+                            } else {
+                                " (discovery off)"
+                            },
+                    )
+                    if (sup.xyzStreamsDiscoveredLabels.isNotEmpty()) {
+                        add("xyz discovered: ${sup.xyzStreamsDiscoveredLabels.joinToString(", ")}")
+                    }
                 }
             }
         }

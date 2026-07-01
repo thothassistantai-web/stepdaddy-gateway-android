@@ -7,6 +7,7 @@ import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.epg.FastChannelTvgIdResolver
 import com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex
 import com.thothassistant.stepdaddy.gateway.epg.SpecialEventsEpgGenerator
+import com.thothassistant.stepdaddy.gateway.epg.XyzStreamsEpgFetcher
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.EventMetadata
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
@@ -56,9 +57,14 @@ class SupplementSource(
     )
 
     private val adultSwimSource = AdultSwimStreamsSource(AdultSwimStreamsSource.defaultClient())
+    private val xyzStreamsEpgFetcher = XyzStreamsEpgFetcher(XyzStreamsEpgFetcher.defaultClient())
+    private val xyzStreamsSource = XyzStreamsSource()
     private val tmdbVodCatalogStore = TmdbVodCatalogStore(context)
-    private val tmdbVodCatalog = TmdbVodCatalog(httpClient) { environment.effectiveTmdbApiKey() }
+    private val tmdbVodCatalog = TmdbVodCatalog(httpClient, apiKey = { environment.effectiveTmdbApiKey() })
     private val tmdbVodSource = TmdbVodSource(tmdbVodCatalog, tmdbVodCatalogStore)
+    private val tmdbVodSeriesCatalogStore = TmdbVodSeriesCatalogStore(context)
+    private val tmdbVodSeriesCatalog = TmdbVodSeriesCatalog(httpClient)
+    private val tmdbVodSeriesSource = TmdbVodSeriesSource(tmdbVodSeriesCatalog, tmdbVodSeriesCatalogStore)
     private val dlhdEventResolver = DaddyLiveEventResolver(httpClient)
     private val dlhdEventHealthStore = DlhdEventStreamHealthStore()
     private val dlhdEventActiveMirrorStore = DlhdEventActiveMirrorStore()
@@ -95,7 +101,14 @@ class SupplementSource(
         val adultSwimChannels: Int = 0,
         val adultSwimProbed: Int = 0,
         val adultSwimProbeOk: Int = 0,
+        val xyzStreamsChannels: Int = 0,
+        val xyzStreamsCatalogPublished: Int = 0,
+        val xyzStreamsDiscoveredPublished: Int = 0,
+        val xyzStreamsDiscoveryProbes: Int = 0,
+        val xyzStreamsDiscoveredLabels: List<String> = emptyList(),
+        val xyzStreamsEpgDiscoveryEnabled: Boolean = true,
         val tmdbVodMovies: Int = 0,
+        val tmdbVodSeries: Int = 0,
     )
 
     private val store = SupplementStore(context)
@@ -143,6 +156,7 @@ class SupplementSource(
             environment.supplementIptvOrgEnabled ||
             environment.supplementNtvCxEnabled ||
             environment.supplementAdultSwimEnabled ||
+            environment.supplementXyzStreamsEnabled ||
             environment.supplementTmdbMoviesEnabled
 
     fun sportsEnabled(): Boolean = environment.supplementSportsEnabled
@@ -153,9 +167,15 @@ class SupplementSource(
 
     fun adultSwimEnabled(): Boolean = environment.supplementAdultSwimEnabled
 
+    fun xyzStreamsEnabled(): Boolean = environment.supplementXyzStreamsEnabled
+
     fun tmdbMoviesEnabled(): Boolean = environment.supplementTmdbMoviesEnabled
 
     fun adultSwimImportMode(): SupplementImportMode = environment.supplementAdultSwimImportMode
+
+    fun xyzStreamsImportMode(): SupplementImportMode = environment.supplementXyzStreamsImportMode
+
+    fun xyzStreamsEpgDiscoveryEnabled(): Boolean = environment.supplementXyzStreamsEpgDiscoveryEnabled
 
     fun ntvCxImportMode(): SupplementImportMode = environment.supplementNtvCxImportMode
 
@@ -182,10 +202,31 @@ class SupplementSource(
 
     fun adultSwimCount(): Int = cached.count { it.id.startsWith("adultswim:") }
 
+    fun xyzStreamsCount(): Int = cached.count { it.id.startsWith("xyz:") }
+
     fun tmdbVodCount(): Int = cached.count { it.id.startsWith(TmdbVodConfig.ID_PREFIX) }
+
+    fun tmdbVodSeriesCount(): Int = cached.count { it.id.startsWith(TmdbVodConfig.SERIES_ID_PREFIX) }
 
     fun vodMovie(tmdbId: String): SupplementChannel? =
         cached.firstOrNull { it.id == "${TmdbVodConfig.ID_PREFIX}$tmdbId" }
+
+    fun vodEpisode(showTmdbId: String, season: Int, episode: Int): SupplementChannel? {
+        val showId = showTmdbId.trim().toIntOrNull() ?: return null
+        return cached.firstOrNull {
+            it.id == TmdbVodConfig.seriesSupplementId(showId, season, episode)
+        }
+    }
+
+    fun vodEpisodeOrCached(showTmdbId: String, season: Int, episode: Int): SupplementChannel? {
+        vodEpisode(showTmdbId, season, episode)?.let { return it }
+        val showId = showTmdbId.trim().toIntOrNull() ?: return null
+        return tmdbVodSeriesCatalogStore.read()
+            .firstOrNull {
+                it.showTmdbId == showId && it.season == season && it.episode == episode
+            }
+            ?.let { tmdbVodSeriesSource.toSupplementChannel(it) }
+    }
 
     fun vodMovieOrCached(tmdbId: String): SupplementChannel? {
         vodMovie(tmdbId)?.let { return it }
@@ -196,6 +237,14 @@ class SupplementSource(
 
     fun ntvChannel(token: String): SupplementChannel? =
         cached.firstOrNull { it.id == "ntv:$token" }
+
+    fun xyzChannel(streamId: String): SupplementChannel? {
+        val trimmed = streamId.trim()
+        if (trimmed.isEmpty()) return null
+        return cached.firstOrNull {
+            it.id == "xyz:$trimmed" || it.id.removePrefix("xyz:") == trimmed
+        }
+    }
 
     fun syncSnapshot(): SyncSnapshot = lastSync
 
@@ -275,6 +324,17 @@ class SupplementSource(
         val file = store.sportsEpgFile
         return file.takeIf { it.isFile && it.length() > 0L }
     }
+
+    fun xyzStreamsEpgXmlFile(): File? {
+        if (!xyzStreamsEnabled()) return null
+        val file = store.xyzStreamsEpgFile
+        return file.takeIf { it.isFile && it.length() > 0L }
+    }
+
+    fun xyzStreamsTvgIdsForEpg(): Set<String> =
+        cached.filter { it.id.startsWith("xyz:") }
+            .mapNotNull { it.tvgId?.trim()?.takeIf { id -> id.isNotEmpty() } }
+            .toSet()
 
     fun sportsTvgIdsForEpg(): Set<String> =
         cached.filter {
@@ -596,7 +656,7 @@ class SupplementSource(
                         "Supplement sync: ${supplements.size} total " +
                             "(sports=${sportsCount()}, " +
                             "iptv-org=${iptvOrgCount()}, ntv.cx=${ntvCxCount()}, " +
-                            "adultswim=${adultSwimCount()}, " +
+                            "xyzstreams=${xyzStreamsCount()}, adultswim=${adultSwimCount()}, " +
                             "blocked_thetvapp=${lastSync.blockedTheTvApp})",
                     )
                     onRefreshComplete?.invoke()
@@ -693,7 +753,13 @@ class SupplementSource(
 
         val iptvOrgDeferred = async {
             if (iptvOrgEnabled()) {
-                runCatching { iptvOrgSource.fetchChannels(daddyChannels, environment.supplementIptvOrgImportMode) }
+                runCatching {
+                    iptvOrgSource.fetchChannels(
+                        daddyChannels,
+                        environment.supplementIptvOrgImportMode,
+                        environment.iptvOrgEnabledPlaylists,
+                    )
+                }
                     .getOrElse { exc ->
                         Log.w(TAG, "iptv-org fetch failed", exc)
                         emptyList<SupplementChannel>() to IptvOrgStreamsSource.FetchStats()
@@ -738,6 +804,24 @@ class SupplementSource(
             }
         }
 
+        val xyzStreamsDeferred = async {
+            if (xyzStreamsEnabled()) {
+                runCatching {
+                    xyzStreamsSource.fetchChannels(
+                        daddyChannels,
+                        environment.supplementXyzStreamsImportMode,
+                        enableDiscovery = environment.supplementXyzStreamsEpgDiscoveryEnabled,
+                    )
+                }
+                    .getOrElse { exc ->
+                        Log.w(TAG, "xyzstreams fetch failed", exc)
+                        emptyList<SupplementChannel>() to XyzStreamsSource.FetchStats()
+                    }
+            } else {
+                emptyList<SupplementChannel>() to XyzStreamsSource.FetchStats()
+            }
+        }
+
         val tmdbVodDeferred = async {
             if (tmdbMoviesEnabled()) {
                 runCatching { tmdbVodSource.fetchChannels() }
@@ -750,10 +834,24 @@ class SupplementSource(
             }
         }
 
+        val tmdbVodSeriesDeferred = async {
+            if (tmdbMoviesEnabled()) {
+                runCatching { tmdbVodSeriesSource.fetchChannels() }
+                    .getOrElse { exc ->
+                        Log.w(TAG, "series VOD fetch failed", exc)
+                        emptyList<SupplementChannel>() to TmdbVodSeriesSource.FetchStats()
+                    }
+            } else {
+                emptyList<SupplementChannel>() to TmdbVodSeriesSource.FetchStats()
+            }
+        }
+
         val (iptvOrg, iptvStats) = iptvOrgDeferred.await()
         var (ntvCx, ntvStats) = ntvCxDeferred.await()
         var (adultSwim, adultSwimStats) = adultSwimDeferred.await()
+        var (xyzStreams, xyzStats) = xyzStreamsDeferred.await()
         val (tmdbVod, tmdbVodStats) = tmdbVodDeferred.await()
+        val (tmdbVodSeries, tmdbVodSeriesStats) = tmdbVodSeriesDeferred.await()
 
         if (ntvCx.isEmpty() && ntvCxEnabled()) {
             val cachedNtv = cached.filter { it.id.startsWith("ntv:") }
@@ -771,6 +869,34 @@ class SupplementSource(
             }
         }
 
+        if (xyzStreamsEnabled() && xyzStats.channelsAfterDedup > 0) {
+            Log.i(
+                TAG,
+                buildString {
+                    append("xyzstreams sync: ")
+                    append("${xyzStats.catalogPublished} catalog")
+                    if (xyzStats.epgDiscoveryEnabled) {
+                        append(", ${xyzStats.discoveredPublished} discovered")
+                        append(" (${xyzStats.discoveryProbes} probes)")
+                    } else {
+                        append(" (EPG discovery off)")
+                    }
+                    append(", ${xyzStats.channelsAfterDedup} total")
+                },
+            )
+            if (xyzStats.discoveredChannelLabels.isNotEmpty()) {
+                Log.i(TAG, "xyzstreams discovered channels: ${xyzStats.discoveredChannelLabels.joinToString(", ")}")
+            }
+        }
+
+        if (xyzStreams.isEmpty() && xyzStreamsEnabled()) {
+            val cachedXyz = cached.filter { it.id.startsWith("xyz:") }
+            if (cachedXyz.isNotEmpty()) {
+                Log.w(TAG, "xyzstreams fetch empty — keeping ${cachedXyz.size} cached channels")
+                xyzStreams = cachedXyz
+            }
+        }
+
         var publishedTmdbVod = tmdbVod
         if (publishedTmdbVod.isEmpty() && tmdbMoviesEnabled()) {
             val cachedVod = cached.filter { it.id.startsWith(TmdbVodConfig.ID_PREFIX) }
@@ -780,12 +906,29 @@ class SupplementSource(
             }
         }
 
+        var publishedTmdbVodSeries = tmdbVodSeries
+        if (publishedTmdbVodSeries.isEmpty() && tmdbMoviesEnabled()) {
+            val cachedSeries = cached.filter { it.id.startsWith(TmdbVodConfig.SERIES_ID_PREFIX) }
+            if (cachedSeries.isNotEmpty()) {
+                Log.w(TAG, "series VOD fetch empty — keeping ${cachedSeries.size} cached episodes")
+                publishedTmdbVodSeries = cachedSeries
+            }
+        }
+
         if (environment.gatewayEpgEnabled && iptvOrgEnabled() && environment.iptvOrgEpgEnabled) {
             runCatching {
                 iptvOrgEpgRepository.refresh(
                     environment.iptvOrgEpgUrl.takeIf { it.isNotBlank() },
                 )
             }.onFailure { exc -> Log.w(TAG, "iptv-org EPG refresh failed", exc) }
+        }
+
+        if (environment.gatewayEpgEnabled && xyzStreamsEnabled()) {
+            runCatching {
+                xyzStreamsEpgFetcher.refresh(store.xyzStreamsEpgFile)
+            }.onFailure { exc -> Log.w(TAG, "xyzstreams EPG refresh failed", exc) }
+        } else if (!xyzStreamsEnabled()) {
+            store.xyzStreamsEpgFile.delete()
         }
 
         lastSync = SyncSnapshot(
@@ -802,10 +945,17 @@ class SupplementSource(
             adultSwimChannels = adultSwim.size,
             adultSwimProbed = adultSwimStats.probed,
             adultSwimProbeOk = adultSwimStats.probeOk,
+            xyzStreamsChannels = xyzStreams.size,
+            xyzStreamsCatalogPublished = xyzStats.catalogPublished,
+            xyzStreamsDiscoveredPublished = xyzStats.discoveredPublished,
+            xyzStreamsDiscoveryProbes = xyzStats.discoveryProbes,
+            xyzStreamsDiscoveredLabels = xyzStats.discoveredChannelLabels,
+            xyzStreamsEpgDiscoveryEnabled = xyzStats.epgDiscoveryEnabled,
             tmdbVodMovies = publishedTmdbVod.size,
+            tmdbVodSeries = publishedTmdbVodSeries.size,
         )
 
-        specialEvents + iptvOrg + ntvCx + adultSwim + publishedTmdbVod
+        specialEvents + iptvOrg + ntvCx + adultSwim + xyzStreams + publishedTmdbVod + publishedTmdbVodSeries
     }
 
     private suspend fun fetchSpecialEventsBundle(
