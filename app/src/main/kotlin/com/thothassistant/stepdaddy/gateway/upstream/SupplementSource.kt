@@ -119,6 +119,8 @@ class SupplementSource(
     @Volatile
     private var refreshInFlight = false
     @Volatile
+    private var specialEventsRefreshInFlight = false
+    @Volatile
     private var lastSpecialEventsSyncMs = 0L
     @Volatile
     private var lastVerifyTriggeredSyncMs = 0L
@@ -249,6 +251,8 @@ class SupplementSource(
     fun syncSnapshot(): SyncSnapshot = lastSync
 
     fun syncInFlight(): Boolean = refreshInFlight
+
+    fun specialEventsSyncInFlight(): Boolean = specialEventsRefreshInFlight
 
     fun specialEventsLastSyncMs(): Long = lastSpecialEventsSyncMs.takeIf { it > 0L } ?: 0L
 
@@ -562,6 +566,7 @@ class SupplementSource(
         if (!sportsEnabled() || refreshInFlight) return false
         return specialEventsMutex.withLock {
             if (refreshInFlight) return false
+            specialEventsRefreshInFlight = true
             try {
                 val scheduleBase = dlhdScheduleBaseUrl?.trim()?.trimEnd('/').orEmpty()
                     .ifEmpty { environment.dlhdBaseUrl.trimEnd('/') }
@@ -611,6 +616,8 @@ class SupplementSource(
             } catch (exc: Exception) {
                 Log.w(TAG, "Special Events refresh failed", exc)
                 false
+            } finally {
+                specialEventsRefreshInFlight = false
             }
         }
     }
@@ -625,49 +632,47 @@ class SupplementSource(
             if (refreshInFlight) return
             if (!force && !store.isStale() && cached.isNotEmpty()) return
             refreshInFlight = true
+        }
+        try {
             if (cached.isEmpty()) {
                 retainOrRecoverCache(daddyChannels)
             }
-            coroutineScope {
-                val mergeJob = async(Dispatchers.IO) {
-                    mergeSupplements(daddyChannels, dlhdScheduleBaseUrl)
-                }
-                try {
-                    val merged = withTimeoutOrNull(SYNC_MAX_MS) { mergeJob.await() }
-                    if (merged == null) {
-                        mergeJob.cancel()
-                        Log.w(TAG, "Supplement sync timed out after ${SYNC_MAX_MS}ms — keeping cache")
-                        retainOrRecoverCache(daddyChannels)
-                        onRefreshComplete?.invoke()
-                        return@coroutineScope
-                    }
-                    val supplements = enrichSupplementLogos(merged)
-                    if (supplements.isEmpty()) {
-                        Log.w(TAG, "Supplement sync returned 0 channels — not overwriting cache")
-                        retainOrRecoverCache(daddyChannels)
-                        onRefreshComplete?.invoke()
-                        return@coroutineScope
-                    }
-                    cached = supplements
-                    store.writeChannels(supplements)
-                    applyNameEpgOverrides()
-                    Log.i(
-                        TAG,
-                        "Supplement sync: ${supplements.size} total " +
-                            "(sports=${sportsCount()}, " +
-                            "iptv-org=${iptvOrgCount()}, ntv.cx=${ntvCxCount()}, " +
-                            "xyzstreams=${xyzStreamsCount()}, adultswim=${adultSwimCount()}, " +
-                            "blocked_thetvapp=${lastSync.blockedTheTvApp})",
-                    )
-                    onRefreshComplete?.invoke()
-                } catch (exc: Exception) {
-                    mergeJob.cancel()
-                    Log.w(TAG, "Supplement sync failed — keeping cache", exc)
-                    retainOrRecoverCache(daddyChannels)
-                } finally {
-                    refreshInFlight = false
-                }
+            val merged = withTimeoutOrNull(SYNC_MAX_MS) {
+                mergeSupplements(daddyChannels, dlhdScheduleBaseUrl)
             }
+            if (merged == null) {
+                Log.w(TAG, "Supplement sync timed out after ${SYNC_MAX_MS}ms — keeping cache")
+                retainOrRecoverCache(daddyChannels)
+                return
+            }
+            if (merged.isEmpty()) {
+                Log.w(TAG, "Supplement sync returned 0 channels — not overwriting cache")
+                retainOrRecoverCache(daddyChannels)
+                return
+            }
+            // Publish merged catalog immediately so M3U/health reflect supplements during logo enrich.
+            cached = merged
+            store.writeChannels(merged)
+            applyNameEpgOverrides()
+            Log.i(
+                TAG,
+                "Supplement sync: ${merged.size} total " +
+                    "(sports=${sportsCount()}, " +
+                    "iptv-org=${iptvOrgCount()}, ntv.cx=${ntvCxCount()}, " +
+                    "xyzstreams=${xyzStreamsCount()}, adultswim=${adultSwimCount()}, " +
+                    "blocked_thetvapp=${lastSync.blockedTheTvApp})",
+            )
+            val enriched = enrichSupplementLogos(merged)
+            if (enriched !== merged) {
+                cached = enriched
+                store.writeChannels(enriched)
+            }
+        } catch (exc: Exception) {
+            Log.w(TAG, "Supplement sync failed — keeping cache", exc)
+            retainOrRecoverCache(daddyChannels)
+        } finally {
+            refreshInFlight = false
+            onRefreshComplete?.invoke()
         }
     }
 
@@ -847,6 +852,12 @@ class SupplementSource(
         }
 
         val (iptvOrg, iptvStats) = iptvOrgDeferred.await()
+        lastSync = lastSync.copy(
+            iptvOrgChannels = iptvOrg.size,
+            iptvOrgPlaylistsFetched = iptvStats.playlistsFetched,
+            iptvOrgPlaylistsFailed = iptvStats.playlistsFailed,
+            iptvOrgEntriesParsed = iptvStats.entriesParsed,
+        )
         var (ntvCx, ntvStats) = ntvCxDeferred.await()
         var (adultSwim, adultSwimStats) = adultSwimDeferred.await()
         var (xyzStreams, xyzStats) = xyzStreamsDeferred.await()

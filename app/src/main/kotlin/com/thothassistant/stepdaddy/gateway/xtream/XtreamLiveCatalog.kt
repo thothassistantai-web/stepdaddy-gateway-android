@@ -138,6 +138,9 @@ object XtreamLiveCatalog {
         ) {
             return GroupTitleResolver.SPECIAL_EVENTS
         }
+        if (supplement.id.startsWith("iptv:")) {
+            return GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id).groupTitle
+        }
         return supplement.groupTitle.ifBlank { GroupTitleResolver.ENTERTAINMENT }
     }
 

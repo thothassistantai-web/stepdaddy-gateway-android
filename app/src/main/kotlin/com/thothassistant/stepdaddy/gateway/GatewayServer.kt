@@ -331,12 +331,24 @@ class GatewayServer(
                 }
                 route("/movie/{user}/{pass}/{streamId}.{ext}") {
                     get {
+                        val user = call.parameters["user"].orEmpty()
+                        val pass = call.parameters["pass"].orEmpty()
+                        if (!gatewayEnvironment.isXtreamAuthorized(user, pass)) {
+                            call.respondText("Authentication failed", status = HttpStatusCode.Unauthorized)
+                            return@get
+                        }
                         val id = call.parameters["streamId"].orEmpty()
                         call.respondRedirect("/vod/movie/$id.m3u8", permanent = false)
                     }
                 }
                 route("/series/{user}/{pass}/{streamId}.{ext}") {
                     get {
+                        val user = call.parameters["user"].orEmpty()
+                        val pass = call.parameters["pass"].orEmpty()
+                        if (!gatewayEnvironment.isXtreamAuthorized(user, pass)) {
+                            call.respondText("Authentication failed", status = HttpStatusCode.Unauthorized)
+                            return@get
+                        }
                         val parts = call.parameters["streamId"].orEmpty().split('.')
                         if (parts.size >= 3) {
                             call.respondRedirect(

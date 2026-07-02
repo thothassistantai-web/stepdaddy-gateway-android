@@ -135,6 +135,7 @@ class XtreamApiRoutes(
         val title: String,
         val container_extension: String = "mp4",
         val season: Int,
+        val direct_source: String = "",
     )
 
     private fun userInfo(): String = """{
@@ -267,6 +268,7 @@ class XtreamApiRoutes(
                     episode_num = key.episode,
                     title = episodes.first { TmdbVodConfig.parseSeriesSupplementId(it.id) == key }.name,
                     season = key.season,
+                    direct_source = "${base.trimEnd('/')}/vod/series/${key.showTmdbId}/${key.season}/${key.episode}.m3u8",
                 )
             }
         }.mapKeys { it.key.toString() }

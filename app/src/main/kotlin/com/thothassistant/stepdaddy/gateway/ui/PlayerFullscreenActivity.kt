@@ -1,5 +1,6 @@
 package com.thothassistant.stepdaddy.gateway.ui
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.view.GestureDetector
 import android.view.KeyEvent
@@ -46,6 +47,11 @@ class PlayerFullscreenActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        requestedOrientation = if (isTvDevice) {
+            ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_SENSOR
+        }
         binding = ActivityPlayerFullscreenBinding.inflate(layoutInflater)
         setContentView(binding.root)
         readIntentExtras()

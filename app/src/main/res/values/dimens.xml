@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="bottom_panel_content_height">200dp</dimen>
+    <dimen name="dashboard_padding">18dp</dimen>
+    <dimen name="dashboard_card_padding">18dp</dimen>
+    <dimen name="dashboard_section_gap">14dp</dimen>
+    <dimen name="screen_padding">24dp</dimen>
 </resources>

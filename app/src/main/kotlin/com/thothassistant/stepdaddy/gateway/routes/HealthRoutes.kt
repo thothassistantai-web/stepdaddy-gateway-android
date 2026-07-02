@@ -343,7 +343,7 @@ class HealthRoutes(
         val stale = SpecialEventsHealthSummary.isStale(lastSyncMs, nowMs)
         val status = SpecialEventsHealthSummary.status(
             sportsEnabled = sportsOn,
-            syncInFlight = syncInFlight,
+            syncInFlight = supplementSource.specialEventsSyncInFlight(),
             guideCount = specialEventGuides,
             liveEventCount = dlhdEventStreams,
             lastSyncMs = lastSyncMs,
@@ -364,7 +364,7 @@ class HealthRoutes(
             dlhdEventStreams = dlhdEventStreams,
             sportsEventsScanned = sync.sportsEventsScanned,
             supplementSyncInFlight = syncInFlight,
-            iptvOrgChannels = supplementSource.iptvOrgCount(),
+            iptvOrgChannels = maxOf(supplementSource.iptvOrgCount(), sync.iptvOrgChannels),
             ntvCxChannels = supplementSource.ntvCxCount(),
             adultSwimChannels = supplementSource.adultSwimCount(),
             xyzStreamsChannels = supplementSource.xyzStreamsCount(),
@@ -415,7 +415,10 @@ class HealthRoutes(
             ?: (totalChannels.takeIf { it > 0 } ?: 0)
         return ProviderStats(
             daddylive = channelCount,
-            iptvOrg = supplementSource.iptvOrgCount(),
+            iptvOrg = maxOf(
+                supplementSource.iptvOrgCount(),
+                supplementSource.syncSnapshot().iptvOrgChannels,
+            ),
             sports = supplementSource.sportsCount(),
             ntvCx = supplementSource.ntvCxCount(),
             adultSwim = supplementSource.adultSwimCount(),

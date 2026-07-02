@@ -7,6 +7,22 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.15] - 2026-06-30
+
+### Fixed
+
+- **Supplement sync lifecycle** — publish merged catalog before logo enrich; clear `syncInFlight` before refresh callbacks; outer try/finally prevents stuck sync flag
+- **Health during iptv-org fetch** — incremental sync stats after playlist merge; health reports iptv-org counts from cache or in-flight merge
+- **Special Events health** — `specialEventsStatus` no longer shows "syncing" during unrelated supplement refresh (iptv-org, TMDB, etc.)
+- **Xtream parity** — iptv-org supplements use `GroupTitleResolver` in live categories (matches M3U); series episodes include `direct_source` playback URLs
+- **Xtream auth** — `/movie/` and `/series/` redirect routes require valid credentials
+- **Settings** — saving supplement/EPG toggles triggers supplement + EPG refresh without full service restart
+
+### Changed
+
+- **Channel numbering** — iptv-org supplements always resolve group via `GroupTitleResolver` (even with empty tags)
+- **Phone layouts** — portrait dashboard stacks cards vertically with 2×2 stats; compact landscape layout for phones under 600dp sw; player rotates freely on phones (TV stays landscape)
+
 ## [3.0.14] - 2026-07-01
 
 ### Added

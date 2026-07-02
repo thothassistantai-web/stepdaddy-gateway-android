@@ -12,6 +12,7 @@ import com.google.android.material.button.MaterialButtonToggleGroup
 import com.thothassistant.stepdaddy.gateway.BuildConfig
 import com.thothassistant.stepdaddy.gateway.GatewayApp
 import com.thothassistant.stepdaddy.gateway.GatewayStartHelper
+import com.thothassistant.stepdaddy.gateway.ServerService
 import com.thothassistant.stepdaddy.gateway.R
 import com.thothassistant.stepdaddy.gateway.databinding.ActivitySettingsBinding
 import com.thothassistant.stepdaddy.gateway.install.ApkInstallManager
@@ -204,6 +205,11 @@ class SettingsActivity : AppCompatActivity() {
             com.thothassistant.stepdaddy.gateway.upstream.PlaylistTitleStyle.LEGACY
         }
         (application as GatewayApp).playlistCache.invalidate()
+        startService(
+            Intent(this, ServerService::class.java).apply {
+                action = ServerService.ACTION_REFRESH_SUPPLEMENTS
+            },
+        )
         environment.autoCheckUpdates = binding.switchAutoCheckUpdates.isChecked
         environment.autoDownloadUpdates = binding.switchAutoDownloadUpdates.isChecked
         environment.setUpdateManifestUrlOverride(binding.editUpdateManifestUrl.text?.toString().orEmpty())

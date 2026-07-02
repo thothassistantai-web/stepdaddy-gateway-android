@@ -79,6 +79,12 @@ class ServerService : LifecycleService() {
                     GatewayStartHelper.ensureGatewayReady(this@ServerService)
                 }
             }
+            ACTION_REFRESH_SUPPLEMENTS -> {
+                ensureGatewayListening()
+                lifecycleScope.launch(Dispatchers.IO) {
+                    refreshSupplementsFromSettings()
+                }
+            }
             else -> startGateway()
         }
         return START_STICKY
@@ -399,6 +405,24 @@ class ServerService : LifecycleService() {
         }
     }
 
+    private suspend fun refreshSupplementsFromSettings() {
+        val app = application as GatewayApp
+        app.awaitComponents()
+        if (!::daddyLiveClient.isInitialized) return
+        app.playlistCache.invalidate()
+        runCatching {
+            app.supplementSource.refresh(
+                daddyLiveClient.channels,
+                force = true,
+                dlhdScheduleBaseUrl = daddyLiveClient.activeBaseUrl,
+            )
+        }.onFailure { exc ->
+            Log.w(TAG, "Settings-triggered supplement refresh failed", exc)
+        }
+        epgManager.scheduleRefresh(daddyLiveClient.channels, force = true)
+        updateRunningNotification()
+    }
+
     private fun updateRunningNotification() {
         val channelCount =
             if (::daddyLiveClient.isInitialized) daddyLiveClient.channels.size else lastKnownChannelCount
@@ -531,6 +555,8 @@ class ServerService : LifecycleService() {
         const val ACTION_STOP = "com.thothassistant.stepdaddy.gateway.action.STOP"
         const val ACTION_ENSURE_GATEWAY = "com.thothassistant.stepdaddy.gateway.action.ENSURE_GATEWAY"
         const val ACTION_ENSURE_READY = "com.thothassistant.stepdaddy.gateway.action.ENSURE_READY"
+        const val ACTION_REFRESH_SUPPLEMENTS =
+            "com.thothassistant.stepdaddy.gateway.action.REFRESH_SUPPLEMENTS"
         private const val HTTP_HEALTH_CHECK_MS = 30_000L
         /** FUSA sticks need >25s when iptv-org CSV + supplement stores load on cold process. */
         private const val COMPONENT_INIT_MAX_WAIT_MS = 60_000L

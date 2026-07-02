@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:text="@string/install_apps_title"
         android:textColor="@color/on_background"
-        android:textSize="28sp"
+        android:textSize="24sp"
         android:textStyle="bold" />
 
     <TextView
@@ -43,52 +43,59 @@
             android:nextFocusDown="@id/buttonRefresh" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <LinearLayout
-        android:id="@+id/toolbarActions"
+    <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:orientation="horizontal">
+        android:layout_marginTop="12dp"
+        android:fillViewport="true"
+        android:scrollbars="none">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonRefresh"
-            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+        <LinearLayout
+            android:id="@+id/toolbarActions"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:nextFocusLeft="@id/editSearch"
-            android:nextFocusRight="@id/buttonSelectAll"
-            android:nextFocusUp="@id/editSearch"
-            android:text="@string/install_apps_refresh" />
+            android:orientation="horizontal">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonSelectAll"
-            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:nextFocusLeft="@id/buttonRefresh"
-            android:nextFocusRight="@id/buttonBatchInstall"
-            android:text="@string/install_apps_select_all" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonRefresh"
+                style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:nextFocusLeft="@id/editSearch"
+                android:nextFocusRight="@id/buttonSelectAll"
+                android:nextFocusUp="@id/editSearch"
+                android:text="@string/install_apps_refresh" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonBatchInstall"
-            style="@style/Widget.StepDaddyGateway.TvButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:nextFocusLeft="@id/buttonSelectAll"
-            android:nextFocusRight="@id/buttonBack"
-            android:text="@string/install_apps_batch_install" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonSelectAll"
+                style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:nextFocusLeft="@id/buttonRefresh"
+                android:nextFocusRight="@id/buttonBatchInstall"
+                android:text="@string/install_apps_select_all" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonBack"
-            style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:nextFocusLeft="@id/buttonBatchInstall"
-            android:text="@string/action_back" />
-    </LinearLayout>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonBatchInstall"
+                style="@style/Widget.StepDaddyGateway.TvButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:nextFocusLeft="@id/buttonSelectAll"
+                android:nextFocusRight="@id/buttonBack"
+                android:text="@string/install_apps_batch_install" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonBack"
+                style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:nextFocusLeft="@id/buttonBatchInstall"
+                android:text="@string/action_back" />
+        </LinearLayout>
+    </HorizontalScrollView>
 
     <TextView
         android:id="@+id/textEmpty"
@@ -114,7 +121,7 @@
         android:id="@+id/recyclerApps"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="12dp"
         android:layout_weight="1"
         android:clipToPadding="false"
         android:descendantFocusability="afterDescendants"

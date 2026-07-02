@@ -3,6 +3,7 @@ package com.thothassistant.stepdaddy.gateway.xtream
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -38,12 +39,26 @@ class XtreamLiveCatalogTest {
     }
 
     @Test
-    fun categoriesMatchStreamGroups() {
-        val categories = XtreamLiveCatalog.categories(
-            channels = listOf(Channel(id = "1", name = "News", tags = listOf("news"))),
-            supplements = emptyList(),
+    fun iptvSupplementCategoryMatchesBetweenCategoriesAndStreams() {
+        val supplements = listOf(
+            SupplementChannel(
+                id = "iptv:abc",
+                name = "BBC News",
+                groupTitle = "Movies",
+                tags = listOf("news"),
+                streamUrl = "https://cdn.example/live.m3u8",
+            ),
         )
-        assertTrue(categories.isNotEmpty())
-        assertEquals(categories[0].category_id, categories[0].category_id)
+        val categories = XtreamLiveCatalog.categories(channels = emptyList(), supplements = supplements)
+        val streams = XtreamLiveCatalog.streams(
+            channels = emptyList(),
+            supplements = supplements,
+            baseUrl = "http://127.0.0.1:3000",
+        )
+        assertEquals(1, streams.size)
+        assertTrue(categories.any { it.category_id == streams[0].category_id })
+        val groupName = categories.first { it.category_id == streams[0].category_id }.category_name
+        assertTrue(groupName.isNotBlank())
+        assertNotEquals("Movies", groupName)
     }
 }
