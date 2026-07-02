@@ -32,8 +32,44 @@ class SupplementDedupTest {
             importMode = SupplementImportMode.SKIP_DUPLICATES,
             mapChannel = ::mapTestChannel,
         )
-        assertEquals(1, out.size)
-        assertEquals("DAZN USA", out.first().name)
+        assertEquals(1, out.channels.size)
+        assertEquals("DAZN USA", out.channels.first().name)
+    }
+
+    @Test
+    fun `CONSOLIDATE_FALLBACKS attaches daddy overlap instead of publishing row`() {
+        val daddy = listOf(ch("70", "ESPN USA", "ESPN.us"))
+        val entries = listOf(
+            M3uParser.Entry(name = "ESPN USA", streamUrl = "https://example.com/espn-fast.m3u8"),
+            M3uParser.Entry(name = "DAZN USA", streamUrl = "https://example.com/dazn.m3u8"),
+        )
+        val out = SupplementDedup.filterNewChannels(
+            entries,
+            daddy,
+            importMode = SupplementImportMode.CONSOLIDATE_FALLBACKS,
+            mapChannel = ::mapTestChannel,
+        )
+        assertEquals(1, out.channels.size)
+        assertEquals("DAZN USA", out.channels.first().name)
+        assertEquals(1, out.daddyFallbacks["70"]?.size)
+        assertEquals("https://example.com/espn-fast.m3u8", out.daddyFallbacks["70"]?.first()?.streamUrl)
+    }
+
+    @Test
+    fun `CONSOLIDATE_FALLBACKS attaches internal iptv duplicate to primary row`() {
+        val entries = listOf(
+            M3uParser.Entry(name = "Pluto TV", tvgId = "Pluto.us", streamUrl = "https://a.example/a.m3u8"),
+            M3uParser.Entry(name = "Pluto TV Mirror", tvgId = "Pluto.us", streamUrl = "https://b.example/b.m3u8"),
+        )
+        val out = SupplementDedup.filterNewChannels(
+            entries = entries,
+            daddyChannels = emptyList(),
+            importMode = SupplementImportMode.CONSOLIDATE_FALLBACKS,
+            mapChannel = ::mapTestChannel,
+        )
+        assertEquals(1, out.channels.size)
+        assertEquals(1, out.channels.first().fallbackMirrors.size)
+        assertEquals("https://b.example/b.m3u8", out.channels.first().fallbackMirrors.first().streamUrl)
     }
 
     @Test
@@ -49,8 +85,8 @@ class SupplementDedupTest {
             importMode = SupplementImportMode.SKIP_DUPLICATES,
             mapChannel = ::mapTestChannel,
         )
-        assertEquals(1, out.size)
-        assertEquals("NEW.us", out.first().tvgId)
+        assertEquals(1, out.channels.size)
+        assertEquals("NEW.us", out.channels.first().tvgId)
     }
 
     @Test
@@ -81,8 +117,8 @@ class SupplementDedupTest {
                 streamUrl = entry.streamUrl,
             )
         }
-        assertEquals(1, out.size)
-        assertEquals("Sky News", out.first().name)
+        assertEquals(1, out.channels.size)
+        assertEquals("Sky News", out.channels.first().name)
     }
 
     @Test
@@ -97,7 +133,7 @@ class SupplementDedupTest {
             importMode = SupplementImportMode.FULL_CATALOG,
             mapChannel = ::mapTestChannel,
         )
-        assertEquals(1, out.size)
+        assertEquals(1, out.channels.size)
     }
 
     @Test

@@ -5,11 +5,18 @@ package com.thothassistant.stepdaddy.gateway.upstream
  *
  * - [FULL_CATALOG]: every upstream row (default).
  * - [SKIP_DUPLICATES]: skip rows whose normalized name or tvg-id already exists on DaddyLive.
+ * - [CONSOLIDATE_FALLBACKS]: same row count as skip, but attach duplicate streams as failover mirrors.
  */
 enum class SupplementImportMode {
     FULL_CATALOG,
     SKIP_DUPLICATES,
+    CONSOLIDATE_FALLBACKS,
     ;
+
+    fun skipsDuplicateRows(): Boolean =
+        this == SKIP_DUPLICATES || this == CONSOLIDATE_FALLBACKS
+
+    fun attachesFallbacks(): Boolean = this == CONSOLIDATE_FALLBACKS
 
     companion object {
         fun fromPref(raw: String?): SupplementImportMode {
@@ -21,6 +28,7 @@ enum class SupplementImportMode {
             return entries.firstOrNull { it.name.equals(trimmed, ignoreCase = true) } ?: FULL_CATALOG
         }
 
+        /** @deprecated Use per-provider import mode toggles in Settings. */
         fun fromSkipDuplicatesPref(skipDuplicates: Boolean): SupplementImportMode =
             if (skipDuplicates) SKIP_DUPLICATES else FULL_CATALOG
     }

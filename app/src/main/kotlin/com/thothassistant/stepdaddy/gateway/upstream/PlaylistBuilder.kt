@@ -493,6 +493,21 @@ object PlaylistBuilder {
                 ?: TmdbVodConfig.EMBED_REFERER
             return "$stream|User-Agent=$TIVIMATE_USER_AGENT|Referer=$referer"
         }
+        if (supplement.fallbackMirrors.isNotEmpty()) {
+            val encoded = java.net.URLEncoder.encode(supplement.id, Charsets.UTF_8.name())
+            val stream = "${base.trimEnd('/')}/supplement-stream/$encoded/master.m3u8"
+            if (streamUrlStyle == StreamUrlStyle.PLAIN) {
+                return stream
+            }
+            val referer = supplement.referer?.trim()?.takeIf { it.isNotEmpty() }
+            val origin = supplement.origin?.trim()?.takeIf { it.isNotEmpty() } ?: referer?.trimEnd('/')
+            return buildString {
+                append(stream)
+                append("|User-Agent=$TIVIMATE_USER_AGENT")
+                if (!referer.isNullOrBlank()) append("|Referer=$referer")
+                if (!origin.isNullOrBlank()) append("|Origin=$origin")
+            }
+        }
         val referer = supplement.referer?.trim()?.takeIf { it.isNotEmpty() }
         if (referer == null) {
             return supplement.streamUrl

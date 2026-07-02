@@ -322,6 +322,7 @@ class GatewayEnvironment(context: Context) {
     /**
      * [SupplementImportMode.FULL_CATALOG] includes every 24/7 row (default).
      * [SupplementImportMode.SKIP_DUPLICATES] skips names already on the main DaddyLive list.
+     * [SupplementImportMode.CONSOLIDATE_FALLBACKS] attaches overlapping supplement streams as DaddyLive failover mirrors.
      */
     var supplementNtvCxImportMode: SupplementImportMode
         get() {

@@ -284,8 +284,12 @@
     <string name="settings_supplement_iptv_org_enable">Enable iptv-org streams</string>
     <string name="settings_supplement_ntv_cx_enable">Enable ntv.cx 24/7 (~940 channels)</string>
     <string name="settings_supplement_sports_enable">Enable live sports &amp; Special Events channels</string>
+    <string name="settings_import_mode_label">Import mode (overlap with DaddyLive)</string>
+    <string name="settings_import_mode_full">All channels</string>
+    <string name="settings_import_mode_skip">Skip dupes</string>
+    <string name="settings_import_mode_fallback">Merge fallbacks</string>
     <string name="settings_import_skip_duplicates">Skip channels already on DaddyLive</string>
-    <string name="settings_import_mode_hint">Off (default) = full catalog from each provider. On = hide rows whose name already appears on the main DaddyLive list.</string>
+    <string name="settings_import_mode_hint">All = separate playlist rows. Skip dupes = hide overlapping names. Merge fallbacks = attach supplement streams to the matching DaddyLive row (fewer channels, automatic failover).</string>
     <string name="settings_supplement_sports">Sports supplement (thetvapp)</string>
     <string name="settings_supplement_iptv_org">iptv-org supplement</string>
     <string name="settings_supplement_ntv_cx">ntv.cx 24/7 supplement (~850 channels)</string>

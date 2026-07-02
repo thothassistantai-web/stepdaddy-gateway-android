@@ -10,9 +10,11 @@ object MirrorHlsManifest {
         eventToken: String,
         mirrorCount: Int,
         labels: List<String> = emptyList(),
+        pathPrefix: String? = null,
     ): String {
         val base = baseUrl.trimEnd('/')
         val count = mirrorCount.coerceAtLeast(1)
+        val prefix = pathPrefix?.trim()?.trim('/') ?: "dlhd-event-mirror/$eventToken"
         return buildString {
             appendLine("#EXTM3U")
             appendLine("#EXT-X-VERSION:3")
@@ -28,7 +30,7 @@ object MirrorHlsManifest {
                 appendLine(
                     "#EXT-X-STREAM-INF:BANDWIDTH=$bandwidth$nameAttr",
                 )
-                appendLine("$base/dlhd-event-mirror/$eventToken/$index.m3u8")
+                appendLine("$base/$prefix/$index.m3u8")
             }
         }
     }

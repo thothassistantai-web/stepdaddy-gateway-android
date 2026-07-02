@@ -32,17 +32,24 @@ class IptvOrgStreamsSource(
         val playlistsFailed: Int = 0,
         val entriesParsed: Int = 0,
         val channelsAfterDedup: Int = 0,
+        val daddyFallbacksAttached: Int = 0,
+    )
+
+    data class FetchOutcome(
+        val channels: List<SupplementChannel>,
+        val stats: FetchStats,
+        val daddyFallbacks: Map<String, List<com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror>> = emptyMap(),
     )
 
     suspend fun fetchChannels(
         daddyChannels: List<Channel>,
         importMode: SupplementImportMode = SupplementImportMode.FULL_CATALOG,
         enabledPlaylists: Set<String> = IptvOrgStreamsConfig.PLAYLIST_FILES.toSet(),
-    ): Pair<List<SupplementChannel>, FetchStats> =
+    ): FetchOutcome =
         withContext(Dispatchers.IO) {
             val playlistFiles = IptvOrgStreamsConfig.PLAYLIST_FILES.filter { it in enabledPlaylists }
             if (playlistFiles.isEmpty()) {
-                return@withContext emptyList<SupplementChannel>() to FetchStats()
+                return@withContext FetchOutcome(emptyList(), FetchStats())
             }
             val semaphore = Semaphore(4)
             val parsed = coroutineScope {
@@ -67,7 +74,7 @@ class IptvOrgStreamsSource(
                 }
             }
 
-            val channels = SupplementDedup.filterNewChannels(
+            val filtered = SupplementDedup.filterNewChannels(
                 entries = allEntries,
                 daddyChannels = daddyChannels,
                 maxChannels = IptvOrgStreamsConfig.MAX_CHANNELS_AFTER_DEDUP,
@@ -76,11 +83,16 @@ class IptvOrgStreamsSource(
                 toIptvOrgChannel(entry, entry.sourcePlaylist.orEmpty())
             }
 
-            channels to FetchStats(
-                playlistsFetched = fetched,
-                playlistsFailed = failed,
-                entriesParsed = allEntries.size,
-                channelsAfterDedup = channels.size,
+            FetchOutcome(
+                channels = filtered.channels,
+                stats = FetchStats(
+                    playlistsFetched = fetched,
+                    playlistsFailed = failed,
+                    entriesParsed = allEntries.size,
+                    channelsAfterDedup = filtered.channels.size,
+                    daddyFallbacksAttached = filtered.daddyFallbacks.values.sumOf { it.size },
+                ),
+                daddyFallbacks = filtered.daddyFallbacks,
             )
         }
 

@@ -23,22 +23,28 @@ class XyzStreamsSource(
         val discoveredChannelLabels: List<String> = emptyList(),
         val channelsAfterDedup: Int = 0,
         val epgDiscoveryEnabled: Boolean = true,
+        val daddyFallbacksAttached: Int = 0,
+    )
+
+    data class FetchOutcome(
+        val channels: List<SupplementChannel>,
+        val stats: FetchStats,
+        val daddyFallbacks: Map<String, List<com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror>> = emptyMap(),
     )
 
     suspend fun fetchChannels(
         daddyChannels: List<Channel>,
         importMode: SupplementImportMode = SupplementImportMode.FULL_CATALOG,
         enableDiscovery: Boolean = true,
-    ): Pair<List<SupplementChannel>, FetchStats> = withContext(Dispatchers.IO) {
-        val skipDuplicates = importMode == SupplementImportMode.SKIP_DUPLICATES
-        val daddyNormNames = if (skipDuplicates) {
-            daddyChannels
-                .map { EpgChannelMapper.normalizeName(it.name) }
-                .filter { it.isNotEmpty() }
-                .toSet()
+    ): FetchOutcome = withContext(Dispatchers.IO) {
+        val consolidate = importMode.attachesFallbacks()
+        val skipDuplicates = importMode.skipsDuplicateRows()
+        val daddyIndexes = if (skipDuplicates) {
+            SupplementImportMatcher.buildDaddyIndexes(daddyChannels)
         } else {
-            emptySet()
+            SupplementImportMatcher.DaddyIndexes(emptyMap(), emptyMap())
         }
+        val daddyFallbacks = mutableMapOf<String, MutableList<com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror>>()
 
         val staticRows = XyzStreamsCatalog.CATALOG
         val (discovered, discoveryStats) = if (enableDiscovery) {
@@ -56,7 +62,20 @@ class XyzStreamsSource(
                 return@mapNotNull null
             }
             val norm = EpgChannelMapper.normalizeName(row.displayName)
-            if (skipDuplicates && norm in daddyNormNames) return@mapNotNull null
+            if (skipDuplicates && SupplementImportMatcher.matchesDaddy(norm, row.tvgId, daddyIndexes)) {
+                if (consolidate) {
+                    val targetId = SupplementImportMatcher.resolveDaddyChannelId(norm, row.tvgId, daddyIndexes)
+                    if (targetId != null) {
+                        daddyFallbacks.getOrPut(targetId) { mutableListOf() } += com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror(
+                            streamUrl = XyzStreamsConfig.upstreamManifestUrl(row),
+                            label = XyzStreamsConfig.PROVIDER_TAG,
+                            referer = XyzStreamsConfig.REFERER,
+                            origin = XyzStreamsConfig.ORIGIN,
+                        )
+                    }
+                }
+                return@mapNotNull null
+            }
             toSupplementChannel(row)
         }
 
@@ -66,15 +85,20 @@ class XyzStreamsSource(
         }.sorted()
         val catalogPublished = channels.size - publishedDiscoveredLabels.size
 
-        channels to FetchStats(
-            catalogRows = staticRows.size,
-            catalogPublished = catalogPublished,
-            discoveredRows = discovered.size,
-            discoveredPublished = publishedDiscoveredLabels.size,
-            discoveryProbes = discoveryStats.candidatesProbed,
-            discoveredChannelLabels = publishedDiscoveredLabels,
-            channelsAfterDedup = channels.size,
-            epgDiscoveryEnabled = enableDiscovery,
+        FetchOutcome(
+            channels = channels,
+            stats = FetchStats(
+                catalogRows = staticRows.size,
+                catalogPublished = catalogPublished,
+                discoveredRows = discovered.size,
+                discoveredPublished = publishedDiscoveredLabels.size,
+                discoveryProbes = discoveryStats.candidatesProbed,
+                discoveredChannelLabels = publishedDiscoveredLabels,
+                channelsAfterDedup = channels.size,
+                epgDiscoveryEnabled = enableDiscovery,
+                daddyFallbacksAttached = daddyFallbacks.values.sumOf { it.size },
+            ),
+            daddyFallbacks = daddyFallbacks,
         )
     }
 

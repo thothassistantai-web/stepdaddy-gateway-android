@@ -47,6 +47,23 @@ class SupplementStore(context: Context) {
         channelsFile.writeText(json.encodeToString(payload))
     }
 
+    private val daddyFallbacksFile = File(dir, "daddy_fallbacks.json")
+
+    fun readDaddyFallbacks(): Map<String, List<com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror>> {
+        if (!daddyFallbacksFile.exists()) return emptyMap()
+        return runCatching {
+            json.decodeFromString<DaddyChannelFallbackCache>(daddyFallbacksFile.readText()).fallbacks
+        }.getOrDefault(emptyMap())
+    }
+
+    fun writeDaddyFallbacks(fallbacks: Map<String, List<com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror>>) {
+        val payload = DaddyChannelFallbackCache(
+            fallbacks = fallbacks,
+            syncedAtMs = System.currentTimeMillis(),
+        )
+        daddyFallbacksFile.writeText(json.encodeToString(payload))
+    }
+
     fun isStale(): Boolean {
         if (!channelsFile.exists()) return true
         val syncedAt = runCatching {

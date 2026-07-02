@@ -28,9 +28,9 @@ class NtvCxCdnLiveSourceTest {
             daddyChannels = daddy,
             mergeMode = SupplementImportMode.FULL_CATALOG,
         )
-        assertEquals(2, channels.size)
-        assertTrue(channels.any { it.name == "ESPN" && it.providerTag == "CDN" })
-        assertTrue(channels.any { it.name == "AzamSports 1" && it.providerTag == "Falcon" })
+        assertEquals(2, channels.channels.size)
+        assertTrue(channels.channels.any { it.name == "ESPN" && it.providerTag == "CDN" })
+        assertTrue(channels.channels.any { it.name == "AzamSports 1" && it.providerTag == "Falcon" })
     }
 
     @Test
@@ -40,8 +40,20 @@ class NtvCxCdnLiveSourceTest {
             daddyChannels = daddy,
             mergeMode = SupplementImportMode.SKIP_DUPLICATES,
         )
-        assertEquals(1, channels.size)
-        assertEquals("AzamSports 1", channels.single().name)
+        assertEquals(1, channels.channels.size)
+        assertEquals("AzamSports 1", channels.channels.single().name)
+    }
+
+    @Test
+    fun `CONSOLIDATE_FALLBACKS attaches overlap to daddy row`() {
+        val channels = NtvCxCdnLiveSource.buildChannels(
+            catalog = catalog,
+            daddyChannels = daddy,
+            mergeMode = SupplementImportMode.CONSOLIDATE_FALLBACKS,
+        )
+        assertEquals(1, channels.channels.size)
+        assertEquals(1, channels.daddyFallbacks["70"]?.size)
+        assertTrue(channels.daddyFallbacks["70"]?.first()?.ntvCdnLiveKey?.isNotBlank() == true)
     }
 
     @Test
@@ -51,7 +63,7 @@ class NtvCxCdnLiveSourceTest {
             daddyChannels = emptyList(),
             mergeMode = SupplementImportMode.FULL_CATALOG,
         )
-        assertTrue(channels.all { it.id.startsWith("ntv:") })
-        assertTrue(channels.all { !it.ntvCdnLiveKey.isNullOrBlank() })
+        assertTrue(channels.channels.all { it.id.startsWith("ntv:") })
+        assertTrue(channels.channels.all { !it.ntvCdnLiveKey.isNullOrBlank() })
     }
 }

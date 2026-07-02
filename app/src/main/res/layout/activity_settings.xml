@@ -262,14 +262,11 @@
             android:text="@string/settings_supplement_iptv_org_enable"
             android:textColor="@color/on_background" />
 
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchIptvOrgSkipDuplicates"
+        <include
+            android:id="@+id/iptvOrgImportMode"
+            layout="@layout/include_settings_import_mode"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:minHeight="48dp"
-            android:text="@string/settings_import_skip_duplicates"
-            android:textColor="@color/on_background" />
+            android:layout_height="wrap_content" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonIptvOrgPlaylists"
@@ -297,14 +294,11 @@
             android:text="@string/settings_supplement_xyzstreams_enable"
             android:textColor="@color/on_background" />
 
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchXyzStreamsSkipDuplicates"
+        <include
+            android:id="@+id/xyzStreamsImportMode"
+            layout="@layout/include_settings_import_mode"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:minHeight="48dp"
-            android:text="@string/settings_import_skip_duplicates"
-            android:textColor="@color/on_background" />
+            android:layout_height="wrap_content" />
 
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switchXyzStreamsEpgDiscovery"
@@ -333,14 +327,11 @@
             android:text="@string/settings_supplement_ntv_cx_enable"
             android:textColor="@color/on_background" />
 
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchNtvCxSkipDuplicates"
+        <include
+            android:id="@+id/ntvCxImportMode"
+            layout="@layout/include_settings_import_mode"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:minHeight="48dp"
-            android:text="@string/settings_import_skip_duplicates"
-            android:textColor="@color/on_background" />
+            android:layout_height="wrap_content" />
 
         <TextView
             android:layout_width="match_parent"
@@ -360,14 +351,11 @@
             android:text="@string/settings_supplement_adult_swim_enable"
             android:textColor="@color/on_background" />
 
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchAdultSwimSkipDuplicates"
+        <include
+            android:id="@+id/adultSwimImportMode"
+            layout="@layout/include_settings_import_mode"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:minHeight="48dp"
-            android:text="@string/settings_import_skip_duplicates"
-            android:textColor="@color/on_background" />
+            android:layout_height="wrap_content" />
 
         <TextView
             android:layout_width="match_parent"

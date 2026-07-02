@@ -15,29 +15,25 @@ internal object SettingsSupplementControls {
         binding.switchSupplementNtvCx.isChecked = environment.supplementNtvCxEnabled
         binding.switchSupplementAdultSwim.isChecked = environment.supplementAdultSwimEnabled
         binding.switchSupplementTmdbMovies.isChecked = environment.supplementTmdbMoviesEnabled
-        binding.switchIptvOrgSkipDuplicates.isChecked =
-            environment.supplementIptvOrgImportMode == SupplementImportMode.SKIP_DUPLICATES
-        binding.switchXyzStreamsSkipDuplicates.isChecked =
-            environment.supplementXyzStreamsImportMode == SupplementImportMode.SKIP_DUPLICATES
+        SettingsImportModeUi.load(binding.iptvOrgImportMode, environment.supplementIptvOrgImportMode)
+        SettingsImportModeUi.load(binding.xyzStreamsImportMode, environment.supplementXyzStreamsImportMode)
         binding.switchXyzStreamsEpgDiscovery.isChecked = environment.supplementXyzStreamsEpgDiscoveryEnabled
-        binding.switchNtvCxSkipDuplicates.isChecked =
-            environment.supplementNtvCxImportMode == SupplementImportMode.SKIP_DUPLICATES
-        binding.switchAdultSwimSkipDuplicates.isChecked =
-            environment.supplementAdultSwimImportMode == SupplementImportMode.SKIP_DUPLICATES
+        SettingsImportModeUi.load(binding.ntvCxImportMode, environment.supplementNtvCxImportMode)
+        SettingsImportModeUi.load(binding.adultSwimImportMode, environment.supplementAdultSwimImportMode)
         refreshMasterSwitch(binding)
-        updateSkipDuplicateVisibility(binding)
+        updateImportModeVisibility(binding)
     }
 
     fun wireListeners(binding: ActivitySettingsBinding, host: SettingsActivity) {
-        val skipListener = { _: android.widget.CompoundButton, _: Boolean ->
-            updateSkipDuplicateVisibility(binding)
+        val visibilityListener = { _: android.widget.CompoundButton, _: Boolean ->
+            updateImportModeVisibility(binding)
         }
-        binding.switchSupplementSports.setOnCheckedChangeListener(skipListener)
-        binding.switchSupplementIptvOrg.setOnCheckedChangeListener(skipListener)
-        binding.switchSupplementXyzStreams.setOnCheckedChangeListener(skipListener)
-        binding.switchSupplementNtvCx.setOnCheckedChangeListener(skipListener)
-        binding.switchSupplementAdultSwim.setOnCheckedChangeListener(skipListener)
-        binding.switchSupplementTmdbMovies.setOnCheckedChangeListener(skipListener)
+        binding.switchSupplementSports.setOnCheckedChangeListener(visibilityListener)
+        binding.switchSupplementIptvOrg.setOnCheckedChangeListener(visibilityListener)
+        binding.switchSupplementXyzStreams.setOnCheckedChangeListener(visibilityListener)
+        binding.switchSupplementNtvCx.setOnCheckedChangeListener(visibilityListener)
+        binding.switchSupplementAdultSwim.setOnCheckedChangeListener(visibilityListener)
+        binding.switchSupplementTmdbMovies.setOnCheckedChangeListener(visibilityListener)
         binding.buttonIptvOrgPlaylists.setOnClickListener {
             host.startActivity(Intent(host, IptvOrgPlaylistSettingsActivity::class.java))
         }
@@ -51,9 +47,9 @@ internal object SettingsSupplementControls {
             binding.switchSupplementAdultSwim.isChecked = checked
             binding.switchSupplementTmdbMovies.isChecked = checked
             syncingMaster = false
-            updateSkipDuplicateVisibility(binding)
+            updateImportModeVisibility(binding)
         }
-        updateSkipDuplicateVisibility(binding)
+        updateImportModeVisibility(binding)
     }
 
     fun save(binding: ActivitySettingsBinding, environment: com.thothassistant.stepdaddy.gateway.GatewayEnvironment) {
@@ -63,17 +59,13 @@ internal object SettingsSupplementControls {
         environment.supplementNtvCxEnabled = binding.switchSupplementNtvCx.isChecked
         environment.supplementAdultSwimEnabled = binding.switchSupplementAdultSwim.isChecked
         environment.supplementTmdbMoviesEnabled = binding.switchSupplementTmdbMovies.isChecked
-        environment.supplementIptvOrgImportMode = importMode(binding.switchIptvOrgSkipDuplicates.isChecked)
-        environment.supplementXyzStreamsImportMode = importMode(binding.switchXyzStreamsSkipDuplicates.isChecked)
+        environment.supplementIptvOrgImportMode = SettingsImportModeUi.read(binding.iptvOrgImportMode)
+        environment.supplementXyzStreamsImportMode = SettingsImportModeUi.read(binding.xyzStreamsImportMode)
         environment.supplementXyzStreamsEpgDiscoveryEnabled = binding.switchXyzStreamsEpgDiscovery.isChecked
-        environment.supplementNtvCxImportMode = importMode(binding.switchNtvCxSkipDuplicates.isChecked)
-        environment.supplementAdultSwimImportMode = importMode(binding.switchAdultSwimSkipDuplicates.isChecked)
+        environment.supplementNtvCxImportMode = SettingsImportModeUi.read(binding.ntvCxImportMode)
+        environment.supplementAdultSwimImportMode = SettingsImportModeUi.read(binding.adultSwimImportMode)
     }
 
-    private fun importMode(skipDuplicates: Boolean): SupplementImportMode =
-        if (skipDuplicates) SupplementImportMode.SKIP_DUPLICATES else SupplementImportMode.FULL_CATALOG
-
-    /** Reflect all-on state on load only; individual toggles do not move the master switch. */
     private fun refreshMasterSwitch(binding: ActivitySettingsBinding) {
         if (syncingMaster) return
         syncingMaster = true
@@ -87,18 +79,18 @@ internal object SettingsSupplementControls {
         syncingMaster = false
     }
 
-    private fun updateSkipDuplicateVisibility(binding: ActivitySettingsBinding) {
-        setSkipDuplicateRow(binding.switchIptvOrgSkipDuplicates, binding.switchSupplementIptvOrg.isChecked)
+    private fun updateImportModeVisibility(binding: ActivitySettingsBinding) {
+        SettingsImportModeUi.setVisible(binding.iptvOrgImportMode, binding.switchSupplementIptvOrg.isChecked)
         binding.buttonIptvOrgPlaylists.visibility =
             if (binding.switchSupplementIptvOrg.isChecked) View.VISIBLE else View.GONE
-        setSkipDuplicateRow(binding.switchXyzStreamsSkipDuplicates, binding.switchSupplementXyzStreams.isChecked)
-        setSkipDuplicateRow(binding.switchXyzStreamsEpgDiscovery, binding.switchSupplementXyzStreams.isChecked)
-        setSkipDuplicateRow(binding.switchNtvCxSkipDuplicates, binding.switchSupplementNtvCx.isChecked)
-        setSkipDuplicateRow(binding.switchAdultSwimSkipDuplicates, binding.switchSupplementAdultSwim.isChecked)
+        SettingsImportModeUi.setVisible(binding.xyzStreamsImportMode, binding.switchSupplementXyzStreams.isChecked)
+        setDiscoveryRow(binding, binding.switchSupplementXyzStreams.isChecked)
+        SettingsImportModeUi.setVisible(binding.ntvCxImportMode, binding.switchSupplementNtvCx.isChecked)
+        SettingsImportModeUi.setVisible(binding.adultSwimImportMode, binding.switchSupplementAdultSwim.isChecked)
     }
 
-    private fun setSkipDuplicateRow(switch: android.widget.CompoundButton, providerOn: Boolean) {
-        switch.visibility = if (providerOn) View.VISIBLE else View.GONE
-        switch.isEnabled = providerOn
+    private fun setDiscoveryRow(binding: ActivitySettingsBinding, providerOn: Boolean) {
+        binding.switchXyzStreamsEpgDiscovery.visibility = if (providerOn) View.VISIBLE else View.GONE
+        binding.switchXyzStreamsEpgDiscovery.isEnabled = providerOn
     }
 }

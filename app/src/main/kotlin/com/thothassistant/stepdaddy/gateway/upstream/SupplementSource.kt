@@ -11,6 +11,7 @@ import com.thothassistant.stepdaddy.gateway.epg.XyzStreamsEpgFetcher
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.EventMetadata
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
+import com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror
 import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
@@ -127,6 +128,8 @@ class SupplementSource(
     @Volatile
     private var cached: List<SupplementChannel> = store.readChannels().filterNot { it.id.startsWith("sup:") }
     @Volatile
+    private var daddyChannelFallbacks: Map<String, List<SupplementFallbackMirror>> = store.readDaddyFallbacks()
+    @Volatile
     private var guideSchedules: Map<String, List<SpecialEventsMerger.GuideEventRow>> = store.readGuideSchedules()
     @Volatile
     private var lastSync = SyncSnapshot()
@@ -185,6 +188,11 @@ class SupplementSource(
     fun ntvCxMergeMode(): SupplementImportMode = ntvCxImportMode()
 
     fun channels(): List<SupplementChannel> = cached
+
+    fun channelById(id: String): SupplementChannel? = cached.firstOrNull { it.id == id }
+
+    fun daddyChannelFallbacks(channelId: String): List<SupplementFallbackMirror> =
+        daddyChannelFallbacks[channelId].orEmpty()
 
     fun channelCount(): Int = cached.size
 
@@ -472,6 +480,8 @@ class SupplementSource(
                 cached = emptyList()
                 guideSchedules = emptyMap()
                 store.writeChannels(emptyList())
+                store.writeDaddyFallbacks(emptyMap())
+                daddyChannelFallbacks = emptyMap()
                 store.clearGuideSchedules()
                 lastSync = SyncSnapshot()
             }
@@ -716,12 +726,17 @@ class SupplementSource(
         if (ntvCxEnabled()) {
             val catalog = ntvCxCatalogStore.loadCatalog()
             if (catalog.isNotEmpty()) {
-                recovered += NtvCxCdnLiveSource.buildChannels(
+                val built = NtvCxCdnLiveSource.buildChannels(
                     catalog = catalog,
                     daddyChannels = daddyChannels,
                     mergeMode = environment.supplementNtvCxImportMode,
                     nameIndex = null,
                 )
+                recovered += built.channels
+                if (built.daddyFallbacks.isNotEmpty()) {
+                    daddyChannelFallbacks = built.daddyFallbacks
+                    store.writeDaddyFallbacks(built.daddyFallbacks)
+                }
             }
         }
         return recovered
@@ -767,10 +782,10 @@ class SupplementSource(
                 }
                     .getOrElse { exc ->
                         Log.w(TAG, "iptv-org fetch failed", exc)
-                        emptyList<SupplementChannel>() to IptvOrgStreamsSource.FetchStats()
+                        IptvOrgStreamsSource.FetchOutcome(emptyList(), IptvOrgStreamsSource.FetchStats())
                     }
             } else {
-                emptyList<SupplementChannel>() to IptvOrgStreamsSource.FetchStats()
+                IptvOrgStreamsSource.FetchOutcome(emptyList(), IptvOrgStreamsSource.FetchStats())
             }
         }
 
@@ -785,10 +800,10 @@ class SupplementSource(
                 }
                     .getOrElse { exc ->
                         Log.w(TAG, "ntv.cx 24/7 fetch failed", exc)
-                        emptyList<SupplementChannel>() to NtvCxCdnLiveResolver.FetchStats()
+                        NtvCxCdnLiveSource.FetchOutcome(emptyList(), NtvCxCdnLiveResolver.FetchStats())
                     }
             } else {
-                emptyList<SupplementChannel>() to NtvCxCdnLiveResolver.FetchStats()
+                NtvCxCdnLiveSource.FetchOutcome(emptyList(), NtvCxCdnLiveResolver.FetchStats())
             }
         }
 
@@ -802,10 +817,10 @@ class SupplementSource(
                 }
                     .getOrElse { exc ->
                         Log.w(TAG, "adult swim fetch failed", exc)
-                        emptyList<SupplementChannel>() to AdultSwimStreamsSource.FetchStats()
+                        AdultSwimStreamsSource.FetchOutcome(emptyList(), AdultSwimStreamsSource.FetchStats())
                     }
             } else {
-                emptyList<SupplementChannel>() to AdultSwimStreamsSource.FetchStats()
+                AdultSwimStreamsSource.FetchOutcome(emptyList(), AdultSwimStreamsSource.FetchStats())
             }
         }
 
@@ -820,10 +835,10 @@ class SupplementSource(
                 }
                     .getOrElse { exc ->
                         Log.w(TAG, "xyzstreams fetch failed", exc)
-                        emptyList<SupplementChannel>() to XyzStreamsSource.FetchStats()
+                        XyzStreamsSource.FetchOutcome(emptyList(), XyzStreamsSource.FetchStats())
                     }
             } else {
-                emptyList<SupplementChannel>() to XyzStreamsSource.FetchStats()
+                XyzStreamsSource.FetchOutcome(emptyList(), XyzStreamsSource.FetchStats())
             }
         }
 
@@ -851,18 +866,42 @@ class SupplementSource(
             }
         }
 
-        val (iptvOrg, iptvStats) = iptvOrgDeferred.await()
+        val iptvOutcome = iptvOrgDeferred.await()
+        val iptvOrg = iptvOutcome.channels
+        val iptvStats = iptvOutcome.stats
         lastSync = lastSync.copy(
             iptvOrgChannels = iptvOrg.size,
             iptvOrgPlaylistsFetched = iptvStats.playlistsFetched,
             iptvOrgPlaylistsFailed = iptvStats.playlistsFailed,
             iptvOrgEntriesParsed = iptvStats.entriesParsed,
         )
-        var (ntvCx, ntvStats) = ntvCxDeferred.await()
-        var (adultSwim, adultSwimStats) = adultSwimDeferred.await()
-        var (xyzStreams, xyzStats) = xyzStreamsDeferred.await()
+        var ntvOutcome = ntvCxDeferred.await()
+        var ntvCx = ntvOutcome.channels
+        var ntvStats = ntvOutcome.stats
+        var adultSwimOutcome = adultSwimDeferred.await()
+        var adultSwim = adultSwimOutcome.channels
+        var adultSwimStats = adultSwimOutcome.stats
+        var xyzOutcome = xyzStreamsDeferred.await()
+        var xyzStreams = xyzOutcome.channels
+        var xyzStats = xyzOutcome.stats
         val (tmdbVod, tmdbVodStats) = tmdbVodDeferred.await()
         val (tmdbVodSeries, tmdbVodSeriesStats) = tmdbVodSeriesDeferred.await()
+
+        val mergedDaddyFallbacks = SupplementImportHelper.mergeDaddyFallbackMaps(
+            iptvOutcome.daddyFallbacks,
+            ntvOutcome.daddyFallbacks,
+            adultSwimOutcome.daddyFallbacks,
+            xyzOutcome.daddyFallbacks,
+        )
+        daddyChannelFallbacks = mergedDaddyFallbacks
+        store.writeDaddyFallbacks(mergedDaddyFallbacks)
+        if (mergedDaddyFallbacks.isNotEmpty()) {
+            Log.i(
+                TAG,
+                "Consolidated ${mergedDaddyFallbacks.values.sumOf { it.size }} supplement fallbacks " +
+                    "onto ${mergedDaddyFallbacks.size} DaddyLive channels",
+            )
+        }
 
         if (ntvCx.isEmpty() && ntvCxEnabled()) {
             val cachedNtv = cached.filter { it.id.startsWith("ntv:") }

@@ -26,22 +26,27 @@ class AdultSwimStreamsSource(
         val probed: Int = 0,
         val probeOk: Int = 0,
         val channelsAfterDedup: Int = 0,
+        val daddyFallbacksAttached: Int = 0,
+    )
+
+    data class FetchOutcome(
+        val channels: List<SupplementChannel>,
+        val stats: FetchStats,
+        val daddyFallbacks: Map<String, List<com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror>> = emptyMap(),
     )
 
     suspend fun fetchChannels(
         daddyChannels: List<Channel>,
         importMode: SupplementImportMode = SupplementImportMode.FULL_CATALOG,
-    ): Pair<List<SupplementChannel>, FetchStats> = withContext(Dispatchers.IO) {
-        val skipDuplicates = importMode == SupplementImportMode.SKIP_DUPLICATES
-        val daddyNormNames = if (skipDuplicates) {
-            daddyChannels
-                .map { EpgChannelMapper.normalizeName(it.name) }
-                .filter { it.isNotEmpty() }
-                .toSet()
+    ): FetchOutcome = withContext(Dispatchers.IO) {
+        val consolidate = importMode.attachesFallbacks()
+        val skipDuplicates = importMode.skipsDuplicateRows()
+        val daddyIndexes = if (skipDuplicates) {
+            SupplementImportMatcher.buildDaddyIndexes(daddyChannels)
         } else {
-            emptySet()
+            SupplementImportMatcher.DaddyIndexes(emptyMap(), emptyMap())
         }
-
+        val daddyFallbacks = mutableMapOf<String, MutableList<com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror>>()
         val semaphore = Semaphore(AdultSwimStreamsConfig.MAX_CONCURRENT_PROBES)
         val probeResults = coroutineScope {
             AdultSwimStreamsConfig.CATALOG.map { row ->
@@ -64,7 +69,20 @@ class AdultSwimStreamsSource(
             }
             probeOk++
             val norm = EpgChannelMapper.normalizeName(row.name)
-            if (skipDuplicates && norm in daddyNormNames) continue
+            if (skipDuplicates && SupplementImportMatcher.matchesDaddy(norm, row.tvgId, daddyIndexes)) {
+                if (consolidate) {
+                    val targetId = SupplementImportMatcher.resolveDaddyChannelId(norm, row.tvgId, daddyIndexes)
+                    if (targetId != null) {
+                        daddyFallbacks.getOrPut(targetId) { mutableListOf() } += com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror(
+                            streamUrl = AdultSwimStreamsConfig.masterPlaylistUrl(row.slug),
+                            label = AdultSwimStreamsConfig.PROVIDER_TAG,
+                            referer = AdultSwimStreamsConfig.REFERER,
+                            origin = AdultSwimStreamsConfig.ORIGIN,
+                        )
+                    }
+                }
+                continue
+            }
             channels += SupplementChannel(
                 id = "adultswim:${row.slug}",
                 name = row.name,
@@ -79,11 +97,16 @@ class AdultSwimStreamsSource(
             )
         }
 
-        channels to FetchStats(
-            catalogRows = AdultSwimStreamsConfig.CATALOG.size,
-            probed = probed,
-            probeOk = probeOk,
-            channelsAfterDedup = channels.size,
+        FetchOutcome(
+            channels = channels,
+            stats = FetchStats(
+                catalogRows = AdultSwimStreamsConfig.CATALOG.size,
+                probed = probed,
+                probeOk = probeOk,
+                channelsAfterDedup = channels.size,
+                daddyFallbacksAttached = daddyFallbacks.values.sumOf { it.size },
+            ),
+            daddyFallbacks = daddyFallbacks,
         )
     }
 

@@ -24,6 +24,7 @@ import com.thothassistant.stepdaddy.gateway.upstream.VodMovieResolver
 import com.thothassistant.stepdaddy.gateway.upstream.VodStreamCache
 import com.thothassistant.stepdaddy.gateway.routes.PlaylistPaths
 import com.thothassistant.stepdaddy.gateway.routes.PlaylistRoutes
+import com.thothassistant.stepdaddy.gateway.routes.SupplementFallbackStreamRoutes
 import com.thothassistant.stepdaddy.gateway.routes.StreamRoutes
 import com.thothassistant.stepdaddy.gateway.routes.TiviMateRoutes
 import com.thothassistant.stepdaddy.gateway.routes.UiRoutes
@@ -97,10 +98,17 @@ class GatewayServer(
         playlistRoutes = routes
         val streamRoutes = StreamRoutes(environment, client)
         val dlhdEventStreamRoutes = DlhdEventStreamRoutes(appContext, environment, supplementSource, client)
+        val ntvResolver = NtvCxCdnLiveResolver(NtvCxCdnLiveResolver.defaultClient())
+        val supplementFallbackRoutes = SupplementFallbackStreamRoutes(
+            environment,
+            supplementSource,
+            client,
+            ntvResolver,
+        )
         val ntvStreamRoutes = NtvStreamRoutes(
             environment,
             supplementSource,
-            NtvCxCdnLiveResolver(NtvCxCdnLiveResolver.defaultClient()),
+            ntvResolver,
         )
         val xyzStreamRoutes = XyzStreamRoutes(environment, supplementSource)
         val vodStreamCache = VodStreamCache()
@@ -208,6 +216,8 @@ class GatewayServer(
                         if (channelId.startsWith("dlhd-event-")) {
                             val token = channelId.removePrefix("dlhd-event-")
                             dlhdEventStreamRoutes.eventStreamMaster(call, token)
+                        } else if (supplementSource.daddyChannelFallbacks(channelId).isNotEmpty()) {
+                            supplementFallbackRoutes.daddyMaster(call, channelId)
                         } else {
                             streamRoutes.tivimateStream(call, channelId)
                         }
@@ -217,9 +227,45 @@ class GatewayServer(
                         if (channelId.startsWith("dlhd-event-")) {
                             val token = channelId.removePrefix("dlhd-event-")
                             dlhdEventStreamRoutes.eventStreamMaster(call, token)
+                        } else if (supplementSource.daddyChannelFallbacks(channelId).isNotEmpty()) {
+                            supplementFallbackRoutes.daddyMaster(call, channelId)
                         } else {
                             streamRoutes.tivimateStream(call, channelId)
                         }
+                    }
+                }
+                route("/daddy-fallback/{channelId}/{index}.m3u8") {
+                    get {
+                        val channelId = call.parameters["channelId"].orEmpty()
+                        val index = call.parameters["index"]?.toIntOrNull() ?: 0
+                        supplementFallbackRoutes.daddyMirror(call, channelId, index)
+                    }
+                    head {
+                        val channelId = call.parameters["channelId"].orEmpty()
+                        val index = call.parameters["index"]?.toIntOrNull() ?: 0
+                        supplementFallbackRoutes.daddyMirror(call, channelId, index)
+                    }
+                }
+                route("/supplement-stream/{supplementId}/master.m3u8") {
+                    get {
+                        val id = SupplementFallbackStreamRoutes.decodeId(call.parameters["supplementId"].orEmpty())
+                        supplementFallbackRoutes.supplementMaster(call, id)
+                    }
+                    head {
+                        val id = SupplementFallbackStreamRoutes.decodeId(call.parameters["supplementId"].orEmpty())
+                        supplementFallbackRoutes.supplementMaster(call, id)
+                    }
+                }
+                route("/supplement-stream/{supplementId}/{index}.m3u8") {
+                    get {
+                        val id = SupplementFallbackStreamRoutes.decodeId(call.parameters["supplementId"].orEmpty())
+                        val index = call.parameters["index"]?.toIntOrNull() ?: 0
+                        supplementFallbackRoutes.supplementMirror(call, id, index)
+                    }
+                    head {
+                        val id = SupplementFallbackStreamRoutes.decodeId(call.parameters["supplementId"].orEmpty())
+                        val index = call.parameters["index"]?.toIntOrNull() ?: 0
+                        supplementFallbackRoutes.supplementMirror(call, id, index)
                     }
                 }
                 route("/dlhd-event-mirror/{token}/{index}.m3u8") {

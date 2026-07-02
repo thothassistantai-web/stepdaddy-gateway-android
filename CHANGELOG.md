@@ -7,6 +7,12 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.16] - 2026-06-30
+
+### Added
+
+- **Import mode: Merge fallbacks** — third supplement import option alongside "All channels" and "Skip dupes". Overlapping iptv-org, ntv.cx, xyz, and Adult Swim rows attach as automatic failover mirrors on the matching DaddyLive channel (multi-variant HLS master) instead of separate playlist entries. Internal iptv-org duplicates attach mirrors on the kept supplement row via `/supplement-stream/{id}/master.m3u8`. Settings uses a 3-way toggle per provider; fallbacks persist in `daddy_fallbacks.json`.
+
 ## [3.0.15] - 2026-06-30
 
 ### Fixed

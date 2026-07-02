@@ -1,8 +1,8 @@
 {
-  "versionCode": 30015,
-  "versionName": "3.0.15",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.15/stepdaddy-gateway-3.0.15-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.15/stepdaddy-gateway-3.0.15-debug.apk",
+  "versionCode": 30016,
+  "versionName": "3.0.16",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.16/stepdaddy-gateway-3.0.16-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.16/stepdaddy-gateway-3.0.16-debug.apk",
   "releaseNotes": "See CHANGELOG.md",
   "mandatory": false
 }

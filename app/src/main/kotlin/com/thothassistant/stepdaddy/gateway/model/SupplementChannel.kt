@@ -39,4 +39,6 @@ data class SupplementChannel(
     val plot: String? = null,
     /** IMDB tt-id when known (`tt0111161`). */
     val imdbId: String? = null,
+    /** Alternate streams consolidated under this supplement row (iptv-org FAST dupes). */
+    val fallbackMirrors: List<SupplementFallbackMirror> = emptyList(),
 )
