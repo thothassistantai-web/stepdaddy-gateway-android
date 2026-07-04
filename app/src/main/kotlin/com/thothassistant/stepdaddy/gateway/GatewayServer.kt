@@ -96,9 +96,15 @@ class GatewayServer(
             supplementSource.dlhdEventHealthStore(),
         )
         playlistRoutes = routes
+        val fireLite = FireTvDevice.isFireTv(appContext)
         val streamRoutes = StreamRoutes(environment, client)
         val dlhdEventStreamRoutes = DlhdEventStreamRoutes(appContext, environment, supplementSource, client)
-        val ntvResolver = NtvCxCdnLiveResolver(NtvCxCdnLiveResolver.defaultClient())
+        val ntvHttp = if (fireLite) {
+            FireMemoryGuard.compactHttpClient()
+        } else {
+            NtvCxCdnLiveResolver.defaultClient()
+        }
+        val ntvResolver = NtvCxCdnLiveResolver(ntvHttp)
         val supplementFallbackRoutes = SupplementFallbackStreamRoutes(
             environment,
             supplementSource,
@@ -112,7 +118,11 @@ class GatewayServer(
         )
         val xyzStreamRoutes = XyzStreamRoutes(environment, supplementSource)
         val vodStreamCache = VodStreamCache()
-        val vodHttpClient = VidsrcMovieResolver.defaultClient()
+        val vodHttpClient = if (fireLite) {
+            FireMemoryGuard.compactHttpClient()
+        } else {
+            VidsrcMovieResolver.defaultClient()
+        }
         val vodMovieResolver = VodMovieResolver(
             VidsrcMovieResolver(vodHttpClient),
             MovieboxStreamResolver(MovieboxSession(vodHttpClient)),
@@ -127,7 +137,12 @@ class GatewayServer(
         val moviesRoutes = MoviesRoutes(environment, supplementSource)
         val seriesRoutes = SeriesRoutes(environment, supplementSource)
         val xtreamApiRoutes = XtreamApiRoutes(environment, client, supplementSource)
-        val contentRoutes = ContentRoutes(environment, client, ResportzParser.defaultClient())
+        val contentHttp = if (fireLite) {
+            FireMemoryGuard.compactHttpClient()
+        } else {
+            ResportzParser.defaultClient()
+        }
+        val contentRoutes = ContentRoutes(environment, client, contentHttp)
         val epgRoutes = EpgRoutes(client, epgManager, supplementSource)
         val adminRoutes = adminActions?.let { AdminRoutes(it) }
 
@@ -140,7 +155,8 @@ class GatewayServer(
             port = environment.port,
             configure = {
                 // Keep client connections open through slow resportz fetches (Python allows 60s+).
-                connectionIdleTimeoutSeconds = 300
+                // Fire Stick: shorter idle + fewer workers to cut native/thread RAM.
+                connectionIdleTimeoutSeconds = if (fireLite) 60 else 300
                 reuseAddress = true
             },
         ) {

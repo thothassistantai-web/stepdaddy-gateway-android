@@ -19,6 +19,9 @@ class BootAlarmReceiver : BroadcastReceiver() {
                 Log.i(TAG, "Alarm#$alarmIndex result: $result")
                 if (GatewayStartHelper.isGatewayHealthy(context)) {
                     GatewayStartHelper.cancelBootFallbacks(context)
+                } else if (FireTvDevice.isFireTv(context)) {
+                    // Re-arm remaining horizon after LMK / partial start on Fire Stick.
+                    GatewayStartHelper.scheduleFireBootFallbacks(context)
                 }
             } finally {
                 releaseWakeLock(wakeLock)

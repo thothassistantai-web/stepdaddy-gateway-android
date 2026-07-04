@@ -19,6 +19,7 @@ import kotlinx.coroutines.delay
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Single coordinated entry for every auto-start path (boot, wake, periodic, package
@@ -35,6 +36,8 @@ object GatewayStartHelper {
 
     private val fallbacksScheduled = AtomicBoolean(false)
     private val bootExecutor = Executors.newSingleThreadExecutor()
+    /** Fire Stick: do not cancel boot alarms until this elapsedRealtime, even if briefly healthy. */
+    private val fireKeepAliveUntilElapsed = AtomicLong(0L)
 
     /** FGS alive AND loopback catalog is serving channels (not merely HTTP up). */
     fun isGatewayHealthy(context: Context): Boolean {
@@ -158,6 +161,10 @@ object GatewayStartHelper {
         val fgsResult = tryStartForegroundService(appContext, source)
         when (fgsResult) {
             StartResult.STARTED -> {
+                // Fire Stick LMK can kill FGS during catalog load — keep alarms until healthy.
+                if (FireTvDevice.isFireTv(appContext)) {
+                    scheduleFireBootFallbacks(appContext)
+                }
                 return StartResult.STARTED
             }
             StartResult.LAUNCHED_TRAMPOLINE -> {
@@ -188,6 +195,30 @@ object GatewayStartHelper {
         cancelBootFallbacks(context)
         schedulePeriodicEnsureAlive(context)
         scheduleWorkManagerBootCatchup(context)
+        Log.i(TAG, "Gateway healthy; boot fallbacks cancelled")
+    }
+
+    /**
+     * Fire Stick only: arm long-horizon boot alarms that survive LMK kills of the FGS.
+     * Safe to call repeatedly — resets and reschedules so a mid-boot cancel cannot strand us.
+     */
+    fun scheduleFireBootFallbacks(context: Context) {
+        if (!FireTvDevice.isFireTv(context)) {
+            scheduleBootFallbacksAsync(context)
+            return
+        }
+        val appContext = context.applicationContext
+        // Hold alarms through the observed LMK window (~35s) + sticky restart (~30s) + settle.
+        fireKeepAliveUntilElapsed.updateAndGet { current ->
+            val candidate = SystemClock.elapsedRealtime() + FIRE_KEEPALIVE_MIN_MS
+            maxOf(current, candidate)
+        }
+        bootExecutor.execute {
+            // Force re-arm even if a prior schedule was cancelled by an earlier FGS onCreate.
+            fallbacksScheduled.set(false)
+            scheduleBootFallbacksOnce(appContext)
+            Log.i(TAG, "Fire TV boot keep-alive alarms armed")
+        }
     }
 
     /** Deferred WM retries — safe after the boot ANR window has passed. */
@@ -317,7 +348,8 @@ object GatewayStartHelper {
     /** Exact elapsed-realtime alarms — survive Doze better than inexact WM on some TV sticks. */
     private fun scheduleAlarms(context: Context) {
         val alarmManager = context.getSystemService(AlarmManager::class.java) ?: return
-        ALARM_DELAYS_MS.forEachIndexed { index, delayMs ->
+        val delays = if (FireTvDevice.isFireTv(context)) FIRE_ALARM_DELAYS_MS else ALARM_DELAYS_MS
+        delays.forEachIndexed { index, delayMs ->
             val intent = Intent(context, BootAlarmReceiver::class.java).apply {
                 action = ACTION_BOOT_ALARM
                 putExtra(EXTRA_ALARM_INDEX, index)
@@ -352,7 +384,7 @@ object GatewayStartHelper {
                 )
             }
         }
-        Log.i(TAG, "Scheduled ${ALARM_DELAYS_MS.size} alarm boot retries")
+        Log.i(TAG, "Scheduled ${delays.size} alarm boot retries (fire=${FireTvDevice.isFireTv(context)})")
     }
 
     /** Long-horizon keep-alive when start-on-boot is enabled (TiviMate redundancy). */
@@ -394,9 +426,23 @@ object GatewayStartHelper {
 
     fun cancelBootFallbacks(context: Context) {
         val appContext = context.applicationContext
+        if (FireTvDevice.isFireTv(appContext)) {
+            val until = fireKeepAliveUntilElapsed.get()
+            val now = SystemClock.elapsedRealtime()
+            if (until > 0L && now < until) {
+                Log.i(
+                    TAG,
+                    "Fire TV: keeping boot alarms for ${(until - now)}ms more (LMK grace)",
+                )
+                return
+            }
+            fireKeepAliveUntilElapsed.set(0L)
+        }
         WorkManager.getInstance(appContext).cancelAllWorkByTag(WORK_TAG_BOOT_START)
         val alarmManager = appContext.getSystemService(AlarmManager::class.java) ?: return
-        ALARM_DELAYS_MS.indices.forEach { index ->
+        // Cancel both default and Fire delay slots (union of request codes).
+        val maxAlarms = maxOf(ALARM_DELAYS_MS.size, FIRE_ALARM_DELAYS_MS.size)
+        (0 until maxAlarms).forEach { index ->
             val intent = Intent(appContext, BootAlarmReceiver::class.java).apply {
                 action = ACTION_BOOT_ALARM
                 putExtra(EXTRA_ALARM_INDEX, index)
@@ -430,4 +476,15 @@ object GatewayStartHelper {
     private val ALARM_DELAYS_MS = longArrayOf(
         3_000, 8_000, 15_000, 30_000, 60_000, 120_000, 240_000,
     )
+
+    /**
+     * Fire Stick: longer horizon covering LMK kill (~35s) + sticky restart delay (~30s)
+     * and slow catalog load on ~1GB RAM devices.
+     */
+    private val FIRE_ALARM_DELAYS_MS = longArrayOf(
+        15_000, 30_000, 45_000, 75_000, 120_000, 180_000, 300_000, 480_000, 600_000,
+    )
+
+    /** Minimum time Fire boot alarms stay armed after scheduleFireBootFallbacks(). */
+    private const val FIRE_KEEPALIVE_MIN_MS = 180_000L
 }

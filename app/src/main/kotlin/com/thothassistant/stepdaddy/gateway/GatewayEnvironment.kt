@@ -13,6 +13,7 @@ import java.security.SecureRandom
 import java.util.Base64
 
 class GatewayEnvironment(context: Context) {
+    val appContext: Context = context.applicationContext
     private val prefs: SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 

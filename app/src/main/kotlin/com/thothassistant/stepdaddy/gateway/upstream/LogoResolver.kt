@@ -2,6 +2,7 @@ package com.thothassistant.stepdaddy.gateway.upstream
 
 import android.content.Context
 import android.util.Log
+import com.thothassistant.stepdaddy.gateway.FireMemoryGuard
 import com.thothassistant.stepdaddy.gateway.upstream.GatewayConfig.USER_AGENT
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -20,6 +21,7 @@ import kotlin.math.max
 
 class LogoResolver(context: Context) {
     private val appContext = context.applicationContext
+    private val fireLite = FireMemoryGuard.skipHeavyCatalogIndexes(appContext)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val loadGate = CompletableDeferred<Unit>()
     private val byChannelId = mutableMapOf<String, String>()
@@ -34,17 +36,34 @@ class LogoResolver(context: Context) {
 
     init {
         scope.launch {
-            runCatching { loadAll() }
+            runCatching {
+                if (fireLite) {
+                    // Fire Stick: skip 3.5MB logos_db_cache.csv + channels CSV (~100MB+ RAM).
+                    loadOverrides()
+                    loadRuntimeOverrides(appContext)
+                } else {
+                    loadAll()
+                }
+            }
                 .onSuccess {
                     loaded = true
                     loadGate.complete(Unit)
-                    Log.i(TAG, "Logo DB ready: ${byChannelId.size} logos, ${nameToId.size} names, ${overridesByName.size} overrides")
+                    Log.i(
+                        TAG,
+                        "Logo DB ready: ${byChannelId.size} logos, ${nameToId.size} names, " +
+                            "${overridesByName.size} overrides (fireLite=$fireLite)",
+                    )
                 }
                 .onFailure { exc ->
                     Log.w(TAG, "Logo DB load failed", exc)
                     loadGate.completeExceptionally(exc)
                 }
         }
+    }
+
+    /** Drop placeholder SVG cache under LMK pressure (Fire Stick). */
+    fun releaseMemory() {
+        synchronized(placeholderCache) { placeholderCache.clear() }
     }
 
     suspend fun awaitLoaded(timeoutMs: Long = 60_000L) {
@@ -249,6 +268,7 @@ class LogoResolver(context: Context) {
     }
 
     fun schedulePrewarm(channels: List<Pair<String, String?>>) {
+        if (fireLite) return
         if (!loaded || channels.isEmpty()) return
         scope.launch {
             val urls = linkedSetOf<String>()

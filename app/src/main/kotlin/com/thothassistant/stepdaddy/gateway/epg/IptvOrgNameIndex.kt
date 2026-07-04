@@ -2,6 +2,7 @@ package com.thothassistant.stepdaddy.gateway.epg
 
 import android.content.Context
 import android.util.Log
+import com.thothassistant.stepdaddy.gateway.FireMemoryGuard
 import com.thothassistant.stepdaddy.gateway.upstream.TvgIdNormalizer
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -16,9 +17,12 @@ import kotlinx.coroutines.withTimeout
  *
  * CSV parse runs on a background thread — synchronous init blocked FUSA cold boot
  * for ~50s and tripped [ServerService] component-init timeouts.
+ *
+ * Fire Stick skips the 3.6MB CSV entirely (maps expand to tens of MB and trip LMK).
  */
 class IptvOrgNameIndex(context: Context) {
     private val appContext = context.applicationContext
+    private val fireLite = FireMemoryGuard.skipHeavyCatalogIndexes(appContext)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val loadGate = CompletableDeferred<Unit>()
     @Volatile
@@ -29,19 +33,25 @@ class IptvOrgNameIndex(context: Context) {
     private var loaded = false
 
     init {
-        scope.launch {
-            runCatching { loadCsv() }
-                .onSuccess { (map, keys) ->
-                    byNormName = map
-                    normKeys = keys
-                    loaded = true
-                    loadGate.complete(Unit)
-                    Log.i(TAG, "iptv-org name index: ${map.size} keys")
-                }
-                .onFailure { exc ->
-                    Log.w(TAG, "channels_db_cache.csv name index failed", exc)
-                    loadGate.completeExceptionally(exc)
-                }
+        if (fireLite) {
+            loaded = true
+            loadGate.complete(Unit)
+            Log.i(TAG, "iptv-org name index: skipped on Fire Stick (memory)")
+        } else {
+            scope.launch {
+                runCatching { loadCsv() }
+                    .onSuccess { (map, keys) ->
+                        byNormName = map
+                        normKeys = keys
+                        loaded = true
+                        loadGate.complete(Unit)
+                        Log.i(TAG, "iptv-org name index: ${map.size} keys")
+                    }
+                    .onFailure { exc ->
+                        Log.w(TAG, "channels_db_cache.csv name index failed", exc)
+                        loadGate.completeExceptionally(exc)
+                    }
+            }
         }
     }
 

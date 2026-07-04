@@ -85,6 +85,12 @@ class PlaylistCache {
         snapshot = null
     }
 
+    /** Drop in-memory M3U under LMK pressure; next request rebuilds. */
+    fun releaseMemory() {
+        snapshot = null
+        buildFlight = null
+    }
+
     fun schedulePrewarm(key: Long, builder: () -> String) {
         if (snapshot?.key == key) return
         scope.launch {

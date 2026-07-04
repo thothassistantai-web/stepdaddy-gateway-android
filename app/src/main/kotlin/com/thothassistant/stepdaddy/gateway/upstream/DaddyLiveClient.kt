@@ -2,6 +2,7 @@ package com.thothassistant.stepdaddy.gateway.upstream
 
 import android.content.Context
 import android.util.Log
+import com.thothassistant.stepdaddy.gateway.FireMemoryGuard
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex
@@ -43,6 +44,8 @@ class DaddyLiveClient(
     private val client: OkHttpClient = ResportzParser.defaultClient(),
     context: Context,
 ) {
+    private val appContext = context.applicationContext
+    private val fireLite = FireMemoryGuard.deferHeavyBootWork(appContext)
     private val prefs = context.getSharedPreferences("stepdaddy_channels", Context.MODE_PRIVATE)
     private val staleGoodCacheStore = StaleGoodCacheStore(context)
     private val channelNameOverrides = ChannelNameOverrides(context)
@@ -109,12 +112,26 @@ class DaddyLiveClient(
         initialLoadGate.complete(Unit)
         refreshScope.launch {
             staleGoodCacheStore.purgeExpired(GatewayConfig.STALE_DISK_TTL_MS)
+            if (fireLite) {
+                // Fire Stick: logo enrich allocates a full channel-list copy and trips LMK.
+                Log.i(TAG, "Skipping logo enrich on Fire Stick")
+                return@launch
+            }
             runCatching {
                 logoResolver?.awaitLoaded(120_000L)
                 enrichCachedChannelsQuietly()
             }.onFailure { exc ->
                 Log.d(TAG, "Deferred logo enrich skipped: ${exc.message}")
             }
+        }
+    }
+
+    /** Drop stream/upstream caches under LMK pressure (Fire Stick). */
+    fun releaseMemoryCaches() {
+        synchronized(healingLock) {
+            streamCache.clear()
+            staleStreamCache.clear()
+            upstreamCache.clear()
         }
     }
 
@@ -173,6 +190,7 @@ class DaddyLiveClient(
     }
 
     fun schedulePrewarmDelayed() {
+        if (fireLite) return
         refreshScope.launch {
             delay(5_000L)
             schedulePrewarm()
@@ -180,6 +198,7 @@ class DaddyLiveClient(
     }
 
     fun schedulePrewarm() {
+        if (fireLite) return
         refreshScope.launch {
             for (channelId in GatewayConfig.PREWARM_CHANNEL_IDS) {
                 runCatching {

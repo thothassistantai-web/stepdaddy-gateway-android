@@ -103,7 +103,13 @@ class GatewayApp : Application() {
         if (gatewayEnvironment.startOnBoot) {
             ScreenWakeRegistrar.register(this)
             bootKickExecutor.execute {
-                GatewayStartHelper.startIfNeeded(this@GatewayApp, "Application", allowReschedule = false)
+                if (FireTvDevice.isFireTv(this@GatewayApp)) {
+                    // Fire Stick: BootReceiver owns the delayed start. Only arm keep-alive
+                    // here so Application.onCreate does not race heavy init during boot.
+                    GatewayStartHelper.scheduleFireBootFallbacks(this@GatewayApp)
+                } else {
+                    GatewayStartHelper.startIfNeeded(this@GatewayApp, "Application", allowReschedule = false)
+                }
             }
         }
 
@@ -172,13 +178,16 @@ class GatewayApp : Application() {
         if (!componentsReady.isCompleted) {
             componentsReady.complete(Unit)
         }
-        appScope.launch(Dispatchers.IO) {
-            val store = EpgStore(this@GatewayApp)
-            maybeInvalidateEpgForBridgeFix(store)
-            val mapper = _epgChannelMapper ?: return@launch
-            if (mapper.mappingMigrationApplied) {
-                store.invalidateBuild()
-                Log.i("GatewayApp", "EPG rebuild scheduled after channel mapping correction")
+        // Fire Stick: skip post-init EPG invalidate — rebuild spikes RAM and trips LMK.
+        if (!FireTvDevice.isFireTv(this)) {
+            appScope.launch(Dispatchers.IO) {
+                val store = EpgStore(this@GatewayApp)
+                maybeInvalidateEpgForBridgeFix(store)
+                val mapper = _epgChannelMapper ?: return@launch
+                if (mapper.mappingMigrationApplied) {
+                    store.invalidateBuild()
+                    Log.i("GatewayApp", "EPG rebuild scheduled after channel mapping correction")
+                }
             }
         }
     }

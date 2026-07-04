@@ -21,6 +21,8 @@ object GatewayNotifier {
     const val NOTIFICATION_ID_ALERT_ERROR = 3002
 
     private const val CHANNEL_ONGOING = "stepdaddy_gateway"
+    /** Fire Stick: higher importance — existing LOW channel cannot be upgraded in-place. */
+    private const val CHANNEL_ONGOING_FIRE = "stepdaddy_gateway_fire"
     private const val CHANNEL_ALERTS = "stepdaddy_alerts"
     private const val CHANNEL_ERRORS = "stepdaddy_gateway_errors"
 
@@ -48,6 +50,20 @@ object GatewayNotifier {
                 setShowBadge(false)
             },
         )
+        if (FireTvDevice.isFireTv(context)) {
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    CHANNEL_ONGOING_FIRE,
+                    context.getString(R.string.notification_channel_name),
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                ).apply {
+                    description = context.getString(R.string.notification_channel_desc)
+                    setShowBadge(false)
+                    setSound(null, null)
+                    enableVibration(false)
+                },
+            )
+        }
         manager.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_ALERTS,
@@ -94,16 +110,27 @@ object GatewayNotifier {
             }
             GatewayState.ERROR -> context.getString(R.string.notification_error, errorMessage ?: "")
         }
-        val channelId = if (state == GatewayState.ERROR) CHANNEL_ERRORS else CHANNEL_ONGOING
+        val fireTv = FireTvDevice.isFireTv(context)
+        val channelId = when {
+            state == GatewayState.ERROR -> CHANNEL_ERRORS
+            fireTv -> CHANNEL_ONGOING_FIRE
+            else -> CHANNEL_ONGOING
+        }
         return NotificationCompat.Builder(context, channelId)
             .setContentTitle(context.getString(R.string.app_name))
             .setContentText(text)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(launchIntent)
             .setOngoing(state != GatewayState.ERROR)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(
+                if (fireTv) NotificationCompat.PRIORITY_DEFAULT
+                else NotificationCompat.PRIORITY_LOW,
+            )
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setGroup(GROUP_ONGOING)
             .setGroupSummary(false)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .apply {
                 if (state != GatewayState.ERROR) {
                     addAction(0, context.getString(R.string.action_stop), stopPending)

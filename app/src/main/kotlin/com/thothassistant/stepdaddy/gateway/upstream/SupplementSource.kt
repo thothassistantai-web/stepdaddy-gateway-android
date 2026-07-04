@@ -2,6 +2,7 @@ package com.thothassistant.stepdaddy.gateway.upstream
 
 import android.content.Context
 import android.util.Log
+import com.thothassistant.stepdaddy.gateway.FireMemoryGuard
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.epg.FastChannelTvgIdResolver
@@ -112,6 +113,9 @@ class SupplementSource(
         val tmdbVodSeries: Int = 0,
     )
 
+    private val appContext = context.applicationContext
+    /** Fire Stick: skip loading ~4k supplement rows at construct (tens of MB, trips LMK). */
+    private val fireLite = FireMemoryGuard.skipHeavyCatalogIndexes(appContext)
     private val store = SupplementStore(context)
     private val eventMetadataStore = EventMetadataStore(context)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -126,28 +130,49 @@ class SupplementSource(
     @Volatile
     private var lastVerifyTriggeredSyncMs = 0L
     @Volatile
-    private var cached: List<SupplementChannel> = store.readChannels().filterNot { it.id.startsWith("sup:") }
+    private var cached: List<SupplementChannel> =
+        if (fireLite) {
+            emptyList()
+        } else {
+            store.readChannels().filterNot { it.id.startsWith("sup:") }
+        }
     @Volatile
-    private var daddyChannelFallbacks: Map<String, List<SupplementFallbackMirror>> = store.readDaddyFallbacks()
+    private var daddyChannelFallbacks: Map<String, List<SupplementFallbackMirror>> =
+        if (fireLite) emptyMap() else store.readDaddyFallbacks()
     @Volatile
-    private var guideSchedules: Map<String, List<SpecialEventsMerger.GuideEventRow>> = store.readGuideSchedules()
+    private var guideSchedules: Map<String, List<SpecialEventsMerger.GuideEventRow>> =
+        if (fireLite) emptyMap() else store.readGuideSchedules()
     @Volatile
     private var lastSync = SyncSnapshot()
     @Volatile
-    private var eventMetadata: Map<String, EventMetadata> = eventMetadataStore.readAll()
+    private var eventMetadata: Map<String, EventMetadata> =
+        if (fireLite) emptyMap() else eventMetadataStore.readAll()
 
     init {
-        if (sportsEnabled()) {
-            pruneExpiredSpecialEvents()
-        }
-        if (sportsCount() > 0) {
-            lastSpecialEventsSyncMs = store.guideSchedulesSyncedAtMs()
-                .takeIf { it > 0L }
-                ?: store.lastSyncedAtMs()
-            if (eventMetadata.isEmpty()) {
-                syncEventMetadata(cached.filter { EventLifecycleManager.isSpecialEventChannel(it.id) })
+        if (fireLite) {
+            Log.i(TAG, "Fire Stick: deferred supplement disk load (memory)")
+        } else {
+            if (sportsEnabled()) {
+                pruneExpiredSpecialEvents()
+            }
+            if (sportsCount() > 0) {
+                lastSpecialEventsSyncMs = store.guideSchedulesSyncedAtMs()
+                    .takeIf { it > 0L }
+                    ?: store.lastSyncedAtMs()
+                if (eventMetadata.isEmpty()) {
+                    syncEventMetadata(cached.filter { EventLifecycleManager.isSpecialEventChannel(it.id) })
+                }
             }
         }
+    }
+
+    /** Drop in-memory supplement catalog under LMK pressure (Fire Stick). */
+    fun releaseMemory() {
+        if (!fireLite) return
+        cached = emptyList()
+        daddyChannelFallbacks = emptyMap()
+        guideSchedules = emptyMap()
+        eventMetadata = emptyMap()
     }
 
     @Volatile

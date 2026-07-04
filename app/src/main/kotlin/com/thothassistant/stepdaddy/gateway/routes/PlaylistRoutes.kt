@@ -1,5 +1,6 @@
 package com.thothassistant.stepdaddy.gateway.routes
 
+import com.thothassistant.stepdaddy.gateway.FireMemoryGuard
 import com.thothassistant.stepdaddy.gateway.epg.EpgPlaylistUrlResolver
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.upstream.DlhdEventStreamHealthStore
@@ -91,6 +92,8 @@ class PlaylistRoutes(
     }
 
     fun schedulePrewarm() {
+        // Fire Stick: building two full M3Us spikes RAM and trips LMK; build on first request.
+        if (FireMemoryGuard.deferHeavyBootWork(environment.appContext)) return
         val channels = client.channels
         val supplements = supplementSource.channels()
         val channelCount = channels.size

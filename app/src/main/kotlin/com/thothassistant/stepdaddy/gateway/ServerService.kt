@@ -20,6 +20,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
+import java.util.concurrent.atomic.AtomicBoolean
 
 class ServerService : LifecycleService() {
     private lateinit var environment: GatewayEnvironment
@@ -52,8 +53,16 @@ class ServerService : LifecycleService() {
         )
         environment.recordServiceStart()
         GatewayHud.initForService(environment)
-        GatewayStartHelper.cancelBootFallbacks(this)
-        GatewayStartHelper.resetFallbacksScheduled()
+        if (FireTvDevice.isFireTv(this)) {
+            // Fire Stick LMK kills FGS during catalog load. Keep boot alarms armed until
+            // /health reports channels — do not cancel merely because FGS started.
+            fireHeavyWorkScheduled.set(false)
+            GatewayStartHelper.scheduleFireBootFallbacks(this)
+            FireMemoryGuard.install(this) { releaseFireCaches() }
+        } else {
+            GatewayStartHelper.cancelBootFallbacks(this)
+            GatewayStartHelper.resetFallbacksScheduled()
+        }
         ScreenWakeRegistrar.register(this)
         GatewayMessageBus.postBoot("ServerService")
         GatewayDiagnostics.info(TAG, "Foreground service created")
@@ -182,6 +191,7 @@ class ServerService : LifecycleService() {
                         adminController,
                     )
                     gatewayServer = server
+                    val fireTv = FireTvDevice.isFireTv(this@ServerService)
                     app.supplementSource.onRefreshComplete = {
                         val sync = app.supplementSource.syncSnapshot()
                         GatewayDiagnostics.info(
@@ -220,27 +230,44 @@ class ServerService : LifecycleService() {
                                 }
                             },
                         )
-                        server.prewarmPlaylist()
-                        epgManager.scheduleRefresh(client.channels, force = true)
+                        if (!fireTv) {
+                            server.prewarmPlaylist()
+                            epgManager.scheduleRefresh(client.channels, force = true)
+                        } else {
+                            app.playlistCache.invalidate()
+                        }
                     }
                     app.supplementSource.onSpecialEventsChanged = {
-                        server.prewarmPlaylist()
-                        epgManager.scheduleRefresh(client.channels, force = true)
+                        if (!fireTv) {
+                            server.prewarmPlaylist()
+                            epgManager.scheduleRefresh(client.channels, force = true)
+                        } else {
+                            app.playlistCache.invalidate()
+                        }
                     }
                     app.supplementSource.onDlhdEventHealthChanged = {
                         app.playlistCache.invalidate()
-                        server.prewarmPlaylist()
+                        if (!fireTv) {
+                            server.prewarmPlaylist()
+                        }
                     }
                     server.start()
-                    server.prewarmPlaylist()
-                    scheduleImmediateBootEpgFastPass(client)
+                    // Fire Stick: skip playlist prewarm + EPG at listen — peak RAM kills FGS.
+                    if (!fireTv) {
+                        server.prewarmPlaylist()
+                        scheduleImmediateBootEpgFastPass(client)
+                    }
                     environment.serverRunning = true
                     streamHealthWatchdog?.stop()
-                    streamHealthWatchdog = StreamHealthWatchdog(
-                        client = client,
-                        environment = environment,
-                        onPersistentFailure = { restartGatewayAfterFailure() },
-                    ).also { it.start() }
+                    streamHealthWatchdog = null
+                    // Fire Stick: stream probes allocate manifests and trip LMK; defer with heavy work.
+                    if (!fireTv) {
+                        streamHealthWatchdog = StreamHealthWatchdog(
+                            client = client,
+                            environment = environment,
+                            onPersistentFailure = { restartGatewayAfterFailure() },
+                        ).also { it.start() }
+                    }
                     client.reportHealthyStart()
                     val channelCount = client.channels.size
                     mainHandler.post {
@@ -248,31 +275,43 @@ class ServerService : LifecycleService() {
                     }
                     updateRunningNotification()
                     GatewayStartHelper.schedulePeriodicEnsureAlive(this@ServerService)
+                    if (channelCount > 0 && GatewayStartHelper.isGatewayHealthy(this@ServerService)) {
+                        // Catalog ready — safe to drop Fire Stick keep-alive alarms.
+                        GatewayStartHelper.cancelBootFallbacks(this@ServerService)
+                    } else if (fireTv) {
+                        GatewayStartHelper.scheduleFireBootFallbacks(this@ServerService)
+                    }
                     GatewayDiagnostics.info(TAG, "Gateway listening on ${environment.loopbackBase()} ($channelCount channels)")
-                    scheduleDeferredBootEpgBuild(client)
+                    if (!fireTv) {
+                        scheduleDeferredBootEpgBuild(client)
+                    } else {
+                        scheduleFireDeferredHeavyWork(client)
+                    }
                     if (client.channels.isEmpty()) {
                         client.scheduleChannelRefresh(force = true) {
                             updateRunningNotification()
                         }
                     }
-                    epgManager.schedulePeriodicRefresh { daddyLiveClient.channels }
-                    app.supplementSource.schedulePeriodicRefresh { daddyLiveClient.channels }
-                    app.supplementSource.schedulePeriodicSpecialEventsMaintenance {
-                        daddyLiveClient.activeBaseUrl
-                    }
-                    if (SupplementConfig.DLHD_EVENT_HEALTH_PROBES_ENABLED) {
-                        app.eventStreamHealthMonitor.start { channelId ->
-                            try {
-                                withTimeout(GatewayConfig.WATCHDOG_PROBE_TIMEOUT_MS) {
-                                    daddyLiveClient.resolveStream(
-                                        channelId,
-                                        useProxy = true,
-                                        apiUrl = environment.loopbackBase(),
-                                    )
+                    if (!fireTv) {
+                        epgManager.schedulePeriodicRefresh { daddyLiveClient.channels }
+                        app.supplementSource.schedulePeriodicRefresh { daddyLiveClient.channels }
+                        app.supplementSource.schedulePeriodicSpecialEventsMaintenance {
+                            daddyLiveClient.activeBaseUrl
+                        }
+                        if (SupplementConfig.DLHD_EVENT_HEALTH_PROBES_ENABLED) {
+                            app.eventStreamHealthMonitor.start { channelId ->
+                                try {
+                                    withTimeout(GatewayConfig.WATCHDOG_PROBE_TIMEOUT_MS) {
+                                        daddyLiveClient.resolveStream(
+                                            channelId,
+                                            useProxy = true,
+                                            apiUrl = environment.loopbackBase(),
+                                        )
+                                    }
+                                    true
+                                } catch (_: Exception) {
+                                    false
                                 }
-                                true
-                            } catch (_: Exception) {
-                                false
                             }
                         }
                     }
@@ -333,16 +372,71 @@ class ServerService : LifecycleService() {
         }
     }
 
+    /**
+     * Fire Stick: after a long settle window, enable EPG/supplement periodic work.
+     * Immediate post-listen work is what trips LMK (`prcp FGS`).
+     */
+    private fun scheduleFireDeferredHeavyWork(client: DaddyLiveClient) {
+        if (!fireHeavyWorkScheduled.compareAndSet(false, true)) return
+        lifecycleScope.launch(Dispatchers.IO) {
+            delay(FIRE_HEAVY_WORK_DEFER_MS)
+            if (!isServiceActive) return@launch
+            val app = application as GatewayApp
+            Log.i(TAG, "Fire Stick: starting deferred heavy work after settle")
+            if (::epgManager.isInitialized && epgManager.needsBuild() && client.channels.isNotEmpty()) {
+                epgManager.scheduleRefresh(client.channels, force = true, tvtvGapFill = false)
+            }
+            if (::epgManager.isInitialized) {
+                epgManager.schedulePeriodicRefresh { daddyLiveClient.channels }
+            }
+            app.supplementSource.schedulePeriodicRefresh { daddyLiveClient.channels }
+            app.supplementSource.schedulePeriodicSpecialEventsMaintenance {
+                daddyLiveClient.activeBaseUrl
+            }
+            if (streamHealthWatchdog == null && ::daddyLiveClient.isInitialized) {
+                streamHealthWatchdog = StreamHealthWatchdog(
+                    client = daddyLiveClient,
+                    environment = environment,
+                    onPersistentFailure = { restartGatewayAfterFailure() },
+                ).also { it.start() }
+            }
+        }
+    }
+
+    private fun releaseFireCaches() {
+        runCatching {
+            val app = application as GatewayApp
+            app.playlistCache.releaseMemory()
+            app.logoResolver.releaseMemory()
+            app.supplementSource.releaseMemory()
+            if (::daddyLiveClient.isInitialized) {
+                daddyLiveClient.releaseMemoryCaches()
+            }
+        }
+    }
+
     private suspend fun ensureDaddyLiveClient(app: GatewayApp): DaddyLiveClient {
         if (::daddyLiveClient.isInitialized) {
             return daddyLiveClient
         }
+        val httpClient =
+            if (FireTvDevice.isFireTv(this)) {
+                FireMemoryGuard.compactHttpClient(
+                    connectSec = GatewayConfig.UPSTREAM_CONNECT_TIMEOUT_SEC,
+                    readSec = GatewayConfig.UPSTREAM_READ_TIMEOUT_SEC,
+                    writeSec = GatewayConfig.UPSTREAM_WRITE_TIMEOUT_SEC,
+                    callSec = GatewayConfig.UPSTREAM_CALL_TIMEOUT_SEC,
+                )
+            } else {
+                com.thothassistant.stepdaddy.gateway.upstream.ResportzParser.defaultClient()
+            }
         daddyLiveClient = DaddyLiveClient(
             environment,
             app.epgChannelMapper,
             app.tvgIdResolver,
             app.logoResolver,
             app.channelMetaStore,
+            client = httpClient,
             context = this,
         )
         return daddyLiveClient
@@ -354,15 +448,38 @@ class ServerService : LifecycleService() {
      */
     private fun scheduleDeferredBootChannelRefresh(skipReadySurface: Boolean) {
         lifecycleScope.launch(Dispatchers.IO) {
+            val fireTv = FireTvDevice.isFireTv(this@ServerService)
+            val hasChannels =
+                ::daddyLiveClient.isInitialized && daddyLiveClient.channels.isNotEmpty()
             val deferMs =
-                if (::daddyLiveClient.isInitialized && daddyLiveClient.channels.isEmpty()) {
-                    8_000L
+                if (!hasChannels) {
+                    if (fireTv) FIRE_EMPTY_CHANNEL_REFRESH_DEFER_MS else 8_000L
+                } else if (fireTv) {
+                    // Disk catalog is enough for health; defer network refresh past LMK window.
+                    FIRE_BOOT_CHANNEL_REFRESH_DEFER_MS
                 } else {
                     BOOT_CHANNEL_REFRESH_DEFER_MS
                 }
             delay(deferMs)
             if (!isServiceActive || !::daddyLiveClient.isInitialized) return@launch
             val app = application as GatewayApp
+            if (fireTv && hasChannels) {
+                // Steady-state survival: DaddyLive disk catalog only — no supplements in RAM.
+                if (!skipReadySurface) {
+                    mainHandler.post {
+                        GatewayHud.onCatalogReady(
+                            this@ServerService,
+                            daddyLiveClient.channels.size,
+                            environment,
+                            launchTivimate = false,
+                        )
+                    }
+                }
+                if (GatewayStartHelper.isGatewayHealthy(this@ServerService)) {
+                    GatewayStartHelper.cancelBootFallbacks(this@ServerService)
+                }
+                return@launch
+            }
             daddyLiveClient.scheduleChannelRefresh(force = true) {
                 updateRunningNotification()
                 daddyLiveClient.schedulePrewarmDelayed()
@@ -384,9 +501,15 @@ class ServerService : LifecycleService() {
                         )
                     }
                 }
+                if (GatewayStartHelper.isGatewayHealthy(this@ServerService)) {
+                    GatewayStartHelper.cancelBootFallbacks(this@ServerService)
+                }
             }
             runCatching {
                 app.supplementSource.recoverFromDiskIfNeeded(daddyLiveClient.channels)
+                if (fireTv) {
+                    delay(FIRE_SUPPLEMENT_NETWORK_GAP_MS)
+                }
                 app.supplementSource.refresh(
                     daddyLiveClient.channels,
                     force = true,
@@ -395,7 +518,10 @@ class ServerService : LifecycleService() {
             }.onFailure { exc ->
                 Log.w(TAG, "Boot supplement refresh failed", exc)
             }
-            if (epgManager.needsBuild() || epgManager.isServeStale()) {
+            if (GatewayStartHelper.isGatewayHealthy(this@ServerService)) {
+                GatewayStartHelper.cancelBootFallbacks(this@ServerService)
+            }
+            if (!fireTv && (epgManager.needsBuild() || epgManager.isServeStale())) {
                 epgManager.scheduleRefresh(
                     daddyLiveClient.channels,
                     force = epgManager.needsBuild(),
@@ -472,6 +598,9 @@ class ServerService : LifecycleService() {
         streamHealthWatchdog = null
         runCatching {
             (application as? GatewayApp)?.eventStreamHealthMonitor?.stop()
+        }
+        if (FireTvDevice.isFireTv(this)) {
+            FireMemoryGuard.uninstall()
         }
         gatewayServer?.stop()
         gatewayServer = null
@@ -552,6 +681,8 @@ class ServerService : LifecycleService() {
         @Volatile
         var lastKnownChannelCount: Int = 0
 
+        private val fireHeavyWorkScheduled = AtomicBoolean(false)
+
         const val ACTION_STOP = "com.thothassistant.stepdaddy.gateway.action.STOP"
         const val ACTION_ENSURE_GATEWAY = "com.thothassistant.stepdaddy.gateway.action.ENSURE_GATEWAY"
         const val ACTION_ENSURE_READY = "com.thothassistant.stepdaddy.gateway.action.ENSURE_READY"
@@ -564,6 +695,12 @@ class ServerService : LifecycleService() {
         private const val TIVIMATE_WATCH_MS = 60_000L
         private const val BOOT_CHANNEL_LOAD_MAX_WAIT_MS = 4_000L
         private const val BOOT_CHANNEL_REFRESH_DEFER_MS = 45_000L
+        /** Fire Stick: catalog-ready HUD only; no network refresh in the LMK window. */
+        private const val FIRE_BOOT_CHANNEL_REFRESH_DEFER_MS = 30_000L
+        private const val FIRE_EMPTY_CHANNEL_REFRESH_DEFER_MS = 20_000L
+        private const val FIRE_SUPPLEMENT_NETWORK_GAP_MS = 15_000L
+        /** Fire Stick: EPG/supplement periodic work only after continuous survival window. */
+        private const val FIRE_HEAVY_WORK_DEFER_MS = 360_000L
         private const val BOOT_EPG_BUILD_DEFER_MS = 5_000L
     }
 }
