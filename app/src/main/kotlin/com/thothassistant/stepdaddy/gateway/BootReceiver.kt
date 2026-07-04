@@ -32,10 +32,14 @@ class BootReceiver : BroadcastReceiver() {
                 environment.clearBootStaleState()
                 ScreenWakeRegistrar.register(appContext)
 
+                val memoryLite = LowRamTvDevice.needsMemoryLite(appContext)
                 val fireTv = FireTvDevice.isFireTv(appContext)
-                if (fireTv) {
-                    // Arm keep-alive before any delay — Fire Stick LMK can kill FGS mid-boot.
+                if (memoryLite) {
+                    // Arm keep-alive before start — LMK can kill FGS mid-boot on low-RAM sticks.
                     GatewayStartHelper.scheduleFireBootFallbacks(appContext)
+                }
+                if (fireTv) {
+                    // Fire OS only: let Amazon launcher settle and wait for network.
                     Log.i(TAG, "Fire TV boot path: delay ${FIRE_BOOT_DELAY_MS}ms for memory settle")
                     Thread.sleep(FIRE_BOOT_DELAY_MS)
                     waitForNetwork(appContext, FIRE_NETWORK_WAIT_MS)
@@ -47,9 +51,9 @@ class BootReceiver : BroadcastReceiver() {
                     GatewayStartHelper.StartResult.STARTED,
                     GatewayStartHelper.StartResult.ALREADY_RUNNING,
                     -> {
-                        // Non-Fire: startIfNeeded / ServerService manage fallbacks.
-                        // Fire: keep alarms until catalog is healthy (LMK kills FGS).
-                        if (fireTv) {
+                        // Full-RAM devices: startIfNeeded / ServerService manage fallbacks.
+                        // Low-RAM sticks: keep alarms until catalog is healthy (LMK kills FGS).
+                        if (memoryLite) {
                             GatewayStartHelper.scheduleFireBootFallbacks(appContext)
                         }
                     }
@@ -58,7 +62,7 @@ class BootReceiver : BroadcastReceiver() {
                     -> Unit // fallbacks already scheduled inside startIfNeeded
                     else -> GatewayStartHelper.scheduleBootFallbacksAsync(appContext)
                 }
-                val retryDelayMs = if (fireTv) FIRE_BOOT_RETRY_DELAY_MS else BOOT_RETRY_DELAY_MS
+                val retryDelayMs = if (memoryLite) FIRE_BOOT_RETRY_DELAY_MS else BOOT_RETRY_DELAY_MS
                 if (!ServerService.isServiceActive) {
                     Thread.sleep(retryDelayMs)
                     if (!ServerService.isServiceActive) {
@@ -70,7 +74,7 @@ class BootReceiver : BroadcastReceiver() {
                         Log.i(TAG, "BootReceiver retry result: $retry")
                     }
                 }
-                if (fireTv && !GatewayStartHelper.isGatewayHealthy(appContext)) {
+                if (memoryLite && !GatewayStartHelper.isGatewayHealthy(appContext)) {
                     GatewayStartHelper.scheduleFireBootFallbacks(appContext)
                 }
             } finally {
@@ -108,7 +112,7 @@ class BootReceiver : BroadcastReceiver() {
     private fun acquireBootWakeLock(context: Context): PowerManager.WakeLock? =
         runCatching {
             val manager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-            val holdMs = if (FireTvDevice.isFireTv(context)) FIRE_BOOT_WAKE_LOCK_MS else BOOT_WAKE_LOCK_MS
+            val holdMs = if (LowRamTvDevice.needsMemoryLite(context)) FIRE_BOOT_WAKE_LOCK_MS else BOOT_WAKE_LOCK_MS
             manager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG).apply {
                 setReferenceCounted(false)
                 acquire(holdMs)
@@ -127,7 +131,7 @@ class BootReceiver : BroadcastReceiver() {
         private const val TAG = "BootReceiver"
         private const val WAKE_LOCK_TAG = "StepDaddy::BootStart"
         private const val BOOT_WAKE_LOCK_MS = 60_000L
-        /** Fire Stick needs a longer hold while delayed start + catalog load run. */
+        /** Low-RAM sticks need a longer hold while delayed start + catalog load run. */
         private const val FIRE_BOOT_WAKE_LOCK_MS = 180_000L
         private const val BOOT_RETRY_DELAY_MS = 3_000L
         private const val FIRE_BOOT_RETRY_DELAY_MS = 8_000L

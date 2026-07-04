@@ -103,8 +103,8 @@ class GatewayApp : Application() {
         if (gatewayEnvironment.startOnBoot) {
             ScreenWakeRegistrar.register(this)
             bootKickExecutor.execute {
-                if (FireTvDevice.isFireTv(this@GatewayApp)) {
-                    // Fire Stick: BootReceiver owns the delayed start. Only arm keep-alive
+                if (LowRamTvDevice.needsMemoryLite(this@GatewayApp)) {
+                    // Low-RAM sticks: BootReceiver owns the delayed start. Only arm keep-alive
                     // here so Application.onCreate does not race heavy init during boot.
                     GatewayStartHelper.scheduleFireBootFallbacks(this@GatewayApp)
                 } else {
@@ -178,8 +178,8 @@ class GatewayApp : Application() {
         if (!componentsReady.isCompleted) {
             componentsReady.complete(Unit)
         }
-        // Fire Stick: skip post-init EPG invalidate — rebuild spikes RAM and trips LMK.
-        if (!FireTvDevice.isFireTv(this)) {
+        // Low-RAM sticks: skip post-init EPG invalidate — rebuild spikes RAM and trips LMK.
+        if (!LowRamTvDevice.needsMemoryLite(this)) {
             appScope.launch(Dispatchers.IO) {
                 val store = EpgStore(this@GatewayApp)
                 maybeInvalidateEpgForBridgeFix(store)

@@ -1,8 +1,8 @@
 {
-  "versionCode": 30019,
-  "versionName": "3.0.19",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.19/stepdaddy-gateway-3.0.19-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.19/stepdaddy-gateway-3.0.19-debug.apk",
-  "releaseNotes": "Fix Xtream /live/ routing so TiviMate plays video (empty stream id redirect).",
+  "versionCode": 30020,
+  "versionName": "3.0.20",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.20/stepdaddy-gateway-3.0.20-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.20/stepdaddy-gateway-3.0.20-debug.apk",
+  "releaseNotes": "Low-RAM TV stick LMK survival for Onn + Fire Stick. See RELEASE-NOTES-3.0.20.md",
   "mandatory": false
 }

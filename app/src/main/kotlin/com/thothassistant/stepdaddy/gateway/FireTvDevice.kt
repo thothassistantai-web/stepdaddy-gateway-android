@@ -5,8 +5,9 @@ import android.content.pm.PackageManager
 import android.os.Build
 
 /**
- * Amazon Fire TV / Fire Stick detection for additive boot and memory-safe paths.
- * Non-Fire devices must keep the existing default behavior.
+ * Amazon Fire TV / Fire Stick detection for Fire-OS-specific quirks
+ * (boot delay, Amazon network wait, notification channel importance).
+ * Shared low-RAM / LMK survival lives in [LowRamTvDevice] / [FireMemoryGuard].
  */
 object FireTvDevice {
     fun isFireTv(context: Context? = null): Boolean {

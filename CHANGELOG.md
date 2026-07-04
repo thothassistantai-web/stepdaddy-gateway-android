@@ -7,6 +7,12 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.20] - 2026-07-04
+
+### Fixed
+
+- **Onn / low-RAM TV stick LMK survival** — Memory-lite mode (catalog skip, deferred EPG/prewarm, compact HTTP, boot keep-alive) now applies via `LowRamTvDevice` to Fire Stick, Onn/Walmart sticks, and any leanback TV under 1.5 GiB RAM — not only Amazon Fire TV. Fire-OS-only boot delay and network wait remain Fire-gated.
+
 ## [3.0.16] - 2026-06-30
 
 ### Added

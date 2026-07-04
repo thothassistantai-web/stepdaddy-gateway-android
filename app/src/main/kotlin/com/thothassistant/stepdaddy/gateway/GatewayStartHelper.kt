@@ -161,8 +161,8 @@ object GatewayStartHelper {
         val fgsResult = tryStartForegroundService(appContext, source)
         when (fgsResult) {
             StartResult.STARTED -> {
-                // Fire Stick LMK can kill FGS during catalog load — keep alarms until healthy.
-                if (FireTvDevice.isFireTv(appContext)) {
+                // Low-RAM sticks: LMK can kill FGS during catalog load — keep alarms until healthy.
+                if (LowRamTvDevice.needsMemoryLite(appContext)) {
                     scheduleFireBootFallbacks(appContext)
                 }
                 return StartResult.STARTED
@@ -199,11 +199,11 @@ object GatewayStartHelper {
     }
 
     /**
-     * Fire Stick only: arm long-horizon boot alarms that survive LMK kills of the FGS.
+     * Low-RAM TV sticks: arm long-horizon boot alarms that survive LMK kills of the FGS.
      * Safe to call repeatedly — resets and reschedules so a mid-boot cancel cannot strand us.
      */
     fun scheduleFireBootFallbacks(context: Context) {
-        if (!FireTvDevice.isFireTv(context)) {
+        if (!LowRamTvDevice.needsMemoryLite(context)) {
             scheduleBootFallbacksAsync(context)
             return
         }
@@ -348,7 +348,7 @@ object GatewayStartHelper {
     /** Exact elapsed-realtime alarms — survive Doze better than inexact WM on some TV sticks. */
     private fun scheduleAlarms(context: Context) {
         val alarmManager = context.getSystemService(AlarmManager::class.java) ?: return
-        val delays = if (FireTvDevice.isFireTv(context)) FIRE_ALARM_DELAYS_MS else ALARM_DELAYS_MS
+        val delays = if (LowRamTvDevice.needsMemoryLite(context)) FIRE_ALARM_DELAYS_MS else ALARM_DELAYS_MS
         delays.forEachIndexed { index, delayMs ->
             val intent = Intent(context, BootAlarmReceiver::class.java).apply {
                 action = ACTION_BOOT_ALARM
@@ -384,7 +384,7 @@ object GatewayStartHelper {
                 )
             }
         }
-        Log.i(TAG, "Scheduled ${delays.size} alarm boot retries (fire=${FireTvDevice.isFireTv(context)})")
+        Log.i(TAG, "Scheduled ${delays.size} alarm boot retries (memoryLite=${LowRamTvDevice.needsMemoryLite(context)})")
     }
 
     /** Long-horizon keep-alive when start-on-boot is enabled (TiviMate redundancy). */
@@ -426,13 +426,13 @@ object GatewayStartHelper {
 
     fun cancelBootFallbacks(context: Context) {
         val appContext = context.applicationContext
-        if (FireTvDevice.isFireTv(appContext)) {
+        if (LowRamTvDevice.needsMemoryLite(appContext)) {
             val until = fireKeepAliveUntilElapsed.get()
             val now = SystemClock.elapsedRealtime()
             if (until > 0L && now < until) {
                 Log.i(
                     TAG,
-                    "Fire TV: keeping boot alarms for ${(until - now)}ms more (LMK grace)",
+                    "Low-RAM TV: keeping boot alarms for ${(until - now)}ms more (LMK grace)",
                 )
                 return
             }

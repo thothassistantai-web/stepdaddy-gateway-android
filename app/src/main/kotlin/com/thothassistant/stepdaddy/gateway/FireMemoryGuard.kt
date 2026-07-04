@@ -17,8 +17,9 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Fire Stick (~900MB RAM) survival helpers: lower peak footprint, raise process importance,
- * and aggressively release caches under LMK pressure. No-ops on non-Fire devices.
+ * Low-RAM Android TV stick survival helpers (Fire Stick, Onn, etc.): lower peak footprint,
+ * raise process importance, and aggressively release caches under LMK pressure.
+ * No-ops on phones and higher-RAM TVs ([LowRamTvDevice.needsMemoryLite]).
  */
 object FireMemoryGuard : ComponentCallbacks2 {
     private const val TAG = "FireMemoryGuard"
@@ -39,12 +40,12 @@ object FireMemoryGuard : ComponentCallbacks2 {
     private var trimListener: (() -> Unit)? = null
 
     fun install(context: Context, onTrim: (() -> Unit)? = null) {
-        if (!FireTvDevice.isFireTv(context)) return
+        if (!LowRamTvDevice.needsMemoryLite(context)) return
         appContext = context.applicationContext
         trimListener = onTrim
         if (installed.compareAndSet(false, true)) {
             appContext?.registerComponentCallbacks(this)
-            Log.i(TAG, "Installed Fire memory guard")
+            Log.i(TAG, "Installed low-RAM TV memory guard")
         }
         acquireWakeLock()
         attachPriorityOverlay()
@@ -61,7 +62,7 @@ object FireMemoryGuard : ComponentCallbacks2 {
         appContext = null
     }
 
-    /** Smaller OkHttp pools for Fire Stick — fewer idle sockets / threads. */
+    /** Smaller OkHttp pools for low-RAM sticks — fewer idle sockets / threads. */
     fun compactHttpClient(
         connectSec: Long = 10,
         readSec: Long = 20,
@@ -80,23 +81,23 @@ object FireMemoryGuard : ComponentCallbacks2 {
 
     fun connectionPoolMaxIdle(): Int = 2
 
-    /** Skip multi-MB logo / iptv-org CSV indexes on Fire — placeholders + disk mapper only. */
-    fun skipHeavyCatalogIndexes(context: Context): Boolean = FireTvDevice.isFireTv(context)
+    /** Skip multi-MB logo / iptv-org CSV indexes — placeholders + disk mapper only. */
+    fun skipHeavyCatalogIndexes(context: Context): Boolean = LowRamTvDevice.needsMemoryLite(context)
 
     /** Defer playlist prewarm / EPG rebuild / logo enrich until steady-state. */
-    fun deferHeavyBootWork(context: Context): Boolean = FireTvDevice.isFireTv(context)
+    fun deferHeavyBootWork(context: Context): Boolean = LowRamTvDevice.needsMemoryLite(context)
 
     fun releaseCaches() {
         trimListener?.invoke()
         runCatching { Runtime.getRuntime().gc() }
-        Log.i(TAG, "Released Fire caches (trim)")
+        Log.i(TAG, "Released low-RAM TV caches (trim)")
     }
 
     private fun acquireWakeLock() {
         val ctx = appContext ?: return
         if (wakeLock?.isHeld == true) return
         val pm = ctx.getSystemService(PowerManager::class.java) ?: return
-        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "stepdaddy:fire_gateway").apply {
+        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "stepdaddy:stick_gateway").apply {
             setReferenceCounted(false)
             acquire(6 * 60 * 60 * 1000L)
         }
@@ -111,8 +112,8 @@ object FireMemoryGuard : ComponentCallbacks2 {
     }
 
     /**
-     * Persistent 1px overlay keeps the process associated with a visible window on Fire OS,
-     * which tends to raise LMK priority above a bare FGS.
+     * Persistent 1px overlay keeps the process associated with a visible window on low-RAM
+     * TV sticks, which tends to raise LMK priority above a bare FGS.
      */
     private fun attachPriorityOverlay() {
         val ctx = appContext ?: return

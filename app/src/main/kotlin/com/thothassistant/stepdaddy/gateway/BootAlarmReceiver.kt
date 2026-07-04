@@ -19,8 +19,8 @@ class BootAlarmReceiver : BroadcastReceiver() {
                 Log.i(TAG, "Alarm#$alarmIndex result: $result")
                 if (GatewayStartHelper.isGatewayHealthy(context)) {
                     GatewayStartHelper.cancelBootFallbacks(context)
-                } else if (FireTvDevice.isFireTv(context)) {
-                    // Re-arm remaining horizon after LMK / partial start on Fire Stick.
+                } else if (LowRamTvDevice.needsMemoryLite(context)) {
+                    // Re-arm remaining horizon after LMK / partial start on low-RAM sticks.
                     GatewayStartHelper.scheduleFireBootFallbacks(context)
                 }
             } finally {

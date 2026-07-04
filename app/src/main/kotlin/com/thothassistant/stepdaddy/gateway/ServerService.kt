@@ -53,8 +53,8 @@ class ServerService : LifecycleService() {
         )
         environment.recordServiceStart()
         GatewayHud.initForService(environment)
-        if (FireTvDevice.isFireTv(this)) {
-            // Fire Stick LMK kills FGS during catalog load. Keep boot alarms armed until
+        if (LowRamTvDevice.needsMemoryLite(this)) {
+            // Low-RAM sticks: LMK kills FGS during catalog load. Keep boot alarms armed until
             // /health reports channels — do not cancel merely because FGS started.
             fireHeavyWorkScheduled.set(false)
             GatewayStartHelper.scheduleFireBootFallbacks(this)
@@ -191,7 +191,7 @@ class ServerService : LifecycleService() {
                         adminController,
                     )
                     gatewayServer = server
-                    val fireTv = FireTvDevice.isFireTv(this@ServerService)
+                    val memoryLite = LowRamTvDevice.needsMemoryLite(this@ServerService)
                     app.supplementSource.onRefreshComplete = {
                         val sync = app.supplementSource.syncSnapshot()
                         GatewayDiagnostics.info(
@@ -230,7 +230,7 @@ class ServerService : LifecycleService() {
                                 }
                             },
                         )
-                        if (!fireTv) {
+                        if (!memoryLite) {
                             server.prewarmPlaylist()
                             epgManager.scheduleRefresh(client.channels, force = true)
                         } else {
@@ -238,7 +238,7 @@ class ServerService : LifecycleService() {
                         }
                     }
                     app.supplementSource.onSpecialEventsChanged = {
-                        if (!fireTv) {
+                        if (!memoryLite) {
                             server.prewarmPlaylist()
                             epgManager.scheduleRefresh(client.channels, force = true)
                         } else {
@@ -247,13 +247,13 @@ class ServerService : LifecycleService() {
                     }
                     app.supplementSource.onDlhdEventHealthChanged = {
                         app.playlistCache.invalidate()
-                        if (!fireTv) {
+                        if (!memoryLite) {
                             server.prewarmPlaylist()
                         }
                     }
                     server.start()
                     // Fire Stick: skip playlist prewarm + EPG at listen — peak RAM kills FGS.
-                    if (!fireTv) {
+                    if (!memoryLite) {
                         server.prewarmPlaylist()
                         scheduleImmediateBootEpgFastPass(client)
                     }
@@ -261,7 +261,7 @@ class ServerService : LifecycleService() {
                     streamHealthWatchdog?.stop()
                     streamHealthWatchdog = null
                     // Fire Stick: stream probes allocate manifests and trip LMK; defer with heavy work.
-                    if (!fireTv) {
+                    if (!memoryLite) {
                         streamHealthWatchdog = StreamHealthWatchdog(
                             client = client,
                             environment = environment,
@@ -278,11 +278,11 @@ class ServerService : LifecycleService() {
                     if (channelCount > 0 && GatewayStartHelper.isGatewayHealthy(this@ServerService)) {
                         // Catalog ready — safe to drop Fire Stick keep-alive alarms.
                         GatewayStartHelper.cancelBootFallbacks(this@ServerService)
-                    } else if (fireTv) {
+                    } else if (memoryLite) {
                         GatewayStartHelper.scheduleFireBootFallbacks(this@ServerService)
                     }
                     GatewayDiagnostics.info(TAG, "Gateway listening on ${environment.loopbackBase()} ($channelCount channels)")
-                    if (!fireTv) {
+                    if (!memoryLite) {
                         scheduleDeferredBootEpgBuild(client)
                     } else {
                         scheduleFireDeferredHeavyWork(client)
@@ -292,7 +292,7 @@ class ServerService : LifecycleService() {
                             updateRunningNotification()
                         }
                     }
-                    if (!fireTv) {
+                    if (!memoryLite) {
                         epgManager.schedulePeriodicRefresh { daddyLiveClient.channels }
                         app.supplementSource.schedulePeriodicRefresh { daddyLiveClient.channels }
                         app.supplementSource.schedulePeriodicSpecialEventsMaintenance {
@@ -420,7 +420,7 @@ class ServerService : LifecycleService() {
             return daddyLiveClient
         }
         val httpClient =
-            if (FireTvDevice.isFireTv(this)) {
+            if (LowRamTvDevice.needsMemoryLite(this)) {
                 FireMemoryGuard.compactHttpClient(
                     connectSec = GatewayConfig.UPSTREAM_CONNECT_TIMEOUT_SEC,
                     readSec = GatewayConfig.UPSTREAM_READ_TIMEOUT_SEC,
@@ -448,13 +448,13 @@ class ServerService : LifecycleService() {
      */
     private fun scheduleDeferredBootChannelRefresh(skipReadySurface: Boolean) {
         lifecycleScope.launch(Dispatchers.IO) {
-            val fireTv = FireTvDevice.isFireTv(this@ServerService)
+            val memoryLite = LowRamTvDevice.needsMemoryLite(this@ServerService)
             val hasChannels =
                 ::daddyLiveClient.isInitialized && daddyLiveClient.channels.isNotEmpty()
             val deferMs =
                 if (!hasChannels) {
-                    if (fireTv) FIRE_EMPTY_CHANNEL_REFRESH_DEFER_MS else 8_000L
-                } else if (fireTv) {
+                    if (memoryLite) FIRE_EMPTY_CHANNEL_REFRESH_DEFER_MS else 8_000L
+                } else if (memoryLite) {
                     // Disk catalog is enough for health; defer network refresh past LMK window.
                     FIRE_BOOT_CHANNEL_REFRESH_DEFER_MS
                 } else {
@@ -463,7 +463,7 @@ class ServerService : LifecycleService() {
             delay(deferMs)
             if (!isServiceActive || !::daddyLiveClient.isInitialized) return@launch
             val app = application as GatewayApp
-            if (fireTv && hasChannels) {
+            if (memoryLite && hasChannels) {
                 // Steady-state survival: DaddyLive disk catalog only — no supplements in RAM.
                 if (!skipReadySurface) {
                     mainHandler.post {
@@ -507,7 +507,7 @@ class ServerService : LifecycleService() {
             }
             runCatching {
                 app.supplementSource.recoverFromDiskIfNeeded(daddyLiveClient.channels)
-                if (fireTv) {
+                if (memoryLite) {
                     delay(FIRE_SUPPLEMENT_NETWORK_GAP_MS)
                 }
                 app.supplementSource.refresh(
@@ -521,7 +521,7 @@ class ServerService : LifecycleService() {
             if (GatewayStartHelper.isGatewayHealthy(this@ServerService)) {
                 GatewayStartHelper.cancelBootFallbacks(this@ServerService)
             }
-            if (!fireTv && (epgManager.needsBuild() || epgManager.isServeStale())) {
+            if (!memoryLite && (epgManager.needsBuild() || epgManager.isServeStale())) {
                 epgManager.scheduleRefresh(
                     daddyLiveClient.channels,
                     force = epgManager.needsBuild(),
@@ -599,7 +599,7 @@ class ServerService : LifecycleService() {
         runCatching {
             (application as? GatewayApp)?.eventStreamHealthMonitor?.stop()
         }
-        if (FireTvDevice.isFireTv(this)) {
+        if (LowRamTvDevice.needsMemoryLite(this)) {
             FireMemoryGuard.uninstall()
         }
         gatewayServer?.stop()

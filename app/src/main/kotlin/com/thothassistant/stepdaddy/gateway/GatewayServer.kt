@@ -96,7 +96,7 @@ class GatewayServer(
             supplementSource.dlhdEventHealthStore(),
         )
         playlistRoutes = routes
-        val fireLite = FireTvDevice.isFireTv(appContext)
+        val fireLite = LowRamTvDevice.needsMemoryLite(appContext)
         val streamRoutes = StreamRoutes(environment, client)
         val dlhdEventStreamRoutes = DlhdEventStreamRoutes(appContext, environment, supplementSource, client)
         val ntvHttp = if (fireLite) {
