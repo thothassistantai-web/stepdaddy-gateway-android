@@ -371,7 +371,9 @@ class GatewayServer(
                 head("/get.php") {
                     routes.xtreamGetPhp(call)
                 }
-                route("/live/{user}/{pass}/{streamId}.{ext}") {
+                // Use a single path segment ({streamFile}) — Ktor 2.x does not reliably capture
+                // {streamId}.{ext} in one segment (streamId was always empty → /tivimate-stream/.m3u8).
+                route("/live/{user}/{pass}/{streamFile}") {
                     get {
                         val user = call.parameters["user"].orEmpty()
                         val pass = call.parameters["pass"].orEmpty()
@@ -379,7 +381,11 @@ class GatewayServer(
                             call.respondText("Authentication failed", status = HttpStatusCode.Unauthorized)
                             return@get
                         }
-                        val streamId = call.parameters["streamId"].orEmpty()
+                        val streamId = xtreamStreamId(call.parameters["streamFile"].orEmpty())
+                        if (streamId.isEmpty()) {
+                            call.respondText("stream not found", status = HttpStatusCode.NotFound)
+                            return@get
+                        }
                         call.respondRedirect("/tivimate-stream/$streamId.m3u8", permanent = false)
                     }
                     head {
@@ -389,9 +395,14 @@ class GatewayServer(
                             call.respondText("", status = HttpStatusCode.Unauthorized)
                             return@head
                         }
+                        val streamId = xtreamStreamId(call.parameters["streamFile"].orEmpty())
+                        if (streamId.isEmpty()) {
+                            call.respondText("", status = HttpStatusCode.NotFound)
+                            return@head
+                        }
                     }
                 }
-                route("/movie/{user}/{pass}/{streamId}.{ext}") {
+                route("/movie/{user}/{pass}/{streamFile}") {
                     get {
                         val user = call.parameters["user"].orEmpty()
                         val pass = call.parameters["pass"].orEmpty()
@@ -399,11 +410,15 @@ class GatewayServer(
                             call.respondText("Authentication failed", status = HttpStatusCode.Unauthorized)
                             return@get
                         }
-                        val id = call.parameters["streamId"].orEmpty()
+                        val id = xtreamStreamId(call.parameters["streamFile"].orEmpty())
+                        if (id.isEmpty()) {
+                            call.respondText("stream not found", status = HttpStatusCode.NotFound)
+                            return@get
+                        }
                         call.respondRedirect("/vod/movie/$id.m3u8", permanent = false)
                     }
                 }
-                route("/series/{user}/{pass}/{streamId}.{ext}") {
+                route("/series/{user}/{pass}/{streamFile}") {
                     get {
                         val user = call.parameters["user"].orEmpty()
                         val pass = call.parameters["pass"].orEmpty()
@@ -411,12 +426,15 @@ class GatewayServer(
                             call.respondText("Authentication failed", status = HttpStatusCode.Unauthorized)
                             return@get
                         }
-                        val parts = call.parameters["streamId"].orEmpty().split('.')
-                        if (parts.size >= 3) {
+                        val idPart = xtreamStreamId(call.parameters["streamFile"].orEmpty())
+                        val parts = idPart.split('.')
+                        if (parts.size >= 3 && parts[0].isNotEmpty()) {
                             call.respondRedirect(
                                 "/vod/series/${parts[0]}/${parts[1]}/${parts[2]}.m3u8",
                                 permanent = false,
                             )
+                        } else {
+                            call.respondText("stream not found", status = HttpStatusCode.NotFound)
                         }
                     }
                 }
@@ -524,5 +542,17 @@ class GatewayServer(
         engine?.stop(gracePeriodMillis = 500, timeoutMillis = 2_000)
         engine = null
         playlistRoutes = null
+    }
+
+    companion object {
+        /** Strip `.ts` / `.m3u8` / etc. from an Xtream live/VOD path segment. */
+        internal fun xtreamStreamId(streamFile: String): String {
+            val trimmed = streamFile.trim().trimStart('/')
+            if (trimmed.isEmpty()) return ""
+            val dot = trimmed.lastIndexOf('.')
+            // dot == 0 → leading-dot only (".m3u8"); treat as missing id
+            if (dot <= 0) return if (dot == 0) "" else trimmed
+            return trimmed.substring(0, dot)
+        }
     }
 }

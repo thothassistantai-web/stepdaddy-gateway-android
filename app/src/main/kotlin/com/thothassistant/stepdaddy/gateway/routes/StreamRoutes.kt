@@ -57,18 +57,28 @@ class StreamRoutes(
             call.respondText("", ContentType("application", "vnd.apple.mpegurl"))
             return
         }
+        val id = channelId.trim()
+        if (id.isEmpty()) {
+            respondStreamError(
+                call,
+                hlsErrors = hlsErrors,
+                status = HttpStatusCode.NotFound,
+                message = "channel not found",
+            )
+            return
+        }
         try {
             val playlist = withContext(Dispatchers.IO) {
                 withTimeout(client.streamFetchTimeoutMs()) {
                     client.resolveStream(
-                        channelId,
+                        id,
                         useProxy = useProxy,
                         apiUrl = environment.loopbackBase(),
                     )
                 }
             }
             val servedStale = client.wasLastServeFromStaleCache()
-            client.noteStreamSuccess(channelId)
+            client.noteStreamSuccess(id)
             if (attachment) {
                 call.response.header(
                     HttpHeaders.ContentDisposition,
@@ -86,7 +96,7 @@ class StreamRoutes(
                 contentType = ContentType("application", "vnd.apple.mpegurl"),
             )
         } catch (_: TimeoutCancellationException) {
-            client.noteStreamFailure(channelId, IllegalStateException("upstream_timeout"))
+            client.noteStreamFailure(id, IllegalStateException("upstream_timeout"))
             respondStreamError(
                 call,
                 hlsErrors = hlsErrors,
@@ -97,7 +107,7 @@ class StreamRoutes(
         } catch (exc: CancellationException) {
             throw exc
         } catch (_: IndexOutOfBoundsException) {
-            client.noteStreamFailure(channelId, IllegalStateException("stream_not_found"))
+            client.noteStreamFailure(id, IllegalStateException("stream_not_found"))
             respondStreamError(
                 call,
                 hlsErrors = hlsErrors,
@@ -105,7 +115,7 @@ class StreamRoutes(
                 message = "channel not found",
             )
         } catch (exc: Exception) {
-            client.noteStreamFailure(channelId, exc)
+            client.noteStreamFailure(id, exc)
             val transient = isTransientStreamError(exc)
             val status = when {
                 exc.message == "upstream_busy" -> HttpStatusCode.ServiceUnavailable

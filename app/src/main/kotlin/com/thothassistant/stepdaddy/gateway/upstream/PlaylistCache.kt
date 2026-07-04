@@ -62,22 +62,8 @@ class PlaylistCache {
 
     suspend fun getOrBuild(key: Long, builder: () -> String): String {
         snapshot?.takeIf { it.key == key }?.let { return it.body }
-
-        val staleBody = mutex.withLock {
-            snapshot?.takeIf { it.key == key }?.let { return it.body }
-            val stale = snapshot
-            if (stale != null && stale.key != key && buildFlight?.key != key) {
-                scheduleBuildLocked(key, builder)
-                Log.i(
-                    TAG,
-                    "Serving stale playlist (${stale.body.length} bytes) while rebuilding key ${stale.key} -> $key",
-                )
-                return@withLock stale.body
-            }
-            null
-        }
-        if (staleBody != null) return staleBody
-
+        // Never serve a different cache key as "stale" — keys encode playlist flavor
+        // (TiviMate pipe URLs vs plain /stream/), so a cross-key body breaks playback.
         return awaitBuild(key, builder)
     }
 

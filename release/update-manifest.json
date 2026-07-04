@@ -1,8 +1,8 @@
 {
-  "versionCode": 30018,
-  "versionName": "3.0.18",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.18/stepdaddy-gateway-3.0.18-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.18/stepdaddy-gateway-3.0.18-debug.apk",
-  "releaseNotes": "Fire Stick boot reliability and LMK survival fixes.",
+  "versionCode": 30019,
+  "versionName": "3.0.19",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.19/stepdaddy-gateway-3.0.19-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.19/stepdaddy-gateway-3.0.19-debug.apk",
+  "releaseNotes": "Fix Xtream /live/ routing so TiviMate plays video (empty stream id redirect).",
   "mandatory": false
 }
