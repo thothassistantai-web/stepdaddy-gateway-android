@@ -65,7 +65,12 @@ class TmdbVodCatalog(
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun fetchCatalog(): List<Movie> {
+    data class CatalogResult(
+        val movies: List<Movie>,
+        val dedupRemoved: Int = 0,
+    )
+
+    fun fetchCatalog(): CatalogResult {
         val merged = linkedMapOf<Int, Movie>()
 
         vsembedList.fetchLatestMovies().forEach { row ->
@@ -136,11 +141,26 @@ class TmdbVodCatalog(
             }
         }
 
-        return merged.values
-            .sortedWith(
-                compareByDescending<TmdbVodCatalog.Movie> { VodSort.movieSortKey(it.releaseDate, it.title) },
+        val beforeDedup = merged.values.toList()
+        val deduped = VodMovieDedup.dedupe(beforeDedup)
+        if (deduped.removedCount > 0) {
+            Log.i(
+                TAG,
+                "VOD movie dedup: removed ${deduped.removedCount} duplicate movies " +
+                    "(${deduped.inputCount} -> ${deduped.outputCount})",
             )
-            .take(TmdbVodConfig.MAX_CATALOG_SIZE)
+        }
+
+        return CatalogResult(
+            movies = deduped.movies
+                .sortedWith(
+                    compareByDescending<TmdbVodCatalog.Movie> {
+                        VodSort.movieSortKey(it.releaseDate, it.title)
+                    },
+                )
+                .take(TmdbVodConfig.MAX_CATALOG_SIZE),
+            dedupRemoved = deduped.removedCount,
+        )
     }
 
     private fun enrichWithCinemetaMeta(merged: LinkedHashMap<Int, Movie>) {

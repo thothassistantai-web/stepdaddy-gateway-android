@@ -1,8 +1,8 @@
 {
-  "versionCode": 30021,
-  "versionName": "3.0.21",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.21/stepdaddy-gateway-3.0.21-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.21/stepdaddy-gateway-3.0.21-debug.apk",
-  "releaseNotes": "TiviMate VOD 403 fix, year sort, Nextbox catalog. See RELEASE-NOTES-3.0.21.md",
+  "versionCode": 30022,
+  "versionName": "3.0.22",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.22/stepdaddy-gateway-3.0.22-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.22/stepdaddy-gateway-3.0.22-debug.apk",
+  "releaseNotes": "VOD movie automatic dedup. See RELEASE-NOTES-3.0.22.md",
   "mandatory": false
 }

@@ -7,6 +7,12 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.22] - 2026-07-04
+
+### Added
+
+- **VOD movie dedup** — Automatic duplicate management for movies only at catalog build time. Collapses rows that share TMDB id, IMDB id, or normalized title+year; keeps the richest/playable entry and merges shelf tags. Logs removed duplicate count.
+
 ## [3.0.21] - 2026-07-04
 
 ### Fixed
