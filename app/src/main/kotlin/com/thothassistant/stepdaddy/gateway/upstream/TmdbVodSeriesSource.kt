@@ -32,28 +32,78 @@ class TmdbVodSeriesSource(
                 Log.w(TAG, "series VOD catalog empty")
                 return@withContext emptyList<SupplementChannel>() to FetchStats()
             }
-            val channels = episodes.map { episode -> toSupplementChannel(episode) }
+            val channels = episodes.flatMap { episode -> expandEpisodeChannels(episode) }
             channels to FetchStats(fetched = episodes.size, published = channels.size)
         }
 
-    fun toSupplementChannel(episode: TmdbVodSeriesCatalog.Episode): SupplementChannel {
-        val imdbId = episode.showImdbId?.trim()?.takeIf { it.isNotEmpty() }
-        val tvgId = imdbId ?: "tmdb.${episode.showTmdbId}"
-        return SupplementChannel(
-            id = TmdbVodConfig.seriesSupplementId(episode.showTmdbId, episode.season, episode.episode),
-            name = TmdbVodConfig.episodeDisplayTitle(episode.showTitle, episode.season, episode.episode),
-            tvgId = tvgId,
-            logo = TmdbVodConfig.normalizePosterUrl(episode.posterUrl),
-            groupTitle = when {
-                !episode.genre.isNullOrBlank() &&
-                    NextboxConfig.TV_SECTIONS.any { episode.genre.equals(it, ignoreCase = true) } ->
-                    VodCategoryResolver.nextboxSeriesGroupTitle(episode.genre)
-                else -> VodCategoryResolver.seriesGroupTitle(
+    internal fun expandEpisodeChannels(episode: TmdbVodSeriesCatalog.Episode): List<SupplementChannel> {
+        val shelves = resolveEpisodeShelves(episode)
+        if (shelves.size <= 1) {
+            val groupTitle = if (shelves.isEmpty()) {
+                VodShelfPriority.resolveSeriesGroupTitle(
+                    shelfCategories = emptyList(),
                     genre = episode.genre,
                     showTitle = episode.showTitle,
                     showShelf = episode.showShelf,
                 )
-            },
+            } else {
+                VodShelfPriority.shelfGroupTitle(shelves.first(), isSeries = true)
+            }
+            return listOf(
+                toSupplementChannel(
+                    episode = episode,
+                    groupTitle = groupTitle,
+                    id = TmdbVodConfig.seriesSupplementId(episode.showTmdbId, episode.season, episode.episode),
+                ),
+            )
+        }
+        val baseId = TmdbVodConfig.seriesSupplementId(episode.showTmdbId, episode.season, episode.episode)
+        return shelves.map { shelf ->
+            toSupplementChannel(
+                episode = episode,
+                groupTitle = VodShelfPriority.shelfGroupTitle(shelf, isSeries = true),
+                id = TmdbVodConfig.shelfSeriesSupplementId(baseId, shelf),
+            )
+        }
+    }
+
+    internal fun resolveEpisodeShelves(episode: TmdbVodSeriesCatalog.Episode): List<String> {
+        val shelves = episode.shelfCategories.distinct()
+        if (shelves.isNotEmpty()) {
+            return VodShelfPriority.sortSeriesCategories(shelves)
+        }
+        if (!episode.genre.isNullOrBlank() &&
+            NextboxConfig.TV_SECTIONS.any { episode.genre.equals(it, ignoreCase = true) }
+        ) {
+            return listOf(episode.genre)
+        }
+        if (episode.showShelf) {
+            return listOf(episode.showTitle)
+        }
+        if (!episode.genre.isNullOrBlank()) {
+            return listOf(episode.genre)
+        }
+        return emptyList()
+    }
+
+    fun toSupplementChannel(
+        episode: TmdbVodSeriesCatalog.Episode,
+        groupTitle: String = VodShelfPriority.resolveSeriesGroupTitle(
+            episode.shelfCategories,
+            episode.genre,
+            episode.showTitle,
+            episode.showShelf,
+        ),
+        id: String = TmdbVodConfig.seriesSupplementId(episode.showTmdbId, episode.season, episode.episode),
+    ): SupplementChannel {
+        val imdbId = episode.showImdbId?.trim()?.takeIf { it.isNotEmpty() }
+        val tvgId = imdbId ?: "tmdb.${episode.showTmdbId}"
+        return SupplementChannel(
+            id = id,
+            name = TmdbVodConfig.episodeDisplayTitle(episode.showTitle, episode.season, episode.episode),
+            tvgId = tvgId,
+            logo = TmdbVodConfig.normalizePosterUrl(episode.posterUrl),
+            groupTitle = groupTitle,
             streamUrl = "",
             tags = listOf("#series", "#vod", "#shows"),
             providerTag = TmdbVodConfig.PROVIDER_TAG,

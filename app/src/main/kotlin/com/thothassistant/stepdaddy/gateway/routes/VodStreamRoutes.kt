@@ -64,7 +64,9 @@ class VodStreamRoutes(
         val supplementId = TmdbVodConfig.seriesSupplementId(tmdbId.toInt(), seasonNum, episodeNum)
         val catalogRow = supplementSource.vodEpisodeOrCached(tmdbId, seasonNum, episodeNum)
         if (catalogRow == null &&
-            supplementSource.channels().none { it.id == supplementId }
+            supplementSource.channels().none {
+                TmdbVodConfig.canonicalSeriesSupplementId(it.id) == supplementId
+            }
         ) {
             respondError(call, HttpStatusCode.NotFound, "episode_not_in_catalog")
             return
@@ -111,7 +113,9 @@ class VodStreamRoutes(
         val supplementId = TmdbVodConfig.supplementId(normalizedId.toInt())
         val catalogRow = supplementSource.vodMovieOrCached(normalizedId)
         if (catalogRow == null &&
-            supplementSource.channels().none { it.id == supplementId }
+            supplementSource.channels().none {
+                TmdbVodConfig.tmdbIdFromSupplementId(it.id) == normalizedId
+            }
         ) {
             respondError(call, HttpStatusCode.NotFound, "movie_not_in_catalog")
             return

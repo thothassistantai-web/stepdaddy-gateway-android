@@ -5,6 +5,7 @@ import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
 import com.thothassistant.stepdaddy.gateway.upstream.SupplementSource
 import com.thothassistant.stepdaddy.gateway.upstream.TmdbVodConfig
 import com.thothassistant.stepdaddy.gateway.upstream.VodCategoryResolver
+import com.thothassistant.stepdaddy.gateway.upstream.VodShelfPriority
 import com.thothassistant.stepdaddy.gateway.upstream.VodSort
 import com.thothassistant.stepdaddy.gateway.xtream.XtreamLiveCatalog
 import io.ktor.http.ContentType
@@ -156,7 +157,7 @@ class XtreamApiRoutes(
         movieChannels()
             .map { it.groupTitle }
             .distinct()
-            .sorted()
+            .sortedBy { groupTitleShelfRank(it, isSeries = false) }
             .map { title ->
                 XtreamCategory(
                     category_id = VodCategoryResolver.categoryId(title),
@@ -168,7 +169,7 @@ class XtreamApiRoutes(
         seriesChannels()
             .map { it.groupTitle }
             .distinct()
-            .sorted()
+            .sortedBy { groupTitleShelfRank(it, isSeries = true) }
             .map { title ->
                 XtreamCategory(
                     category_id = VodCategoryResolver.categoryId(title),
@@ -196,8 +197,9 @@ class XtreamApiRoutes(
 
     private fun vodInfo(vodId: String?): String {
         val id = vodId?.trim()?.toIntOrNull() ?: return """{"info":{}}"""
-        val ch = movieChannels().firstOrNull { it.id == TmdbVodConfig.supplementId(id) }
-            ?: return """{"info":{}}"""
+        val ch = movieChannels().firstOrNull {
+            TmdbVodConfig.tmdbIdFromSupplementId(it.id)?.toIntOrNull() == id
+        } ?: return """{"info":{}}"""
         val plot = ch.plot?.replace("\"", "\\\"").orEmpty()
         val name = ch.name.replace("\"", "\\\"")
         val logo = ch.logo.orEmpty()
@@ -287,4 +289,13 @@ class XtreamApiRoutes(
 
     private fun seriesChannels() =
         supplementSource.channels().filter { it.id.startsWith(TmdbVodConfig.SERIES_ID_PREFIX) }
+
+    private fun groupTitleShelfRank(groupTitle: String, isSeries: Boolean): Int {
+        val stripped = groupTitle.removePrefix("🎬 ").removePrefix("📺 ").trim()
+        return if (isSeries) {
+            VodShelfPriority.seriesShelfRank(stripped)
+        } else {
+            VodShelfPriority.movieShelfRank(stripped)
+        }
+    }
 }

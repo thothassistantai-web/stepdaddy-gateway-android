@@ -13,6 +13,7 @@ class VodMovieDedupTest {
         overview: String = "",
         posterUrl: String? = null,
         streamQuality: String? = null,
+        shelfCategories: List<String> = emptyList(),
         genre: String? = null,
     ) = TmdbVodCatalog.Movie(
         tmdbId = tmdbId,
@@ -22,6 +23,7 @@ class VodMovieDedupTest {
         overview = overview,
         posterUrl = posterUrl,
         streamQuality = streamQuality,
+        shelfCategories = shelfCategories,
         genre = genre,
     )
 
@@ -73,17 +75,16 @@ class VodMovieDedupTest {
     }
 
     @Test
-    fun dedupe_mergesGenresFromDuplicates() {
+    fun dedupe_mergesShelfCategoriesFromDuplicates() {
         val input = listOf(
-            movie(1, "Alien", "1979", genre = "Horror Movies"),
-            movie(2, "Alien", "1979", genre = "Popular Movies", imdbId = "tt0078748"),
+            movie(1, "Alien", "1979", shelfCategories = listOf("Horror Movies")),
+            movie(2, "Alien", "1979", shelfCategories = listOf("Popular Movies"), imdbId = "tt0078748"),
         )
         val result = VodMovieDedup.dedupe(input)
         assertEquals(1, result.outputCount)
-        assertTrue(result.movies.first().genre!!.contains("Horror Movies"))
-        assertTrue(result.movies.first().genre!!.contains("Popular Movies"))
+        assertTrue(result.movies.first().shelfCategories.contains("Horror Movies"))
+        assertTrue(result.movies.first().shelfCategories.contains("Popular Movies"))
     }
-
     @Test
     fun dedupe_prefersRicherMetadata() {
         val sparse = movie(1, "Blade Runner", "1982")

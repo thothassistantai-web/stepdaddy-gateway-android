@@ -23,6 +23,20 @@ class NextboxCatalogParseTest {
     }
 
     @Test
+    fun parseMovieSections_sameTitleInMultipleSections() {
+        val html = """
+            <h2><span>Popular Movies</span></h2>
+            <a href="/movie/550/1"><h3>Fight Club</h3><span>8.4</span><span>1999</span></a>
+            <h2><span>Horror Movies</span></h2>
+            <a href="/movie/550/1"><h3>Fight Club</h3><span>8.4</span><span>1999</span></a>
+        """.trimIndent()
+        val rows = catalog.parseMovieSections(html, NextboxConfig.MOVIE_SECTIONS)
+        assertEquals(2, rows.count { it.tmdbId == 550 })
+        assertTrue(rows.any { it.tmdbId == 550 && it.category == "Popular Movies" })
+        assertTrue(rows.any { it.tmdbId == 550 && it.category == "Horror Movies" })
+    }
+
+    @Test
     fun parseShowSections_extractsShowRows() {
         val html = """
             <h2><span>Trending TV Series</span></h2>

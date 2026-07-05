@@ -1,11 +1,13 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
+import android.content.Context
 import android.util.Log
 import kotlinx.serialization.Serializable
 import okhttp3.OkHttpClient
 
 /** Latest TV episodes from vsembed list JSON + Cinemeta show metadata (Xtream-style titles/posters). */
 class TmdbVodSeriesCatalog(
+    private val context: Context,
     private val httpClient: OkHttpClient,
     private val vsembedList: VsembedListCatalog = VsembedListCatalog(httpClient),
     private val cinemetaMeta: CinemetaMetaClient = CinemetaMetaClient(httpClient),
@@ -22,50 +24,54 @@ class TmdbVodSeriesCatalog(
         val posterUrl: String? = null,
         val streamQuality: String? = null,
         val showYear: String? = null,
+        /** Nextbox / vsembed shelf labels — separate from Cinemeta genre metadata. */
+        val shelfCategories: List<String> = emptyList(),
+        /** Cinemeta metadata genre only. */
         val genre: String? = null,
         val cast: String? = null,
         val showShelf: Boolean = false,
     )
 
     fun fetchCatalog(): List<Episode> {
-        val rows = vsembedList.fetchLatestEpisodes()
+        val vsembedPages = VodCatalogLimits.vsembedSeriesPages(context)
+        val rows = vsembedList.fetchLatestEpisodes(pages = vsembedPages)
         if (rows.isEmpty()) {
             Log.w(TAG, "vsembed episodes list empty")
             return emptyList()
         }
-        val nextboxCategories = runCatching { nextboxCatalog.fetchShows() }
+        val nextboxShows = runCatching { nextboxCatalog.fetchShows() }
             .getOrElse { exc ->
                 Log.w(TAG, "nextbox show scrape failed", exc)
                 emptyList()
             }
-            .associate { it.showTmdbId to it.category }
-        val showShelfIds = vsembedList.fetchLatestTvShows()
+        val nextboxCategories = nextboxShows.associate { it.showTmdbId to it.categories }
+        val showShelfIds = vsembedList.fetchLatestTvShows(pages = vsembedPages)
             .map { it.showTmdbId }
             .toSet()
             .plus(nextboxCategories.keys)
         val showMetaCache = mutableMapOf<String, CinemetaMetaClient.EnrichedMeta>()
-        return rows.map { row ->
+        val episodes = rows.map { row ->
+            val nextboxCats = nextboxCategories[row.showTmdbId].orEmpty()
+            val shelves = buildList {
+                add("Latest Shows")
+                addAll(nextboxCats)
+            }.distinct()
             toEpisode(
                 row,
                 showMetaCache,
                 showShelf = showShelfIds.contains(row.showTmdbId),
-                nextboxCategory = nextboxCategories[row.showTmdbId],
+                shelfCategories = shelves,
             )
         }
-            .sortedWith(
-                compareByDescending<TmdbVodSeriesCatalog.Episode> {
-                    VodSort.movieSortKey(it.showYear, it.showTitle)
-                }.thenByDescending { it.season }
-                    .thenByDescending { it.episode },
-            )
-            .take(TmdbVodConfig.MAX_SERIES_CATALOG_SIZE)
+        val cap = VodCatalogLimits.seriesCap(context)
+        return VodShelfPriority.capEpisodes(episodes, cap)
     }
 
     private fun toEpisode(
         row: VsembedListCatalog.EpisodeRow,
         showMetaCache: MutableMap<String, CinemetaMetaClient.EnrichedMeta>,
         showShelf: Boolean,
-        nextboxCategory: String? = null,
+        shelfCategories: List<String> = emptyList(),
     ): Episode {
         val parsed = TmdbVodConfig.parseListTitle(row.showTitle)
         val imdbId = row.showImdbId
@@ -97,7 +103,8 @@ class TmdbVodSeriesCatalog(
             posterUrl = posterUrl,
             streamQuality = row.quality,
             showYear = meta?.releaseDate ?: parsed.year,
-            genre = nextboxCategory ?: meta?.genre,
+            shelfCategories = shelfCategories,
+            genre = meta?.genre,
             cast = meta?.cast,
             showShelf = showShelf,
         )

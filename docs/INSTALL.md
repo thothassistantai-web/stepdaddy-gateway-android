@@ -29,6 +29,13 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 - **Path:** `app/build/outputs/apk/debug/app-debug.apk`
 - **Package:** `com.thothassistant.stepdaddy.gateway.debug`
 
+Debug and release share port 3000. Installing debug alongside release is supported for testing, but only one should run at a time — the app stops the sibling gateway service on startup. For a clean device, uninstall release before installing debug:
+
+```bash
+adb uninstall com.thothassistant.stepdaddy.gateway
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
 ### Release build (production)
 
 ```bash

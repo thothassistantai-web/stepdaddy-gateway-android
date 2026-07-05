@@ -536,7 +536,16 @@ class GatewayServer(
             )
         } catch (exc: Exception) {
             engine = null
-            android.util.Log.e("GatewayServer", "Failed to bind port ${environment.port}", exc)
+            val hint = if (GatewayPackageGuard.isPortBindFailure(exc)) {
+                GatewayPackageGuard.portConflictHint(appContext, environment.port)
+            } else {
+                ""
+            }
+            android.util.Log.e(
+                "GatewayServer",
+                "Failed to bind port ${environment.port}. $hint",
+                exc,
+            )
             throw exc
         }
     }

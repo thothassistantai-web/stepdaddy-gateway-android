@@ -21,6 +21,7 @@ import androidx.lifecycle.lifecycleScope
 import com.thothassistant.stepdaddy.gateway.BuildConfig
 import com.thothassistant.stepdaddy.gateway.GatewayApp
 import com.thothassistant.stepdaddy.gateway.GatewayHud
+import com.thothassistant.stepdaddy.gateway.GatewayPackageGuard
 import com.thothassistant.stepdaddy.gateway.GatewayStartHelper
 import com.thothassistant.stepdaddy.gateway.PermissionHelper
 import com.thothassistant.stepdaddy.gateway.R
@@ -101,6 +102,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         views = MainDashboardViews(binding.root)
         environment = (application as GatewayApp).gatewayEnvironment
+        GatewayPackageGuard.resolveSiblingConflict(this)
         statusMonitor = GatewayStatusMonitor { healthUrl() }
         catalogRepository = InstallAppsCatalogRepository(this)
         installManager = ApkInstallManager(this)

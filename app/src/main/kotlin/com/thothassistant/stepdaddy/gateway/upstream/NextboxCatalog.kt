@@ -15,62 +15,120 @@ class NextboxCatalog(
         val tmdbId: Int,
         val title: String,
         val year: String?,
+        val categories: List<String>,
+    ) {
+        val category: String get() = categories.firstOrNull().orEmpty()
+    }
+
+    data class ShowRow(
+        val showTmdbId: Int,
+        val title: String,
+        val year: String?,
+        val categories: List<String>,
+    ) {
+        val category: String get() = categories.firstOrNull().orEmpty()
+    }
+
+    fun fetchMovies(): List<MovieRow> {
+        val categoriesById = linkedMapOf<Int, LinkedHashSet<String>>()
+        val titleById = linkedMapOf<Int, String>()
+        val yearById = linkedMapOf<Int, String?>()
+        for (path in NextboxConfig.MOVIE_PAGES) {
+            val html = fetchPage(path) ?: continue
+            parseMovieSections(html, NextboxConfig.MOVIE_SECTIONS).forEach { row ->
+                categoriesById.getOrPut(row.tmdbId) { linkedSetOf() }.add(row.category)
+                if (row.title.isNotBlank()) {
+                    titleById[row.tmdbId] = row.title
+                }
+                if (row.year != null) {
+                    yearById[row.tmdbId] = row.year
+                }
+            }
+        }
+        return categoriesById.map { (tmdbId, categories) ->
+            MovieRow(
+                tmdbId = tmdbId,
+                title = titleById[tmdbId].orEmpty(),
+                year = yearById[tmdbId],
+                categories = categories.toList(),
+            )
+        }
+    }
+
+    fun fetchShows(): List<ShowRow> {
+        val categoriesById = linkedMapOf<Int, LinkedHashSet<String>>()
+        val titleById = linkedMapOf<Int, String>()
+        val yearById = linkedMapOf<Int, String?>()
+        for (path in NextboxConfig.TV_PAGES) {
+            val html = fetchPage(path) ?: continue
+            parseShowSections(html, NextboxConfig.TV_SECTIONS).forEach { row ->
+                categoriesById.getOrPut(row.showTmdbId) { linkedSetOf() }.add(row.category)
+                if (row.title.isNotBlank()) {
+                    titleById[row.showTmdbId] = row.title
+                }
+                if (row.year != null) {
+                    yearById[row.showTmdbId] = row.year
+                }
+            }
+        }
+        return categoriesById.map { (showTmdbId, categories) ->
+            ShowRow(
+                showTmdbId = showTmdbId,
+                title = titleById[showTmdbId].orEmpty(),
+                year = yearById[showTmdbId],
+                categories = categories.toList(),
+            )
+        }
+    }
+
+    internal data class ParsedMovieRow(
+        val tmdbId: Int,
+        val title: String,
+        val year: String?,
         val category: String,
     )
 
-    data class ShowRow(
+    internal data class ParsedShowRow(
         val showTmdbId: Int,
         val title: String,
         val year: String?,
         val category: String,
     )
 
-    fun fetchMovies(): List<MovieRow> {
-        val merged = linkedMapOf<Int, MovieRow>()
-        for (path in NextboxConfig.MOVIE_PAGES) {
-            val html = fetchPage(path) ?: continue
-            parseMovieSections(html, NextboxConfig.MOVIE_SECTIONS).forEach { row ->
-                merged.putIfAbsent(row.tmdbId, row)
-            }
-        }
-        return merged.values.toList()
-    }
-
-    fun fetchShows(): List<ShowRow> {
-        val merged = linkedMapOf<Int, ShowRow>()
-        for (path in NextboxConfig.TV_PAGES) {
-            val html = fetchPage(path) ?: continue
-            parseShowSections(html, NextboxConfig.TV_SECTIONS).forEach { row ->
-                merged.putIfAbsent(row.showTmdbId, row)
-            }
-        }
-        return merged.values.toList()
-    }
-
-    internal fun parseMovieSections(html: String, sectionTitles: List<String>): List<MovieRow> {
-        val rows = mutableListOf<MovieRow>()
-        for (title in sectionTitles) {
+    internal fun parseMovieSections(html: String, sectionTitles: List<String>): List<ParsedMovieRow> {
+        val rows = mutableListOf<ParsedMovieRow>()
+        for ((index, title) in sectionTitles.withIndex()) {
             val idx = html.indexOf(title)
             if (idx < 0) continue
-            val chunk = html.substring(idx, minOf(html.length, idx + 40_000))
+            val chunkEnd = sectionTitles.drop(index + 1)
+                .map { next -> html.indexOf(next, idx + title.length) }
+                .filter { it >= 0 }
+                .minOrNull()
+                ?: minOf(html.length, idx + 40_000)
+            val chunk = html.substring(idx, chunkEnd)
             rows += parseMovieCards(chunk, title)
         }
         return rows
     }
 
-    internal fun parseShowSections(html: String, sectionTitles: List<String>): List<ShowRow> {
-        val rows = mutableListOf<ShowRow>()
-        for (title in sectionTitles) {
+    internal fun parseShowSections(html: String, sectionTitles: List<String>): List<ParsedShowRow> {
+        val rows = mutableListOf<ParsedShowRow>()
+        for ((index, title) in sectionTitles.withIndex()) {
             val idx = html.indexOf(title)
             if (idx < 0) continue
-            val chunk = html.substring(idx, minOf(html.length, idx + 40_000))
+            val chunkEnd = sectionTitles.drop(index + 1)
+                .map { next -> html.indexOf(next, idx + title.length) }
+                .filter { it >= 0 }
+                .minOrNull()
+                ?: minOf(html.length, idx + 40_000)
+            val chunk = html.substring(idx, chunkEnd)
             rows += parseShowCards(chunk, title)
         }
         return rows
     }
 
-    private fun parseMovieCards(chunk: String, category: String): List<MovieRow> {
-        val rows = mutableListOf<MovieRow>()
+    private fun parseMovieCards(chunk: String, category: String): List<ParsedMovieRow> {
+        val rows = mutableListOf<ParsedMovieRow>()
         val cardPattern = Regex(
             """href="/movie/(\d+)/[^"]*"[^>]*>[\s\S]*?<h3[^>]*>([^<]+)</h3>[\s\S]*?<span>(\d{4})</span>""",
             RegexOption.IGNORE_CASE,
@@ -79,7 +137,7 @@ class NextboxCatalog(
             val tmdbId = match.groupValues[1].toIntOrNull() ?: return@forEach
             if (tmdbId <= 0) return@forEach
             val title = match.groupValues[2].trim().ifBlank { return@forEach }
-            rows += MovieRow(
+            rows += ParsedMovieRow(
                 tmdbId = tmdbId,
                 title = title,
                 year = match.groupValues[3],
@@ -90,7 +148,7 @@ class NextboxCatalog(
             LINK_MOVIE.findAll(chunk).forEach { match ->
                 val tmdbId = match.groupValues[1].toIntOrNull() ?: return@forEach
                 if (tmdbId <= 0) return@forEach
-                rows += MovieRow(
+                rows += ParsedMovieRow(
                     tmdbId = tmdbId,
                     title = "",
                     year = null,
@@ -101,8 +159,8 @@ class NextboxCatalog(
         return rows
     }
 
-    private fun parseShowCards(chunk: String, category: String): List<ShowRow> {
-        val rows = mutableListOf<ShowRow>()
+    private fun parseShowCards(chunk: String, category: String): List<ParsedShowRow> {
+        val rows = mutableListOf<ParsedShowRow>()
         val cardPattern = Regex(
             """href="/tv/(\d+)/[^"]*"[^>]*>[\s\S]*?<h3[^>]*>([^<]+)</h3>[\s\S]*?<span>(\d{4})</span>""",
             RegexOption.IGNORE_CASE,
@@ -111,7 +169,7 @@ class NextboxCatalog(
             val showTmdbId = match.groupValues[1].toIntOrNull() ?: return@forEach
             if (showTmdbId <= 0) return@forEach
             val title = match.groupValues[2].trim().ifBlank { return@forEach }
-            rows += ShowRow(
+            rows += ParsedShowRow(
                 showTmdbId = showTmdbId,
                 title = title,
                 year = match.groupValues[3],
@@ -122,7 +180,7 @@ class NextboxCatalog(
             LINK_TV.findAll(chunk).forEach { match ->
                 val showTmdbId = match.groupValues[1].toIntOrNull() ?: return@forEach
                 if (showTmdbId <= 0) return@forEach
-                rows += ShowRow(
+                rows += ParsedShowRow(
                     showTmdbId = showTmdbId,
                     title = "",
                     year = null,

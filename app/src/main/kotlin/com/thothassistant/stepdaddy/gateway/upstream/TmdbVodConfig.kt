@@ -7,11 +7,14 @@ object TmdbVodConfig {
     const val ID_PREFIX = "vod:tmdb:"
     const val SERIES_ID_PREFIX = "vod:series:"
 
-    /** Max unique movies merged into playlists per sync. */
+    /** Max unique movies merged into playlists per sync (default; see [VodCatalogLimits]). */
     const val MAX_CATALOG_SIZE = 150
 
-    /** Max latest episodes merged into playlists per sync. */
+    /** Max latest episodes merged into playlists per sync (default; see [VodCatalogLimits]). */
     const val MAX_SERIES_CATALOG_SIZE = 150
+
+    /** Multi-shelf supplement id suffix separator (`vod:tmdb:550@shelf_slug`). */
+    const val SHELF_SUFFIX = "@"
 
     const val TMDB_API_BASE = "https://api.themoviedb.org/3/"
     /** Portrait poster size used by major Xtream VOD providers. */
@@ -34,8 +37,35 @@ object TmdbVodConfig {
 
     fun supplementId(tmdbId: Int): String = "$ID_PREFIX$tmdbId"
 
-    fun tmdbIdFromSupplementId(id: String): String? =
-        id.removePrefix(ID_PREFIX).takeIf { it.isNotEmpty() && it != id }
+    fun shelfSupplementId(tmdbId: Int, shelf: String): String =
+        "$ID_PREFIX$tmdbId$SHELF_SUFFIX${shelfSlug(shelf)}"
+
+    fun shelfSeriesSupplementId(baseSeriesId: String, shelf: String): String =
+        "$baseSeriesId$SHELF_SUFFIX${shelfSlug(shelf)}"
+
+    fun tmdbIdFromSupplementId(id: String): String? {
+        val withoutPrefix = id.removePrefix(ID_PREFIX).takeIf { it.isNotEmpty() && it != id } ?: return null
+        return withoutPrefix.substringBefore(SHELF_SUFFIX).takeIf { it.isNotEmpty() }
+    }
+
+    fun canonicalMovieSupplementId(id: String): String {
+        val tmdb = tmdbIdFromSupplementId(id)?.toIntOrNull() ?: return id
+        return supplementId(tmdb)
+    }
+
+    fun canonicalSeriesSupplementId(id: String): String {
+        if (!id.startsWith(SERIES_ID_PREFIX)) return id
+        val withoutPrefix = id.removePrefix(SERIES_ID_PREFIX)
+        val base = withoutPrefix.substringBefore(SHELF_SUFFIX)
+        return "$SERIES_ID_PREFIX$base"
+    }
+
+    private fun shelfSlug(shelf: String): String =
+        shelf.lowercase()
+            .replace(Regex("""[^\w\s-]"""), "")
+            .trim()
+            .replace(Regex("""\s+"""), "_")
+            .ifBlank { "shelf" }
 
     fun seriesSupplementId(showTmdbId: Int, season: Int, episode: Int): String =
         "$SERIES_ID_PREFIX$showTmdbId:$season:$episode"

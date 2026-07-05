@@ -66,6 +66,7 @@ class ServerService : LifecycleService() {
         ScreenWakeRegistrar.register(this)
         GatewayMessageBus.postBoot("ServerService")
         GatewayDiagnostics.info(TAG, "Foreground service created")
+        GatewayPackageGuard.resolveSiblingConflict(this)
         scheduleHttpHealthCheck()
         scheduleTiviMateResumeWatch()
         lifecycleScope.launch(Dispatchers.IO) {

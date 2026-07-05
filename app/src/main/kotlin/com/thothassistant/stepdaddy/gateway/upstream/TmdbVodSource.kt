@@ -36,7 +36,7 @@ class TmdbVodSource(
                 Log.w(TAG, "TMDB VOD catalog empty")
                 return@withContext emptyList<SupplementChannel>() to FetchStats()
             }
-            val channels = movies.map { movie -> toSupplementChannel(movie) }
+            val channels = movies.flatMap { movie -> expandMovieChannels(movie) }
             channels to FetchStats(
                 fetched = movies.size,
                 published = channels.size,
@@ -44,18 +44,58 @@ class TmdbVodSource(
             )
         }
 
-    fun toSupplementChannel(movie: TmdbVodCatalog.Movie): SupplementChannel {
+    internal fun expandMovieChannels(movie: TmdbVodCatalog.Movie): List<SupplementChannel> {
+        val shelves = resolveMovieShelves(movie)
+        if (shelves.size <= 1) {
+            val groupTitle = if (shelves.isEmpty()) {
+                VodShelfPriority.resolveMovieGroupTitle(emptyList(), movie.genre)
+            } else {
+                VodShelfPriority.shelfGroupTitle(shelves.first(), isSeries = false)
+            }
+            return listOf(
+                toSupplementChannel(
+                    movie = movie,
+                    groupTitle = groupTitle,
+                    id = TmdbVodConfig.supplementId(movie.tmdbId),
+                ),
+            )
+        }
+        return shelves.map { shelf ->
+            toSupplementChannel(
+                movie = movie,
+                groupTitle = VodShelfPriority.shelfGroupTitle(shelf, isSeries = false),
+                id = TmdbVodConfig.shelfSupplementId(movie.tmdbId, shelf),
+            )
+        }
+    }
+
+    internal fun resolveMovieShelves(movie: TmdbVodCatalog.Movie): List<String> {
+        val shelves = movie.shelfCategories.distinct()
+        if (shelves.isNotEmpty()) {
+            return VodShelfPriority.sortMovieCategories(shelves)
+        }
+        if (!movie.genre.isNullOrBlank()) {
+            return listOf(movie.genre)
+        }
+        return emptyList()
+    }
+
+    fun toSupplementChannel(
+        movie: TmdbVodCatalog.Movie,
+        groupTitle: String = VodShelfPriority.resolveMovieGroupTitle(movie.shelfCategories, movie.genre),
+        id: String = TmdbVodConfig.supplementId(movie.tmdbId),
+    ): SupplementChannel {
         val imdbId = movie.imdbId?.trim()?.takeIf { it.isNotEmpty() }
         val tvgId = when {
             imdbId != null -> imdbId
             else -> "tmdb.${movie.tmdbId}"
         }
         return SupplementChannel(
-            id = TmdbVodConfig.supplementId(movie.tmdbId),
+            id = id,
             name = TmdbVodConfig.movieDisplayTitle(movie.title, movie.releaseDate),
             tvgId = tvgId,
             logo = TmdbVodConfig.normalizePosterUrl(movie.posterUrl),
-            groupTitle = movieGroupTitle(movie.genre),
+            groupTitle = groupTitle,
             streamUrl = "",
             tags = listOf("#movies", "#vod"),
             providerTag = TmdbVodConfig.PROVIDER_TAG,
@@ -63,20 +103,6 @@ class TmdbVodSource(
             plot = movie.overview.takeIf { it.isNotBlank() },
             imdbId = imdbId,
         )
-    }
-
-    internal fun movieGroupTitle(genre: String?): String {
-        if (genre.isNullOrBlank()) return VodCategoryResolver.movieGroupTitle(null)
-        val sections = genre.split("/", "·", "|", ",")
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-        val nextboxSection = sections.firstOrNull { section ->
-            NextboxConfig.MOVIE_SECTIONS.any { it.equals(section, ignoreCase = true) }
-        }
-        if (nextboxSection != null) {
-            return VodCategoryResolver.nextboxMovieGroupTitle(nextboxSection)
-        }
-        return VodCategoryResolver.movieGroupTitle(genre)
     }
 
     companion object {

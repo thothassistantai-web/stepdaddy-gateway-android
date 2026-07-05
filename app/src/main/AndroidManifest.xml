@@ -34,6 +34,8 @@
         <package android:name="com.streamvault.app" />
         <package android:name="com.streamvault.app.debug" />
         <package android:name="com.streamvault.app.beta" />
+        <package android:name="com.thothassistant.stepdaddy.gateway" />
+        <package android:name="com.thothassistant.stepdaddy.gateway.debug" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="stepdaddy" />

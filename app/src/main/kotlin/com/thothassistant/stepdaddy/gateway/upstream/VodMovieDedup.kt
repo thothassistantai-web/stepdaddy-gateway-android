@@ -92,6 +92,7 @@ object VodMovieDedup {
         if (movie.voteAverage > 0.0) score += 10
         if (movie.title.isNotBlank()) score += 5
         if (!movie.genre.isNullOrBlank()) score += 5
+        if (movie.shelfCategories.isNotEmpty()) score += 5
         return score
     }
 
@@ -119,8 +120,20 @@ object VodMovieDedup {
             imdbId = best.imdbId ?: rest.imdbId,
             streamQuality = best.streamQuality ?: rest.streamQuality,
             voteAverage = best.voteAverage.takeIf { it > 0.0 } ?: rest.voteAverage,
+            shelfCategories = mergeShelfCategories(best.shelfCategories, rest.shelfCategories),
             genre = mergeGenres(best.genre, rest.genre),
         )
+    }
+
+    internal fun mergeShelfCategories(
+        existing: List<String>?,
+        incoming: List<String>?,
+    ): List<String> {
+        val parts = linkedSetOf<String>()
+        for (raw in (existing.orEmpty() + incoming.orEmpty())) {
+            raw.trim().takeIf { it.isNotEmpty() }?.let { parts += it }
+        }
+        return parts.toList()
     }
 
     internal fun mergeGenres(a: String?, b: String?): String? {

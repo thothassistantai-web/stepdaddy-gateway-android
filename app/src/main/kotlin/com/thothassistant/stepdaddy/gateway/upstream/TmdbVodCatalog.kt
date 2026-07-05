@@ -1,5 +1,6 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
+import android.content.Context
 import android.util.Log
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -9,10 +10,11 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 
 /**
- * Builds the VOD movie catalog: vsembed latest list (primary), Cinemeta enrichment,
- * optional TMDB API when a key is configured.
+ * Builds the VOD movie catalog: vsembed latest list (primary), Nextbox shelves,
+ * Cinemeta enrichment (genre metadata only), optional TMDB API when configured.
  */
 class TmdbVodCatalog(
+    private val context: Context,
     private val httpClient: OkHttpClient,
     private val apiKey: () -> String,
     private val vsembedList: VsembedListCatalog = VsembedListCatalog(httpClient),
@@ -29,6 +31,9 @@ class TmdbVodCatalog(
         val posterUrl: String? = null,
         val imdbId: String? = null,
         val streamQuality: String? = null,
+        /** Nextbox / vsembed shelf labels — never overwritten by Cinemeta. */
+        val shelfCategories: List<String> = emptyList(),
+        /** Cinemeta / TMDB metadata genres only. */
         val genre: String? = null,
     )
 
@@ -72,9 +77,11 @@ class TmdbVodCatalog(
 
     fun fetchCatalog(): CatalogResult {
         val merged = linkedMapOf<Int, Movie>()
+        val vsembedPages = VodCatalogLimits.vsembedMoviePages(context)
 
-        vsembedList.fetchLatestMovies().forEach { row ->
+        vsembedList.fetchLatestMovies(pages = vsembedPages).forEach { row ->
             val parsed = TmdbVodConfig.parseListTitle(row.title)
+            val existing = merged[row.tmdbId]
             merged[row.tmdbId] = Movie(
                 tmdbId = row.tmdbId,
                 title = parsed.title,
@@ -82,6 +89,11 @@ class TmdbVodCatalog(
                 imdbId = row.imdbId,
                 streamQuality = row.quality,
                 posterUrl = row.imdbId?.let { TmdbVodConfig.metahubPosterUrl(it) },
+                shelfCategories = mergeShelfCategories(
+                    existing?.shelfCategories,
+                    listOf("Latest Movies"),
+                ),
+                genre = existing?.genre,
             )
         }
 
@@ -99,9 +111,10 @@ class TmdbVodCatalog(
                     imdbId = existing?.imdbId,
                     streamQuality = existing?.streamQuality,
                     posterUrl = existing?.posterUrl,
-                    genre = row.category,
+                    shelfCategories = mergeShelfCategories(existing?.shelfCategories, row.categories),
                     overview = existing?.overview.orEmpty(),
                     voteAverage = existing?.voteAverage ?: 0.0,
+                    genre = existing?.genre,
                 )
             }
 
@@ -151,22 +164,20 @@ class TmdbVodCatalog(
             )
         }
 
+        val cap = VodCatalogLimits.movieCap(context)
+        val capped = VodShelfPriority.capMovies(deduped.movies, cap)
+
         return CatalogResult(
-            movies = deduped.movies
-                .sortedWith(
-                    compareByDescending<TmdbVodCatalog.Movie> {
-                        VodSort.movieSortKey(it.releaseDate, it.title)
-                    },
-                )
-                .take(TmdbVodConfig.MAX_CATALOG_SIZE),
+            movies = capped,
             dedupRemoved = deduped.removedCount,
         )
     }
 
     private fun enrichWithCinemetaMeta(merged: LinkedHashMap<Int, Movie>) {
+        val enrichCap = VodCatalogLimits.cinemetaEnrichCap(context)
         var enriched = 0
         for ((tmdbId, movie) in merged) {
-            if (enriched >= TmdbVodConfig.MAX_CINEMETA_ENRICH) break
+            if (enriched >= enrichCap) break
             val imdbId = movie.imdbId ?: continue
             val meta = cinemetaMeta.fetchMovieMeta(imdbId) ?: continue
             enriched++
@@ -250,6 +261,11 @@ class TmdbVodCatalog(
         }
         return builder.build().toString()
     }
+
+    internal fun mergeShelfCategories(
+        existing: List<String>?,
+        incoming: List<String>,
+    ): List<String> = VodMovieDedup.mergeShelfCategories(existing, incoming)
 
     companion object {
         private const val TAG = "TmdbVodCatalog"
