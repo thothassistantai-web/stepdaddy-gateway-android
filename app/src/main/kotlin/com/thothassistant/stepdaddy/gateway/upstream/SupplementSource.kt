@@ -3,6 +3,7 @@ package com.thothassistant.stepdaddy.gateway.upstream
 import android.content.Context
 import android.util.Log
 import com.thothassistant.stepdaddy.gateway.FireMemoryGuard
+import com.thothassistant.stepdaddy.gateway.FireTvDevice
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.epg.FastChannelTvgIdResolver
@@ -114,8 +115,8 @@ class SupplementSource(
     )
 
     private val appContext = context.applicationContext
-    /** Fire Stick: skip loading ~4k supplement rows at construct (tens of MB, trips LMK). */
-    private val fireLite = FireMemoryGuard.skipHeavyCatalogIndexes(appContext)
+    /** Fire Stick only: skip loading ~4k supplement rows at construct (tens of MB, trips LMK). */
+    private val fireLite = FireTvDevice.isFireTv(appContext)
     private val store = SupplementStore(context)
     private val eventMetadataStore = EventMetadataStore(context)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

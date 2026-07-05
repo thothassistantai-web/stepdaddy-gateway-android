@@ -25,6 +25,15 @@ object LowRamTvDevice {
         return result
     }
 
+    /**
+     * Walmart Onn / Google TV stick (~1.4 GiB RAM). Distinct from Fire Stick (~0.9 GiB) for
+     * shorter boot deferrals and supplement sync — Fire paths stay Fire-gated.
+     */
+    fun isOnnStick(context: Context): Boolean {
+        if (FireTvDevice.isFireTv(context)) return false
+        return isKnownOnnStick()
+    }
+
     private fun compute(context: Context): Boolean {
         if (FireTvDevice.isFireTv(context)) return true
         if (!isAndroidTv(context)) return false
@@ -39,7 +48,9 @@ object LowRamTvDevice {
         return pm.hasSystemFeature(PackageManager.FEATURE_TELEVISION)
     }
 
-    private fun isKnownLowRamStick(): Boolean {
+    private fun isKnownLowRamStick(): Boolean = isKnownOnnStick()
+
+    private fun isKnownOnnStick(): Boolean {
         val manufacturer = Build.MANUFACTURER.orEmpty()
         val brand = Build.BRAND.orEmpty()
         val model = Build.MODEL.orEmpty()

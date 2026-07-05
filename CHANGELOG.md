@@ -7,6 +7,12 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.23] - 2026-07-05
+
+### Fixed
+
+- **Onn sources hang** — Supplement sync (iptv-org, NTV.cx, Adult Swim) was skipped on all `memoryLite` devices because boot channel refresh used the Fire Stick early-return path. Onn sticks now run supplement sync with shorter deferrals; Fire Stick timing and LMK survival paths are unchanged (`FireTvDevice.isFireTv()`).
+
 ## [3.0.22] - 2026-07-04
 
 ### Added

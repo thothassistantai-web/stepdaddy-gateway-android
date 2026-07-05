@@ -379,10 +379,22 @@ class ServerService : LifecycleService() {
     private fun scheduleFireDeferredHeavyWork(client: DaddyLiveClient) {
         if (!fireHeavyWorkScheduled.compareAndSet(false, true)) return
         lifecycleScope.launch(Dispatchers.IO) {
-            delay(FIRE_HEAVY_WORK_DEFER_MS)
+            val deferMs =
+                when {
+                    FireTvDevice.isFireTv(this@ServerService) -> FIRE_HEAVY_WORK_DEFER_MS
+                    LowRamTvDevice.isOnnStick(this@ServerService) -> ONN_HEAVY_WORK_DEFER_MS
+                    else -> FIRE_HEAVY_WORK_DEFER_MS
+                }
+            delay(deferMs)
             if (!isServiceActive) return@launch
             val app = application as GatewayApp
-            Log.i(TAG, "Fire Stick: starting deferred heavy work after settle")
+            val label =
+                when {
+                    FireTvDevice.isFireTv(this@ServerService) -> "Fire Stick"
+                    LowRamTvDevice.isOnnStick(this@ServerService) -> "Onn"
+                    else -> "low-RAM TV"
+                }
+            Log.i(TAG, "$label: starting deferred heavy work after settle")
             if (::epgManager.isInitialized && epgManager.needsBuild() && client.channels.isNotEmpty()) {
                 epgManager.scheduleRefresh(client.channels, force = true, tvtvGapFill = false)
             }
@@ -453,18 +465,26 @@ class ServerService : LifecycleService() {
                 ::daddyLiveClient.isInitialized && daddyLiveClient.channels.isNotEmpty()
             val deferMs =
                 if (!hasChannels) {
-                    if (memoryLite) FIRE_EMPTY_CHANNEL_REFRESH_DEFER_MS else 8_000L
+                    when {
+                        FireTvDevice.isFireTv(this@ServerService) -> FIRE_EMPTY_CHANNEL_REFRESH_DEFER_MS
+                        LowRamTvDevice.isOnnStick(this@ServerService) -> ONN_EMPTY_CHANNEL_REFRESH_DEFER_MS
+                        memoryLite -> FIRE_EMPTY_CHANNEL_REFRESH_DEFER_MS
+                        else -> 8_000L
+                    }
                 } else if (memoryLite) {
-                    // Disk catalog is enough for health; defer network refresh past LMK window.
-                    FIRE_BOOT_CHANNEL_REFRESH_DEFER_MS
+                    when {
+                        FireTvDevice.isFireTv(this@ServerService) -> FIRE_BOOT_CHANNEL_REFRESH_DEFER_MS
+                        LowRamTvDevice.isOnnStick(this@ServerService) -> ONN_BOOT_CHANNEL_REFRESH_DEFER_MS
+                        else -> FIRE_BOOT_CHANNEL_REFRESH_DEFER_MS
+                    }
                 } else {
                     BOOT_CHANNEL_REFRESH_DEFER_MS
                 }
             delay(deferMs)
             if (!isServiceActive || !::daddyLiveClient.isInitialized) return@launch
             val app = application as GatewayApp
-            if (memoryLite && hasChannels) {
-                // Steady-state survival: DaddyLive disk catalog only — no supplements in RAM.
+            // Fire Stick only: disk DaddyLive catalog is enough; skip supplement network refresh in LMK window.
+            if (FireTvDevice.isFireTv(this@ServerService) && hasChannels) {
                 if (!skipReadySurface) {
                     mainHandler.post {
                         GatewayHud.onCatalogReady(
@@ -507,8 +527,9 @@ class ServerService : LifecycleService() {
             }
             runCatching {
                 app.supplementSource.recoverFromDiskIfNeeded(daddyLiveClient.channels)
-                if (memoryLite) {
-                    delay(FIRE_SUPPLEMENT_NETWORK_GAP_MS)
+                when {
+                    FireTvDevice.isFireTv(this@ServerService) -> delay(FIRE_SUPPLEMENT_NETWORK_GAP_MS)
+                    LowRamTvDevice.isOnnStick(this@ServerService) -> delay(ONN_SUPPLEMENT_NETWORK_GAP_MS)
                 }
                 app.supplementSource.refresh(
                     daddyLiveClient.channels,
@@ -701,6 +722,11 @@ class ServerService : LifecycleService() {
         private const val FIRE_SUPPLEMENT_NETWORK_GAP_MS = 15_000L
         /** Fire Stick: EPG/supplement periodic work only after continuous survival window. */
         private const val FIRE_HEAVY_WORK_DEFER_MS = 360_000L
+        /** Onn (~1.4 GiB): shorter settle before supplement sync — Fire timing unchanged. */
+        private const val ONN_HEAVY_WORK_DEFER_MS = 90_000L
+        private const val ONN_BOOT_CHANNEL_REFRESH_DEFER_MS = 15_000L
+        private const val ONN_EMPTY_CHANNEL_REFRESH_DEFER_MS = 12_000L
+        private const val ONN_SUPPLEMENT_NETWORK_GAP_MS = 5_000L
         private const val BOOT_EPG_BUILD_DEFER_MS = 5_000L
     }
 }

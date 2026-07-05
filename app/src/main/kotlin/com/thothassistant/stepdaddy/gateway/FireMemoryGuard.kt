@@ -82,10 +82,20 @@ object FireMemoryGuard : ComponentCallbacks2 {
     fun connectionPoolMaxIdle(): Int = 2
 
     /** Skip multi-MB logo / iptv-org CSV indexes — placeholders + disk mapper only. */
-    fun skipHeavyCatalogIndexes(context: Context): Boolean = LowRamTvDevice.needsMemoryLite(context)
+    fun skipHeavyCatalogIndexes(context: Context): Boolean =
+        if (FireTvDevice.isFireTv(context)) {
+            true
+        } else {
+            LowRamTvDevice.needsMemoryLite(context) && !LowRamTvDevice.isOnnStick(context)
+        }
 
     /** Defer playlist prewarm / EPG rebuild / logo enrich until steady-state. */
-    fun deferHeavyBootWork(context: Context): Boolean = LowRamTvDevice.needsMemoryLite(context)
+    fun deferHeavyBootWork(context: Context): Boolean =
+        if (FireTvDevice.isFireTv(context)) {
+            true
+        } else {
+            LowRamTvDevice.needsMemoryLite(context) && !LowRamTvDevice.isOnnStick(context)
+        }
 
     fun releaseCaches() {
         trimListener?.invoke()
