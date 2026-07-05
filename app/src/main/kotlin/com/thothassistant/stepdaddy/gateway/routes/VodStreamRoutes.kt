@@ -200,8 +200,9 @@ class VodStreamRoutes(
                 m3u8Text = manifest,
                 m3u8Url = resolved.url,
                 refererHost = resolved.referer,
-                useProxy = false,
+                useProxy = true,
                 apiUrl = environment.loopbackBase(),
+                segmentReferer = resolved.referer,
             )
             call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
             call.response.header(HttpHeaders.CacheControl, "no-cache")

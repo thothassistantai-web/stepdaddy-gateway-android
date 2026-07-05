@@ -10,6 +10,8 @@ object M3u8Rewriter {
         useProxy: Boolean,
         apiUrl: String = "",
         preferLighterVariant: Boolean = true,
+        /** When set with [useProxy], segment/key URLs use `/vod-content/` with this embed referer. */
+        segmentReferer: String? = null,
     ): String {
         var text = m3u8Text
         if (preferLighterVariant) {
@@ -24,10 +26,11 @@ object M3u8Rewriter {
                 if (uriMatch != null) {
                     val originalUrl = uriMatch.groupValues[1]
                     val absoluteKeyUrl = resolveUrl(m3u8Url, originalUrl)
+                    val keyReferer = segmentReferer?.takeIf { it.isNotBlank() } ?: refererHost
                     line = if (useProxy && apiUrl.isNotBlank()) {
                         line.replace(
                             originalUrl,
-                            "${apiUrl.trimEnd('/')}/key/${ContentCrypto.encrypt(absoluteKeyUrl)}/${ContentCrypto.encrypt(refererHost)}",
+                            "${apiUrl.trimEnd('/')}/key/${ContentCrypto.encrypt(absoluteKeyUrl)}/${ContentCrypto.encrypt(keyReferer)}",
                         )
                     } else {
                         line.replace(originalUrl, absoluteKeyUrl)
@@ -37,7 +40,7 @@ object M3u8Rewriter {
                 nonCommentCount++
                 val absoluteMediaUrl = resolveUrl(m3u8Url, line)
                 line = if (useProxy && apiUrl.isNotBlank()) {
-                    "${apiUrl.trimEnd('/')}/content/${ContentCrypto.encrypt(absoluteMediaUrl)}"
+                    proxyContentUrl(apiUrl, absoluteMediaUrl, segmentReferer)
                 } else {
                     absoluteMediaUrl
                 }
@@ -101,6 +104,17 @@ object M3u8Rewriter {
             .thenBy { if (it.bandwidth == 0) 999_999_999 else it.bandwidth })
         val header = lines.filter { it.trim().startsWith("#EXTM3U") }.ifEmpty { listOf("#EXTM3U") }
         return (header + winner.block).joinToString("\n").trimEnd() + "\n"
+    }
+
+    fun proxyContentUrl(apiUrl: String, absoluteMediaUrl: String, segmentReferer: String?): String {
+        val base = apiUrl.trimEnd('/')
+        val encrypted = ContentCrypto.encrypt(absoluteMediaUrl)
+        val referer = segmentReferer?.trim()?.takeIf { it.isNotEmpty() }
+        return if (referer != null) {
+            "$base/vod-content/$encrypted/${ContentCrypto.encrypt(referer)}"
+        } else {
+            "$base/content/$encrypted"
+        }
     }
 
     private fun resolveUrl(base: String, relative: String): String {

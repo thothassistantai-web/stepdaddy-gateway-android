@@ -465,6 +465,13 @@ class GatewayServer(
                 get("/content/{path}") {
                     contentRoutes.content(call, call.parameters["path"].orEmpty())
                 }
+                get("/vod-content/{url}/{referer}") {
+                    contentRoutes.vodContent(
+                        call,
+                        call.parameters["url"].orEmpty(),
+                        call.parameters["referer"].orEmpty(),
+                    )
+                }
                 get("/key/{url}/{host}") {
                     contentRoutes.key(
                         call,

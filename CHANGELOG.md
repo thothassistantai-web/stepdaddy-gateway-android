@@ -7,6 +7,17 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.21] - 2026-07-04
+
+### Fixed
+
+- **TiviMate VOD 403** — VOD HLS manifests proxy segments through `/vod-content/` with vsembed embed referer and browser User-Agent so TiviMate internal player no longer hits upstream 403 on CDN segments.
+
+### Added
+
+- **VOD year sort** — Movies and series Xtream lists sort by release year descending (newest first).
+- **Nextbox catalog** — Scrapes nextbox.uno homepage and featured pages; categories mirror site shelves (Popular Movies, Horror Movies, Trending TV Series, etc.).
+
 ## [3.0.20] - 2026-07-04
 
 ### Fixed

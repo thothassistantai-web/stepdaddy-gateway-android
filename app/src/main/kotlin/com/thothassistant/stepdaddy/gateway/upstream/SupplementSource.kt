@@ -270,6 +270,14 @@ class SupplementSource(
             ?.let { tmdbVodSource.toSupplementChannel(it) }
     }
 
+    /** Newest-first sort key for Xtream series list (show release year). */
+    fun vodShowSortYear(showTmdbId: Int): Int =
+        tmdbVodSeriesCatalogStore.read()
+            .asSequence()
+            .filter { it.showTmdbId == showTmdbId }
+            .maxOfOrNull { VodSort.movieSortKey(it.showYear, it.showTitle) }
+            ?: 0
+
     fun ntvChannel(token: String): SupplementChannel? =
         cached.firstOrNull { it.id == "ntv:$token" }
 

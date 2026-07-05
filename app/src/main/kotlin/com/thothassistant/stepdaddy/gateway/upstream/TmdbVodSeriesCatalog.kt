@@ -9,6 +9,7 @@ class TmdbVodSeriesCatalog(
     private val httpClient: OkHttpClient,
     private val vsembedList: VsembedListCatalog = VsembedListCatalog(httpClient),
     private val cinemetaMeta: CinemetaMetaClient = CinemetaMetaClient(httpClient),
+    private val nextboxCatalog: NextboxCatalog = NextboxCatalog(httpClient),
 ) {
     @Serializable
     data class Episode(
@@ -32,11 +33,31 @@ class TmdbVodSeriesCatalog(
             Log.w(TAG, "vsembed episodes list empty")
             return emptyList()
         }
+        val nextboxCategories = runCatching { nextboxCatalog.fetchShows() }
+            .getOrElse { exc ->
+                Log.w(TAG, "nextbox show scrape failed", exc)
+                emptyList()
+            }
+            .associate { it.showTmdbId to it.category }
         val showShelfIds = vsembedList.fetchLatestTvShows()
             .map { it.showTmdbId }
             .toSet()
+            .plus(nextboxCategories.keys)
         val showMetaCache = mutableMapOf<String, CinemetaMetaClient.EnrichedMeta>()
-        return rows.map { row -> toEpisode(row, showMetaCache, showShelfIds.contains(row.showTmdbId)) }
+        return rows.map { row ->
+            toEpisode(
+                row,
+                showMetaCache,
+                showShelf = showShelfIds.contains(row.showTmdbId),
+                nextboxCategory = nextboxCategories[row.showTmdbId],
+            )
+        }
+            .sortedWith(
+                compareByDescending<TmdbVodSeriesCatalog.Episode> {
+                    VodSort.movieSortKey(it.showYear, it.showTitle)
+                }.thenByDescending { it.season }
+                    .thenByDescending { it.episode },
+            )
             .take(TmdbVodConfig.MAX_SERIES_CATALOG_SIZE)
     }
 
@@ -44,6 +65,7 @@ class TmdbVodSeriesCatalog(
         row: VsembedListCatalog.EpisodeRow,
         showMetaCache: MutableMap<String, CinemetaMetaClient.EnrichedMeta>,
         showShelf: Boolean,
+        nextboxCategory: String? = null,
     ): Episode {
         val parsed = TmdbVodConfig.parseListTitle(row.showTitle)
         val imdbId = row.showImdbId
@@ -75,7 +97,7 @@ class TmdbVodSeriesCatalog(
             posterUrl = posterUrl,
             streamQuality = row.quality,
             showYear = meta?.releaseDate ?: parsed.year,
-            genre = meta?.genre,
+            genre = nextboxCategory ?: meta?.genre,
             cast = meta?.cast,
             showShelf = showShelf,
         )

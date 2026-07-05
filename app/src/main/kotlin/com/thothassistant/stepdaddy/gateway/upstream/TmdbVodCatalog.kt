@@ -17,6 +17,7 @@ class TmdbVodCatalog(
     private val apiKey: () -> String,
     private val vsembedList: VsembedListCatalog = VsembedListCatalog(httpClient),
     private val cinemetaMeta: CinemetaMetaClient = CinemetaMetaClient(httpClient),
+    private val nextboxCatalog: NextboxCatalog = NextboxCatalog(httpClient),
 ) {
     @Serializable
     data class Movie(
@@ -79,6 +80,26 @@ class TmdbVodCatalog(
             )
         }
 
+        runCatching { nextboxCatalog.fetchMovies() }
+            .getOrElse { exc ->
+                Log.w(TAG, "nextbox movie scrape failed", exc)
+                emptyList()
+            }
+            .forEach { row ->
+                val existing = merged[row.tmdbId]
+                merged[row.tmdbId] = Movie(
+                    tmdbId = row.tmdbId,
+                    title = row.title.ifBlank { existing?.title.orEmpty() },
+                    releaseDate = row.year ?: existing?.releaseDate,
+                    imdbId = existing?.imdbId,
+                    streamQuality = existing?.streamQuality,
+                    posterUrl = existing?.posterUrl,
+                    genre = row.category,
+                    overview = existing?.overview.orEmpty(),
+                    voteAverage = existing?.voteAverage ?: 0.0,
+                )
+            }
+
         if (merged.isEmpty()) {
             Log.w(TAG, "vsembed list empty — falling back to Cinemeta catalogs")
             fetchCinemetaCatalog().forEach { movie ->
@@ -116,7 +137,9 @@ class TmdbVodCatalog(
         }
 
         return merged.values
-            .sortedByDescending { it.voteAverage }
+            .sortedWith(
+                compareByDescending<TmdbVodCatalog.Movie> { VodSort.movieSortKey(it.releaseDate, it.title) },
+            )
             .take(TmdbVodConfig.MAX_CATALOG_SIZE)
     }
 

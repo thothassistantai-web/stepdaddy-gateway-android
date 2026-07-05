@@ -44,11 +44,16 @@ class TmdbVodSeriesSource(
             name = TmdbVodConfig.episodeDisplayTitle(episode.showTitle, episode.season, episode.episode),
             tvgId = tvgId,
             logo = TmdbVodConfig.normalizePosterUrl(episode.posterUrl),
-            groupTitle = VodCategoryResolver.seriesGroupTitle(
-                genre = episode.genre,
-                showTitle = episode.showTitle,
-                showShelf = episode.showShelf,
-            ),
+            groupTitle = when {
+                !episode.genre.isNullOrBlank() &&
+                    NextboxConfig.TV_SECTIONS.any { episode.genre.equals(it, ignoreCase = true) } ->
+                    VodCategoryResolver.nextboxSeriesGroupTitle(episode.genre)
+                else -> VodCategoryResolver.seriesGroupTitle(
+                    genre = episode.genre,
+                    showTitle = episode.showTitle,
+                    showShelf = episode.showShelf,
+                )
+            },
             streamUrl = "",
             tags = listOf("#series", "#vod", "#shows"),
             providerTag = TmdbVodConfig.PROVIDER_TAG,

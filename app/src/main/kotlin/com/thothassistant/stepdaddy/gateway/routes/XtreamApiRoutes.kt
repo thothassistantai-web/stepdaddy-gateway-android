@@ -5,6 +5,7 @@ import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
 import com.thothassistant.stepdaddy.gateway.upstream.SupplementSource
 import com.thothassistant.stepdaddy.gateway.upstream.TmdbVodConfig
 import com.thothassistant.stepdaddy.gateway.upstream.VodCategoryResolver
+import com.thothassistant.stepdaddy.gateway.upstream.VodSort
 import com.thothassistant.stepdaddy.gateway.xtream.XtreamLiveCatalog
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -179,7 +180,7 @@ class XtreamApiRoutes(
         val movies = movieChannels().filter { ch ->
             categoryId.isNullOrBlank() ||
                 VodCategoryResolver.categoryId(ch.groupTitle) == categoryId
-        }
+        }.sortedWith(compareByDescending { VodSort.yearFromDisplayName(it.name) ?: 0 })
         return movies.mapIndexed { index, ch ->
             val tmdbId = TmdbVodConfig.tmdbIdFromSupplementId(ch.id)?.toIntOrNull() ?: 0
             XtreamVodStream(
@@ -220,7 +221,13 @@ class XtreamApiRoutes(
         val byShow = seriesChannels().groupBy { ch ->
             TmdbVodConfig.parseSeriesSupplementId(ch.id)?.showTmdbId
         }.filterKeys { it != null }
-        return byShow.entries.mapIndexed { index, (showId, episodes) ->
+        return byShow.entries
+            .sortedWith(
+                compareByDescending<Map.Entry<Int?, List<com.thothassistant.stepdaddy.gateway.model.SupplementChannel>>> { entry ->
+                    supplementSource.vodShowSortYear(entry.key!!)
+                },
+            )
+            .mapIndexed { index, (showId, episodes) ->
             val first = episodes.first()
             XtreamSeries(
                 num = index + 1,

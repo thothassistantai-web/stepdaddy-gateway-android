@@ -26,6 +26,17 @@ object VodCategoryResolver {
         return "📺 $label"
     }
 
+    /** nextbox.uno section title as Xtream category shelf. */
+    fun nextboxMovieGroupTitle(category: String): String {
+        val trimmed = category.trim().ifBlank { return LATEST_MOVIES }
+        return if (trimmed.startsWith("🎬")) trimmed else "🎬 $trimmed"
+    }
+
+    fun nextboxSeriesGroupTitle(category: String): String {
+        val trimmed = category.trim().ifBlank { return LATEST_SHOWS }
+        return if (trimmed.startsWith("📺")) trimmed else "📺 $trimmed"
+    }
+
     fun categoryId(groupTitle: String): String =
         groupTitle.lowercase()
             .replace(Regex("""[^\w\s-]"""), "")

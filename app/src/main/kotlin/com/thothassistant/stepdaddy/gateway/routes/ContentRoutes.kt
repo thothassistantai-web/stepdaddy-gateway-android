@@ -51,6 +51,31 @@ class ContentRoutes(
         }
     }
 
+    suspend fun vodContent(call: ApplicationCall, encryptedUrl: String, encryptedReferer: String) {
+        val upstreamUrl = runCatching { ContentCrypto.decrypt(encryptedUrl) }
+            .getOrElse {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid_vod_url"))
+                return
+            }
+        val embedReferer = runCatching { ContentCrypto.decrypt(encryptedReferer) }
+            .getOrElse {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid_vod_referer"))
+                return
+            }
+        try {
+            if (isM3u8Url(upstreamUrl)) {
+                serveProxiedVodPlaylist(call, upstreamUrl, embedReferer)
+            } else {
+                serveBinary(call, upstreamUrl, referer = embedReferer)
+            }
+        } catch (exc: Exception) {
+            call.respond(
+                HttpStatusCode.BadGateway,
+                mapOf("error" to (exc.message ?: "vod_content_proxy_error")),
+            )
+        }
+    }
+
     suspend fun key(call: ApplicationCall, encryptedUrl: String, encryptedHost: String) {
         val upstreamUrl = runCatching { ContentCrypto.decrypt(encryptedUrl) }
             .getOrElse {
@@ -124,6 +149,35 @@ class ContentRoutes(
             useProxy = true,
             apiUrl = environment.loopbackBase(),
             preferLighterVariant = false,
+        )
+        call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+        call.response.header(HttpHeaders.CacheControl, "no-cache")
+        call.respondText(rewritten, ContentType("application", "vnd.apple.mpegurl"))
+    }
+
+    private suspend fun serveProxiedVodPlaylist(
+        call: ApplicationCall,
+        upstreamUrl: String,
+        embedReferer: String,
+    ) {
+        val request = Request.Builder()
+            .url(upstreamUrl)
+            .header("User-Agent", GatewayConfig.USER_AGENT)
+            .header("Referer", embedReferer)
+            .header("Accept-Encoding", "identity")
+            .get()
+            .build()
+        val playlistText = withContext(Dispatchers.IO) {
+            httpClient.getText(request)
+        }
+        val rewritten = M3u8Rewriter.rewrite(
+            m3u8Text = playlistText,
+            m3u8Url = upstreamUrl,
+            refererHost = embedReferer,
+            useProxy = true,
+            apiUrl = environment.loopbackBase(),
+            preferLighterVariant = false,
+            segmentReferer = embedReferer,
         )
         call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
         call.response.header(HttpHeaders.CacheControl, "no-cache")

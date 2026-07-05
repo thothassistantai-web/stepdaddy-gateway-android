@@ -49,7 +49,12 @@ class TmdbVodSource(
             name = TmdbVodConfig.movieDisplayTitle(movie.title, movie.releaseDate),
             tvgId = tvgId,
             logo = TmdbVodConfig.normalizePosterUrl(movie.posterUrl),
-            groupTitle = VodCategoryResolver.movieGroupTitle(movie.genre),
+            groupTitle = when {
+                !movie.genre.isNullOrBlank() &&
+                    NextboxConfig.MOVIE_SECTIONS.any { movie.genre.equals(it, ignoreCase = true) } ->
+                    VodCategoryResolver.nextboxMovieGroupTitle(movie.genre)
+                else -> VodCategoryResolver.movieGroupTitle(movie.genre)
+            },
             streamUrl = "",
             tags = listOf("#movies", "#vod"),
             providerTag = TmdbVodConfig.PROVIDER_TAG,
