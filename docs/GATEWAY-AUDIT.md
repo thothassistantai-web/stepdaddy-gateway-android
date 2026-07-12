@@ -96,7 +96,7 @@ Fresh install / clear-data loads **full DaddyLive catalog** plus **all supplemen
 | port | 3000 |
 | network_access_mode | DEFAULT |
 | dlhd_base_url | `https://daddylive.eu` |
-| mirror_urls | `daddylive.li`, `daddylive.org` |
+| mirror_urls | `dlhd.st`, `daddylive.li`, `daddylive.org` |
 | supplement: sports / iptv-org / ntv.cx / adult-swim | all **true** |
 | supplement import modes | **FULL_CATALOG** (opt-in `SKIP_DUPLICATES` per provider in Settings) |
 | setup playlist (`/tivimate-setup-playlist.m3u8`) | **diagnostic** — 50-channel bootstrap (`SETUP_BOOTSTRAP_MAX_CHANNELS`); user catalog at `/tivimate.m3u` |

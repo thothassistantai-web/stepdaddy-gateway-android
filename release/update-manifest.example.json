@@ -3,5 +3,7 @@
   "versionName": "1.0.0",
   "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.0/stepdaddy-gateway-1.0.0-release.apk",
   "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.0/stepdaddy-gateway-1.0.0-debug.apk",
+  "apkSha256": "<sha256-of-release-apk>",
+  "apkSha256Debug": "<sha256-of-debug-apk>",
   "releaseNotes": "Initial public release. apkUrl is stable sideload; apkUrlDebug is the dev package."
 }

@@ -117,13 +117,14 @@ Probed 2026-06-23 — only mirrors with a working `GET /api/channels` JSON list 
 | Rank | URL | Latency (avg) | Status |
 |------|-----|---------------|--------|
 | 1 | `https://daddylive.eu` | ~534 ms | **Primary** (default) |
-| 2 | `https://daddylive.li` | ~584 ms | Fallback |
+| 2 | `https://dlhd.st` | — | Fallback |
+| 3 | `https://daddylive.li` | ~584 ms | Fallback |
 | — | `https://daddylive.org` | — | API 404 (last-resort only) |
 
 Gateway failover order for new installs:
 
 1. **Primary** — `dlhdBaseUrl` (default `https://daddylive.eu`)
-2. **Mirrors** — `https://daddylive.li,https://daddylive.org`
+2. **Mirrors** — `https://dlhd.st,https://daddylive.li,https://daddylive.org`
 
 Edit in **Settings → Upstream → DaddyLive URL / Mirror URLs**. Active mirror is reported in `/health` and channel cache metadata. Existing installs keep saved prefs until cleared in Settings or via admin API; rebuild the gateway APK for defaults on fresh installs.
 

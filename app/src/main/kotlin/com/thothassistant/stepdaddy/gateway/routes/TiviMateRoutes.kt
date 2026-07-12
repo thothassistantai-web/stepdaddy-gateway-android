@@ -94,11 +94,7 @@ class TiviMateRoutes(
             state = probe.state,
             error = probe.error,
         )
-        val status = when {
-            probe.reachable -> HttpStatusCode.OK
-            probe.statusCode != null -> HttpStatusCode.fromValue(probe.statusCode)
-            else -> HttpStatusCode.BadGateway
-        }
+        val status = HttpStatusCode.OK
         call.respondText(
             json.encodeToString(payload),
             ContentType.Application.Json,

@@ -27,6 +27,7 @@ class ServerService : LifecycleService() {
     private lateinit var daddyLiveClient: DaddyLiveClient
     private lateinit var epgManager: com.thothassistant.stepdaddy.gateway.epg.EpgManager
     private var gatewayServer: GatewayServer? = null
+    private var controlPortServer: ControlPortServer? = null
     private var streamHealthWatchdog: StreamHealthWatchdog? = null
     private val startMutex = Mutex()
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -259,6 +260,12 @@ class ServerService : LifecycleService() {
                         scheduleImmediateBootEpgFastPass(client)
                     }
                     environment.serverRunning = true
+                    controlPortServer?.stop()
+                    controlPortServer = ControlPortServer(environment, client).apply { start() }
+                    GatewayDiagnostics.info(
+                        TAG,
+                        "Control port HTTP API emulating StepDaddy patch at ${TiviMateController.HTTP_CONTROL_BASE}",
+                    )
                     streamHealthWatchdog?.stop()
                     streamHealthWatchdog = null
                     // Fire Stick: stream probes allocate manifests and trip LMK; defer with heavy work.
@@ -597,6 +604,8 @@ class ServerService : LifecycleService() {
         runCatching {
             (application as? GatewayApp)?.eventStreamHealthMonitor?.stop()
         }
+        controlPortServer?.stop()
+        controlPortServer = null
         gatewayServer?.stop()
         gatewayServer = null
         environment.serverRunning = false
@@ -628,6 +637,8 @@ class ServerService : LifecycleService() {
         gatewayServer = null
         environment.serverRunning = false
         isServiceActive = false
+        controlPortServer?.stop()
+        controlPortServer = null
         super.onDestroy()
     }
 

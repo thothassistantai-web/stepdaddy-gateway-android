@@ -2,8 +2,10 @@ package com.thothassistant.stepdaddy.gateway.routes
 
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.upstream.ContentCrypto
+import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveErrorClassifier
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
 import com.thothassistant.stepdaddy.gateway.upstream.GatewayConfig
+import com.thothassistant.stepdaddy.gateway.upstream.HttpStatusException
 import com.thothassistant.stepdaddy.gateway.upstream.M3u8Rewriter
 import com.thothassistant.stepdaddy.gateway.upstream.executeAsync
 import com.thothassistant.stepdaddy.gateway.upstream.getText
@@ -21,12 +23,17 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.net.URL
 import java.nio.charset.StandardCharsets
+import kotlin.math.min
 
 class ContentRoutes(
     private val environment: GatewayEnvironment,
     private val client: DaddyLiveClient,
     private val httpClient: OkHttpClient,
 ) {
+    private val dlhdHostFailureCounts = mutableMapOf<String, Int>()
+    private val dlhdHostCooldownUntilMs = mutableMapOf<String, Long>()
+    private val dlhdHostLock = Any()
+
     suspend fun content(call: ApplicationCall, encryptedPath: String) {
         val upstreamUrl = runCatching { ContentCrypto.decrypt(encryptedPath) }
             .getOrElse {
@@ -98,7 +105,11 @@ class ContentRoutes(
             val bytes = withContext(Dispatchers.IO) {
                 httpClient.executeAsync(request).use { response ->
                     if (!response.isSuccessful) {
-                        throw IllegalStateException("HTTP ${response.code} for key")
+                        throw HttpStatusException(
+                            code = response.code,
+                            url = response.request.url,
+                            responseMessage = response.message,
+                        )
                     }
                     response.body?.bytes() ?: byteArrayOf()
                 }
@@ -115,40 +126,45 @@ class ContentRoutes(
 
     private suspend fun serveProxiedPlaylist(call: ApplicationCall, upstreamUrl: String) {
         val parsed = URL(upstreamUrl)
-        val refererCandidates = listOf(
-            upstreamUrl,
-            "${parsed.protocol}://${parsed.host}/",
-            client.activeBaseUrl.trimEnd('/') + "/",
-        )
+        val candidates = buildPlaylistCandidates(upstreamUrl, parsed)
         var playlistText: String? = null
         var lastError: Exception? = null
-        for (referer in refererCandidates) {
+        var resolvedUrl: String? = null
+        var resolvedHost: String? = null
+        for (candidate in candidates) {
             try {
                 val request = Request.Builder()
-                    .url(upstreamUrl)
+                    .url(candidate.url)
                     .header("User-Agent", GatewayConfig.USER_AGENT)
-                    .header("Referer", referer)
+                    .header("Referer", candidate.referer)
                     .header("Accept-Encoding", "identity")
                     .get()
                     .build()
                 playlistText = withContext(Dispatchers.IO) {
                     httpClient.getText(request)
                 }
+                resolvedUrl = candidate.url
+                resolvedHost = runCatching { URL(candidate.url).host }.getOrNull()
+                candidate.cooldownKey?.let { markDlhdHostSuccess(it) }
                 break
             } catch (exc: Exception) {
                 lastError = exc
+                candidate.cooldownKey?.let { markDlhdHostFailure(it) }
             }
         }
         if (playlistText == null) {
             throw lastError ?: IllegalStateException("upstream playlist unavailable")
         }
+        val rewriteUrl = resolvedUrl ?: upstreamUrl
+        val segmentReferer = resolvedHost?.takeIf { isDlhdHost(it) }?.let { "https://${it.trimEnd('/')}/" }
         val rewritten = M3u8Rewriter.rewrite(
             m3u8Text = playlistText,
-            m3u8Url = upstreamUrl,
-            refererHost = parsed.host,
+            m3u8Url = rewriteUrl,
+            refererHost = resolvedHost ?: parsed.host,
             useProxy = true,
             apiUrl = environment.loopbackBase(),
             preferLighterVariant = false,
+            segmentReferer = segmentReferer,
         )
         call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
         call.response.header(HttpHeaders.CacheControl, "no-cache")
@@ -195,7 +211,11 @@ class ContentRoutes(
         val bytes = withContext(Dispatchers.IO) {
             httpClient.executeAsync(request).use { response ->
                 if (!response.isSuccessful) {
-                    throw IllegalStateException("HTTP ${response.code} for segment")
+                    throw HttpStatusException(
+                        code = response.code,
+                        url = response.request.url,
+                        responseMessage = response.message,
+                    )
                 }
                 response.body?.bytes() ?: byteArrayOf()
             }
@@ -209,8 +229,112 @@ class ContentRoutes(
         return path.endsWith(".m3u8") || path.endsWith(".m3u")
     }
 
+    private fun buildPlaylistCandidates(upstreamUrl: String, parsed: URL): List<PlaylistFetchCandidate> {
+        val candidates = mutableListOf<PlaylistFetchCandidate>()
+        if (isDlhdHost(parsed.host)) {
+            val path = parsed.file
+            for (host in orderedDlhdEmbedHosts(parsed.host)) {
+                val candidateUrl = URL(parsed.protocol, host, parsed.port, path).toString()
+                candidates += PlaylistFetchCandidate(
+                    url = candidateUrl,
+                    referer = "https://${host.trimEnd('/')}/",
+                    cooldownKey = hostKey(host),
+                )
+            }
+        }
+        val fallbackReferers = listOf(
+            upstreamUrl,
+            "${parsed.protocol}://${parsed.host}/",
+            client.activeBaseUrl.trimEnd('/') + "/",
+        )
+        for (referer in fallbackReferers) {
+            candidates += PlaylistFetchCandidate(url = upstreamUrl, referer = referer)
+        }
+        return candidates.distinctBy { "${it.url}|${it.referer}" }
+    }
+
+    private fun orderedDlhdEmbedHosts(primaryHost: String?): List<String> {
+        val ordered = linkedSetOf<String>()
+        primaryHost?.trim()?.lowercase()?.takeIf { it.isNotEmpty() }?.let { ordered += it }
+        hostFromBase(client.activeBaseUrl)?.let { ordered += it }
+        GatewayConfig.DLHD_EMBED_HOSTS.mapNotNull(::hostFromBase).forEach { ordered += it }
+        val hosts = ordered.toList()
+        val eligible = hosts.filterNot { isDlhdHostCoolingDown(it) }
+        return eligible.ifEmpty { hosts }
+    }
+
+    private fun isDlhdHostCoolingDown(host: String): Boolean {
+        val key = hostKey(host)
+        if (key.isEmpty()) return false
+        val retryAt = synchronized(dlhdHostLock) { dlhdHostCooldownUntilMs[key] } ?: return false
+        if (System.currentTimeMillis() >= retryAt) {
+            synchronized(dlhdHostLock) {
+                dlhdHostCooldownUntilMs.remove(key)
+                dlhdHostFailureCounts.remove(key)
+            }
+            return false
+        }
+        return true
+    }
+
+    private fun markDlhdHostFailure(host: String) {
+        val key = hostKey(host)
+        if (key.isEmpty()) return
+        val now = System.currentTimeMillis()
+        val nextCount = synchronized(dlhdHostLock) {
+            val next = (dlhdHostFailureCounts[key] ?: 0) + 1
+            dlhdHostFailureCounts[key] = next
+            next
+        }
+        val backoff = min(
+            GatewayConfig.DLHD_HOST_COOLDOWN_BASE_MS * (1L shl min(nextCount - 1, 4)),
+            GatewayConfig.DLHD_HOST_COOLDOWN_MAX_MS,
+        )
+        synchronized(dlhdHostLock) {
+            dlhdHostCooldownUntilMs[key] = now + backoff
+        }
+    }
+
+    private fun markDlhdHostSuccess(host: String) {
+        val key = hostKey(host)
+        if (key.isEmpty()) return
+        synchronized(dlhdHostLock) {
+            dlhdHostFailureCounts.remove(key)
+            dlhdHostCooldownUntilMs.remove(key)
+        }
+    }
+
+    private fun isDlhdHost(host: String): Boolean =
+        GatewayConfig.DADDYLIVE_HOSTS.any { hostMatches(host.lowercase(), it) }
+
+    private fun hostFromBase(baseUrl: String): String? =
+        runCatching { URL(baseUrl).host.lowercase() }.getOrNull()
+
+    private fun hostMatches(host: String, token: String): Boolean =
+        host == token || host.endsWith(".$token")
+
+    private fun hostKey(hostOrUrl: String): String =
+        runCatching { URL(hostOrUrl).host.lowercase() }.getOrNull()
+            ?: hostOrUrl.trim().lowercase()
+
+    private data class PlaylistFetchCandidate(
+        val url: String,
+        val referer: String,
+        val cooldownKey: String? = null,
+    )
+
     private fun isRetriableContentError(exc: Exception): Boolean {
+        val status = exc as? HttpStatusException
+        if (status != null) {
+            if (status.code == 403 && DaddyLiveErrorClassifier.isXameleonUrl(status.url)) {
+                return true
+            }
+            return status.code == 403 || status.code == 502 || status.code == 504 || status.code == 500
+        }
         val message = exc.message.orEmpty()
+        if (message.contains("HTTP 403") && message.contains("xameleon", ignoreCase = true)) {
+            return true
+        }
         return message.contains("HTTP 403") ||
             message.contains("HTTP 502") ||
             message.contains("HTTP 504") ||

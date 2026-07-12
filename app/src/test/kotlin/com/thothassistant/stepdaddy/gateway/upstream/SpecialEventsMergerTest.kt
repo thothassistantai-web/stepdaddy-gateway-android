@@ -8,7 +8,7 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 class SpecialEventsMergerTest {
-    private val futureDateKey = "Monday 6th July 2026 - Schedule Time UK GMT"
+    private val futureDateKey = dlhdDateKey(1)
 
     @Test
     fun merge_buildsGuidesStreamsAndDedupsTheTvApp() {
@@ -287,7 +287,7 @@ class SpecialEventsMergerTest {
     @Test
     fun merge_dropsEndedEvents() {
         val past = Instant.now().minus(2, ChronoUnit.HOURS)
-        val dateKey = "Sunday 21st June 2026 - Schedule Time UK GMT"
+        val dateKey = dlhdDateKey(-2)
         val timeLabel = "%02d:%02d".format(
             past.atZone(java.time.ZoneId.of("Europe/London")).hour,
             past.atZone(java.time.ZoneId.of("Europe/London")).minute,

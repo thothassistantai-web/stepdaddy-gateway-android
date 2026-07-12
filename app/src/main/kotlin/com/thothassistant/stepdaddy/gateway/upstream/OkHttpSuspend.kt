@@ -3,6 +3,7 @@ package com.thothassistant.stepdaddy.gateway.upstream
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.Call
 import okhttp3.Callback
+import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -33,10 +34,20 @@ suspend fun OkHttpClient.executeAsync(request: Request): Response =
         )
     }
 
+class HttpStatusException(
+    val code: Int,
+    val url: HttpUrl,
+    val responseMessage: String? = null,
+) : IOException("HTTP $code for $url")
+
 suspend fun OkHttpClient.getText(request: Request): String {
     executeAsync(request).use { response ->
         if (!response.isSuccessful) {
-            error("HTTP ${response.code} for ${request.url}")
+            throw HttpStatusException(
+                code = response.code,
+                url = response.request.url,
+                responseMessage = response.message,
+            )
         }
         return response.body?.string().orEmpty()
     }

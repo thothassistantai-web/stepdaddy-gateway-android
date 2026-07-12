@@ -12,6 +12,10 @@ data class UpdateManifest(
     val apkUrl: String,
     /** Debug package OTA URL (`com.thothassistant.stepdaddy.gateway.debug`). */
     val apkUrlDebug: String? = null,
+    /** Optional SHA-256 checksum for `apkUrl`. */
+    val apkSha256: String? = null,
+    /** Optional SHA-256 checksum for `apkUrlDebug`. */
+    val apkSha256Debug: String? = null,
     val releaseNotes: String? = null,
     val mandatory: Boolean = false,
 ) {

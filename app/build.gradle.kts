@@ -62,7 +62,7 @@ android {
 
     defaultConfig {
         applicationId = "com.thothassistant.stepdaddy.gateway"
-        minSdk = 24
+        minSdk = 22
         targetSdk = 34
         versionCode = stepdaddyVersionCode
         versionName = stepdaddyVersionName

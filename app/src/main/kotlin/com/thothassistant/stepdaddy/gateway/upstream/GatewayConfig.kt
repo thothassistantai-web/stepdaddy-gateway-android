@@ -7,7 +7,26 @@ object GatewayConfig {
         "Mozilla/5.0 (Linux; Android 14; wv) AppleWebKit/537.36 " +
             "(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36"
     const val RESPORTZ_STREAM_TEMPLATE = "https://resportz.cfd/live/stream-%s.php"
-    /** dlhd.pk relay paths used by daddylive embed when resportz.cfd is unreachable. */
+    const val RESPORTZ_STREAM_PATH = "/live/stream-%s.php"
+    val RESPORTZ_WATCH_HOSTS = listOf(
+        "https://resportz.cfd",
+        "https://resportz.live",
+    )
+    val DLHD_RELAY_HOSTS = listOf(
+        "https://dlhd.pk",
+        "https://dlhd.st",
+    )
+    /** dlhd embed hosts used for direct m3u8 fetches with embed referer. */
+    val DLHD_EMBED_HOSTS = listOf(
+        "https://dlhd.st",
+        "https://dlhd.pk",
+        "https://dlhd.li",
+        "https://dlhd.org",
+        "https://daddylive.li",
+        "https://daddylive.org",
+        "https://daddylive.eu",
+    )
+    /** dlhd relay paths used by daddylive embed when resportz.cfd is unreachable. */
     val DLHD_PK_STREAM_PATHS = listOf("watch", "cast", "plus", "player", "casting")
     /** Wizard/setup M3U cap — full catalog (~5k ch) blocks FUSA for minutes; bootstrap must be fast. */
     const val SETUP_BOOTSTRAP_MAX_CHANNELS = 50
@@ -35,6 +54,8 @@ object GatewayConfig {
     const val OUTAGE_STREAM_FETCH_TIMEOUT_MS = 12_000L
     const val OUTAGE_PROBE_TIMEOUT_MS = 8_000L
     const val INVALIDATE_COOLDOWN_MS = 180_000L
+    const val CHANNEL_MIRROR_COOLDOWN_BASE_MS = 20_000L
+    const val CHANNEL_MIRROR_COOLDOWN_MAX_MS = 180_000L
     const val UPSTREAM_CONNECT_TIMEOUT_SEC = 5L
     const val UPSTREAM_READ_TIMEOUT_SEC = 20L
     const val UPSTREAM_WRITE_TIMEOUT_SEC = 20L
@@ -52,7 +73,15 @@ object GatewayConfig {
     const val STREAM_FAILURE_INVALIDATE_THRESHOLD = 2
     const val HEALING_LOG_MAX = 20
 
-    val DADDYLIVE_HOSTS = setOf("daddylive.org", "daddylive.li", "daddylive.eu")
+    val DADDYLIVE_HOSTS = setOf(
+        "daddylive.org",
+        "daddylive.li",
+        "daddylive.eu",
+        "dlhd.st",
+        "dlhd.pk",
+        "dlhd.li",
+        "dlhd.org",
+    )
     /** EMA weight for mirror/path latency samples (higher = more reactive). */
     const val MIRROR_LATENCY_EMA_ALPHA = 0.35
     /** Sort rank for mirrors with no latency history yet. */
@@ -61,7 +90,14 @@ object GatewayConfig {
     const val MIRROR_FAILURE_PENALTY_MS = 120_000L
     /** Concurrent dlhd.pk relay paths to race within one mirror attempt. */
     const val DLHD_PK_PARALLEL_PROBE_COUNT = 3
+    const val DLHD_PATH_COOLDOWN_BASE_MS = 10_000L
+    const val DLHD_PATH_COOLDOWN_MAX_MS = 120_000L
+    const val RESPORTZ_HOST_COOLDOWN_BASE_MS = 12_000L
+    const val RESPORTZ_HOST_COOLDOWN_MAX_MS = 120_000L
+    const val DLHD_HOST_COOLDOWN_BASE_MS = 12_000L
+    const val DLHD_HOST_COOLDOWN_MAX_MS = 120_000L
     /** Hedged mirror race: max wait for the first successful mirror. */
     const val HEDGED_MIRROR_RACE_TIMEOUT_MS = 8_000L
     const val HEDGED_MIRROR_RACE_ENABLED = true
+    val XAMELEON_HOSTS = setOf("xameleon")
 }

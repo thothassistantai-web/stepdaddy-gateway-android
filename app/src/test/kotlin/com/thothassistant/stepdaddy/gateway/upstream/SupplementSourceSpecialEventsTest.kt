@@ -11,7 +11,7 @@ import org.junit.Test
  * after [SpecialEventsMerger.buildFromParsed] (see refreshSpecialEventsOnly / mergeSupplements).
  */
 class SupplementSourceSpecialEventsTest {
-    private val futureDateKey = "Monday 23rd June 2026 - Schedule Time UK GMT"
+    private val futureDateKey = dlhdDateKey(1)
 
     private fun dlhdEvent(
         category: String,

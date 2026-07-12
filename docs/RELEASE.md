@@ -107,6 +107,8 @@ When updating `install_apps_catalog.json` for a new TiviMate release, confirm si
   "versionName": "1.0.1",
   "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.4/stepdaddy-gateway-1.0.4-release.apk",
   "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.4/stepdaddy-gateway-1.0.4-debug.apk",
+  "apkSha256": "<sha256-of-release-apk>",
+  "apkSha256Debug": "<sha256-of-debug-apk>",
   "releaseNotes": "Boot reliability fixes.",
   "mandatory": false
 }

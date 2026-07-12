@@ -128,8 +128,8 @@ adb shell appops set $PKG SYSTEM_ALERT_WINDOW allow
 
 Defaults (Settings → Upstream):
 
-- Primary: `https://daddylive.org`
-- Mirrors: `https://daddylive.org,https://daddylive.li,https://daddylive.eu`
+- Primary: `https://daddylive.eu`
+- Mirrors: `https://dlhd.st,https://daddylive.li,https://daddylive.org`
 
 Change if upstream rotates domains. Active mirror appears in `/health` after channel fetch.
 

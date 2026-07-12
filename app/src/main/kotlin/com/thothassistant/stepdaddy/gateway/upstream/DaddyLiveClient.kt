@@ -66,6 +66,7 @@ class DaddyLiveClient(
     private val deadMirrors = mutableMapOf<String, Long>()
     private val mirrorFailureCounts = mutableMapOf<String, Int>()
     private val mirrorRetryAfterMs = mutableMapOf<String, Long>()
+    private val channelMirrorCooldowns = ChannelMirrorCooldowns()
     private val streamFailures = mutableMapOf<String, Int>()
     private val invalidateCooldownUntilMs = mutableMapOf<String, Long>()
     private val healingLog = ArrayDeque<String>(GatewayConfig.HEALING_LOG_MAX)
@@ -265,6 +266,7 @@ class DaddyLiveClient(
                 refererHost = manifest.refererHost,
                 useProxy = useProxy,
                 apiUrl = apiUrl,
+                segmentReferer = embedReferer(manifest.refererHost),
             )
             val savedAt = System.currentTimeMillis()
             cacheMutex.withLock {
@@ -343,7 +345,9 @@ class DaddyLiveClient(
         )
         if (raceBudget <= 500L) return@coroutineScope null
 
-        val eligible = mirrors.filter { !isMirrorDead(it) && !isMirrorCoolingDown(it) }
+        val eligible = mirrors.filter {
+            !isMirrorDead(it) && !isMirrorCoolingDown(it) && !channelMirrorCooldowns.isCoolingDown(channelId, it)
+        }
         if (eligible.size < 2) return@coroutineScope null
 
         val winner = CompletableDeferred<UpstreamManifest>()
@@ -362,6 +366,7 @@ class DaddyLiveClient(
                     val latencyMs = (System.nanoTime() - attemptStarted) / 1_000_000L
                     mirrorLatencyTracker.recordMirrorSuccess(baseUrl, latencyMs)
                     markMirrorAlive(baseUrl)
+                    channelMirrorCooldowns.clear(channelId, baseUrl)
                     activeBaseUrl = baseUrl
                     clearGlobalOutageIfOpen()
                     val savedAt = System.currentTimeMillis()
@@ -378,7 +383,12 @@ class DaddyLiveClient(
                     throw exc
                 } catch (exc: Exception) {
                     mirrorLatencyTracker.recordMirrorFailure(baseUrl)
-                    if (isConnectivityFailure(exc) || shouldMarkMirrorDead(exc)) {
+                    if (DaddyLiveErrorClassifier.isChannelSpecificError(exc)) {
+                        channelMirrorCooldowns.recordFailure(channelId, baseUrl)
+                    } else if (
+                        DaddyLiveErrorClassifier.isConnectivityFailure(exc) ||
+                        DaddyLiveErrorClassifier.shouldMarkMirrorDead(exc)
+                    ) {
                         markMirrorFailure(baseUrl)
                     }
                     Log.d(TAG, "Hedged mirror failed for $channelId on $mirrorKey: ${exc.message}")
@@ -403,7 +413,11 @@ class DaddyLiveClient(
         var attemptedMirrors = 0
         var connectivityFailures = 0
         for (baseUrl in mirrors) {
-            if (isMirrorDead(baseUrl) || isMirrorCoolingDown(baseUrl)) continue
+            if (isMirrorDead(baseUrl) || isMirrorCoolingDown(baseUrl) ||
+                channelMirrorCooldowns.isCoolingDown(channelId, baseUrl)
+            ) {
+                continue
+            }
             attemptedMirrors++
             val mirrorKey = baseUrl.trimEnd('/')
             if (isDaddyLiveMirror(baseUrl) && mirrorKey in resportzTimedOut) {
@@ -427,6 +441,7 @@ class DaddyLiveClient(
                 val latencyMs = (System.nanoTime() - attemptStarted) / 1_000_000L
                 mirrorLatencyTracker.recordMirrorSuccess(baseUrl, latencyMs)
                 markMirrorAlive(baseUrl)
+                channelMirrorCooldowns.clear(channelId, baseUrl)
                 activeBaseUrl = baseUrl
                 clearGlobalOutageIfOpen()
                 val savedAt = System.currentTimeMillis()
@@ -449,11 +464,15 @@ class DaddyLiveClient(
                 Log.d(TAG, "Mirror timeout for $channelId on $baseUrl (${attemptBudget}ms)")
             } catch (exc: Exception) {
                 lastError = exc
-                if (isChannelSpecificError(exc)) {
+                if (DaddyLiveErrorClassifier.isChannelSpecificError(exc)) {
+                    channelMirrorCooldowns.recordFailure(channelId, baseUrl)
                     Log.d(TAG, "Channel-specific failure for $channelId: ${exc.message}")
-                    break
+                    continue
                 }
-                if (isConnectivityFailure(exc) || shouldMarkMirrorDead(exc)) {
+                if (
+                    DaddyLiveErrorClassifier.isConnectivityFailure(exc) ||
+                    DaddyLiveErrorClassifier.shouldMarkMirrorDead(exc)
+                ) {
                     mirrorLatencyTracker.recordMirrorFailure(baseUrl)
                     connectivityFailures++
                     markMirrorFailure(baseUrl)
@@ -616,10 +635,10 @@ class DaddyLiveClient(
     }
 
     fun noteStreamFailure(channelId: String, exc: Exception) {
-        if (isTransientError(exc)) {
+        if (DaddyLiveErrorClassifier.isTransientError(exc)) {
             return
         }
-        if (!isChannelSpecificStreamFailure(exc)) {
+        if (!DaddyLiveErrorClassifier.isChannelSpecificStreamFailure(exc)) {
             Log.d(TAG, "Skipping cache invalidate for global/mirror failure channel=$channelId: ${exc.message}")
             return
         }
@@ -728,7 +747,7 @@ class DaddyLiveClient(
 
     private fun invalidateChannelCachesLocked(channelId: String, reason: Exception? = null) {
         streamCache.keys.filter { it.startsWith("$channelId:") }.forEach { streamCache.remove(it) }
-        if (shouldPurgeUpstreamCache(reason)) {
+        if (DaddyLiveErrorClassifier.shouldPurgeUpstreamCache(reason)) {
             staleStreamCache.keys.filter { it.startsWith("$channelId:") }.forEach { staleStreamCache.remove(it) }
             upstreamCache.remove(channelId)
         } else {
@@ -799,78 +818,6 @@ class DaddyLiveClient(
             openGlobalOutage("mirror_probe_all_failed")
         }
         return false
-    }
-
-    private fun isTransientError(exc: Exception): Boolean {
-        val message = exc.message.orEmpty()
-        if (message == "upstream_busy") return true
-        if (message.contains("timeout", ignoreCase = true)) return true
-        if (message.contains("timed out", ignoreCase = true)) return true
-        return false
-    }
-
-    private fun isCdnFetchError(exc: Exception): Boolean {
-        val message = exc.message.orEmpty()
-        return message.startsWith("HTTP 4") || message.startsWith("HTTP 5")
-    }
-
-    private fun isConnectivityFailure(exc: Exception): Boolean {
-        val message = exc.message.orEmpty()
-        if (message.contains("failed to connect", ignoreCase = true)) return true
-        if (message.contains("unable to resolve host", ignoreCase = true)) return true
-        if (message.contains("connection reset", ignoreCase = true)) return true
-        if (message.contains("network is unreachable", ignoreCase = true)) return true
-        if (message.contains("timeout", ignoreCase = true)) return true
-        return false
-    }
-
-    /** Only resportz watch / mirror API faults should poison the shared mirror pool. */
-    private fun shouldMarkMirrorDead(exc: Exception): Boolean {
-        if (isCdnFetchError(exc)) return false
-        val message = exc.message.orEmpty()
-        if (message.contains("failed to connect", ignoreCase = true)) return false
-        if (message.contains("unable to resolve host", ignoreCase = true)) return false
-        if (message.contains("connection reset", ignoreCase = true)) return false
-        if (message.contains("resportz watch", ignoreCase = true)) return true
-        if (message.startsWith("HTTP ") && message.contains("resportz")) return true
-        return false
-    }
-
-    /** Resportz scrape misses are per-channel; do not poison the shared mirror pool. */
-    private fun isChannelSpecificError(exc: Exception): Boolean {
-        val message = exc.message.orEmpty()
-        if (message.contains("encoded m3u8", ignoreCase = true)) return true
-        if (message.contains("iframe source", ignoreCase = true)) return true
-        if (message.contains("embed stub host", ignoreCase = true)) return true
-        if (message.contains("empty iframe", ignoreCase = true)) return true
-        if (message.contains("empty encoded source", ignoreCase = true)) return true
-        return false
-    }
-
-    /** Only count failures toward per-channel cache purge when the channel's own upstream/CDN broke. */
-    private fun isChannelSpecificStreamFailure(exc: Exception): Boolean {
-        val message = exc.message.orEmpty()
-        if (message.contains("No mirrors available", ignoreCase = true)) return false
-        if (message.contains("upstream_busy")) return false
-        if (message.contains("upstream_outage", ignoreCase = true)) return false
-        if (message.contains("upstream_timeout", ignoreCase = true)) return false
-        if (message.contains("failed to connect", ignoreCase = true)) return false
-        if (message.contains("unable to resolve host", ignoreCase = true)) return false
-        if (message.contains("timeout", ignoreCase = true)) return false
-        if (message.contains("timed out", ignoreCase = true)) return false
-        if (message.contains("stream_not_found", ignoreCase = true)) return false
-        if (isChannelSpecificError(exc)) return true
-        if (message.contains("HTTP 403") || message.contains("HTTP 502") ||
-            message.contains("HTTP 504") || message.contains("HTTP 500")
-        ) {
-            return true
-        }
-        return true
-    }
-
-    private fun shouldPurgeUpstreamCache(reason: Exception?): Boolean {
-        if (reason == null) return true
-        return isChannelSpecificStreamFailure(reason)
     }
 
     private fun isMirrorDead(baseUrl: String): Boolean {
@@ -1023,49 +970,17 @@ class DaddyLiveClient(
         prefs.edit().putString("channels_json", payload.toString()).apply()
     }
 
-    private data class CachedManifest(
-        val savedAtMs: Long,
-        val rewrittenPlaylist: String,
-    )
-
-    private data class CachedUpstream(
-        val savedAtMs: Long,
-        val manifest: UpstreamManifest,
-    )
-
-    data class HealingSnapshot(
-        val lastAction: String,
-        val recentActions: List<String>,
-        val streamFailureCount: Int,
-        val deadMirrorCount: Int,
-        val streamCacheSize: Int,
-        val upstreamCacheSize: Int,
-        val staleDiskEntries: Int,
-        val outageMode: Boolean,
-        val cacheServeMode: Boolean,
-        val breakerOpen: Boolean,
-        val breakerRemainingMs: Long,
-        val outageOpenCount: Int,
-        val lastUpstreamSuccessMs: Long?,
-        val canary: CanarySnapshot,
-    )
-
-    data class CanarySnapshot(
-        val goodOk: Int = 0,
-        val goodTotal: Int = 0,
-        val badExpectedFail: Int = 0,
-        val badTotal: Int = 0,
-        val lastProbeMs: Long = 0L,
-    )
-
-    data class MirrorStatsSnapshot(
-        val activeBaseUrl: String,
-        val fastestMirrorEmaMs: Double?,
-        val streamCacheHitRate: Double?,
-        val mirrorLatenciesMs: Map<String, Double>,
-    )
-
     companion object {
         private const val TAG = "DaddyLiveClient"
+    }
+
+    private fun embedReferer(host: String): String? {
+        val trimmed = host.trim()
+        if (trimmed.isEmpty()) return null
+        return if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+            trimmed.trimEnd('/') + "/"
+        } else {
+            "https://${trimmed.trimEnd('/')}/"
+        }
     }
 }

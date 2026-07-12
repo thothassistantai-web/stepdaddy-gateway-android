@@ -12,6 +12,8 @@ The app reads a JSON file with this shape:
   "versionName": "1.0.0",
   "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.0/stepdaddy-gateway-1.0.0-release.apk",
   "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.0/stepdaddy-gateway-1.0.0-debug.apk",
+  "apkSha256": "<sha256-of-release-apk>",
+  "apkSha256Debug": "<sha256-of-debug-apk>",
   "releaseNotes": "Initial public release."
 }
 ```
@@ -22,6 +24,8 @@ The app reads a JSON file with this shape:
 | `versionName` | Yes | Shown in the update dialog |
 | `apkUrl` | Yes | Stable / release package (`com.thothassistant.stepdaddy.gateway`) |
 | `apkUrlDebug` | No | Debug package (`com.thothassistant.stepdaddy.gateway.debug`); used when the installed app is a debug build |
+| `apkSha256` | No | SHA-256 checksum for `apkUrl` (release) |
+| `apkSha256Debug` | No | SHA-256 checksum for `apkUrlDebug` |
 | `releaseNotes` | No | Markdown/plain text in the dialog |
 
 Example file in repo: [release/update-manifest.example.json](../release/update-manifest.example.json).
