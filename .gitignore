@@ -16,7 +16,11 @@ keystore.properties
 *.keystore
 release/*.apk
 release/*.aab
+release/*-debug.txt
+release/*-VERSION-*.txt
 .env
 .env.local
 local.properties
 docs/store-assets/*.png
+reports/
+scripts/.cache/
