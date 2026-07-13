@@ -1,10 +1,10 @@
 {
-  "versionCode": 30025,
-  "versionName": "3.0.25",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.25/stepdaddy-gateway-3.0.25-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.25/stepdaddy-gateway-3.0.25-debug.apk",
-  "apkSha256": "f49f67af5acd7e0196862c8b91d97274d8191701aae79e9a9c9c00eb4cf89a07",
-  "apkSha256Debug": "659983739a2861b63e73c94192bc8d7a8a31f8a3636f325eba6144a8842044e2",
+  "versionCode": 30026,
+  "versionName": "3.0.26",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.26/stepdaddy-gateway-3.0.26-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.26/stepdaddy-gateway-3.0.26-debug.apk",
+  "apkSha256": "97f92a5662d39d9a569b70a1f3036582df2ecd6bdcff08ecb0a5ddcabf755ed2",
+  "apkSha256Debug": "460cc2bbb549d32af4120e4c06201b91868d9a05938ac90c9aaab0ee23b96ec8",
   "releaseNotes": "See CHANGELOG.md",
   "mandatory": false
 }

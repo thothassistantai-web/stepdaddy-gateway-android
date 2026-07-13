@@ -7,6 +7,12 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.26] - 2026-07-12
+
+### Changed
+
+- **Release metadata refresh** — Version bump and OTA manifest/hash updates for the 3.0.26 build.
+
 ## [3.0.24] - 2026-07-05
 
 ### Added
