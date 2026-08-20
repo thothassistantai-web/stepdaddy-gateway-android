@@ -38,12 +38,10 @@ class SupplementSourceSpecialEventsTest {
     /** Simulates SupplementSource.cached special-events slice after merge + dedupe. */
     private fun mergeSpecialEvents(
         dlhdEvents: List<DaddyLiveEventResolver.ParsedEvent>,
-        theTvApp: List<SupplementChannel> = emptyList(),
     ): List<SupplementChannel> {
         val raw = SpecialEventsMerger.buildFromParsed(
             dlhdEvents = dlhdEvents,
             dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = dlhdEvents.size),
-            theTvAppChannels = theTvApp,
             maxStreams = 50,
         )
         return SpecialEventStreamDedup.dedupeBundle(raw).channels
@@ -124,33 +122,6 @@ class SupplementSourceSpecialEventsTest {
         val events = channels.filter { it.id.startsWith("dlhd-event:") }
         assertEquals(2, events.size)
         assertEquals(1, events.map { it.dlhdEventMirrors.single().streamKey }.toSet().size)
-    }
-
-    @Test
-    fun `thetvapp sport rows deduped when dlhd already owns normalized title`() {
-        val channels = mergeSpecialEvents(
-            dlhdEvents = listOf(
-                dlhdEvent(
-                    category = "MLB",
-                    title = "Baseball : Seattle Mariners vs Boston Red Sox",
-                    league = "MLB",
-                    channelId = "ppv-1",
-                    source = DaddyLiveEventResolver.StreamSource.TV2,
-                ),
-            ),
-            theTvApp = listOf(
-                SupplementChannel(
-                    id = "sport:tvapp1",
-                    name = "Seattle Mariners vs Boston Red Sox",
-                    groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
-                    streamUrl = "https://example.com/mlb.m3u8",
-                    providerTag = "MLB",
-                ),
-            ),
-        )
-        assertEquals(0, channels.count { it.id.startsWith("sport:") })
-        assertEquals(1, channels.count { it.id.startsWith("dlhd-event:") })
-        assertEquals(1, channels.count { it.id.startsWith("dlhd-guide:") })
     }
 
     @Test

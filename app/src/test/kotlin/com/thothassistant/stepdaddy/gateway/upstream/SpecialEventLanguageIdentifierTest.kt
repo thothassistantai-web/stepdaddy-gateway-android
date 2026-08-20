@@ -67,17 +67,6 @@ class SpecialEventLanguageIdentifierTest {
     }
 
     @Test
-    fun theTvAppFrenchUrlLocale() {
-        val code = SpecialEventLanguageIdentifier.identify(
-            SpecialEventLanguageIdentifier.Context(
-                eventTitle = "Match du soir",
-                eventSourceUrl = "https://thetvapp.link/fr/soccer/psg-lyon/99",
-            ),
-        )
-        assertEquals("fr", code)
-    }
-
-    @Test
     fun emptyContextReturnsNull() {
         assertNull(SpecialEventLanguageIdentifier.identify(SpecialEventLanguageIdentifier.Context()))
     }

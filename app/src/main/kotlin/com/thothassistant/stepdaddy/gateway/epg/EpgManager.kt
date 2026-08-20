@@ -117,7 +117,6 @@ class EpgManager(
         val fastTvgIds = supplementSource?.fastTvgIdsForEpg().orEmpty()
         val iptvOrgTvgIds = supplementSource?.iptvOrgTvgIdsForEpg().orEmpty()
         val sportsTvgIds = supplementSource?.sportsTvgIdsForEpg().orEmpty()
-        val xyzStreamsTvgIds = supplementSource?.xyzStreamsTvgIdsForEpg().orEmpty()
         val channelNamesByTvgId = buildMap<String, String> {
           channels.forEach { ch -> ch.tvgId?.let { put(it, ch.name) } }
           supplementSource?.channels()?.forEach { sup -> sup.tvgId?.let { put(it, sup.name) } }
@@ -131,8 +130,6 @@ class EpgManager(
               iptvOrgEpgFile = supplementSource?.iptvOrgEpgFile(),
               sportsEpgFile = supplementSource?.sportsEpgXmlFile(),
               sportsTvgIds = sportsTvgIds,
-              xyzStreamsEpgFile = supplementSource?.xyzStreamsEpgXmlFile(),
-              xyzStreamsTvgIds = xyzStreamsTvgIds,
               fastEpgFiles = supplementSource?.fastEpgFeedFiles().orEmpty(),
               fastEpgTvgIds = fastTvgIds,
               channelNamesByTvgId = channelNamesByTvgId,

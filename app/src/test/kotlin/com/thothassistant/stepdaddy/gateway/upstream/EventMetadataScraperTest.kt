@@ -63,25 +63,6 @@ class EventMetadataScraperTest {
     }
 
     @Test
-    fun fromTheTvAppChannel_parsesSlugAndLeague() {
-        val channel = SupplementChannel(
-            id = "sport:deadbeef",
-            name = "San Antonio Spurs vs New York Knicks",
-            groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
-            streamUrl = "https://cdn.example/live.m3u8",
-            providerTag = "NBA",
-            eventSourceUrl = "https://thetvapp.link/nba/san-antonio-spurs-new-york-knicks/43353157680",
-        )
-        val meta = EventMetadataScraper.fromSupplementChannel(channel)
-        assertNotNull(meta)
-        assertEquals("nba/san-antonio-spurs-new-york-knicks", meta!!.slug)
-        assertEquals("NBA", meta.league)
-        assertEquals("Basketball", meta.sportType)
-        assertEquals(EventMetadataSource.THE_TV_APP, meta.source)
-        assertEquals("US", meta.region)
-    }
-
-    @Test
     fun fromDlhdGuideChannel_usesCategorySlug() {
         val channel = SupplementChannel(
             id = "dlhd-guide:golf",

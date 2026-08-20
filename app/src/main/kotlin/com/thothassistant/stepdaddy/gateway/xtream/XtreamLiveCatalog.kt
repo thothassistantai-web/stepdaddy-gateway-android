@@ -3,6 +3,7 @@ package com.thothassistant.stepdaddy.gateway.xtream
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import com.thothassistant.stepdaddy.gateway.upstream.ChannelNumberResolver
+import com.thothassistant.stepdaddy.gateway.upstream.FreeTvIptvConfig
 import com.thothassistant.stepdaddy.gateway.upstream.GroupTitleResolver
 import com.thothassistant.stepdaddy.gateway.upstream.SpecialEventLifecycle
 import com.thothassistant.stepdaddy.gateway.upstream.TmdbVodConfig
@@ -132,13 +133,14 @@ object XtreamLiveCatalog {
     }
 
     private fun supplementGroupTitle(supplement: SupplementChannel): String {
-        if (supplement.id.startsWith("sport:") ||
-            supplement.id.startsWith("dlhd-guide:") ||
+        if (            supplement.id.startsWith("dlhd-guide:") ||
             supplement.id.startsWith("dlhd-event:")
         ) {
             return GroupTitleResolver.SPECIAL_EVENTS
         }
-        if (supplement.id.startsWith("iptv:")) {
+        if (supplement.id.startsWith("iptv:") ||
+            supplement.id.startsWith(FreeTvIptvConfig.ID_PREFIX)
+        ) {
             return GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id).groupTitle
         }
         return supplement.groupTitle.ifBlank { GroupTitleResolver.ENTERTAINMENT }
@@ -160,10 +162,6 @@ object XtreamLiveCatalog {
             supplement.id.startsWith("ntv:") -> {
                 val token = supplement.id.removePrefix("ntv:")
                 "$base/ntv-stream/$token.m3u8"
-            }
-            supplement.id.startsWith("xyz:") -> {
-                val streamId = supplement.id.removePrefix("xyz:")
-                "$base/xyz-stream/$streamId.m3u8"
             }
             supplement.streamUrl.startsWith("http") -> supplement.streamUrl
             else -> gatewayStreamUrl(base, supplement.id)

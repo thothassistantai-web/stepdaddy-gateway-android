@@ -1,7 +1,7 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
 object SupplementConfig {
-    /** Max playable event streams (DaddyLive + TheTvApp combined). */
+    /** Max playable event streams (DaddyLive Special Events). */
     const val MAX_SPECIAL_EVENT_STREAMS = 120
 
     /** Max mirrors probed eagerly per event; remaining mirrors are cold failovers. */
@@ -10,7 +10,7 @@ object SupplementConfig {
     /** @deprecated Mirrors are internal; playlist emits one row per event. */
     const val MAX_STREAM_LINKS_PER_EVENT = 1
 
-    /** Re-fetch DaddyLive schedule + TheTvApp embeds for Special Events only. */
+    /** Re-fetch DaddyLive schedule for Special Events only. */
     const val SPECIAL_EVENTS_SYNC_INTERVAL_MS = 15 * 60_000L
 
     /** Drop finished events and stale guide rows between upstream syncs. */
@@ -53,6 +53,13 @@ object SupplementConfig {
     const val GROUP_PREFIX = "📡 | Extra"
 
     /** @deprecated Stored on disk from older builds; maps to [GroupTitleResolver.SPECIAL_EVENTS]. */
-    const val LEGACY_SPORTS_GROUP_TITLE = "🏈 | Sports | TheTvApp"
+    const val LEGACY_SPORTS_GROUP_TITLE = "🏈 | Special Events"
 
+    fun defaultHttpClient(): okhttp3.OkHttpClient =
+        okhttp3.OkHttpClient.Builder()
+            .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(DOWNLOAD_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
+            .writeTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+            .callTimeout(DOWNLOAD_TIMEOUT_MS + 5_000L, java.util.concurrent.TimeUnit.MILLISECONDS)
+            .build()
 }

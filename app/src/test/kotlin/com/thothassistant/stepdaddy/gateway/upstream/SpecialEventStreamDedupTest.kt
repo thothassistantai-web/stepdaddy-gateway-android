@@ -36,33 +36,6 @@ class SpecialEventStreamDedupTest {
     }
 
     @Test
-    fun dedupeChannels_removesDuplicateTheTvAppStreamUrls() {
-        val sharedUrl = "https://cdn.example.com/live/game.m3u8?quality=720"
-        val channels = listOf(
-            sport(
-                id = "sport:111111",
-                name = "Maple Leafs vs Canadiens",
-                streamUrl = sharedUrl,
-                eventSourceUrl = "https://thetvapp.link/nhl/maple-leafs/123",
-                providerTag = "NHL",
-                tvgId = "TVAPP.Event.abc",
-            ),
-            sport(
-                id = "sport:222222",
-                name = "Leafs @ Habs",
-                streamUrl = "$sharedUrl&token=rotate-me",
-                eventSourceUrl = "https://thetvapp.link/nhl/leafs/456",
-            ),
-        )
-
-        val result = SpecialEventStreamDedup.dedupeChannels(channels)
-
-        assertEquals(1, result.removedCount)
-        assertEquals(1, result.channels.size)
-        assertEquals("sport:111111", result.channels[0].id)
-    }
-
-    @Test
     fun dedupeChannels_preservesGuideInterleaveOrder() {
         val channels = listOf(
             guide("golf"),
@@ -148,24 +121,5 @@ class SpecialEventStreamDedupTest {
             providerTag = providerTag,
             eventSourceUrl = eventSourceUrl,
             dlhdEventStreamKey = dlhdEventStreamKey,
-        )
-
-    private fun sport(
-        id: String,
-        name: String,
-        streamUrl: String,
-        eventSourceUrl: String? = null,
-        providerTag: String? = null,
-        tvgId: String? = null,
-    ): SupplementChannel =
-        SupplementChannel(
-            id = id,
-            name = name,
-            tvgId = tvgId,
-            groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
-            streamUrl = streamUrl,
-            providerTag = providerTag,
-            eventSourceUrl = eventSourceUrl,
-            referer = "https://gooz.aapmains.net/new-stream-embed/42",
         )
 }

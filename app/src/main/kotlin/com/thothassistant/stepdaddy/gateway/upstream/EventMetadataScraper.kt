@@ -6,7 +6,7 @@ import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 
 /**
  * Scrapes title, slug, region, league, and sport type from DaddyLive `tv.json` /
- * `tv2.json` rows, TheTvApp embed pages, and cached supplement channel fields.
+ * `tv2.json` rows and cached supplement channel fields.
  */
 object EventMetadataScraper {
     private val regionPrefixRe = Regex("""^(US|UK|CA|FR|ES|DE|IT|PT|AU|MX|BR)\s*:""", RegexOption.IGNORE_CASE)
@@ -93,7 +93,6 @@ object EventMetadataScraper {
     fun fromSupplementChannel(channel: SupplementChannel): EventMetadata? = when {
         channel.id.startsWith("dlhd-guide:") -> fromDlhdGuide(channel)
         channel.id.startsWith("dlhd-event:") -> fromDlhdEventChannel(channel)
-        channel.id.startsWith("sport:") -> fromTheTvAppChannel(channel)
         else -> null
     }
 
@@ -164,38 +163,6 @@ object EventMetadataScraper {
         )
     }
 
-    private fun fromTheTvAppChannel(channel: SupplementChannel): EventMetadata {
-        val eventUrl = channel.eventSourceUrl.orEmpty()
-        val title = channel.name.trim()
-        val league = SpecialEventSort.normalizeLeague(
-            channel.providerTag?.trim().orEmpty().ifEmpty {
-                if (eventUrl.isNotEmpty()) SpecialEventSort.leagueFromEventUrl(eventUrl) else ""
-            },
-        )
-        val slug = theTvAppSlug(eventUrl).ifEmpty { SpecialEventsMerger.slugify(title) }
-        return EventMetadata(
-            title = title,
-            slug = slug,
-            region = resolveRegion(
-                title = title,
-                eventSourceUrl = eventUrl,
-                languageCode = channel.languageCode,
-            ),
-            league = league,
-            sportType = sportTypeFor(league, category = league, title = title),
-            source = EventMetadataSource.THE_TV_APP,
-            eventSourceUrl = eventUrl.ifEmpty { null },
-            languageCode = channel.languageCode ?: SpecialEventLanguageIdentifier.identify(
-                SpecialEventLanguageIdentifier.Context(
-                    eventTitle = title,
-                    league = league,
-                    eventSourceUrl = eventUrl,
-                    siteLocale = "en",
-                ),
-            ),
-        )
-    }
-
     fun sportTypeFor(league: String, category: String, title: String): String {
         val haystack = "$league $category $title".lowercase()
         return when {
@@ -235,7 +202,6 @@ object EventMetadataScraper {
         category: String = "",
         title: String = "",
         streamLabel: String? = null,
-        eventSourceUrl: String? = null,
         languageCode: String? = null,
     ): String {
         regionPrefixRe.find(title)?.groupValues?.getOrNull(1)?.uppercase()?.let { return it }
@@ -261,34 +227,7 @@ object EventMetadataScraper {
             }
         }
 
-        eventSourceUrl?.let { localeFromTheTvAppUrl(it) }?.let { return it }
-
         return "US"
-    }
-
-    private fun localeFromTheTvAppUrl(url: String): String? {
-        val path = url.substringAfter("thetvapp.link/", "").trim('/').lowercase()
-        val segment = path.substringBefore('/')
-        return when (segment) {
-            "fr", "fra" -> "FR"
-            "es", "esp" -> "ES"
-            "de", "deu" -> "DE"
-            "it", "ita" -> "IT"
-            "pt", "por" -> "PT"
-            "ca" -> "CA"
-            "uk" -> "UK"
-            "au" -> "AU"
-            "mx" -> "MX"
-            "br" -> "BR"
-            else -> null
-        }
-    }
-
-    fun theTvAppSlug(eventUrl: String): String {
-        val path = eventUrl.substringAfter("thetvapp.link/", "").trim('/')
-        if (path.isEmpty()) return ""
-        val withoutId = path.substringBeforeLast('/').trim('/')
-        return withoutId.ifEmpty { path.substringBefore('/') }
     }
 
     private fun eventSlug(title: String, category: String, channelId: String): String {

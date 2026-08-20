@@ -30,7 +30,7 @@ class GroupTitleResolverTest {
     assertEquals(2, GroupTitleResolver.groupSortOrder("Locals"))
     assertEquals(1, GroupTitleResolver.groupSortOrder("Premium"))
     assertEquals(0, GroupTitleResolver.groupSortOrder("🎬 | Adult Swim | Marathon"))
-    assertEquals(11, GroupTitleResolver.groupSortOrder("🏈 | Sports | TheTvApp"))
+    assertEquals(11, GroupTitleResolver.groupSortOrder(GroupTitleResolver.SPECIAL_EVENTS))
     assertEquals(11, GroupTitleResolver.groupSortOrder("🎟️ Special Events"))
     assertEquals(11, GroupTitleResolver.groupSortOrder("🎟️ | Special Events"))
     assertEquals(1, GroupTitleResolver.groupSortOrder(TmdbVodConfig.SERIES_GROUP_TITLE))

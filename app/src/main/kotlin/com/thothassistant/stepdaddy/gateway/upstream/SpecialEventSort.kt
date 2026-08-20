@@ -5,7 +5,7 @@ import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 /**
  * Orders live event rows in [GroupTitleResolver.SPECIAL_EVENTS].
  * Guide channels (`dlhd-guide:*`) sort A–Z by playlist display name; each guide sits
- * directly above its category's stream rows. TheTvApp-only rows keep league priority.
+ * directly above its category's stream rows.
  */
 object SpecialEventSort {
     private val LEAGUE_PRIORITY = listOf(
@@ -39,13 +39,6 @@ object SpecialEventSort {
         "NASCAR" to Regex("""\bNASCAR\b""", RegexOption.IGNORE_CASE),
         "SOCCER" to Regex("""\bSoccer\b|Premier League|La Liga|Champions League""", RegexOption.IGNORE_CASE),
     )
-
-    fun leagueFromEventUrl(eventUrl: String): String {
-        val path = eventUrl.substringAfter("thetvapp.link/", "").trim('/')
-        val slug = path.substringBefore('/').trim()
-        if (slug.isEmpty()) return "OTHER"
-        return normalizeLeague(slug)
-    }
 
     fun leagueFromCategoryOrTitle(category: String, title: String): String {
         val colon = title.indexOf(':')
@@ -122,7 +115,6 @@ object SpecialEventSort {
     /**
      * Lexicographic block key for DaddyLive guide + event rows.
      * Guides sort A–Z by playlist display name; events share their guide's key.
-     * TheTvApp-only `sport:*` rows sort after all guide blocks.
      */
     fun guideBlockSortKey(supplement: SupplementChannel): String = when {
         supplement.id.startsWith("dlhd-guide:") ->
@@ -136,10 +128,6 @@ object SpecialEventSort {
             } else {
                 key
             }
-        }
-        supplement.id.startsWith("sport:") -> {
-            val leagueSlot = sortKey(supplement.providerTag, supplement.name, supplement.eventSourceUrl)
-            "\uFFFF${leagueSlot.toString().padStart(12, '0')}"
         }
         else -> ""
     }
@@ -158,8 +146,7 @@ object SpecialEventSort {
      */
     fun supplementPlaylistOrder(supplement: SupplementChannel): Int {
         if (!supplement.id.startsWith("dlhd-guide:") &&
-            !supplement.id.startsWith("dlhd-event:") &&
-            !supplement.id.startsWith("sport:")
+            !supplement.id.startsWith("dlhd-event:")
         ) {
             return 0
         }
@@ -173,8 +160,6 @@ object SpecialEventSort {
     private fun leagueSortIndex(providerTag: String?, channelName: String, eventUrl: String?): Int {
         val league = normalizeLeague(
             providerTag?.trim().orEmpty().ifEmpty {
-                eventUrl?.let { leagueFromEventUrl(it) }.orEmpty()
-            }.ifEmpty {
                 guessLeagueFromName(channelName)
             },
         )

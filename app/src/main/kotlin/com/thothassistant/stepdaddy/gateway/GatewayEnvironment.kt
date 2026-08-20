@@ -174,7 +174,7 @@ class GatewayEnvironment(context: Context) {
         }
 
     /**
-     * When true, merges Special Events from DaddyLive schedule (tv.json/tv2.json) and TheTvApp embeds.
+     * When true, merges Special Events from DaddyLive schedule (tv.json / tv2.json).
      * Off by default.
      */
     var supplementSportsEnabled: Boolean
@@ -216,15 +216,16 @@ class GatewayEnvironment(context: Context) {
         }
 
     /**
-     * When true, merges xyzstreams.st US cable / broadcast feeds (Sling-backed 24/7).
+     * When true, merges Free-TV/IPTV curated country playlists (USA/CA/UK HLS backups).
+     * @see FreeTvIptvConfig
      */
-    var supplementXyzStreamsEnabled: Boolean
+    var supplementFreeTvEnabled: Boolean
         get() = prefs.getBoolean(
-            KEY_SUPPLEMENT_XYZ_STREAMS_ENABLED,
-            BuildConfig.DEFAULT_SUPPLEMENT_XYZ_STREAMS_ENABLED,
+            KEY_SUPPLEMENT_FREE_TV_ENABLED,
+            BuildConfig.DEFAULT_SUPPLEMENT_FREE_TV_ENABLED,
         )
         set(value) {
-            prefs.edit().putBoolean(KEY_SUPPLEMENT_XYZ_STREAMS_ENABLED, value).apply()
+            prefs.edit().putBoolean(KEY_SUPPLEMENT_FREE_TV_ENABLED, value).apply()
         }
 
     /**
@@ -266,24 +267,14 @@ class GatewayEnvironment(context: Context) {
         }
 
     /**
-     * When true, probes 247v2 for TV Guide callsigns not in the static xyzstreams catalog.
+     * How Free-TV/IPTV country playlists are merged.
      */
-    var supplementXyzStreamsEpgDiscoveryEnabled: Boolean
-        get() = prefs.getBoolean(
-            KEY_SUPPLEMENT_XYZ_STREAMS_EPG_DISCOVERY_ENABLED,
-            BuildConfig.DEFAULT_SUPPLEMENT_XYZ_STREAMS_EPG_DISCOVERY_ENABLED,
-        )
-        set(value) {
-            prefs.edit().putBoolean(KEY_SUPPLEMENT_XYZ_STREAMS_EPG_DISCOVERY_ENABLED, value).apply()
-        }
-
-    /** How xyzstreams rows are merged. */
-    var supplementXyzStreamsImportMode: SupplementImportMode
+    var supplementFreeTvImportMode: SupplementImportMode
         get() = SupplementImportMode.fromPref(
-            prefs.getString(KEY_SUPPLEMENT_XYZ_STREAMS_IMPORT_MODE, BuildConfig.DEFAULT_SUPPLEMENT_IMPORT_MODE),
+            prefs.getString(KEY_SUPPLEMENT_FREE_TV_IMPORT_MODE, BuildConfig.DEFAULT_SUPPLEMENT_IMPORT_MODE),
         )
         set(value) {
-            prefs.edit().putString(KEY_SUPPLEMENT_XYZ_STREAMS_IMPORT_MODE, value.name).apply()
+            prefs.edit().putString(KEY_SUPPLEMENT_FREE_TV_IMPORT_MODE, value.name).apply()
         }
 
     /**
@@ -553,13 +544,11 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_SUPPLEMENT_IPTV_ORG_ENABLED = "supplement_iptv_org_enabled"
         private const val KEY_SUPPLEMENT_NTV_CX_ENABLED = "supplement_ntv_cx_enabled"
         private const val KEY_SUPPLEMENT_ADULT_SWIM_ENABLED = "supplement_adult_swim_enabled"
-        private const val KEY_SUPPLEMENT_XYZ_STREAMS_ENABLED = "supplement_xyz_streams_enabled"
-        private const val KEY_SUPPLEMENT_XYZ_STREAMS_EPG_DISCOVERY_ENABLED =
-            "supplement_xyz_streams_epg_discovery_enabled"
+        private const val KEY_SUPPLEMENT_FREE_TV_ENABLED = "supplement_free_tv_enabled"
         private const val KEY_SUPPLEMENT_TMDB_MOVIES_ENABLED = "supplement_tmdb_movies_enabled"
         private const val KEY_TMDB_API_KEY = "tmdb_api_key"
         private const val KEY_SUPPLEMENT_ADULT_SWIM_IMPORT_MODE = "supplement_adult_swim_import_mode"
-        private const val KEY_SUPPLEMENT_XYZ_STREAMS_IMPORT_MODE = "supplement_xyz_streams_import_mode"
+        private const val KEY_SUPPLEMENT_FREE_TV_IMPORT_MODE = "supplement_free_tv_import_mode"
         private const val KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE = "supplement_iptv_org_import_mode"
         private const val KEY_IPTV_ORG_ENABLED_PLAYLISTS = "iptv_org_enabled_playlists"
         private const val KEY_SUPPLEMENT_NTV_CX_MERGE_MODE = "supplement_ntv_cx_merge_mode"

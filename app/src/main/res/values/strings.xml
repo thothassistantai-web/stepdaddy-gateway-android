@@ -126,6 +126,7 @@
     <string name="provider_iptv_org">iptv-org</string>
     <string name="provider_ntv_cx">ntv.cx 24/7</string>
     <string name="provider_adult_swim">Adult Swim</string>
+    <string name="provider_free_tv">Free-TV</string>
     <string name="provider_sports">Sports</string>
     <string name="provider_adult">XXX Adult</string>
     <string name="dashboard_providers_total">Total: %1$s</string>
@@ -261,12 +262,10 @@
     <string name="settings_mirror_urls">Mirror URLs (comma-separated)</string>
     <string name="settings_section_supplements">Extra channels for TiviMate</string>
     <string name="settings_supplements_intro">DaddyLive is always imported in full as your main list. Turn on extra providers below to add more channels. By default each provider imports its full catalog.</string>
-    <string name="settings_enable_all_supplements">Enable all extra providers (Sports, iptv-org, ntv.cx, Adult Swim, xyzstreams)</string>
+    <string name="settings_enable_all_supplements">Enable all extra providers (Special Events, iptv-org, Free-TV, ntv.cx, Adult Swim)</string>
     <string name="settings_provider_iptv_org">iptv-org (Pluto, Plex, Xumo, …)</string>
-    <string name="settings_provider_xyzstreams">xyzstreams (US cable / broadcast)</string>
-    <string name="settings_supplement_xyzstreams_enable">Enable xyzstreams US live TV (~65+ channels, EPG discovery)</string>
-    <string name="settings_supplement_xyzstreams_epg_discovery">Probe EPG for extra xyzstreams channels (slower sync)</string>
-    <string name="dashboard_xyzstreams_discovery">xyzstreams: %1$d catalog + %2$d discovered (%3$d probes)</string>
+    <string name="settings_provider_free_tv">Free-TV (USA / CA / UK)</string>
+    <string name="settings_supplement_free_tv_enable">Enable Free-TV/IPTV curated live backups</string>
     <string name="settings_iptv_org_playlists_configure">Choose iptv-org playlists…</string>
     <string name="settings_iptv_org_playlists_title">iptv-org playlists</string>
     <string name="settings_iptv_org_playlists_intro">iptv-org combines many upstream FAST playlists. Turn off playlists you do not want imported.</string>
@@ -290,7 +289,7 @@
     <string name="settings_import_mode_fallback">Merge fallbacks</string>
     <string name="settings_import_skip_duplicates">Skip channels already on DaddyLive</string>
     <string name="settings_import_mode_hint">All = separate playlist rows. Skip dupes = hide overlapping names. Merge fallbacks = attach supplement streams to the matching DaddyLive row (fewer channels, automatic failover).</string>
-    <string name="settings_supplement_sports">Sports supplement (thetvapp)</string>
+    <string name="settings_supplement_sports">Special Events (DaddyLive schedule)</string>
     <string name="settings_supplement_iptv_org">iptv-org supplement</string>
     <string name="settings_supplement_ntv_cx">ntv.cx 24/7 supplement (~850 channels)</string>
     <string name="settings_iptv_org_epg">iptv-org FAST EPG (Pluto, Plex, Xumo, Distro)</string>

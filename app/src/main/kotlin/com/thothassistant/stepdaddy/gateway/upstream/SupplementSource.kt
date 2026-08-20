@@ -2,20 +2,16 @@ package com.thothassistant.stepdaddy.gateway.upstream
 
 import android.content.Context
 import android.util.Log
-import com.thothassistant.stepdaddy.gateway.FireMemoryGuard
 import com.thothassistant.stepdaddy.gateway.FireTvDevice
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.epg.FastChannelTvgIdResolver
 import com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex
-import com.thothassistant.stepdaddy.gateway.epg.SpecialEventsEpgGenerator
-import com.thothassistant.stepdaddy.gateway.epg.XyzStreamsEpgFetcher
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.EventMetadata
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror
 import java.io.File
-import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -26,10 +22,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
-import okhttp3.Request
 
 class SupplementSource(
     context: Context,
@@ -38,8 +32,7 @@ class SupplementSource(
     private val epgChannelMapper: EpgChannelMapper? = null,
     private val logoResolver: LogoResolver? = null,
     private val channelMetaStore: ChannelMetaStore? = null,
-    private val httpClient: OkHttpClient = defaultClient(),
-    private val sportsResolver: TheTvAppSportsResolver = TheTvAppSportsResolver(httpClient),
+    private val httpClient: OkHttpClient = SupplementConfig.defaultHttpClient(),
     private val iptvOrgEpgRepository: IptvOrgEpgRepository = IptvOrgEpgRepository(context, httpClient),
 ) {
     private val fastEpgCatalog = FastEpgCatalog(context)
@@ -60,8 +53,7 @@ class SupplementSource(
     )
 
     private val adultSwimSource = AdultSwimStreamsSource(AdultSwimStreamsSource.defaultClient())
-    private val xyzStreamsEpgFetcher = XyzStreamsEpgFetcher(XyzStreamsEpgFetcher.defaultClient())
-    private val xyzStreamsSource = XyzStreamsSource()
+    private val freeTvSource = FreeTvIptvSource(httpClient)
     private val tmdbVodCatalogStore = TmdbVodCatalogStore(context)
     private val tmdbVodCatalog = TmdbVodCatalog(context, httpClient, apiKey = { environment.effectiveTmdbApiKey() })
     private val tmdbVodSource = TmdbVodSource(tmdbVodCatalog, tmdbVodCatalogStore)
@@ -87,33 +79,6 @@ class SupplementSource(
         )
     }
 
-    data class SyncSnapshot(
-        val blockedTheTvApp: Int = 0,
-        val blockedTvPass: Int = 0,
-        val blockedTokenProxy: Int = 0,
-        val sportsChannels: Int = 0,
-        val specialEventGuides: Int = 0,
-        val dlhdEventStreams: Int = 0,
-        val sportsEventsScanned: Int = 0,
-        val iptvOrgChannels: Int = 0,
-        val iptvOrgPlaylistsFetched: Int = 0,
-        val iptvOrgPlaylistsFailed: Int = 0,
-        val iptvOrgEntriesParsed: Int = 0,
-        val ntvCxChannels: Int = 0,
-        val ntvCxResolveProbeOk: Boolean = false,
-        val adultSwimChannels: Int = 0,
-        val adultSwimProbed: Int = 0,
-        val adultSwimProbeOk: Int = 0,
-        val xyzStreamsChannels: Int = 0,
-        val xyzStreamsCatalogPublished: Int = 0,
-        val xyzStreamsDiscoveredPublished: Int = 0,
-        val xyzStreamsDiscoveryProbes: Int = 0,
-        val xyzStreamsDiscoveredLabels: List<String> = emptyList(),
-        val xyzStreamsEpgDiscoveryEnabled: Boolean = true,
-        val tmdbVodMovies: Int = 0,
-        val tmdbVodSeries: Int = 0,
-    )
-
     private val appContext = context.applicationContext
     /** Fire Stick only: skip loading ~4k supplement rows at construct (tens of MB, trips LMK). */
     private val fireLite = FireTvDevice.isFireTv(appContext)
@@ -122,44 +87,28 @@ class SupplementSource(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val refreshMutex = Mutex()
     private val specialEventsMutex = Mutex()
-    @Volatile
-    private var refreshInFlight = false
-    @Volatile
-    private var specialEventsRefreshInFlight = false
-    @Volatile
-    private var lastSpecialEventsSyncMs = 0L
-    @Volatile
-    private var lastVerifyTriggeredSyncMs = 0L
-    @Volatile
-    private var cached: List<SupplementChannel> =
-        if (fireLite) {
-            emptyList()
-        } else {
-            store.readChannels().filterNot { it.id.startsWith("sup:") }
-        }
-    @Volatile
-    private var daddyChannelFallbacks: Map<String, List<SupplementFallbackMirror>> =
+    @Volatile private var refreshInFlight = false
+    @Volatile private var specialEventsRefreshInFlight = false
+    @Volatile private var lastSpecialEventsSyncMs = 0L
+    @Volatile private var lastVerifyTriggeredSyncMs = 0L
+    @Volatile private var cached: List<SupplementChannel> =
+        if (fireLite) emptyList() else store.readChannels().filterNot { it.id.startsWith("sup:") }
+    @Volatile private var daddyChannelFallbacks: Map<String, List<SupplementFallbackMirror>> =
         if (fireLite) emptyMap() else store.readDaddyFallbacks()
-    @Volatile
-    private var guideSchedules: Map<String, List<SpecialEventsMerger.GuideEventRow>> =
+    @Volatile private var guideSchedules: Map<String, List<SpecialEventsMerger.GuideEventRow>> =
         if (fireLite) emptyMap() else store.readGuideSchedules()
-    @Volatile
-    private var lastSync = SyncSnapshot()
-    @Volatile
-    private var eventMetadata: Map<String, EventMetadata> =
+    @Volatile private var lastSync = SupplementSyncSnapshot()
+    @Volatile private var eventMetadata: Map<String, EventMetadata> =
         if (fireLite) emptyMap() else eventMetadataStore.readAll()
 
     init {
         if (fireLite) {
             Log.i(TAG, "Fire Stick: deferred supplement disk load (memory)")
-        } else {
-            if (sportsEnabled()) {
-                pruneExpiredSpecialEvents()
-            }
+        } else if (sportsEnabled()) {
+            pruneExpiredSpecialEvents()
             if (sportsCount() > 0) {
                 lastSpecialEventsSyncMs = store.guideSchedulesSyncedAtMs()
-                    .takeIf { it > 0L }
-                    ?: store.lastSyncedAtMs()
+                    .takeIf { it > 0L } ?: store.lastSyncedAtMs()
                 if (eventMetadata.isEmpty()) {
                     syncEventMetadata(cached.filter { EventLifecycleManager.isSpecialEventChannel(it.id) })
                 }
@@ -176,37 +125,32 @@ class SupplementSource(
         eventMetadata = emptyMap()
     }
 
-    @Volatile
-    var onRefreshComplete: (() -> Unit)? = null
-
-    @Volatile
-    var onSpecialEventsChanged: (() -> Unit)? = null
+    @Volatile var onRefreshComplete: (() -> Unit)? = null
+    @Volatile var onSpecialEventsChanged: (() -> Unit)? = null
 
     fun enabled(): Boolean =
         environment.supplementSportsEnabled ||
             environment.supplementIptvOrgEnabled ||
+            environment.supplementFreeTvEnabled ||
             environment.supplementNtvCxEnabled ||
             environment.supplementAdultSwimEnabled ||
-            environment.supplementXyzStreamsEnabled ||
             environment.supplementTmdbMoviesEnabled
 
     fun sportsEnabled(): Boolean = environment.supplementSportsEnabled
 
     fun iptvOrgEnabled(): Boolean = environment.supplementIptvOrgEnabled
 
+    fun freeTvEnabled(): Boolean = environment.supplementFreeTvEnabled
+
     fun ntvCxEnabled(): Boolean = environment.supplementNtvCxEnabled
 
     fun adultSwimEnabled(): Boolean = environment.supplementAdultSwimEnabled
-
-    fun xyzStreamsEnabled(): Boolean = environment.supplementXyzStreamsEnabled
 
     fun tmdbMoviesEnabled(): Boolean = environment.supplementTmdbMoviesEnabled
 
     fun adultSwimImportMode(): SupplementImportMode = environment.supplementAdultSwimImportMode
 
-    fun xyzStreamsImportMode(): SupplementImportMode = environment.supplementXyzStreamsImportMode
-
-    fun xyzStreamsEpgDiscoveryEnabled(): Boolean = environment.supplementXyzStreamsEpgDiscoveryEnabled
+    fun freeTvImportMode(): SupplementImportMode = environment.supplementFreeTvImportMode
 
     fun ntvCxImportMode(): SupplementImportMode = environment.supplementNtvCxImportMode
 
@@ -223,8 +167,7 @@ class SupplementSource(
     fun channelCount(): Int = cached.size
 
     fun sportsCount(): Int = cached.count {
-        it.id.startsWith("sport:") ||
-            it.id.startsWith("dlhd-guide:") ||
+        it.id.startsWith("dlhd-guide:") ||
             it.id.startsWith("dlhd-event:")
     }
 
@@ -238,7 +181,7 @@ class SupplementSource(
 
     fun adultSwimCount(): Int = cached.count { it.id.startsWith("adultswim:") }
 
-    fun xyzStreamsCount(): Int = cached.count { it.id.startsWith("xyz:") }
+    fun freeTvCount(): Int = cached.count { it.id.startsWith(FreeTvIptvConfig.ID_PREFIX) }
 
     fun tmdbVodCount(): Int = cached.count { it.id.startsWith(TmdbVodConfig.ID_PREFIX) }
 
@@ -282,15 +225,7 @@ class SupplementSource(
     fun ntvChannel(token: String): SupplementChannel? =
         cached.firstOrNull { it.id == "ntv:$token" }
 
-    fun xyzChannel(streamId: String): SupplementChannel? {
-        val trimmed = streamId.trim()
-        if (trimmed.isEmpty()) return null
-        return cached.firstOrNull {
-            it.id == "xyz:$trimmed" || it.id.removePrefix("xyz:") == trimmed
-        }
-    }
-
-    fun syncSnapshot(): SyncSnapshot = lastSync
+    fun syncSnapshot(): SupplementSyncSnapshot = lastSync
 
     fun syncInFlight(): Boolean = refreshInFlight
 
@@ -371,21 +306,9 @@ class SupplementSource(
         return file.takeIf { it.isFile && it.length() > 0L }
     }
 
-    fun xyzStreamsEpgXmlFile(): File? {
-        if (!xyzStreamsEnabled()) return null
-        val file = store.xyzStreamsEpgFile
-        return file.takeIf { it.isFile && it.length() > 0L }
-    }
-
-    fun xyzStreamsTvgIdsForEpg(): Set<String> =
-        cached.filter { it.id.startsWith("xyz:") }
-            .mapNotNull { it.tvgId?.trim()?.takeIf { id -> id.isNotEmpty() } }
-            .toSet()
-
     fun sportsTvgIdsForEpg(): Set<String> =
         cached.filter {
-            it.id.startsWith("sport:") ||
-                it.id.startsWith("dlhd-guide:") ||
+            it.id.startsWith("dlhd-guide:") ||
                 it.id.startsWith("dlhd-event:")
         }
             .mapNotNull { it.tvgId?.trim()?.takeIf { id -> id.isNotEmpty() } }
@@ -399,50 +322,29 @@ class SupplementSource(
         }
     }
 
-    fun dlhdEventStreamHealth(token: String): DlhdEventStreamHealth.Status =
-        dlhdEventHealthStore.status(token)
-
-    fun isDlhdEventStreamHealthy(token: String): Boolean =
-        dlhdEventHealthStore.isHealthy(token)
-
-    fun dlhdEventStreamHealthSummary(): DlhdEventStreamHealth.Summary =
-        dlhdEventHealthStore.summary(dlhdEventStreamCount())
-
+    fun dlhdEventStreamHealth(token: String) = dlhdEventHealthStore.status(token)
+    fun isDlhdEventStreamHealthy(token: String) = dlhdEventHealthStore.isHealthy(token)
+    fun dlhdEventStreamHealthSummary() = dlhdEventHealthStore.summary(dlhdEventStreamCount())
     fun recordDlhdEventStreamHealth(token: String, result: DlhdEventStreamHealth.ProbeResult) {
         val before = dlhdEventHealthStore.revision()
         dlhdEventHealthStore.record(token, result)
-        if (dlhdEventHealthStore.revision() != before) {
-            onDlhdEventHealthChanged?.invoke()
-        }
+        if (dlhdEventHealthStore.revision() != before) onDlhdEventHealthChanged?.invoke()
     }
-
-    fun dlhdEventHealthStore(): DlhdEventStreamHealthStore = dlhdEventHealthStore
-
-    fun dlhdEventActiveMirrorStore(): DlhdEventActiveMirrorStore = dlhdEventActiveMirrorStore
-
-    fun dlhdEventMirrorProbeStore(): DlhdEventMirrorProbeStore = dlhdEventMirrorProbeStore
-
-    fun specialEventsMirrorSummary(): SpecialEventsMirrorHealth.Summary =
-        SpecialEventsMirrorHealth.summarize(
-            channels = cached,
-            activeMirrorIndexByEvent = dlhdEventActiveMirrorStore.snapshot(),
-            eventHealthByKey = dlhdEventHealthStore.snapshot().mapValues { it.value.status },
-            mirrorProbeStore = dlhdEventMirrorProbeStore,
-        )
-
-    fun eventStreamHealthMonitor(): EventStreamHealthMonitor = eventStreamHealthMonitor
-
+    fun dlhdEventHealthStore() = dlhdEventHealthStore
+    fun dlhdEventActiveMirrorStore() = dlhdEventActiveMirrorStore
+    fun dlhdEventMirrorProbeStore() = dlhdEventMirrorProbeStore
+    fun specialEventsMirrorSummary() = SpecialEventsMirrorHealth.summarize(
+        channels = cached,
+        activeMirrorIndexByEvent = dlhdEventActiveMirrorStore.snapshot(),
+        eventHealthByKey = dlhdEventHealthStore.snapshot().mapValues { it.value.status },
+        mirrorProbeStore = dlhdEventMirrorProbeStore,
+    )
+    fun eventStreamHealthMonitor() = eventStreamHealthMonitor
     var onDlhdEventHealthChanged: (() -> Unit)? = null
-
-    fun scheduleDlhdEventStreamHealthProbes(
-        tvStreamProbe: suspend (channelId: String) -> Boolean,
-    ) {
+    fun scheduleDlhdEventStreamHealthProbes(tvStreamProbe: suspend (channelId: String) -> Boolean) {
         eventStreamHealthMonitor.start(tvStreamProbe)
     }
-
-    fun stopDlhdEventStreamHealthProbes() {
-        eventStreamHealthMonitor.stop()
-    }
+    fun stopDlhdEventStreamHealthProbes() = eventStreamHealthMonitor.stop()
 
     fun dlhdGuideChannel(slug: String): SupplementChannel? {
         val normalized = slug.trim().trim('/')
@@ -452,41 +354,31 @@ class SupplementSource(
         }
     }
 
-    fun eventMetadata(channelId: String): EventMetadata? = eventMetadata[channelId.trim()]
-
-    fun eventMetadataMap(): Map<String, EventMetadata> = eventMetadata
-
-    fun eventMetadataCount(): Int = eventMetadata.size
-
-    fun guideSchedule(guideId: String): List<SpecialEventsMerger.GuideEventRow> =
-        guideSchedules[guideId].orEmpty()
-
-    fun guideScheduleContentKey(guideId: String): String =
-        GuideScheduleMediaCache.contentKey(
-            events = guideSchedule(guideId),
-            syncedAtMs = store.lastSyncedAtMs(),
-        )
+    fun eventMetadata(channelId: String) = eventMetadata[channelId.trim()]
+    fun eventMetadataMap() = eventMetadata
+    fun eventMetadataCount() = eventMetadata.size
+    fun guideSchedule(guideId: String) = guideSchedules[guideId].orEmpty()
+    fun guideScheduleContentKey(guideId: String) = GuideScheduleMediaCache.contentKey(
+        events = guideSchedule(guideId),
+        syncedAtMs = store.lastSyncedAtMs(),
+    )
 
     fun fastTvgIdsForEpg(): Set<String> =
         cached.filter { it.id.startsWith("iptv:") }
             .mapNotNull { channel ->
-                channel.tvgId?.trim()?.takeIf { id ->
-                    id.isNotEmpty() && !id.contains('.')
-                }
+                channel.tvgId?.trim()?.takeIf { id -> id.isNotEmpty() && !id.contains('.') }
             }
             .toSet()
 
     fun tvgIdsForEpg(): Set<String> =
-        cached.mapNotNull { channel ->
-            channel.tvgId?.trim()?.takeIf { it.isNotEmpty() }
-        }.toSet()
+        cached.mapNotNull { it.tvgId?.trim()?.takeIf { id -> id.isNotEmpty() } }.toSet()
 
     fun iptvOrgTvgIdsForEpg(): Set<String> =
         cached.filter { it.id.startsWith("iptv:") }
             .mapNotNull { it.tvgId?.trim()?.takeIf { id -> id.isNotEmpty() } }
             .toSet()
 
-    fun lastSyncedAtMs(): Long = store.lastSyncedAtMs()
+    fun lastSyncedAtMs() = store.lastSyncedAtMs()
 
     suspend fun reEnrichLogos(): CatalogLogoEnricher.Result {
         val enricher = catalogLogoEnricher() ?: return CatalogLogoEnricher.Result(0, 0, 0)
@@ -517,7 +409,7 @@ class SupplementSource(
                 store.writeDaddyFallbacks(emptyMap())
                 daddyChannelFallbacks = emptyMap()
                 store.clearGuideSchedules()
-                lastSync = SyncSnapshot()
+                lastSync = SupplementSyncSnapshot()
             }
             return
         }
@@ -614,8 +506,9 @@ class SupplementSource(
             try {
                 val scheduleBase = dlhdScheduleBaseUrl?.trim()?.trimEnd('/').orEmpty()
                     .ifEmpty { environment.dlhdBaseUrl.trimEnd('/') }
-                val (tvAppStats, bundle) = fetchSpecialEventsBundle(scheduleBase)
+                val (dlhdStats, bundle) = fetchSpecialEventsBundle(scheduleBase)
                 val enriched = enrichSupplementLogos(bundle.channels)
+                val eventsScanned = dlhdStats.tvEvents + dlhdStats.tv2Events
                 if (mergeWithExisting) {
                     val mergedState = EventLifecycleManager.mergeFetched(
                         existing = catalogState(),
@@ -640,11 +533,11 @@ class SupplementSource(
                     }
                     cached = nonSpecial + enriched
                     store.writeChannels(cached)
-                    applySpecialEventsBundle(bundle, tvAppStats.eventsScanned)
+                    applySpecialEventsBundle(bundle, eventsScanned)
                 }
                 lastSpecialEventsSyncMs = System.currentTimeMillis()
                 lastSync = lastSync.copy(
-                    sportsEventsScanned = tvAppStats.eventsScanned,
+                    sportsEventsScanned = eventsScanned,
                     sportsChannels = sportsCount(),
                     specialEventGuides = specialEventGuideCount(),
                     dlhdEventStreams = dlhdEventStreamCount(),
@@ -652,8 +545,8 @@ class SupplementSource(
                 Log.i(
                     TAG,
                     "Special Events refresh: guides=${specialEventGuideCount()} " +
-                        "streams=${dlhdEventStreamCount()} (tvApp scanned=${tvAppStats.eventsScanned}, " +
-                        "merge=${mergeWithExisting})",
+                        "streams=${dlhdEventStreamCount()} (dlhd scanned=$eventsScanned, " +
+                        "merge=$mergeWithExisting)",
                 )
                 onSpecialEventsChanged?.invoke()
                 true
@@ -702,9 +595,8 @@ class SupplementSource(
                 TAG,
                 "Supplement sync: ${merged.size} total " +
                     "(sports=${sportsCount()}, " +
-                    "iptv-org=${iptvOrgCount()}, ntv.cx=${ntvCxCount()}, " +
-                    "xyzstreams=${xyzStreamsCount()}, adultswim=${adultSwimCount()}, " +
-                    "blocked_thetvapp=${lastSync.blockedTheTvApp})",
+                    "iptv-org=${iptvOrgCount()}, free-tv=${freeTvCount()}, ntv.cx=${ntvCxCount()}, " +
+                    "adultswim=${adultSwimCount()})",
             )
             val enriched = enrichSupplementLogos(merged)
             if (enriched !== merged) {
@@ -749,31 +641,25 @@ class SupplementSource(
             ntvCxChannels = ntvCxCount(),
             iptvOrgChannels = iptvOrgCount(),
             adultSwimChannels = adultSwimCount(),
+            freeTvChannels = freeTvCount(),
             sportsChannels = sportsCount(),
         )
         Log.i(TAG, "Recovered ${recovered.size} supplement channels from disk caches")
     }
 
     private fun recoverChannelsFromDiskCaches(daddyChannels: List<Channel>): List<SupplementChannel> {
-        if (!enabled()) return emptyList()
-        val recovered = mutableListOf<SupplementChannel>()
-        if (ntvCxEnabled()) {
-            val catalog = ntvCxCatalogStore.loadCatalog()
-            if (catalog.isNotEmpty()) {
-                val built = NtvCxCdnLiveSource.buildChannels(
-                    catalog = catalog,
-                    daddyChannels = daddyChannels,
-                    mergeMode = environment.supplementNtvCxImportMode,
-                    nameIndex = null,
-                )
-                recovered += built.channels
-                if (built.daddyFallbacks.isNotEmpty()) {
-                    daddyChannelFallbacks = built.daddyFallbacks
-                    store.writeDaddyFallbacks(built.daddyFallbacks)
-                }
-            }
+        val recovered = SupplementDiskRecovery.recoverNtvFromCatalog(
+            enabled = enabled(),
+            ntvCxEnabled = ntvCxEnabled(),
+            catalogStore = ntvCxCatalogStore,
+            daddyChannels = daddyChannels,
+            environment = environment,
+        )
+        if (recovered.daddyFallbacks.isNotEmpty()) {
+            daddyChannelFallbacks = recovered.daddyFallbacks
+            store.writeDaddyFallbacks(recovered.daddyFallbacks)
         }
-        return recovered
+        return recovered.channels
     }
 
     private suspend fun mergeSupplements(
@@ -781,15 +667,15 @@ class SupplementSource(
         dlhdScheduleBaseUrl: String? = null,
     ): List<SupplementChannel> =
         coroutineScope {
-        var tvAppEventsScanned = 0
+        var dlhdEventsScanned = 0
         var specialEventGuides = 0
         var dlhdEventStreams = 0
         val specialEvents = if (sportsEnabled()) {
             val scheduleBase = dlhdScheduleBaseUrl?.trim()?.trimEnd('/').orEmpty()
                 .ifEmpty { environment.dlhdBaseUrl.trimEnd('/') }
-            val (tvAppStats, bundle) = fetchSpecialEventsBundle(scheduleBase)
-            tvAppEventsScanned = tvAppStats.eventsScanned
-            applySpecialEventsBundle(bundle, tvAppEventsScanned)
+            val (dlhdStats, bundle) = fetchSpecialEventsBundle(scheduleBase)
+            dlhdEventsScanned = dlhdStats.tvEvents + dlhdStats.tv2Events
+            applySpecialEventsBundle(bundle, dlhdEventsScanned)
             specialEventGuides = specialEventGuideCount()
             dlhdEventStreams = dlhdEventStreamCount()
             bundle.channels
@@ -858,21 +744,20 @@ class SupplementSource(
             }
         }
 
-        val xyzStreamsDeferred = async {
-            if (xyzStreamsEnabled()) {
+        val freeTvDeferred = async {
+            if (freeTvEnabled()) {
                 runCatching {
-                    xyzStreamsSource.fetchChannels(
+                    freeTvSource.fetchChannels(
                         daddyChannels,
-                        environment.supplementXyzStreamsImportMode,
-                        enableDiscovery = environment.supplementXyzStreamsEpgDiscoveryEnabled,
+                        environment.supplementFreeTvImportMode,
                     )
                 }
                     .getOrElse { exc ->
-                        Log.w(TAG, "xyzstreams fetch failed", exc)
-                        XyzStreamsSource.FetchOutcome(emptyList(), XyzStreamsSource.FetchStats())
+                        Log.w(TAG, "Free-TV fetch failed", exc)
+                        FreeTvIptvSource.FetchOutcome(emptyList(), FreeTvIptvSource.FetchStats())
                     }
             } else {
-                XyzStreamsSource.FetchOutcome(emptyList(), XyzStreamsSource.FetchStats())
+                FreeTvIptvSource.FetchOutcome(emptyList(), FreeTvIptvSource.FetchStats())
             }
         }
 
@@ -915,9 +800,9 @@ class SupplementSource(
         var adultSwimOutcome = adultSwimDeferred.await()
         var adultSwim = adultSwimOutcome.channels
         var adultSwimStats = adultSwimOutcome.stats
-        var xyzOutcome = xyzStreamsDeferred.await()
-        var xyzStreams = xyzOutcome.channels
-        var xyzStats = xyzOutcome.stats
+        var freeTvOutcome = freeTvDeferred.await()
+        var freeTv = freeTvOutcome.channels
+        var freeTvStats = freeTvOutcome.stats
         val (tmdbVod, tmdbVodStats) = tmdbVodDeferred.await()
         val (tmdbVodSeries, tmdbVodSeriesStats) = tmdbVodSeriesDeferred.await()
 
@@ -925,7 +810,7 @@ class SupplementSource(
             iptvOutcome.daddyFallbacks,
             ntvOutcome.daddyFallbacks,
             adultSwimOutcome.daddyFallbacks,
-            xyzOutcome.daddyFallbacks,
+            freeTvOutcome.daddyFallbacks,
         )
         daddyChannelFallbacks = mergedDaddyFallbacks
         store.writeDaddyFallbacks(mergedDaddyFallbacks)
@@ -953,31 +838,11 @@ class SupplementSource(
             }
         }
 
-        if (xyzStreamsEnabled() && xyzStats.channelsAfterDedup > 0) {
-            Log.i(
-                TAG,
-                buildString {
-                    append("xyzstreams sync: ")
-                    append("${xyzStats.catalogPublished} catalog")
-                    if (xyzStats.epgDiscoveryEnabled) {
-                        append(", ${xyzStats.discoveredPublished} discovered")
-                        append(" (${xyzStats.discoveryProbes} probes)")
-                    } else {
-                        append(" (EPG discovery off)")
-                    }
-                    append(", ${xyzStats.channelsAfterDedup} total")
-                },
-            )
-            if (xyzStats.discoveredChannelLabels.isNotEmpty()) {
-                Log.i(TAG, "xyzstreams discovered channels: ${xyzStats.discoveredChannelLabels.joinToString(", ")}")
-            }
-        }
-
-        if (xyzStreams.isEmpty() && xyzStreamsEnabled()) {
-            val cachedXyz = cached.filter { it.id.startsWith("xyz:") }
-            if (cachedXyz.isNotEmpty()) {
-                Log.w(TAG, "xyzstreams fetch empty — keeping ${cachedXyz.size} cached channels")
-                xyzStreams = cachedXyz
+        if (freeTv.isEmpty() && freeTvEnabled()) {
+            val cachedFreeTv = cached.filter { it.id.startsWith(FreeTvIptvConfig.ID_PREFIX) }
+            if (cachedFreeTv.isNotEmpty()) {
+                Log.w(TAG, "Free-TV fetch empty — keeping ${cachedFreeTv.size} cached channels")
+                freeTv = cachedFreeTv
             }
         }
 
@@ -1007,19 +872,11 @@ class SupplementSource(
             }.onFailure { exc -> Log.w(TAG, "iptv-org EPG refresh failed", exc) }
         }
 
-        if (environment.gatewayEpgEnabled && xyzStreamsEnabled()) {
-            runCatching {
-                xyzStreamsEpgFetcher.refresh(store.xyzStreamsEpgFile)
-            }.onFailure { exc -> Log.w(TAG, "xyzstreams EPG refresh failed", exc) }
-        } else if (!xyzStreamsEnabled()) {
-            store.xyzStreamsEpgFile.delete()
-        }
-
-        lastSync = SyncSnapshot(
+        lastSync = SupplementSyncSnapshot(
             sportsChannels = specialEvents.size,
             specialEventGuides = specialEventGuides,
             dlhdEventStreams = dlhdEventStreams,
-            sportsEventsScanned = tvAppEventsScanned,
+            sportsEventsScanned = dlhdEventsScanned,
             iptvOrgChannels = iptvOrg.size,
             iptvOrgPlaylistsFetched = iptvStats.playlistsFetched,
             iptvOrgPlaylistsFailed = iptvStats.playlistsFailed,
@@ -1029,58 +886,24 @@ class SupplementSource(
             adultSwimChannels = adultSwim.size,
             adultSwimProbed = adultSwimStats.probed,
             adultSwimProbeOk = adultSwimStats.probeOk,
-            xyzStreamsChannels = xyzStreams.size,
-            xyzStreamsCatalogPublished = xyzStats.catalogPublished,
-            xyzStreamsDiscoveredPublished = xyzStats.discoveredPublished,
-            xyzStreamsDiscoveryProbes = xyzStats.discoveryProbes,
-            xyzStreamsDiscoveredLabels = xyzStats.discoveredChannelLabels,
-            xyzStreamsEpgDiscoveryEnabled = xyzStats.epgDiscoveryEnabled,
+            freeTvChannels = freeTv.size,
+            freeTvPlaylistsFetched = freeTvStats.playlistsFetched,
+            freeTvPlaylistsFailed = freeTvStats.playlistsFailed,
             tmdbVodMovies = publishedTmdbVod.size,
             tmdbVodSeries = publishedTmdbVodSeries.size,
         )
 
-        specialEvents + iptvOrg + ntvCx + adultSwim + xyzStreams + publishedTmdbVod + publishedTmdbVodSeries
+        specialEvents + iptvOrg + freeTv + ntvCx + adultSwim + publishedTmdbVod + publishedTmdbVodSeries
     }
 
-    private suspend fun fetchSpecialEventsBundle(
+    private fun fetchSpecialEventsBundle(
         scheduleBase: String,
-    ): Pair<TheTvAppSportsResolver.ResolveStats, SpecialEventsMerger.EpgBundle> = coroutineScope {
-        val tvAppDeferred = async {
-            runCatching { sportsResolver.resolveFromNetwork() }
-                .getOrElse { exc ->
-                    Log.w(TAG, "TheTvApp sports resolver failed", exc)
-                    emptyList<SupplementChannel>() to TheTvAppSportsResolver.ResolveStats()
-                }
-        }
-        val dlhdDeferred = async {
-            runCatching {
-                resolveDlhdScheduleEvents(scheduleBase)
-            }.getOrElse { exc ->
-                Log.w(TAG, "DLHD schedule resolve failed (base=$scheduleBase)", exc)
-                emptyList<DaddyLiveEventResolver.ParsedEvent>() to DaddyLiveEventResolver.ResolveStats()
-            }
-        }
-        val (tvChannels, tvStats) = tvAppDeferred.await()
-        val (dlhdEvents, dlhdStats) = dlhdDeferred.await()
-        val rawBundle = if (dlhdEvents.isEmpty()) {
-            SpecialEventsMerger.EpgBundle(
-                channels = tvChannels.map { it.copy(groupTitle = GroupTitleResolver.SPECIAL_EVENTS) },
-            )
-        } else {
-            SpecialEventsMerger.buildFromParsed(
-                dlhdEvents = dlhdEvents,
-                dlhdStats = dlhdStats,
-                theTvAppChannels = tvChannels,
-                maxStreams = SupplementConfig.MAX_SPECIAL_EVENT_STREAMS,
-            )
-        }
-        val bundle = EventLifecycleManager.dedupeBundle(rawBundle)
-        tvStats to bundle
-    }
+    ): Pair<DaddyLiveEventResolver.ResolveStats, SpecialEventsMerger.EpgBundle> =
+        SupplementSpecialEventsSupport.fetchBundle(scheduleBase, environment, dlhdEventResolver)
 
     private fun applySpecialEventsBundle(
         bundle: SpecialEventsMerger.EpgBundle,
-        tvAppEventsScanned: Int,
+        eventsScanned: Int,
     ) {
         guideSchedules = bundle.guideProgrammes.mapValues { (_, rows) -> rows.toList() }
         if (bundle.channels.isNotEmpty()) {
@@ -1092,7 +915,7 @@ class SupplementSource(
         rewriteSportsEpg(bundle.channels, bundle.guideProgrammes)
         lastSpecialEventsSyncMs = System.currentTimeMillis()
         lastSync = lastSync.copy(
-            sportsEventsScanned = tvAppEventsScanned,
+            sportsEventsScanned = eventsScanned,
             sportsChannels = bundle.channels.size,
             specialEventGuides = bundle.channels.count { it.id.startsWith("dlhd-guide:") },
             dlhdEventStreams = bundle.channels.count { it.id.startsWith("dlhd-event:") },
@@ -1106,10 +929,10 @@ class SupplementSource(
             eventMetadataStore.clear()
             return
         }
-        val scraped = EventMetadataScraper.scrapeChannels(channels)
-        eventMetadata = scraped
-        eventMetadataStore.writeAll(scraped)
-        Log.d(TAG, "Event metadata synced: ${scraped.size} entries")
+        eventMetadata = EventMetadataScraper.scrapeChannels(channels).also {
+            eventMetadataStore.writeAll(it)
+            Log.d(TAG, "Event metadata synced: ${it.size} entries")
+        }
     }
 
     private fun retainEventMetadataForChannels(channels: List<SupplementChannel>) {
@@ -1122,21 +945,15 @@ class SupplementSource(
     }
 
     private fun catalogState(): EventLifecycleManager.CatalogState =
-        EventLifecycleManager.CatalogState(
-            channels = cached,
-            guideSchedules = guideSchedules,
-        )
+        EventLifecycleManager.CatalogState(channels = cached, guideSchedules = guideSchedules)
 
     private fun applyLifecyclePrune(outcome: EventLifecycleManager.PruneOutcome): Boolean {
         if (!outcome.changed) return false
         cached = outcome.state.channels
         guideSchedules = outcome.state.guideSchedules
         store.writeChannels(cached)
-        if (outcome.state.guideSchedules.isEmpty()) {
-            store.clearGuideSchedules()
-        } else {
-            store.writeGuideSchedules(outcome.state.guideSchedules)
-        }
+        if (outcome.state.guideSchedules.isEmpty()) store.clearGuideSchedules()
+        else store.writeGuideSchedules(outcome.state.guideSchedules)
         rewriteSportsEpg()
         retainEventMetadataForChannels(cached)
         lastSync = lastSync.copy(
@@ -1158,57 +975,18 @@ class SupplementSource(
             EventLifecycleManager.isSpecialEventChannel(it.id)
         },
         programmes: Map<String, List<SpecialEventsMerger.GuideEventRow>> = guideSchedules,
-    ) {
-        if (channels.isEmpty()) {
-            store.sportsEpgFile.delete()
-            return
-        }
-        runCatching {
-            SpecialEventsEpgGenerator.writeXml(
-                SpecialEventsEpgGenerator.programmesForBundle(channels, programmes),
-                store.sportsEpgFile,
-            )
-        }.onFailure { exc ->
-            Log.w(TAG, "Special Events EPG write failed", exc)
-        }
-    }
+    ) = SupplementSpecialEventsSupport.rewriteSportsEpg(store.sportsEpgFile, channels, programmes)
 
-    /** Tries active mirror then configured mirrors until schedule JSON returns events. */
-    private fun resolveDlhdScheduleEvents(
-        primaryBase: String,
-    ): Pair<List<DaddyLiveEventResolver.ParsedEvent>, DaddyLiveEventResolver.ResolveStats> {
-        val mirrorBases = linkedSetOf<String>()
-        mirrorBases += primaryBase.trimEnd('/')
-        mirrorBases += environment.dlhdBaseUrl.trimEnd('/')
-        environment.mirrorUrls.forEach { mirrorBases += it.trimEnd('/') }
-
-        for (base in mirrorBases) {
-            if (base.isEmpty()) continue
-            val (events, stats) = dlhdEventResolver.resolveFromNetwork(base)
-            if (events.isEmpty()) {
-                Log.d(TAG, "DLHD schedule empty on $base (tv=${stats.tvEvents} tv2=${stats.tv2Events})")
-                continue
-            }
-            Log.i(
-                TAG,
-                "DLHD schedule from $base: tv=${stats.tvEvents} tv2=${stats.tv2Events} links=${stats.streamLinks}",
-            )
-            return events to stats
-        }
-        return emptyList<DaddyLiveEventResolver.ParsedEvent>() to DaddyLiveEventResolver.ResolveStats()
-    }
+    private fun resolveDlhdScheduleEvents(primaryBase: String) =
+        SupplementSpecialEventsSupport.resolveDlhdScheduleEvents(
+            primaryBase = primaryBase,
+            environment = environment,
+            dlhdEventResolver = dlhdEventResolver,
+        )
 
     companion object {
         private const val TAG = "SupplementSource"
         /** iptv-org fetches 39 playlists + FAST EPG on slow STBs (e.g. MiTV) can exceed 2 min. */
         private const val SYNC_MAX_MS = 900_000L
-
-        private fun defaultClient(): OkHttpClient =
-            OkHttpClient.Builder()
-                .connectTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(SupplementConfig.DOWNLOAD_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                .writeTimeout(15, TimeUnit.SECONDS)
-                .callTimeout(SupplementConfig.DOWNLOAD_TIMEOUT_MS + 5_000L, TimeUnit.MILLISECONDS)
-                .build()
     }
 }

@@ -129,7 +129,16 @@ Kotlin (`ResportzParser`): tries API embed URL, then `dlstreams.st` relay paths 
 
 ### Special Events
 
-Merged DaddyLive schedule (`tv.json` / `tv2.json`) + optional TheTvApp embeds. Guide channels use **HLS `.m3u8` wrappers** (not raw `.mp4`) so TiviMate lists them under Live TV. See `SpecialEventsMerger`, `GuideScheduleHlsManifest`.
+DaddyLive schedule only (`tv.json` / `tv2.json`). TheTvApp / TVPass / MoveOnJoy / xyzstreams supplements were removed. Guide channels use **HLS `.m3u8` wrappers** (not raw `.mp4`) so TiviMate lists them under Live TV. See `SpecialEventsMerger`, `GuideScheduleHlsManifest`.
+
+### Live supplements
+
+| Source | IDs | Notes |
+|--------|-----|-------|
+| iptv-org | `iptv:*` | GitHub FAST playlists (Pluto, Plex, Xumo, …) |
+| Free-TV/IPTV | `freetv:*` | Curated USA/CA/UK M3U backups ([FMHY eval](docs/FMHY-STREAMING-EVAL.md)) |
+| ntv.cx | `ntv:*` | 24/7 CDN resolves |
+| Adult Swim | `adultswim:*` | Probed Turner HLS |
 
 ### M3U rewrite (`rewrite_m3u8`)
 

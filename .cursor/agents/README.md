@@ -64,8 +64,6 @@ Use android-debug-orchestrator to run a full debug sweep on FUSA2541006925.
 | [`linux-gateway-parity`](linux-gateway-parity.md) | Kotlin vs Python `stepdaddy-web` behavior gaps |
 | [`epg-mapping-auditor`](epg-mapping-auditor.md) | EPG tvg-id mapping quality audit |
 | [`iptv-provider-sort-research`](iptv-provider-sort-research.md) | Provider sort / FiOS-Spectrum numbering research |
-| [`thetvapp-token-flow-investigator`](thetvapp-token-flow-investigator.md) | TVApp2 token / proxy sidecar issues |
-| [`tvapp2-integration-strategist`](tvapp2-integration-strategist.md) | Sidecar integration planning |
 
 ---
 

@@ -147,7 +147,6 @@ object GroupTitleResolver {
 
     /** Supplement / legacy group-title labels that share a canonical sort slot. */
     private val GROUP_TITLE_ALIASES = mapOf(
-        "🏈 | Sports | TheTvApp" to SPECIAL_EVENTS,
         "🎟️ | Special Events" to SPECIAL_EVENTS,
         "🎬 | Adult Swim | Marathon" to ENTERTAINMENT,
         IMDB_MOVIES to MOVIES,

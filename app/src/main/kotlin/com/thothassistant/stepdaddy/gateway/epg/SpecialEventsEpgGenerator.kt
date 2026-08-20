@@ -11,7 +11,7 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
-/** Unified XMLTV for Special Events (DaddyLive schedule + TheTvApp live). */
+/** Unified XMLTV for Special Events (DaddyLive schedule guides + event streams). */
 object SpecialEventsEpgGenerator {
     private val XMLTV_TIME = DateTimeFormatter.ofPattern("yyyyMMddHHmmss Z").withZone(ZoneOffset.UTC)
     private const val LIVE_EVENT_HOURS = 4L
@@ -58,9 +58,6 @@ object SpecialEventsEpgGenerator {
                     val schedule = EventScheduleTimesResolver.fromChannel(channel) ?: return@forEach
                     DlhdEventEpgProgrammes.programmeForChannel(channel, schedule, now)?.let { out += it }
                 }
-                channel.id.startsWith("sport:") -> {
-                    programmeForLiveStream(channel, now)?.let { out += it }
-                }
             }
         }
         return out
@@ -98,30 +95,6 @@ object SpecialEventsEpgGenerator {
             title = title,
             start = start,
             stop = start.plus(LIVE_EVENT_HOURS, ChronoUnit.HOURS),
-        )
-    }
-
-    private fun programmeForLiveStream(channel: SupplementChannel, now: Instant): EventProgramme? {
-        val tvgId = channel.tvgId?.trim().orEmpty()
-        if (tvgId.isEmpty()) return null
-        val startMs = channel.eventStartMs
-        val stopMs = channel.eventStopMs
-        val (start, stop) = if (startMs != null && stopMs != null && stopMs > startMs) {
-            Instant.ofEpochMilli(startMs) to Instant.ofEpochMilli(stopMs)
-        } else {
-            val anchor = now.truncatedTo(ChronoUnit.MINUTES)
-            anchor to anchor.plus(LIVE_EVENT_HOURS, ChronoUnit.HOURS)
-        }
-        if (!SpecialEventLifecycle.isActive(start, stop, now)) return null
-        val title = channel.name.trim().ifEmpty { "Live event" }
-        return EventProgramme(
-            channelId = tvgId,
-            displayName = channel.name,
-            title = title,
-            start = start,
-            stop = stop,
-            regionCode = channel.regionCode,
-            languageCode = channel.languageCode,
         )
     }
 

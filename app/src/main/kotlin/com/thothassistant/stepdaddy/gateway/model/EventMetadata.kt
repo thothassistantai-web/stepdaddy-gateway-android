@@ -3,7 +3,7 @@ package com.thothassistant.stepdaddy.gateway.model
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/** Structured metadata scraped from DaddyLive schedules and TheTvApp embeds. */
+/** Structured metadata scraped from DaddyLive schedules. */
 @Serializable
 data class EventMetadata(
     val title: String,
@@ -29,7 +29,4 @@ enum class EventMetadataSource {
 
     @SerialName("dlhd_tv2")
     DLHD_TV2,
-
-    @SerialName("thetvapp")
-    THE_TV_APP,
 }

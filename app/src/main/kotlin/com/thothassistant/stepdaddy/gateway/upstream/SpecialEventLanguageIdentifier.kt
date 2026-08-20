@@ -47,11 +47,6 @@ object SpecialEventLanguageIdentifier {
     private val frenchDiacriticsRe = Regex("""[àâäéèêëïîôùûüçœæ]""", RegexOption.IGNORE_CASE)
     private val spanishDiacriticsRe = Regex("""[ñáéíóúü¿¡]""", RegexOption.IGNORE_CASE)
 
-    private val urlLocaleRe = Regex(
-        """thetvapp\.link/(?:fr|es|de|it|pt)(?:/|$)""",
-        RegexOption.IGNORE_CASE,
-    )
-
     /** Returns ISO 639-1 code (`en`, `fr`, `es`, …) or `null` when unknown. */
     fun identify(ctx: Context): String? {
         val corpus = buildList {
@@ -67,7 +62,6 @@ object SpecialEventLanguageIdentifier {
         if (frenchDiacriticsRe.containsMatchIn(corpus)) return "fr"
         if (spanishDiacriticsRe.containsMatchIn(corpus)) return "es"
 
-        localeFromUrl(ctx.eventSourceUrl)?.let { return it }
         normalizeLocale(ctx.siteLocale)?.let { return it }
 
         if (corpus.isBlank()) return null
@@ -112,20 +106,6 @@ object SpecialEventLanguageIdentifier {
         germanChannelRe.containsMatchIn(corpus) -> "de"
         italianChannelRe.containsMatchIn(corpus) -> "it"
         else -> null
-    }
-
-    private fun localeFromUrl(eventSourceUrl: String?): String? {
-        val url = eventSourceUrl?.trim().orEmpty()
-        if (url.isEmpty()) return null
-        val match = urlLocaleRe.find(url) ?: return null
-        return when (match.value.lowercase().substringAfter("thetvapp.link/").take(2)) {
-            "fr" -> "fr"
-            "es" -> "es"
-            "de" -> "de"
-            "it" -> "it"
-            "pt" -> "pt"
-            else -> null
-        }
     }
 
     private fun normalizeLocale(raw: String?): String? {

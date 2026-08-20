@@ -89,10 +89,10 @@ class EventTitleHealthDotsTest {
     @Test
     fun `non dlhd-event returns empty prefix`() {
         val channel = SupplementChannel(
-            id = "sport:1",
+            id = "iptv:1",
             name = "Test",
-            groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
-            streamUrl = "",
+            groupTitle = GroupTitleResolver.ENTERTAINMENT,
+            streamUrl = "https://example.com/a.m3u8",
         )
         assertEquals("", EventTitleHealthDots.prefixForSupplement(channel, DlhdEventStreamHealth.Status.HEALTHY))
     }

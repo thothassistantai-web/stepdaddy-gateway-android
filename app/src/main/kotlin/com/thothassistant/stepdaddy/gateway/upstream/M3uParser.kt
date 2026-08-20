@@ -1,7 +1,7 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
 /**
- * Minimal M3U parser for supplement playlists (TVApp2-style EXTINF + URL lines).
+ * Minimal M3U parser for supplement playlists (EXTINF + URL lines).
  */
 object M3uParser {
     data class Entry(

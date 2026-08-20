@@ -55,17 +55,6 @@ class SpecialEventRegionIdentifierTest {
     }
 
     @Test
-    fun identify_thetvappUkUrl() {
-        val code = SpecialEventRegionIdentifier.identify(
-            SpecialEventRegionIdentifier.Context(
-                eventTitle = "Liverpool vs Man City",
-                eventSourceUrl = "https://thetvapp.link/uk/soccer/liverpool-man-city/123",
-            ),
-        )
-        assertEquals("UK", code)
-    }
-
-    @Test
     fun identify_blankContext_returnsNull() {
         assertNull(SpecialEventRegionIdentifier.identify(SpecialEventRegionIdentifier.Context()))
     }

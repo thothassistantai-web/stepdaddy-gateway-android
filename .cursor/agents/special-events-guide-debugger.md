@@ -118,8 +118,7 @@ curl -s -m 15 "$DLHD_BASE/tv2.json" | head -c 500
 | Guide in M3U but 404 on `.mp4` | `guide_schedules.json` empty or slug mismatch | Re-sync supplements; check `DlhdEventStreamRoutes` slug vs `dlhd-guide:{slug}` id |
 | MP4 200 but TiviMate spinner | ExoPlayer format / codec | `fusa-tivimate-debugger`; confirm progressive MP4 not HLS wrapper |
 | Guides exist but wrong order | Sort regression | Run `SpecialEventsMergerTest`; check `interleaveGuidesAndStreams` + `SpecialEventSort` |
-| Guide skipped entirely | `interleaveGuidesAndStreams` line 150: both `streams.isEmpty()` **and** `guideProgrammes` empty | Upstream category had no active rows; expected |
-| Only TheTvApp `sport:*` rows, no `dlhd-guide:*` | DLHD schedule merge failed, fallback to tvApp only | Log: `Special Events merge failed`; fix schedule base URL |
+| Guide skipped entirely | `interleaveGuidesAndStreams`: both `streams.isEmpty()` **and** `guideProgrammes` empty | Upstream category had no active rows; expected |
 | Guides disappeared after deploy | Lifecycle change removing finished categories | Compare CHANGELOG; check if guides require active streams vs schedule-only |
 
 ## Code invariants (verify when fixing)
@@ -139,7 +138,6 @@ curl -s -m 15 "$DLHD_BASE/tv2.json" | head -c 500
 | M3U missing supplements | `gateway-playlist-debugger` |
 | Guide EPG blank in TiviMate | `gateway-epg-debugger` |
 | ExoPlayer errors on guide | `fusa-tivimate-debugger` |
-| TheTvApp-only events | `thetvapp-token-flow-investigator` |
 
 ## Report format
 

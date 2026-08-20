@@ -66,7 +66,4 @@ enum class EventScheduleSource {
 
     @SerialName("dlhd_tv2")
     DLHD_TV2,
-
-    @SerialName("thetvapp")
-    THE_TV_APP,
 }

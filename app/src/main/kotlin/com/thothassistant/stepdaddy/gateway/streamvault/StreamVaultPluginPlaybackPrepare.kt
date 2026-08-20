@@ -85,13 +85,6 @@ internal object StreamVaultPluginPlaybackPrepare {
                 supplement?.origin?.trim()?.takeIf { it.isNotEmpty() }?.let { headers["Origin"] = it }
                 userAgent = GatewayConfig.TIVIMATE_USER_AGENT
             }
-            path.contains("/xyz-stream/") -> {
-                val streamId = path.substringAfterLast('/').removeSuffix(".m3u8")
-                val supplement = supplementSource?.xyzChannel(streamId)
-                supplement?.referer?.trim()?.takeIf { it.isNotEmpty() }?.let { headers["Referer"] = it }
-                supplement?.origin?.trim()?.takeIf { it.isNotEmpty() }?.let { headers["Origin"] = it }
-                userAgent = GatewayConfig.TIVIMATE_USER_AGENT
-            }
             path.contains("/dlhd-event-stream/") ||
                 path.contains("/tivimate-stream/dlhd-event-") ||
                 path.contains("/dlhd-event-mirror/") -> {

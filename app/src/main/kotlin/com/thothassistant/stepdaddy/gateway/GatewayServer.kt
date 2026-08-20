@@ -15,7 +15,6 @@ import com.thothassistant.stepdaddy.gateway.routes.MoviesRoutes
 import com.thothassistant.stepdaddy.gateway.routes.SeriesRoutes
 import com.thothassistant.stepdaddy.gateway.routes.XtreamApiRoutes
 import com.thothassistant.stepdaddy.gateway.routes.NtvStreamRoutes
-import com.thothassistant.stepdaddy.gateway.routes.XyzStreamRoutes
 import com.thothassistant.stepdaddy.gateway.routes.VodStreamRoutes
 import com.thothassistant.stepdaddy.gateway.upstream.MovieboxSession
 import com.thothassistant.stepdaddy.gateway.upstream.MovieboxStreamResolver
@@ -116,7 +115,6 @@ class GatewayServer(
             supplementSource,
             ntvResolver,
         )
-        val xyzStreamRoutes = XyzStreamRoutes(environment, supplementSource)
         val vodStreamCache = VodStreamCache()
         val vodHttpClient = if (fireLite) {
             FireMemoryGuard.compactHttpClient()
@@ -299,10 +297,6 @@ class GatewayServer(
                 route("/ntv-stream/{token}.m3u8") {
                     get { ntvStreamRoutes.tivimateStream(call, call.parameters["token"].orEmpty()) }
                     head { ntvStreamRoutes.tivimateStream(call, call.parameters["token"].orEmpty()) }
-                }
-                route("/xyz-stream/{streamId}.m3u8") {
-                    get { xyzStreamRoutes.tivimateStream(call, call.parameters["streamId"].orEmpty()) }
-                    head { xyzStreamRoutes.tivimateStream(call, call.parameters["streamId"].orEmpty()) }
                 }
                 route("/vod/movie/{tmdbId}.m3u8") {
                     get { vodStreamRoutes.movieStream(call, call.parameters["tmdbId"].orEmpty()) }

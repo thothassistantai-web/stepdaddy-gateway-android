@@ -27,6 +27,7 @@ import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
 import com.thothassistant.stepdaddy.gateway.upstream.GroupTitleResolver
 import com.thothassistant.stepdaddy.gateway.upstream.PlaylistCache
 import com.thothassistant.stepdaddy.gateway.upstream.SupplementSource
+import com.thothassistant.stepdaddy.gateway.upstream.SupplementSyncSnapshot
 import com.thothassistant.stepdaddy.gateway.upstream.SpecialEventsHealthSummary
 import com.thothassistant.stepdaddy.gateway.ui.dashboard.DashboardLoadProgressCalculator
 import io.ktor.http.ContentType
@@ -328,7 +329,7 @@ class HealthRoutes(
         AudioPlaybackSettings.fromEnvironment(environment)
 
     private fun buildSupplementStatus(
-        sync: SupplementSource.SyncSnapshot,
+        sync: SupplementSyncSnapshot,
         specialEventGuides: Int = sync.specialEventGuides
             .takeIf { it > 0 }
             ?: supplementSource.specialEventGuideCount(),
@@ -357,7 +358,7 @@ class HealthRoutes(
             iptvOrgEnabled = supplementSource.iptvOrgEnabled(),
             ntvCxEnabled = supplementSource.ntvCxEnabled(),
             adultSwimEnabled = supplementSource.adultSwimEnabled(),
-            xyzStreamsEnabled = supplementSource.xyzStreamsEnabled(),
+            freeTvEnabled = supplementSource.freeTvEnabled(),
             channels = supplementSource.channelCount(),
             sportsChannels = supplementSource.sportsCount(),
             specialEventGuides = specialEventGuides,
@@ -367,28 +368,23 @@ class HealthRoutes(
             iptvOrgChannels = maxOf(supplementSource.iptvOrgCount(), sync.iptvOrgChannels),
             ntvCxChannels = supplementSource.ntvCxCount(),
             adultSwimChannels = supplementSource.adultSwimCount(),
-            xyzStreamsChannels = supplementSource.xyzStreamsCount(),
-            xyzStreamsEpgDiscoveryEnabled = supplementSource.xyzStreamsEpgDiscoveryEnabled(),
-            xyzStreamsCatalogPublished = sync.xyzStreamsCatalogPublished,
-            xyzStreamsDiscoveredPublished = sync.xyzStreamsDiscoveredPublished,
-            xyzStreamsDiscoveryProbes = sync.xyzStreamsDiscoveryProbes,
-            xyzStreamsDiscoveredLabels = sync.xyzStreamsDiscoveredLabels,
+            freeTvChannels = maxOf(supplementSource.freeTvCount(), sync.freeTvChannels),
             ntvCxImportMode = supplementSource.ntvCxImportMode().name,
             ntvCxMergeMode = supplementSource.ntvCxImportMode().name,
             iptvOrgImportMode = environment.supplementIptvOrgImportMode.name,
-            xyzStreamsImportMode = environment.supplementXyzStreamsImportMode.name,
             adultSwimImportMode = environment.supplementAdultSwimImportMode.name,
+            freeTvImportMode = environment.supplementFreeTvImportMode.name,
             iptvOrgEnabledPlaylistCount = environment.iptvOrgEnabledPlaylists.size,
             ntvCxResolveProbeOk = sync.ntvCxResolveProbeOk,
             adultSwimProbed = sync.adultSwimProbed,
             adultSwimProbeOk = sync.adultSwimProbeOk,
+            freeTvPlaylistsFetched = sync.freeTvPlaylistsFetched,
+            freeTvPlaylistsFailed = sync.freeTvPlaylistsFailed,
             tmdbMoviesEnabled = supplementSource.tmdbMoviesEnabled(),
             tmdbVodMovies = supplementSource.tmdbVodCount().takeIf { it > 0 } ?: sync.tmdbVodMovies,
             tmdbVodSeries = supplementSource.tmdbVodSeriesCount().takeIf { it > 0 } ?: sync.tmdbVodSeries,
             iptvOrgPlaylistsFetched = sync.iptvOrgPlaylistsFetched,
             iptvOrgPlaylistsFailed = sync.iptvOrgPlaylistsFailed,
-            blockedTheTvApp = sync.blockedTheTvApp,
-            blockedTvPass = sync.blockedTvPass,
             blockedTokenProxy = sync.blockedTokenProxy,
             lastSpecialEventsSyncMs = lastSyncMs,
             specialEventsScrapeAgeSeconds = SpecialEventsHealthSummary.ageSeconds(lastSyncMs, nowMs),
@@ -422,7 +418,7 @@ class HealthRoutes(
             sports = supplementSource.sportsCount(),
             ntvCx = supplementSource.ntvCxCount(),
             adultSwim = supplementSource.adultSwimCount(),
-            xyzStreams = supplementSource.xyzStreamsCount(),
+            freeTv = supplementSource.freeTvCount(),
             adult = adultCount,
             playlistReady = playlistReady,
             total = totalChannels,

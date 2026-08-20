@@ -52,11 +52,6 @@ object SpecialEventRegionIdentifier {
         RegexOption.IGNORE_CASE,
     )
 
-    private val urlRegionRe = Regex(
-        """thetvapp\.link/(?:uk|ca|au|ie|mx|br|de|fr|es|it)(?:/|$)""",
-        RegexOption.IGNORE_CASE,
-    )
-
     private val usLeagueDefaults = setOf(
         "NFL", "NBA", "NHL", "MLB", "MLS", "NCAA", "UFC", "NASCAR", "WNBA", "BOXING", "WWE",
     )
@@ -84,7 +79,6 @@ object SpecialEventRegionIdentifier {
         broadcasterRegion(corpus)?.let { return it }
         categoryHintRegion(corpus)?.let { return it }
         leagueDefaultRegion(ctx.league, corpus)?.let { return it }
-        regionFromUrl(ctx.eventSourceUrl)?.let { return it }
         if (corpus.isBlank()) return null
         return "US"
     }
@@ -150,25 +144,5 @@ object SpecialEventRegionIdentifier {
         }
         if (normalized == "SOCCER" && corpus.contains("MLS", ignoreCase = true)) return "US"
         return null
-    }
-
-    private fun regionFromUrl(eventSourceUrl: String?): String? {
-        val url = eventSourceUrl?.trim().orEmpty()
-        if (url.isEmpty()) return null
-        val match = urlRegionRe.find(url) ?: return null
-        val token = match.value.lowercase().substringAfter("thetvapp.link/").take(2)
-        return when (token) {
-            "uk" -> "UK"
-            "ca" -> "CA"
-            "au" -> "AU"
-            "ie" -> "IE"
-            "mx" -> "MX"
-            "br" -> "BR"
-            "de" -> "DE"
-            "fr" -> "FR"
-            "es" -> "ES"
-            "it" -> "IT"
-            else -> null
-        }
     }
 }

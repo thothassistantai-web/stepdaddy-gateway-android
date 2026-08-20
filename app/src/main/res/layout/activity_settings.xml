@@ -280,34 +280,25 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="@string/settings_provider_xyzstreams"
+            android:text="@string/settings_provider_free_tv"
             android:textColor="@color/on_background"
             android:textSize="14sp"
             android:textStyle="bold" />
 
         <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchSupplementXyzStreams"
+            android:id="@+id/switchSupplementFreeTv"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:minHeight="48dp"
-            android:text="@string/settings_supplement_xyzstreams_enable"
+            android:text="@string/settings_supplement_free_tv_enable"
             android:textColor="@color/on_background" />
 
         <include
-            android:id="@+id/xyzStreamsImportMode"
+            android:id="@+id/freeTvImportMode"
             layout="@layout/include_settings_import_mode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
-
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchXyzStreamsEpgDiscovery"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:minHeight="48dp"
-            android:text="@string/settings_supplement_xyzstreams_epg_discovery"
-            android:textColor="@color/on_background" />
 
         <TextView
             android:layout_width="match_parent"

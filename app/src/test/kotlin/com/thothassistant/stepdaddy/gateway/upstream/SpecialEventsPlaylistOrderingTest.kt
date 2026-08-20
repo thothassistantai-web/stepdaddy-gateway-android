@@ -42,12 +42,10 @@ class SpecialEventsPlaylistOrderingTest {
     /** Mirrors SupplementSource: merge, dedupe, then playlist. */
     private fun supplementsAfterMergeAndDedupe(
         dlhdEvents: List<DaddyLiveEventResolver.ParsedEvent>,
-        theTvApp: List<SupplementChannel> = emptyList(),
     ): List<SupplementChannel> {
         val raw = SpecialEventsMerger.buildFromParsed(
             dlhdEvents = dlhdEvents,
             dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = dlhdEvents.size),
-            theTvAppChannels = theTvApp,
             maxStreams = 50,
         )
         return SpecialEventStreamDedup.dedupeBundle(raw).channels
@@ -188,41 +186,6 @@ class SpecialEventsPlaylistOrderingTest {
         val rows = specialEventRows(playlist)
         assertPlaylistGuideBlock(rows, "boxing", listOf("FIGHT A"))
         assertFalse(rows.any { it.title.contains("FIGHT B", ignoreCase = true) })
-    }
-
-    @Test
-    fun `thetvapp sport rows sort after all dlhd guide blocks in playlist`() {
-        val supplements = supplementsAfterMergeAndDedupe(
-            dlhdEvents = listOf(
-                dlhdEvent("Golf", "Golf : Round 1", league = "GOLF", channelId = "401"),
-            ),
-            theTvApp = listOf(
-                SupplementChannel(
-                    id = "sport:nfl",
-                    name = "Chiefs vs Bills",
-                    groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
-                    streamUrl = "https://example.com/nfl.m3u8",
-                    providerTag = "NFL",
-                ),
-                SupplementChannel(
-                    id = "sport:nba",
-                    name = "Lakers vs Celtics",
-                    groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
-                    streamUrl = "https://example.com/nba.m3u8",
-                    providerTag = "NBA",
-                ),
-            ),
-        )
-
-        val rows = specialEventRows(playlistFor(supplements))
-        val lastGuideIndex = rows.indexOfLast { it.stream.contains("/dlhd-event-guide/") }
-        val firstSportIndex = rows.indexOfFirst { it.stream.contains("example.com/nfl") || it.stream.contains("example.com/nba") }
-        assertTrue(lastGuideIndex >= 0)
-        assertTrue(firstSportIndex > lastGuideIndex)
-
-        val nflIndex = rows.indexOfFirst { it.title.contains("CHIEFS VS BILLS") }
-        val nbaIndex = rows.indexOfFirst { it.title.contains("LAKERS VS CELTICS") }
-        assertTrue(nflIndex >= 0 && nbaIndex > nflIndex)
     }
 
     @Test

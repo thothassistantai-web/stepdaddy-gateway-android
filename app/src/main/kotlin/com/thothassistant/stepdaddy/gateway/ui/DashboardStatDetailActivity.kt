@@ -183,6 +183,7 @@ class DashboardStatDetailActivity : AppCompatActivity() {
                 appendLine()
                 appendLine("DaddyLive: ${numberFormat.format(p.daddylive)}")
                 appendLine("IPTV-org: ${numberFormat.format(p.iptvOrg)}")
+                appendLine("Free-TV: ${numberFormat.format(p.freeTv)}")
                 appendLine("NTV.cx: ${numberFormat.format(p.ntvCx)}")
                 appendLine("Sports: ${numberFormat.format(p.sports)}")
                 append("Adult Swim: ${numberFormat.format(p.adultSwim)}")
@@ -240,15 +241,12 @@ class DashboardStatDetailActivity : AppCompatActivity() {
                     appendLine("iptvOrgEnabled=${s.iptvOrgEnabled}")
                     appendLine("iptvOrgPlaylistsFetched=${s.iptvOrgPlaylistsFetched}")
                     appendLine("iptvOrgPlaylistsFailed=${s.iptvOrgPlaylistsFailed}")
+                    appendLine("freeTvEnabled=${s.freeTvEnabled}")
+                    appendLine("freeTvChannels=${s.freeTvChannels}")
+                    appendLine("freeTvPlaylistsFetched=${s.freeTvPlaylistsFetched}")
+                    appendLine("freeTvPlaylistsFailed=${s.freeTvPlaylistsFailed}")
                     appendLine("ntvCxEnabled=${s.ntvCxEnabled}")
                     appendLine("adultSwimEnabled=${s.adultSwimEnabled}")
-                    appendLine("xyzStreamsEnabled=${s.xyzStreamsEnabled}")
-                    appendLine("xyzStreamsChannels=${s.xyzStreamsChannels}")
-                    appendLine("xyzStreamsEpgDiscoveryEnabled=${s.xyzStreamsEpgDiscoveryEnabled}")
-                    appendLine("xyzStreamsCatalogPublished=${s.xyzStreamsCatalogPublished}")
-                    appendLine("xyzStreamsDiscoveredPublished=${s.xyzStreamsDiscoveredPublished}")
-                    appendLine("xyzStreamsDiscoveryProbes=${s.xyzStreamsDiscoveryProbes}")
-                    s.xyzStreamsDiscoveredLabels.forEach { appendLine("xyzDiscovered=$it") }
                 }
             }
         }

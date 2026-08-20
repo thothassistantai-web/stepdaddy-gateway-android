@@ -54,10 +54,11 @@ object ChannelTitleNormalizer {
             )
         }
         if (source == PlaylistTitleSource.SPECIAL_EVENT) {
+            val meta = DlhdEventSourceMeta.parse(eventSourceUrl)
             val league = providerTag?.trim().orEmpty().ifEmpty {
-                eventSourceUrl?.let { SpecialEventSort.leagueFromEventUrl(it) }
+                meta?.let { SpecialEventSort.leagueFromCategoryOrTitle(it.category, it.displayTitle()) }
             }
-            val eventTitle = DlhdEventSourceMeta.parse(eventSourceUrl)?.displayTitle()
+            val eventTitle = meta?.displayTitle()
                 ?.takeIf { it.isNotBlank() }
                 ?: channelName
             return XtreamCategoryTitleFormatter.formatSpecialEvent(

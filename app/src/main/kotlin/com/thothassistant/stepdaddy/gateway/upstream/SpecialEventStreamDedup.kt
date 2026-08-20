@@ -118,7 +118,7 @@ object SpecialEventStreamDedup {
         channel.id.startsWith("dlhd-guide:")
 
     private fun isEventStream(channel: SupplementChannel): Boolean =
-        channel.id.startsWith("dlhd-event:") || channel.id.startsWith("sport:")
+        channel.id.startsWith("dlhd-event:")
 
     private fun pickBetter(
         a: SupplementChannel,

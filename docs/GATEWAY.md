@@ -49,7 +49,9 @@ Expect `ok: true`, `starting: false`, and `channels > 0` before importing playli
 
 ### Special Events (tier 1–5, v3.0.0)
 
-Full health includes `specialEventGuides`, `dlhdEventStreams`, and `specialEvents` summary (language/region metadata, schedule times, stream health dots 🟢🔴🟡⚪, lifecycle add/remove).
+Full health includes `specialEventGuides`, `dlhdEventStreams`, and `specialEvents` summary (language/region metadata, schedule times, stream health dots 🟢🔴🟡⚪, lifecycle add/remove). DaddyLive schedule only — TheTvApp/xyzstreams removed.
+
+Live backups also expose `freeTvChannels` / `freeTvEnabled` (Free-TV/IPTV USA/CA/UK). See [FMHY-STREAMING-EVAL.md](FMHY-STREAMING-EVAL.md).
 
 ## Stream proxies
 
@@ -79,6 +81,7 @@ Gateway ships an embedded StreamVault plugin (`com.thothassistant.stepdaddy.gate
 |-----|-------|
 | [TWO-APP.md](TWO-APP.md) | Gateway + TiviMate Daddy |
 | [STOCK-TIVIMATE-SETUP.md](STOCK-TIVIMATE-SETUP.md) | Stock TiviMate + StreamVault ship path |
+| [FMHY-STREAMING-EVAL.md](FMHY-STREAMING-EVAL.md) | FMHY Streaming research → removals + Free-TV integration |
 | [TIER-RELEASES.md](TIER-RELEASES.md) | Special Events tier rollout (completed in 3.0.0) |
 | [STREAMVAULT-GATEWAY-PLAN.md](STREAMVAULT-GATEWAY-PLAN.md) | StreamVault integration plan |
 | [RELEASE.md](RELEASE.md) | Version bump and GitHub releases |

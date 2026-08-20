@@ -109,10 +109,7 @@ class GatewayAdminController(
         patch.supplementIptvOrgEnabled?.let { environment.supplementIptvOrgEnabled = it }
         patch.supplementNtvCxEnabled?.let { environment.supplementNtvCxEnabled = it }
         patch.supplementAdultSwimEnabled?.let { environment.supplementAdultSwimEnabled = it }
-        patch.supplementXyzStreamsEnabled?.let { environment.supplementXyzStreamsEnabled = it }
-        patch.supplementXyzStreamsEpgDiscoveryEnabled?.let {
-            environment.supplementXyzStreamsEpgDiscoveryEnabled = it
-        }
+        patch.supplementFreeTvEnabled?.let { environment.supplementFreeTvEnabled = it }
         patch.supplementTmdbMoviesEnabled?.let { environment.supplementTmdbMoviesEnabled = it }
         patch.gatewayEpgEnabled?.let { environment.gatewayEpgEnabled = it }
         patch.externalEpgUrl?.let { environment.externalEpgUrl = it }
@@ -545,8 +542,8 @@ class GatewayAdminController(
     private fun supplementSourceLabel(supplement: SupplementChannel): String = when {
         supplement.id.startsWith("iptv:") -> "iptv-org"
         supplement.id.startsWith("ntv:") -> "ntv.cx"
-        supplement.id.startsWith("xyz:") -> "xyzstreams"
-        supplement.id.startsWith("sport:") -> "sports"
+        supplement.id.startsWith("dlhd-guide:") ||
+            supplement.id.startsWith("dlhd-event:") -> "special-events"
         else -> "supplement"
     }
 
@@ -587,8 +584,7 @@ class GatewayAdminController(
         supplementIptvOrgEnabled = environment.supplementIptvOrgEnabled,
         supplementNtvCxEnabled = environment.supplementNtvCxEnabled,
         supplementAdultSwimEnabled = environment.supplementAdultSwimEnabled,
-        supplementXyzStreamsEnabled = environment.supplementXyzStreamsEnabled,
-        supplementXyzStreamsEpgDiscoveryEnabled = environment.supplementXyzStreamsEpgDiscoveryEnabled,
+        supplementFreeTvEnabled = environment.supplementFreeTvEnabled,
         supplementTmdbMoviesEnabled = environment.supplementTmdbMoviesEnabled,
         gatewayEpgEnabled = environment.gatewayEpgEnabled,
         externalEpgUrl = environment.externalEpgUrlForDisplay(),

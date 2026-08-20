@@ -2,7 +2,6 @@ package com.thothassistant.stepdaddy.gateway.admin
 
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import com.thothassistant.stepdaddy.gateway.upstream.NtvCxCdnLiveConfig
-import com.thothassistant.stepdaddy.gateway.upstream.XyzStreamsConfig
 import java.net.URI
 
 object AdminStreamHelper {
@@ -23,15 +22,6 @@ object AdminStreamHelper {
                 ?: NtvCxCdnLiveConfig.REFERER
             val origin = supplement.origin?.trim()?.takeIf { it.isNotEmpty() }
                 ?: NtvCxCdnLiveConfig.ORIGIN
-            return "$stream|User-Agent=$TIVIMATE_USER_AGENT|Referer=$referer|Origin=$origin"
-        }
-        if (supplement.id.startsWith("xyz:")) {
-            val streamId = supplement.id.removePrefix("xyz:")
-            val stream = "${base.trimEnd('/')}/xyz-stream/$streamId.m3u8"
-            val referer = supplement.referer?.trim()?.takeIf { it.isNotEmpty() }
-                ?: XyzStreamsConfig.REFERER
-            val origin = supplement.origin?.trim()?.takeIf { it.isNotEmpty() }
-                ?: XyzStreamsConfig.ORIGIN
             return "$stream|User-Agent=$TIVIMATE_USER_AGENT|Referer=$referer|Origin=$origin"
         }
         val referer = supplement.referer?.trim()?.takeIf { it.isNotEmpty() }

@@ -96,7 +96,7 @@ Run **top to bottom**. Escalate severity when a step fails critically.
 | 0 channels / mirror errors | `gateway-channel-upstream-debugger` |
 | EPG empty / wrong guide | `gateway-epg-debugger` → `epg-mapping-auditor` |
 | Logos broken | `gateway-logo-meta-debugger` |
-| Sidecar / TVApp2 supplements | `gateway-supplement-debugger` → `thetvapp-token-flow-investigator` |
+| Supplement sync / Special Events empty | `gateway-supplement-debugger` → `special-events-guide-debugger` |
 | Linux vs Kotlin behavior gap | `linux-gateway-parity` |
 | Unclear multi-issue | Run this orchestrator first |
 

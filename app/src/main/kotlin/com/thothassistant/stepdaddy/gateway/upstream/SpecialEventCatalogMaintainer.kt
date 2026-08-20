@@ -112,8 +112,7 @@ object SpecialEventCatalogMaintainer {
             channel.id.startsWith("dlhd-event:") &&
                 isDlhdEventActive(channel, Instant.ofEpochMilli(nowMs))
         }
-        val sports = channels.filter { it.id.startsWith("sport:") }
-        if (guides.isEmpty() && streams.isEmpty()) return sports
+        if (guides.isEmpty() && streams.isEmpty()) return emptyList()
 
         val streamsByCategory = streams.groupBy { channel ->
             categorySlug(channel).orEmpty()
@@ -148,26 +147,11 @@ object SpecialEventCatalogMaintainer {
                 streamCount++
             }
         }
-        if (streamCount < maxStreams) {
-            val orphanSports = sports.sortedWith(
-                compareBy(
-                    { SpecialEventSort.streamWindowSortKey(it, nowMs) },
-                    { SpecialEventSort.sortKey(it.providerTag, it.name, it.eventSourceUrl) },
-                    { it.name.lowercase() },
-                ),
-            )
-            for (stream in orphanSports) {
-                if (streamCount >= maxStreams) break
-                result += stream
-                streamCount++
-            }
-        }
         return result
     }
 
     fun isSpecialEventChannel(id: String): Boolean =
-        id.startsWith("sport:") ||
-            id.startsWith("dlhd-guide:") ||
+        id.startsWith("dlhd-guide:") ||
             id.startsWith("dlhd-event:")
 
     fun prune(
@@ -186,11 +170,7 @@ object SpecialEventCatalogMaintainer {
         }.filterValues { it.isNotEmpty() }
 
         val activeStreams = channels.filter { channel ->
-            when {
-                channel.id.startsWith("dlhd-event:") -> isDlhdEventActive(channel, now)
-                channel.id.startsWith("sport:") -> true
-                else -> false
-            }
+            channel.id.startsWith("dlhd-event:") && isDlhdEventActive(channel, now)
         }
         val slugsWithStreams = activeStreams.mapNotNull { categorySlug(it) }.toSet()
 

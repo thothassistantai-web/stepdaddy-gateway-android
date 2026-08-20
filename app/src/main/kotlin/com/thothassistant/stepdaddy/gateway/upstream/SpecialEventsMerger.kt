@@ -9,13 +9,12 @@ import java.time.Instant
 import kotlinx.serialization.Serializable
 
 /**
- * Merges DaddyLive schedule feeds and TheTvApp live events into one Special Events supplement set.
+ * Builds Special Events supplement channels from DaddyLive schedule feeds (tv.json / tv2.json).
  */
 object SpecialEventsMerger {
     data class MergeResult(
         val channels: List<SupplementChannel>,
         val dlhdStats: DaddyLiveEventResolver.ResolveStats = DaddyLiveEventResolver.ResolveStats(),
-        val theTvAppCount: Int = 0,
     )
 
     @Serializable
@@ -37,24 +36,21 @@ object SpecialEventsMerger {
     fun merge(
         dlhdBaseUrl: String,
         dlhdResolver: DaddyLiveEventResolver,
-        theTvAppChannels: List<SupplementChannel>,
         maxStreams: Int = SupplementConfig.MAX_SPECIAL_EVENT_STREAMS,
     ): EpgBundle {
         val (dlhdEvents, dlhdStats) = dlhdResolver.resolveFromNetwork(dlhdBaseUrl)
-        return buildFromParsed(dlhdEvents, dlhdStats, theTvAppChannels, maxStreams)
+        return buildFromParsed(dlhdEvents, dlhdStats, maxStreams)
     }
 
     fun buildFromParsed(
         dlhdEvents: List<DaddyLiveEventResolver.ParsedEvent>,
-        dlhdStats: DaddyLiveEventResolver.ResolveStats,
-        theTvAppChannels: List<SupplementChannel>,
+        dlhdStats: DaddyLiveEventResolver.ResolveStats = DaddyLiveEventResolver.ResolveStats(),
         maxStreams: Int = SupplementConfig.MAX_SPECIAL_EVENT_STREAMS,
     ): EpgBundle {
         val group = GroupTitleResolver.SPECIAL_EVENTS
         val guideProgrammes = linkedMapOf<String, MutableList<GuideEventRow>>()
         val guides = linkedMapOf<String, SupplementChannel>()
         val streamsByCategory = linkedMapOf<String, MutableList<SupplementChannel>>()
-        val theTvAppStreams = mutableListOf<SupplementChannel>()
         val occupiedEventKeys = linkedSetOf<String>()
         val occupiedTitleKeys = mutableSetOf<String>()
         val nowMs = System.currentTimeMillis()
@@ -173,18 +169,10 @@ object SpecialEventsMerger {
             )
         }
 
-        theTvAppChannels.forEach { channel ->
-            val titleKey = normalizeTitleKey(channel.name)
-            if (titleKey in occupiedTitleKeys) return@forEach
-            occupiedTitleKeys += titleKey
-            theTvAppStreams += channel.copy(groupTitle = group)
-        }
-
         return EpgBundle(
             channels = interleaveGuidesAndStreams(
                 guides = guides,
                 streamsByCategory = streamsByCategory,
-                theTvAppStreams = theTvAppStreams,
                 guideProgrammes = guideProgrammes,
                 maxStreams = maxStreams,
             ),
@@ -224,7 +212,6 @@ object SpecialEventsMerger {
     private fun interleaveGuidesAndStreams(
         guides: Map<String, SupplementChannel>,
         streamsByCategory: Map<String, List<SupplementChannel>>,
-        theTvAppStreams: List<SupplementChannel>,
         guideProgrammes: Map<String, List<GuideEventRow>>,
         maxStreams: Int,
     ): List<SupplementChannel> {
@@ -249,20 +236,6 @@ object SpecialEventsMerger {
             result += guide
             if (streamCount >= maxStreams) continue
             for (stream in streams) {
-                if (streamCount >= maxStreams) break
-                result += stream
-                streamCount++
-            }
-        }
-        if (streamCount < maxStreams) {
-            val orphans = theTvAppStreams.sortedWith(
-                compareBy(
-                    { SpecialEventSort.streamWindowSortKey(it, nowMs) },
-                    { SpecialEventSort.sortKey(it.providerTag, it.name, it.eventSourceUrl) },
-                    { it.name.lowercase() },
-                ),
-            )
-            for (stream in orphans) {
                 if (streamCount >= maxStreams) break
                 result += stream
                 streamCount++

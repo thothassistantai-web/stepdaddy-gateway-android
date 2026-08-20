@@ -104,9 +104,9 @@ class PlaylistBuilderTest {
         val supplements = listOf(
             SupplementChannel(
                 id = "sup:abc123",
-                name = "FS1 (MOJ)",
+                name = "FS1 Extra",
                 groupTitle = GroupTitleResolver.SPORTS,
-                streamUrl = "http://fl1.moveonjoy.com/FS1/index.m3u8",
+                streamUrl = "https://example.com/fs1.m3u8",
             ),
         )
 
@@ -165,12 +165,14 @@ class PlaylistBuilderTest {
                 tvgId = "AdultSwimRickandMorty.us",
             ),
             SupplementChannel(
-                id = "sport:abc123",
+                id = "dlhd-event:abc123",
                 name = "Lakers vs Celtics",
                 groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
                 streamUrl = "https://example.com/nba.m3u8",
                 providerTag = "NBA",
-                eventSourceUrl = "https://thetvapp.link/nba/lakers-celtics/123",
+                eventSourceUrl = "Basketball|Sunday|19:00|NBA : Lakers vs Celtics",
+                eventStartMs = java.time.Instant.parse("2026-06-28T12:00:00Z").toEpochMilli(),
+                eventStopMs = java.time.Instant.parse("2026-06-28T16:00:00Z").toEpochMilli(),
             ),
         )
 
@@ -195,14 +197,14 @@ class PlaylistBuilderTest {
     fun `special events sort by league before channel number`() {
         val supplements = listOf(
             SupplementChannel(
-                id = "sport:nfl",
+                id = "dlhd-event:nfl",
                 name = "Chiefs vs Bills",
                 groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
                 streamUrl = "https://example.com/nfl.m3u8",
                 providerTag = "NFL",
             ),
             SupplementChannel(
-                id = "sport:nba",
+                id = "dlhd-event:nba",
                 name = "Lakers vs Celtics",
                 groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
                 streamUrl = "https://example.com/nba.m3u8",
@@ -346,10 +348,10 @@ class PlaylistBuilderTest {
     }
 
     @Test
-    fun `explicit uk prefix emits tvg-country on sport supplement`() {
+    fun `explicit uk prefix emits tvg-country on special event`() {
         val supplements = listOf(
             SupplementChannel(
-                id = "sport:uk-soccer",
+                id = "dlhd-event:uk-soccer",
                 name = "UK: Premier League : Arsenal vs Chelsea",
                 groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
                 streamUrl = "https://example.com/epl.m3u8",
@@ -375,7 +377,7 @@ class PlaylistBuilderTest {
     fun `us nfl event emits tvg-country and english tvg-language when language set`() {
         val supplements = listOf(
             SupplementChannel(
-                id = "sport:nfl",
+                id = "dlhd-event:nfl",
                 name = "Chiefs vs Bills",
                 groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
                 streamUrl = "https://example.com/nfl.m3u8",

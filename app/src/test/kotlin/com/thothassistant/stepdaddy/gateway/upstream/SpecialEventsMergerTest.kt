@@ -11,42 +11,31 @@ class SpecialEventsMergerTest {
     private val futureDateKey = dlhdDateKey(1)
 
     @Test
-    fun merge_buildsGuidesStreamsAndDedupsTheTvApp() {
+    fun merge_buildsGuidesAndStreams() {
         val dlhdEvents = listOf(
             DaddyLiveEventResolver.ParsedEvent(
-                category = "PPV Events",
+                category = "Basketball",
                 dateKey = futureDateKey,
                 timeLabel = "live",
-                title = "Baseball : Seattle Mariners vs Boston Red Sox",
-                league = "MLB",
+                title = "NBA : Lakers vs Celtics",
+                league = "NBA",
                 streams = listOf(
                     DaddyLiveEventResolver.ParsedStream(
                         label = "Link - 1",
-                        channelId = "admin/ppv-boston-red-sox-vs-seattle-mariners/1",
-                        source = DaddyLiveEventResolver.StreamSource.TV2,
+                        channelId = "101",
+                        source = DaddyLiveEventResolver.StreamSource.TV,
                     ),
                 ),
                 live = false,
             ),
         )
-        val theTvApp = listOf(
-            SupplementChannel(
-                id = "sport:abc123",
-                name = "Seattle Mariners vs Boston Red Sox",
-                groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
-                streamUrl = "https://example.com/nba.m3u8",
-                providerTag = "MLB",
-            ),
-        )
         val bundle = SpecialEventsMerger.buildFromParsed(
             dlhdEvents = dlhdEvents,
             dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = 1, streamLinks = 1),
-            theTvAppChannels = theTvApp,
             maxStreams = 10,
         )
         assertTrue(bundle.channels.any { it.id.startsWith("dlhd-guide:") })
         assertTrue(bundle.channels.any { it.id.startsWith("dlhd-event:") })
-        assertEquals(0, bundle.channels.count { it.id.startsWith("sport:") })
         assertEquals(1, bundle.guideProgrammes.values.sumOf { it.size })
         val guideIndex = bundle.channels.indexOfFirst { it.id.startsWith("dlhd-guide:") }
         val eventIndex = bundle.channels.indexOfFirst { it.id.startsWith("dlhd-event:") }
@@ -66,10 +55,10 @@ class SpecialEventsMergerTest {
                     DaddyLiveEventResolver.ParsedStream(
                         label = "Link - 1",
                         channelId = "201",
-                        source = DaddyLiveEventResolver.StreamSource.TV,
-                    ),
+                        source = DaddyLiveEventResolver.StreamSource.TV
+                    )
                 ),
-                live = false,
+                live = false
             ),
             DaddyLiveEventResolver.ParsedEvent(
                 category = "Golf",
@@ -81,17 +70,16 @@ class SpecialEventsMergerTest {
                     DaddyLiveEventResolver.ParsedStream(
                         label = "Link - 1",
                         channelId = "202",
-                        source = DaddyLiveEventResolver.StreamSource.TV,
-                    ),
+                        source = DaddyLiveEventResolver.StreamSource.TV
+                    )
                 ),
-                live = false,
-            ),
+                live = false
+            )
         )
         val bundle = SpecialEventsMerger.buildFromParsed(
             dlhdEvents = dlhdEvents,
             dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = 2, streamLinks = 2),
-            theTvAppChannels = emptyList(),
-            maxStreams = 10,
+            maxStreams = 10
         )
         val ids = bundle.channels.map { it.id }
         val golfGuide = ids.indexOf("dlhd-guide:golf")
@@ -121,10 +109,10 @@ class SpecialEventsMergerTest {
                     DaddyLiveEventResolver.ParsedStream(
                         label = "Link - 1",
                         channelId = "z1",
-                        source = DaddyLiveEventResolver.StreamSource.TV,
-                    ),
+                        source = DaddyLiveEventResolver.StreamSource.TV
+                    )
                 ),
-                live = true,
+                live = true
             ),
             DaddyLiveEventResolver.ParsedEvent(
                 category = "Alpha Early",
@@ -136,17 +124,16 @@ class SpecialEventsMergerTest {
                     DaddyLiveEventResolver.ParsedStream(
                         label = "Link - 1",
                         channelId = "a1",
-                        source = DaddyLiveEventResolver.StreamSource.TV,
-                    ),
+                        source = DaddyLiveEventResolver.StreamSource.TV
+                    )
                 ),
-                live = false,
-            ),
+                live = false
+            )
         )
         val bundle = SpecialEventsMerger.buildFromParsed(
             dlhdEvents = dlhdEvents,
             dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = 2, streamLinks = 2),
-            theTvAppChannels = emptyList(),
-            maxStreams = 10,
+            maxStreams = 10
         )
         val ids = bundle.channels.map { it.id }
         val zebraGuide = ids.indexOf("dlhd-guide:zebra-late")
@@ -160,7 +147,7 @@ class SpecialEventsMergerTest {
             DaddyLiveEventResolver.ParsedStream(
                 label = "Link - $index",
                 channelId = if (index == 3) "ch-1" else "ch-$index",
-                source = DaddyLiveEventResolver.StreamSource.TV,
+                source = DaddyLiveEventResolver.StreamSource.TV
             )
         }
         val event = DaddyLiveEventResolver.ParsedEvent(
@@ -170,7 +157,7 @@ class SpecialEventsMergerTest {
             title = "Germany vs Paraguay",
             league = "SOCCER",
             streams = streams,
-            live = true,
+            live = true
         )
         val mirrors = SpecialEventsMerger.buildMirrors(event)
         assertEquals(4, mirrors.size)
@@ -182,7 +169,7 @@ class SpecialEventsMergerTest {
             DaddyLiveEventResolver.ParsedStream(
                 label = "Link - $index",
                 channelId = "de-py-$index",
-                source = DaddyLiveEventResolver.StreamSource.TV,
+                source = DaddyLiveEventResolver.StreamSource.TV
             )
         }
         val bundle = SpecialEventsMerger.buildFromParsed(
@@ -194,12 +181,11 @@ class SpecialEventsMergerTest {
                     title = "FIFA World Cup : Germany vs Paraguay",
                     league = "SOCCER",
                     streams = streams,
-                    live = true,
-                ),
+                    live = true
+                )
             ),
             dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = 1, streamLinks = 58),
-            theTvAppChannels = emptyList(),
-            maxStreams = 10,
+            maxStreams = 10
         )
         assertEquals(1, bundle.channels.count { it.id.startsWith("dlhd-event:") })
         val event = bundle.channels.first { it.id.startsWith("dlhd-event:") }
@@ -220,10 +206,10 @@ class SpecialEventsMergerTest {
                     DaddyLiveEventResolver.ParsedStream(
                         label = "Link - 1",
                         channelId = "br-$index",
-                        source = DaddyLiveEventResolver.StreamSource.TV,
-                    ),
+                        source = DaddyLiveEventResolver.StreamSource.TV
+                    )
                 ),
-                live = false,
+                live = false
             )
         }
         val japanLive = DaddyLiveEventResolver.ParsedEvent(
@@ -236,16 +222,15 @@ class SpecialEventsMergerTest {
                 DaddyLiveEventResolver.ParsedStream(
                     label = "Link - 1",
                     channelId = "jp-live",
-                    source = DaddyLiveEventResolver.StreamSource.TV,
-                ),
+                    source = DaddyLiveEventResolver.StreamSource.TV
+                )
             ),
-            live = true,
+            live = true
         )
         val bundle = SpecialEventsMerger.buildFromParsed(
             dlhdEvents = manyBrazil + japanLive,
             dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = 31, streamLinks = 31),
-            theTvAppChannels = emptyList(),
-            maxStreams = 5,
+            maxStreams = 5
         )
         val eventStreams = bundle.channels.filter { it.id.startsWith("dlhd-event:") }
         assertTrue(eventStreams.size <= 5)
@@ -266,17 +251,16 @@ class SpecialEventsMergerTest {
                     DaddyLiveEventResolver.ParsedStream(
                         label = "Link - $link",
                         channelId = "m$index-$link",
-                        source = DaddyLiveEventResolver.StreamSource.TV,
+                        source = DaddyLiveEventResolver.StreamSource.TV
                     )
                 },
-                live = true,
+                live = true
             )
         }
         val bundle = SpecialEventsMerger.buildFromParsed(
             dlhdEvents = events,
             dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = 10, streamLinks = 50),
-            theTvAppChannels = emptyList(),
-            maxStreams = 5,
+            maxStreams = 5
         )
         assertEquals(5, bundle.channels.count { it.id.startsWith("dlhd-event:") })
         bundle.channels.filter { it.id.startsWith("dlhd-event:") }.forEach { event ->
@@ -290,7 +274,7 @@ class SpecialEventsMergerTest {
         val dateKey = dlhdDateKey(-2)
         val timeLabel = "%02d:%02d".format(
             past.atZone(java.time.ZoneId.of("Europe/London")).hour,
-            past.atZone(java.time.ZoneId.of("Europe/London")).minute,
+            past.atZone(java.time.ZoneId.of("Europe/London")).minute
         )
         val bundle = SpecialEventsMerger.buildFromParsed(
             dlhdEvents = listOf(
@@ -304,15 +288,14 @@ class SpecialEventsMergerTest {
                         DaddyLiveEventResolver.ParsedStream(
                             label = "Link - 1",
                             channelId = "301",
-                            source = DaddyLiveEventResolver.StreamSource.TV,
-                        ),
+                            source = DaddyLiveEventResolver.StreamSource.TV
+                        )
                     ),
-                    live = false,
-                ),
+                    live = false
+                )
             ),
             dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = 1, streamLinks = 1),
-            theTvAppChannels = emptyList(),
-            maxStreams = 10,
+            maxStreams = 10
         )
         assertEquals(0, bundle.channels.count { it.id.startsWith("dlhd-event:") })
         assertEquals(0, bundle.guideProgrammes.values.sumOf { it.size })
@@ -323,7 +306,7 @@ class SpecialEventsMergerTest {
         val sharedStream = DaddyLiveEventResolver.ParsedStream(
             label = "Link - 1",
             channelId = "shared-99",
-            source = DaddyLiveEventResolver.StreamSource.TV2,
+            source = DaddyLiveEventResolver.StreamSource.TV2
         )
         val bundle = SpecialEventsMerger.buildFromParsed(
             dlhdEvents = listOf(
@@ -334,7 +317,7 @@ class SpecialEventsMergerTest {
                     title = "Boxing : Fight A",
                     league = "BOXING",
                     streams = listOf(sharedStream),
-                    live = false,
+                    live = false
                 ),
                 DaddyLiveEventResolver.ParsedEvent(
                     category = "Boxing",
@@ -343,12 +326,11 @@ class SpecialEventsMergerTest {
                     title = "Boxing : Fight B",
                     league = "BOXING",
                     streams = listOf(sharedStream),
-                    live = false,
-                ),
+                    live = false
+                )
             ),
             dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = 2, streamLinks = 2),
-            theTvAppChannels = emptyList(),
-            maxStreams = 10,
+            maxStreams = 10
         )
         assertEquals(2, bundle.channels.count { it.id.startsWith("dlhd-event:") })
     }
@@ -367,15 +349,14 @@ class SpecialEventsMergerTest {
                         DaddyLiveEventResolver.ParsedStream(
                             label = "Link - 1",
                             channelId = "501",
-                            source = DaddyLiveEventResolver.StreamSource.TV,
-                        ),
+                            source = DaddyLiveEventResolver.StreamSource.TV
+                        )
                     ),
-                    live = false,
-                ),
+                    live = false
+                )
             ),
             dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = 1, streamLinks = 1),
-            theTvAppChannels = emptyList(),
-            maxStreams = 10,
+            maxStreams = 10
         )
         val guide = bundle.channels.first { it.id.startsWith("dlhd-guide:") }
         val event = bundle.channels.first { it.id.startsWith("dlhd-event:") }
@@ -397,17 +378,16 @@ class SpecialEventsMergerTest {
                     DaddyLiveEventResolver.ParsedStream(
                         label = "TVA Sports",
                         channelId = "401",
-                        source = DaddyLiveEventResolver.StreamSource.TV,
-                    ),
+                        source = DaddyLiveEventResolver.StreamSource.TV
+                    )
                 ),
-                live = false,
-            ),
+                live = false
+            )
         )
         val bundle = SpecialEventsMerger.buildFromParsed(
             dlhdEvents = dlhdEvents,
             dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = 1, streamLinks = 1),
-            theTvAppChannels = emptyList(),
-            maxStreams = 10,
+            maxStreams = 10
         )
         val stream = bundle.channels.first { it.id.startsWith("dlhd-event:") }
         assertEquals("fr", stream.languageCode)
@@ -427,15 +407,14 @@ class SpecialEventsMergerTest {
                         DaddyLiveEventResolver.ParsedStream(
                             label = "Link - 1",
                             channelId = "777",
-                            source = DaddyLiveEventResolver.StreamSource.TV,
-                        ),
+                            source = DaddyLiveEventResolver.StreamSource.TV
+                        )
                     ),
-                    live = false,
-                ),
+                    live = false
+                )
             ),
             dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = 1, streamLinks = 1),
-            theTvAppChannels = emptyList(),
-            maxStreams = 10,
+            maxStreams = 10
         )
         val stream = bundle.channels.first { it.id.startsWith("dlhd-event:") }
         val row = bundle.guideProgrammes.values.flatten().single()
@@ -459,15 +438,14 @@ class SpecialEventsMergerTest {
                         DaddyLiveEventResolver.ParsedStream(
                             label = "TVA Sports",
                             channelId = "401",
-                            source = DaddyLiveEventResolver.StreamSource.TV,
-                        ),
+                            source = DaddyLiveEventResolver.StreamSource.TV
+                        )
                     ),
-                    live = true,
-                ),
+                    live = true
+                )
             ),
             dlhdStats = DaddyLiveEventResolver.ResolveStats(tvEvents = 1, streamLinks = 1),
-            theTvAppChannels = emptyList(),
-            maxStreams = 10,
+            maxStreams = 10
         )
         val stream = bundle.channels.first { it.id.startsWith("dlhd-event:") }
         assertEquals("CA", stream.regionCode)

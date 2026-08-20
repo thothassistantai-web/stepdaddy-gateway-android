@@ -146,6 +146,7 @@ class DashboardStatCards(
         if (supplement != null) {
             if (supplement.sportsEnabled) count++
             if (supplement.iptvOrgEnabled) count++
+            if (supplement.freeTvEnabled) count++
             if (supplement.ntvCxEnabled) count++
             if (supplement.adultSwimEnabled) count++
         } else if (health.supplementEnabled) {

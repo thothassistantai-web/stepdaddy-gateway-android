@@ -7,21 +7,6 @@ import org.junit.Test
 import java.time.Instant
 
 class SpecialEventSortTest {
-    @Test
-    fun leagueFromEventUrl_parsesSlug() {
-        assertEquals(
-            "NBA",
-            SpecialEventSort.leagueFromEventUrl(
-                "https://thetvapp.link/nba/san-antonio-spurs-new-york-knicks/43353157680",
-            ),
-        )
-        assertEquals(
-            "MLB",
-            SpecialEventSort.leagueFromEventUrl(
-                "https://thetvapp.link/mlb/boston-red-sox-toronto-blue-jays/43112409480",
-            ),
-        )
-    }
 
     @Test
     fun eventWindowSortKey_liveBeforeUpcoming() {
@@ -90,17 +75,6 @@ class SpecialEventSortTest {
     }
 
     @Test
-    fun sortKey_fallsBackToEventUrl() {
-        val key = SpecialEventSort.sortKey(
-            providerTag = null,
-            channelName = "Spurs vs Knicks",
-            eventUrl = "https://thetvapp.link/nba/spurs-knicks/1",
-        )
-        val nbaBaseline = SpecialEventSort.sortKey("NBA", "Spurs vs Knicks")
-        assertEquals(nbaBaseline / 10_000, key / 10_000)
-    }
-
-    @Test
     fun guideBlockSortKey_eventSharesGuideDisplayNameKey() {
         val guide = guide("dlhd-guide:baseball-mlb", "⚾ Baseball MLB Schedule", "MLB")
         val event = SupplementChannel(
@@ -144,19 +118,6 @@ class SpecialEventSortTest {
             eventSourceUrl = "Golf|Sunday|15:00|Golf : Round 1",
         )
         assertTrue(SpecialEventSort.supplementIntraSlot(guide) < SpecialEventSort.supplementIntraSlot(event))
-    }
-
-    @Test
-    fun guideBlockSortKey_theTvAppRowsSortAfterDlhdBlocks() {
-        val guide = guide("dlhd-guide:golf", "⛳ Golf Schedule", "GOLF")
-        val tvApp = SupplementChannel(
-            id = "sport:nba",
-            name = "Lakers vs Celtics",
-            groupTitle = GroupTitleResolver.SPECIAL_EVENTS,
-            streamUrl = "https://example.com/nba.m3u8",
-            providerTag = "NBA",
-        )
-        assertTrue(SpecialEventSort.guideBlockSortKey(guide) < SpecialEventSort.guideBlockSortKey(tvApp))
     }
 
     @Test

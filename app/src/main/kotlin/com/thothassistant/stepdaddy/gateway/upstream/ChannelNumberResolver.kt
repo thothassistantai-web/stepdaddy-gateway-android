@@ -227,16 +227,16 @@ object ChannelNumberResolver {
 
     fun supplementGroup(supplement: SupplementChannel): String =
         when {
-            supplement.id.startsWith("sport:") ||
-                supplement.id.startsWith("dlhd-guide:") ||
+                            supplement.id.startsWith("dlhd-guide:") ||
                 supplement.id.startsWith("dlhd-event:") -> GroupTitleResolver.SPECIAL_EVENTS
             supplement.id.startsWith("adultswim:") -> GroupTitleResolver.ENTERTAINMENT
+            supplement.id.startsWith(FreeTvIptvConfig.ID_PREFIX) ->
+                GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id).groupTitle
             supplement.id.startsWith(TmdbVodConfig.ID_PREFIX) -> GroupTitleResolver.MOVIES
             supplement.id.startsWith("iptv:") ->
                 GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id).groupTitle
             supplement.id.startsWith("sup:") -> supplement.groupTitle
             supplement.id.startsWith("ntv:") -> supplement.groupTitle
-            supplement.id.startsWith("xyz:") -> supplement.groupTitle
             else -> GroupTitleResolver.ENTERTAINMENT
         }
 
@@ -388,8 +388,7 @@ object ChannelNumberResolver {
         }
 
     private fun supplementCountryCode(supplement: SupplementChannel): String {
-        if (supplement.id.startsWith("sport:") ||
-            supplement.id.startsWith("dlhd-guide:") ||
+        if (            supplement.id.startsWith("dlhd-guide:") ||
             supplement.id.startsWith("dlhd-event:")
         ) {
             supplement.regionCode?.trim()?.takeIf { it.isNotEmpty() }?.let {
