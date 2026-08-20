@@ -4,10 +4,10 @@ Enter these **numeric codes** in the [Downloader](https://www.aftvnews.com/downl
 
 | Build | Downloader code | Package | Stable APK URL |
 |-------|-----------------|---------|----------------|
-| **Release** (production) | `TBD (register once — see below)` | `com.thothassistant.stepdaddy.gateway` | [stepdaddy-gateway-release.apk](https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/latest/download/stepdaddy-gateway-release.apk) |
-| **Debug** (dev / OTA bridge) | `TBD (register once — see below)` | `com.thothassistant.stepdaddy.gateway.debug` | [stepdaddy-gateway-debug.apk](https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/latest/download/stepdaddy-gateway-debug.apk) |
+| **Release** (production) | `4860686` | `com.thothassistant.stepdaddy.gateway` | [stepdaddy-gateway-release.apk](https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/latest/download/stepdaddy-gateway-release.apk) |
+| **Debug** (dev / OTA bridge) | `1401588` | `com.thothassistant.stepdaddy.gateway.debug` | [stepdaddy-gateway-debug.apk](https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/latest/download/stepdaddy-gateway-debug.apk) |
 
-Short links (optional): release `(pending)` · debug `(pending)`
+Short links (optional): release `https://aftv.news/4860686` · debug `https://aftv.news/1401588`
 
 ## How it works
 

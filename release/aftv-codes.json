@@ -8,12 +8,12 @@
     "debug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/latest/download/stepdaddy-gateway-debug.apk"
   },
   "codes": {
-    "release": "",
-    "debug": ""
+    "release": "4860686",
+    "debug": "1401588"
   },
   "packages": {
     "release": "com.thothassistant.stepdaddy.gateway",
     "debug": "com.thothassistant.stepdaddy.gateway.debug"
   },
-  "updatedAt": "2026-08-20T14:54:31Z"
+  "updatedAt": "2026-08-20T20:28:51Z"
 }
