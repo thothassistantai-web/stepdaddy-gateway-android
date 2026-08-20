@@ -91,13 +91,28 @@ When updating `install_apps_catalog.json` for a new TiviMate release, confirm si
 
 ## GitHub Release
 
+Preferred (builds notes + uploads versioned **and** versionless APKs + AFTV section):
+
+```bash
+./scripts/build-release.sh
+./scripts/publish-github-release.sh
+```
+
+Manual equivalent:
+
 1. Tag: `git tag -a v1.0.1 -m "StepDaddy Gateway 1.0.1"`
 2. Push tag: `git push origin v1.0.1`
 3. Create release via `gh release create` with assets:
    - `stepdaddy-gateway-<version>-release.apk` (**required** for stable sideload / in-app updater — matches `com.thothassistant.stepdaddy.gateway`)
    - `stepdaddy-gateway-<version>-debug.apk` (dev package `com.thothassistant.stepdaddy.gateway.debug`)
+   - `stepdaddy-gateway-release.apk` / `stepdaddy-gateway-debug.apk` (**versionless** — required for permanent AFTV Downloader codes via `/releases/latest/download/…`)
    - `update-manifest.json` (for in-app updater; `apkUrl` → release APK, `apkUrlDebug` → debug APK)
+   - `AFTV-CODES.md` / `aftv-codes.json` (Downloader numeric codes)
    - Optional: `app-release.aab` for Play Console
+
+### AFTV Downloader codes
+
+Permanent Fire TV short codes point at the versionless latest URLs. AFTVnews has **no API** (reCAPTCHA + immutable destinations), so register codes **once**. See [AFTV-DOWNLOADER.md](AFTV-DOWNLOADER.md) and [release/AFTV-CODES.md](../release/AFTV-CODES.md).
 
 ### `update-manifest.json` schema
 

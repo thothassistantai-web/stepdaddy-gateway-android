@@ -58,6 +58,10 @@ adb install -r release/stepdaddy-gateway-*-release.apk
 
 Alternatively, install the **debug** APK (`…gateway.debug`) for continued in-app OTA, then use **Settings → Graduate to Release** when ready. See [UPDATES.md](UPDATES.md#signing-key-migration-308) and [KEYSTORE-BACKUP.md](KEYSTORE-BACKUP.md).
 
+### Fire TV / AFTV Downloader (no ADB)
+
+Install **Downloader by AFTVnews**, then enter the permanent numeric codes from [AFTV-DOWNLOADER.md](AFTV-DOWNLOADER.md) / [release/AFTV-CODES.md](../release/AFTV-CODES.md). Those codes always resolve to the latest release or debug APK via GitHub versionless assets.
+
 ### Enable unknown sources
 
 On Android TV: **Settings → Security & restrictions → Unknown sources** → allow your file manager or installer.

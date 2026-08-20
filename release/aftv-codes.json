@@ -1,0 +1,19 @@
+{
+  "service": "aftvnews",
+  "shortenerHome": "https://go.aftvnews.com/",
+  "shortUrlBase": "https://aftv.news/",
+  "notes": "AFTVnews has no public API and cannot edit destination URLs. Codes point at GitHub latest/download versionless assets so one static code always resolves to the newest APK.",
+  "stableUrls": {
+    "release": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/latest/download/stepdaddy-gateway-release.apk",
+    "debug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/latest/download/stepdaddy-gateway-debug.apk"
+  },
+  "codes": {
+    "release": "",
+    "debug": ""
+  },
+  "packages": {
+    "release": "com.thothassistant.stepdaddy.gateway",
+    "debug": "com.thothassistant.stepdaddy.gateway.debug"
+  },
+  "updatedAt": "2026-08-20T14:54:31Z"
+}

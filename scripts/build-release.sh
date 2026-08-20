@@ -59,9 +59,15 @@ DEBUG_APK="${DEBUG_APK_DIR}/app-debug.apk"
 DEBUG_RELEASE_NAME="stepdaddy-gateway-${VERSION_NAME}-debug.apk"
 RELEASE_RELEASE_NAME="stepdaddy-gateway-${VERSION_NAME}-release.apk"
 
+# Versionless names → GitHub /releases/latest/download/... for permanent AFTV codes
+DEBUG_STABLE_NAME="stepdaddy-gateway-debug.apk"
+RELEASE_STABLE_NAME="stepdaddy-gateway-release.apk"
+
 if [[ -f "${DEBUG_APK}" ]]; then
   cp "${DEBUG_APK}" "${RELEASE_DIR}/${DEBUG_RELEASE_NAME}"
+  cp "${DEBUG_APK}" "${RELEASE_DIR}/${DEBUG_STABLE_NAME}"
   echo "==> Debug APK (dev channel): ${RELEASE_DIR}/${DEBUG_RELEASE_NAME}"
+  echo "==> Debug APK (stable name): ${RELEASE_DIR}/${DEBUG_STABLE_NAME}"
 else
   echo "ERROR: Debug APK not found at ${DEBUG_APK}" >&2
   exit 1
@@ -69,10 +75,13 @@ fi
 
 if [[ -f "${APK_DIR}/app-release.apk" ]]; then
   cp "${APK_DIR}/app-release.apk" "${RELEASE_DIR}/${RELEASE_RELEASE_NAME}"
+  cp "${APK_DIR}/app-release.apk" "${RELEASE_DIR}/${RELEASE_STABLE_NAME}"
   echo "==> Signed release APK: ${RELEASE_DIR}/${RELEASE_RELEASE_NAME}"
+  echo "==> Release APK (stable name): ${RELEASE_DIR}/${RELEASE_STABLE_NAME}"
 elif [[ -f "${APK_DIR}/app-release-unsigned.apk" ]]; then
   cp "${APK_DIR}/app-release-unsigned.apk" "${RELEASE_DIR}/stepdaddy-gateway-${VERSION_NAME}-release-unsigned.apk"
   echo "==> Unsigned release APK: ${RELEASE_DIR}/stepdaddy-gateway-${VERSION_NAME}-release-unsigned.apk"
+  echo "    (skipping versionless stable name — unsigned builds should not be AFTV targets)"
 else
   echo "ERROR: No release APK found in ${APK_DIR}" >&2
   exit 1
@@ -130,9 +139,18 @@ Path(os.environ["MANIFEST"]).write_text(json.dumps(manifest, indent=2) + "\n", e
 print(f"==> Update manifest: {os.environ['MANIFEST']}")
 PY
 
+# Refresh AFTV Downloader code docs (codes themselves are permanent; see release/AFTV-CODES.md)
+if [[ -f "${ROOT}/scripts/aftv-shortener.sh" ]]; then
+  bash "${ROOT}/scripts/aftv-shortener.sh" --regen || true
+fi
+
 echo ""
 echo "Build complete."
 echo "  Debug APK (dev):    app/build/outputs/apk/debug/app-debug.apk"
 echo "  Debug sideload:     ${RELEASE_DIR}/${DEBUG_RELEASE_NAME}"
-echo "  Release sideload:     ${RELEASE_DIR}/${RELEASE_RELEASE_NAME}"
+echo "  Debug stable name:  ${RELEASE_DIR}/${DEBUG_STABLE_NAME}"
+echo "  Release sideload:   ${RELEASE_DIR}/${RELEASE_RELEASE_NAME}"
+echo "  Release stable:     ${RELEASE_DIR}/${RELEASE_STABLE_NAME}"
 echo "  Release outputs:    ${RELEASE_DIR}/"
+echo "  Publish to GitHub:  ./scripts/publish-github-release.sh"
+echo "  AFTV codes:         release/AFTV-CODES.md"

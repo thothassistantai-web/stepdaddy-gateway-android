@@ -30,6 +30,8 @@ adb -s $DEV install -r app/build/outputs/apk/debug/app-debug.apk
 
 Or install a release APK from `release/stepdaddy-gateway-*.apk`.
 
+**No ADB (Fire TV Downloader):** use the permanent AFTV codes in [AFTV-DOWNLOADER.md](AFTV-DOWNLOADER.md) — release for production, debug for the `.debug` package.
+
 **ADB grants (recommended):**
 
 ```bash

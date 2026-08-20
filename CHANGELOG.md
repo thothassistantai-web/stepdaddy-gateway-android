@@ -7,6 +7,10 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+### Added
+
+- **AFTV Downloader stable codes** — Versionless GitHub release assets (`stepdaddy-gateway-release.apk` / `-debug.apk`) plus `scripts/aftv-shortener.sh` / `publish-github-release.sh` so one permanent numeric Downloader code always hits the latest APK. See `docs/AFTV-DOWNLOADER.md`.
+
 ## [3.0.28] - 2026-08-20
 
 ### Added

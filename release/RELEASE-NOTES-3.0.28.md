@@ -19,3 +19,12 @@
 1. **Old release (stranded):** `adb uninstall com.thothassistant.stepdaddy.gateway` then install `stepdaddy-gateway-3.0.28-release.apk`.
 2. **Debug bridge:** Keep OTA on debug, or use **Graduate to Release**.
 3. **New signed release:** Future OTA works with this keystore — back it up (`docs/KEYSTORE-BACKUP.md`).
+
+## AFTV Downloader (Fire TV)
+
+Permanent codes (once registered) always download the newest APK via versionless assets:
+
+- Release: `…/releases/latest/download/stepdaddy-gateway-release.apk`
+- Debug: `…/releases/latest/download/stepdaddy-gateway-debug.apk`
+
+See `release/AFTV-CODES.md` and `docs/AFTV-DOWNLOADER.md`.
