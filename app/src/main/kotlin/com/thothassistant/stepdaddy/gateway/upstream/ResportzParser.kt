@@ -27,11 +27,34 @@ class ResportzParser(
     private val dlhdHostCooldownUntilMs = ConcurrentHashMap<String, Long>()
     private val resportzHostFailureCounts = ConcurrentHashMap<String, Int>()
     private val resportzHostCooldownUntilMs = ConcurrentHashMap<String, Long>()
-    suspend fun fetchManifest(channelId: String, refererBase: String): UpstreamManifest {
+    suspend fun fetchManifest(
+        channelId: String,
+        refererBase: String,
+        embedUrl: String? = null,
+    ): UpstreamManifest {
         val referer = "${refererBase.trimEnd('/')}/"
-        val candidates = watchUrlCandidates(channelId)
+        val candidates = watchUrlCandidates(channelId, refererBase, embedUrl)
+        val embedCandidates = candidates.filter { DlhdEmbedUrl.isEmbedPageUrl(it) }
         val dlhdCandidates = candidates.filter { isDlhdRelayUrl(it) }
-        val otherCandidates = candidates.filterNot { isDlhdRelayUrl(it) }
+        val otherCandidates = candidates.filterNot { it in embedCandidates || it in dlhdCandidates }
+
+        var lastError: Exception? = null
+        for (watchUrl in embedCandidates) {
+            try {
+                val manifest = fetchManifestFromWatchPage(
+                    channelId,
+                    watchUrl,
+                    refererForWatchUrl(watchUrl, referer),
+                )
+                markWatchHostSuccess(watchUrl)
+                return manifest
+            } catch (exc: Exception) {
+                if (exc is CancellationException) throw exc
+                lastError = exc
+                markWatchHostFailure(watchUrl)
+                Log.d(TAG, "embed watch failed $watchUrl: ${exc.message}")
+            }
+        }
 
         if (dlhdCandidates.isNotEmpty()) {
             val raced = raceDlhdWatchUrls(channelId, dlhdCandidates, referer)
@@ -40,10 +63,9 @@ class ResportzParser(
             }
         }
 
-        var lastError: Exception? = null
         for (watchUrl in otherCandidates) {
             try {
-                val manifest = fetchManifestFromWatchPage(channelId, watchUrl, referer)
+                val manifest = fetchManifestFromWatchPage(channelId, watchUrl, refererForWatchUrl(watchUrl, referer))
                 markWatchHostSuccess(watchUrl)
                 return manifest
             } catch (exc: Exception) {
@@ -82,7 +104,11 @@ class ResportzParser(
             val path = dlhdPathFromUrl(watchUrl)
             val startedAt = System.nanoTime()
             return runCatching {
-                val manifest = fetchManifestFromWatchPage(channelId, watchUrl, referer)
+                val manifest = fetchManifestFromWatchPage(
+                    channelId,
+                    watchUrl,
+                    refererForWatchUrl(watchUrl, referer),
+                )
                 val latencyMs = (System.nanoTime() - startedAt) / 1_000_000L
                         path?.let { mirrorLatencyTracker?.recordDlhdPathSuccess(it, latencyMs) }
                         path?.let { markDlhdPathSuccess(it) }
@@ -102,7 +128,11 @@ class ResportzParser(
                     val path = dlhdPathFromUrl(watchUrl)
                     val startedAt = System.nanoTime()
                     try {
-                        val manifest = fetchManifestFromWatchPage(channelId, watchUrl, referer)
+                        val manifest = fetchManifestFromWatchPage(
+                            channelId,
+                            watchUrl,
+                            refererForWatchUrl(watchUrl, referer),
+                        )
                         val latencyMs = (System.nanoTime() - startedAt) / 1_000_000L
                         path?.let { mirrorLatencyTracker?.recordDlhdPathSuccess(it, latencyMs) }
                         path?.let { markDlhdPathSuccess(it) }
@@ -128,18 +158,15 @@ class ResportzParser(
         }
     }
 
-    private fun watchUrlCandidates(channelId: String): List<String> {
-        val orderedPaths = mirrorLatencyTracker?.orderedDlhdPaths(GatewayConfig.DLHD_PK_STREAM_PATHS)
-            ?: GatewayConfig.DLHD_PK_STREAM_PATHS
-        val eligiblePaths = orderedPaths.filterNot { isDlhdPathCoolingDown(it) }
-        val activePaths = eligiblePaths.ifEmpty { orderedPaths }
+    private fun watchUrlCandidates(
+        channelId: String,
+        refererBase: String,
+        embedUrl: String?,
+    ): List<String> {
         val ordered = linkedSetOf<String>()
-        for (host in orderedDlhdRelayHosts()) {
-            val base = host.trimEnd('/')
-            for (path in activePaths) {
-                ordered += "$base/$path/stream-$channelId.php"
-            }
-        }
+        embedUrl?.trim()?.takeIf { it.isNotEmpty() }?.let { ordered += it }
+        ordered += DlhdEmbedUrl.embedUrlForMirror(refererBase, channelId)
+        ordered += DlhdEmbedUrl.buildRelayWatchUrls(channelId, orderedDlhdRelayHosts())
         for (host in orderedResportzHosts()) {
             val base = host.trimEnd('/')
             ordered += base + GatewayConfig.RESPORTZ_STREAM_PATH.format(channelId)
@@ -147,7 +174,15 @@ class ResportzParser(
         return ordered.toList()
     }
 
+    private fun refererForWatchUrl(watchUrl: String, defaultReferer: String): String {
+        if (DlhdEmbedUrl.isEmbedPageUrl(watchUrl)) {
+            return watchUrl
+        }
+        return defaultReferer
+    }
+
     private fun isDlhdRelayUrl(url: String): Boolean {
+        if (DlhdEmbedUrl.isEmbedPageUrl(url)) return false
         val host = runCatching { URL(url).host.lowercase() }.getOrNull() ?: return false
         return dlhdRelayHosts().any { hostMatches(host, it) }
     }

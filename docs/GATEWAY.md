@@ -2,7 +2,7 @@
 
 Native Android TV gateway on **port 3000** (loopback `127.0.0.1:3000` by default). Serves M3U playlists, XMLTV EPG, per-channel HLS proxies, and companion-app integration endpoints.
 
-**Stable release:** `3.0.0` (`versionCode` 30000)  
+**Stable release:** `3.0.27` (`versionCode` 30027)  
 **Package:** `com.thothassistant.stepdaddy.gateway` (release) · `com.thothassistant.stepdaddy.gateway.debug` (debug)
 
 ## User playlist URLs

@@ -63,6 +63,7 @@ class DaddyLiveClient(
     private val streamCache = mutableMapOf<String, CachedManifest>()
     private val staleStreamCache = mutableMapOf<String, CachedManifest>()
     private val upstreamCache = mutableMapOf<String, CachedUpstream>()
+    private val channelEmbedUrls = mutableMapOf<String, String>()
     private val deadMirrors = mutableMapOf<String, Long>()
     private val mirrorFailureCounts = mutableMapOf<String, Int>()
     private val mirrorRetryAfterMs = mutableMapOf<String, Long>()
@@ -358,7 +359,11 @@ class DaddyLiveClient(
                 try {
                     val manifest = withTimeout(raceBudget) {
                         if (isDaddyLiveMirror(baseUrl)) {
-                            resportzParser.fetchManifest(channelId, baseUrl)
+                            resportzParser.fetchManifest(
+                                channelId,
+                                baseUrl,
+                                embedUrlForChannel(channelId, baseUrl),
+                            )
                         } else {
                             error("Non-DaddyLive mirrors not implemented in MVP: $baseUrl")
                         }
@@ -433,7 +438,11 @@ class DaddyLiveClient(
             try {
                 val manifest = withTimeout(attemptBudget) {
                     if (isDaddyLiveMirror(baseUrl)) {
-                        resportzParser.fetchManifest(channelId, baseUrl)
+                        resportzParser.fetchManifest(
+                            channelId,
+                            baseUrl,
+                            embedUrlForChannel(channelId, baseUrl),
+                        )
                     } else {
                         error("Non-DaddyLive mirrors not implemented in MVP: $baseUrl")
                     }
@@ -569,8 +578,22 @@ class DaddyLiveClient(
                 if (rows.isEmpty()) continue
                 markMirrorAlive(baseUrl)
                 activeBaseUrl = baseUrl
-                return rows.map { row ->
-                    channelFromRow(row.channelId, row.channelName, fastPath = true)
+                return rows.mapNotNull { row ->
+                    val id = row.resolvedChannelId()
+                    if (id.isBlank() || row.channelName.isBlank()) {
+                        return@mapNotNull null
+                    }
+                    row.resolvedEmbedUrl()?.let { url ->
+                        synchronized(healingLock) {
+                            channelEmbedUrls[id] = url
+                        }
+                    }
+                    channelFromRow(
+                        id,
+                        row.channelName,
+                        cachedEmbedUrl = row.resolvedEmbedUrl(),
+                        fastPath = true,
+                    )
                 }.sortedWith(GroupTitleResolver.channelComparator())
             } catch (exc: Exception) {
                 lastError = exc
@@ -605,9 +628,19 @@ class DaddyLiveClient(
             configuredMirrors = environment.mirrorUrls,
             mirrorLatencyMs = mirrorLatencyTracker::mirrorLatencyMs,
             isExcluded = { baseUrl ->
-                isMirrorDead(baseUrl) || isMirrorCoolingDown(baseUrl)
+                isMirrorBlocked(baseUrl) ||
+                    isMirrorDead(baseUrl) ||
+                    isMirrorCoolingDown(baseUrl)
             },
         )
+
+    private fun isMirrorBlocked(baseUrl: String): Boolean {
+        val host = runCatching { URL(baseUrl.trimEnd('/')).host.lowercase() }.getOrNull()
+            ?: return false
+        return GatewayConfig.DADDYLIVE_BLOCKED_HOSTS.any { blocked ->
+            host == blocked || host.endsWith(".$blocked")
+        }
+    }
 
     fun mirrorStatsSnapshot(): MirrorStatsSnapshot {
         val hits = streamCacheHits
@@ -619,6 +652,15 @@ class DaddyLiveClient(
             streamCacheHitRate = if (total > 0) hits.toDouble() / total.toDouble() else null,
             mirrorLatenciesMs = mirrorLatencyTracker.mirrorLatencySnapshot(),
         )
+    }
+
+    private fun embedUrlForChannel(channelId: String, mirrorBase: String): String? {
+        val stored = synchronized(healingLock) { channelEmbedUrls[channelId] }
+        return when {
+            !stored.isNullOrBlank() -> DlhdEmbedUrl.mirrorEmbedUrl(stored, mirrorBase)
+            channelId.isNotBlank() -> DlhdEmbedUrl.embedUrlForMirror(mirrorBase, channelId)
+            else -> null
+        }
     }
 
     private fun isDaddyLiveMirror(baseUrl: String): Boolean {
@@ -909,8 +951,14 @@ class DaddyLiveClient(
                     val tvgId = row.optString("tvg_id").takeIf { it.isNotBlank() }
                         ?: epgChannelMapper?.tvgIdFor(id, name)
                     val cachedLogo = row.optString("logo").takeIf { it.isNotBlank() }
+                    val cachedEmbedUrl = row.optString("embed_url").takeIf { it.isNotBlank() }
                     if (id.isNotBlank() && name.isNotBlank()) {
-                        add(channelFromRow(id, name, tvgId, cachedLogo, fastPath = true))
+                        cachedEmbedUrl?.let { url ->
+                            synchronized(healingLock) {
+                                channelEmbedUrls[id] = url
+                            }
+                        }
+                        add(channelFromRow(id, name, tvgId, cachedLogo, cachedEmbedUrl, fastPath = true))
                     }
                 }
             }
@@ -930,6 +978,7 @@ class DaddyLiveClient(
         channelName: String,
         cachedTvgId: String? = null,
         cachedLogo: String? = null,
+        cachedEmbedUrl: String? = null,
         fastPath: Boolean = false,
     ): Channel {
         val id = channelId.trim()
@@ -949,6 +998,7 @@ class DaddyLiveClient(
             tags = tags,
             tvgId = tvgId,
             logo = logo,
+            embedUrl = cachedEmbedUrl?.takeIf { it.isNotBlank() },
         )
     }
 
@@ -960,6 +1010,7 @@ class DaddyLiveClient(
                 .put("id", channel.id)
                 .put("name", channel.name)
                 .put("tvg_id", channel.tvgId)
+            channel.embedUrl?.takeIf { it.isNotBlank() }?.let { row.put("embed_url", it) }
             channel.logo?.takeIf { it.isNotBlank() }?.let { row.put("logo", it) }
             channelsArray.put(row)
         }

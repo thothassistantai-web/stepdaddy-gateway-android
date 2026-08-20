@@ -87,17 +87,48 @@ fi
 MANIFEST="${RELEASE_DIR}/update-manifest.json"
 RELEASE_APK_URL="https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v${VERSION_NAME}/${RELEASE_RELEASE_NAME}"
 DEBUG_APK_URL="https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v${VERSION_NAME}/${DEBUG_RELEASE_NAME}"
-cat > "${MANIFEST}" <<EOF
-{
-  "versionCode": ${VERSION_CODE},
-  "versionName": "${VERSION_NAME}",
-  "apkUrl": "${RELEASE_APK_URL}",
-  "apkUrlDebug": "${DEBUG_APK_URL}",
-  "releaseNotes": "See CHANGELOG.md",
-  "mandatory": false
+sha256_of() {
+  if [[ -f "$1" ]]; then
+    sha256sum "$1" | awk '{print $1}'
+  else
+    echo ""
+  fi
 }
-EOF
-echo "==> Update manifest: ${MANIFEST}"
+APK_SHA256="$(sha256_of "${RELEASE_DIR}/${RELEASE_RELEASE_NAME}")"
+if [[ -z "${APK_SHA256}" ]]; then
+  APK_SHA256="$(sha256_of "${RELEASE_DIR}/stepdaddy-gateway-${VERSION_NAME}-release-unsigned.apk")"
+fi
+APK_SHA256_DEBUG="$(sha256_of "${RELEASE_DIR}/${DEBUG_RELEASE_NAME}")"
+RELEASE_NOTES="See CHANGELOG.md"
+NOTES_FILE="${RELEASE_DIR}/RELEASE-NOTES-${VERSION_NAME}.md"
+if [[ -f "${NOTES_FILE}" ]]; then
+  RELEASE_NOTES="$(python3 -c '
+import pathlib, re, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+m = re.search(r"(?m)^- \\*\\*.+\\*\\* — .+$", text)
+print(m.group(0).lstrip("- ").strip() if m else "See CHANGELOG.md")
+' "${NOTES_FILE}")"
+fi
+VERSION_CODE="${VERSION_CODE}" VERSION_NAME="${VERSION_NAME}" \
+RELEASE_APK_URL="${RELEASE_APK_URL}" DEBUG_APK_URL="${DEBUG_APK_URL}" \
+APK_SHA256="${APK_SHA256}" APK_SHA256_DEBUG="${APK_SHA256_DEBUG}" \
+RELEASE_NOTES="${RELEASE_NOTES}" MANIFEST="${MANIFEST}" \
+python3 - <<'PY'
+import json, os
+from pathlib import Path
+manifest = {
+    "versionCode": int(os.environ["VERSION_CODE"]),
+    "versionName": os.environ["VERSION_NAME"],
+    "apkUrl": os.environ["RELEASE_APK_URL"],
+    "apkUrlDebug": os.environ["DEBUG_APK_URL"],
+    "apkSha256": os.environ.get("APK_SHA256", ""),
+    "apkSha256Debug": os.environ.get("APK_SHA256_DEBUG", ""),
+    "releaseNotes": os.environ.get("RELEASE_NOTES", "See CHANGELOG.md"),
+    "mandatory": False,
+}
+Path(os.environ["MANIFEST"]).write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+print(f"==> Update manifest: {os.environ['MANIFEST']}")
+PY
 
 echo ""
 echo "Build complete."

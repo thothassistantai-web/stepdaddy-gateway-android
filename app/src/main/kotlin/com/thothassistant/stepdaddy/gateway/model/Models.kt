@@ -7,7 +7,14 @@ import kotlinx.serialization.Serializable
 data class UpstreamChannelRow(
     @SerialName("channel_id") val channelId: String = "",
     @SerialName("channel_name") val channelName: String = "",
-)
+    /** Present on current DaddyLive API: `/player/embed.php?id=…` */
+    val url: String = "",
+) {
+    fun resolvedChannelId(): String =
+        com.thothassistant.stepdaddy.gateway.upstream.DlhdEmbedUrl.channelIdFromRow(channelId, url)
+
+    fun resolvedEmbedUrl(): String? = url.trim().takeIf { it.isNotEmpty() }
+}
 
 data class Channel(
     val id: String,
@@ -15,6 +22,8 @@ data class Channel(
     val tags: List<String> = emptyList(),
     val logo: String? = null,
     val tvgId: String? = null,
+    /** Upstream embed page from `/api/channels` when available. */
+    val embedUrl: String? = null,
 )
 
 data class UpstreamManifest(

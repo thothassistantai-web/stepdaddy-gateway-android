@@ -7,6 +7,12 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.27] - 2026-08-19
+
+### Fixed
+
+- **Daddy Live 404 / stream resolution** — Parse the current `/api/channels` schema `{channel_name,url}` (embed URL per row; legacy `{channel_id,channel_name}` still works). Build relay watch URLs from the embed id, prefer `dlstreams.st` player/casting paths, and skip seized/broken mirrors on the blocklist so TiviMate no longer 404s on dead hosts.
+
 ## [3.0.26] - 2026-07-12
 
 ### Changed

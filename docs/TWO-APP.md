@@ -60,7 +60,7 @@ Track **both** version strings when debugging fleet sticks.
 | `versionCode` | Monotonic integer for APK updates |
 | Runtime check | `GET http://127.0.0.1:3000/health` → `"version"` |
 
-**Current release:** `2.0.0` (`versionCode` 20000) — see [CHANGELOG.md](../CHANGELOG.md).
+**Current release:** `3.0.27` (`versionCode` 30027) — see [CHANGELOG.md](../CHANGELOG.md).
 
 ### TiviMate Daddy (patch)
 
@@ -117,14 +117,14 @@ Probed 2026-06-23 — only mirrors with a working `GET /api/channels` JSON list 
 | Rank | URL | Latency (avg) | Status |
 |------|-----|---------------|--------|
 | 1 | `https://daddylive.eu` | ~534 ms | **Primary** (default) |
-| 2 | `https://dlhd.st` | — | Fallback |
+| 2 | `https://dlstreams.st` | — | Relay host (dlhd.pk/st redirect here) |
 | 3 | `https://daddylive.li` | ~584 ms | Fallback |
-| — | `https://daddylive.org` | — | API 404 (last-resort only) |
+| — | `https://daddylive.org` | — | **Seized** — do not use |
 
 Gateway failover order for new installs:
 
 1. **Primary** — `dlhdBaseUrl` (default `https://daddylive.eu`)
-2. **Mirrors** — `https://dlhd.st,https://daddylive.li,https://daddylive.org`
+2. **Mirrors** — `https://dlstreams.st,https://daddylive.li,https://dlhd.st`
 
 Edit in **Settings → Upstream → DaddyLive URL / Mirror URLs**. Active mirror is reported in `/health` and channel cache metadata. Existing installs keep saved prefs until cleared in Settings or via admin API; rebuild the gateway APK for defaults on fresh installs.
 

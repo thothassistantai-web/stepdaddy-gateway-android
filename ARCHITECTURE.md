@@ -60,8 +60,8 @@ flowchart TB
 
 | Component | Current | Where defined |
 |-----------|---------|---------------|
-| Gateway `versionName` | `2.0.0` | `app/build.gradle.kts` (from `STEPDADDY_VERSION`) |
-| Gateway `versionCode` | `37` | `app/build.gradle.kts` |
+| Gateway `versionName` | `3.0.27` | `app/build.gradle.kts` (from `STEPDADDY_VERSION`) |
+| Gateway `versionCode` | `30027` | `app/build.gradle.kts` |
 | Patch `patchVersion` | `1.2.1-boot-tune-safe` | `StepDaddyConstants.PATCH_VERSION` |
 | TiViMate base | `4.6.1` (4610) | ONN USB mod APK |
 
@@ -111,20 +111,21 @@ Python:
 - Fallback: disk cache `dlhd_channels_cache.json`
 
 Kotlin (`DaddyLiveClient`):
-- Primary `dlhdBaseUrl` then `mirrorUrls` (default: `daddylive.eu` → `daddylive.li` → `daddylive.org`; only `.eu` and `.li` serve `/api/channels` as of 2026-06-23)
-- `UpstreamChannelRow` deserialization
-- SharedPreferences JSON cache (`stepdaddy_channels`)
+- Primary `dlhdBaseUrl` then `mirrorUrls` (default: `daddylive.eu` → `dlstreams.st` → `daddylive.li`)
+- `GET {base}/api/channels` → JSON `[{channel_name, url}]` (embed URL per row; legacy `{channel_id, channel_name}` still supported)
+- Channel id extracted from `url` query (`/player/embed.php?id=…`); embed URL stored per channel for stream resolve
+- SharedPreferences JSON cache (`stepdaddy_channels`) includes optional `embed_url`
 
 ### Stream resolution (`_fetch_via_resportz`)
 
-Python chain:
+Python chain (legacy):
 1. `https://resportz.cfd/live/stream-{id}.php`
 2. Parse iframe `src`
 3. Parse `source: window.atob('...')`
 4. Base64 decode → m3u8 URL
 5. Fetch manifest
 
-Kotlin (`ResportzParser`): identical regex chain with OkHttp.
+Kotlin (`ResportzParser`): tries API embed URL, then `dlstreams.st` relay paths (`player`, `casting`, …), then legacy resportz hosts. Relay hosts rotate via mirror latency tracker.
 
 ### Special Events
 

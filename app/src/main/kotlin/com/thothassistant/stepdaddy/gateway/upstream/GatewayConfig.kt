@@ -8,26 +8,30 @@ object GatewayConfig {
             "(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36"
     const val RESPORTZ_STREAM_TEMPLATE = "https://resportz.cfd/live/stream-%s.php"
     const val RESPORTZ_STREAM_PATH = "/live/stream-%s.php"
+    /** Legacy resportz hosts — kept as last-resort; most installs use dlstreams relay paths. */
     val RESPORTZ_WATCH_HOSTS = listOf(
         "https://resportz.cfd",
         "https://resportz.live",
     )
+    /** Active dlhd relay hosts (dlhd.pk/st redirect to dlstreams.st as of 2026-08). */
     val DLHD_RELAY_HOSTS = listOf(
-        "https://dlhd.pk",
+        "https://dlstreams.st",
         "https://dlhd.st",
+        "https://dlhd.pk",
     )
     /** dlhd embed hosts used for direct m3u8 fetches with embed referer. */
     val DLHD_EMBED_HOSTS = listOf(
+        "https://dlstreams.st",
         "https://dlhd.st",
         "https://dlhd.pk",
         "https://dlhd.li",
         "https://dlhd.org",
         "https://daddylive.li",
-        "https://daddylive.org",
         "https://daddylive.eu",
+        "https://daddylive.at",
     )
-    /** dlhd relay paths used by daddylive embed when resportz.cfd is unreachable. */
-    val DLHD_PK_STREAM_PATHS = listOf("watch", "cast", "plus", "player", "casting")
+    /** Relay paths — player/casting first (watch/cast often 403/404 on current mirrors). */
+    val DLHD_PK_STREAM_PATHS = listOf("player", "casting", "watch", "cast", "plus")
     /** Wizard/setup M3U cap — full catalog (~5k ch) blocks FUSA for minutes; bootstrap must be fast. */
     const val SETUP_BOOTSTRAP_MAX_CHANNELS = 50
     const val CHANNEL_REFRESH_INTERVAL_MS = 600_000L
@@ -77,10 +81,16 @@ object GatewayConfig {
         "daddylive.org",
         "daddylive.li",
         "daddylive.eu",
+        "daddylive.at",
+        "dlstreams.st",
         "dlhd.st",
         "dlhd.pk",
         "dlhd.li",
         "dlhd.org",
+    )
+    /** Mirrors excluded from automatic rotation (seized, deprecated, or structurally broken). */
+    val DADDYLIVE_BLOCKED_HOSTS = setOf(
+        "daddylive.org",
     )
     /** EMA weight for mirror/path latency samples (higher = more reactive). */
     const val MIRROR_LATENCY_EMA_ALPHA = 0.35

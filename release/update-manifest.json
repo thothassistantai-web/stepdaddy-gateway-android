@@ -1,10 +1,10 @@
 {
-  "versionCode": 30026,
-  "versionName": "3.0.26",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.26/stepdaddy-gateway-3.0.26-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.26/stepdaddy-gateway-3.0.26-debug.apk",
-  "apkSha256": "97f92a5662d39d9a569b70a1f3036582df2ecd6bdcff08ecb0a5ddcabf755ed2",
-  "apkSha256Debug": "460cc2bbb549d32af4120e4c06201b91868d9a05938ac90c9aaab0ee23b96ec8",
-  "releaseNotes": "See CHANGELOG.md",
+  "versionCode": 30027,
+  "versionName": "3.0.27",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.27/stepdaddy-gateway-3.0.27-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.27/stepdaddy-gateway-3.0.27-debug.apk",
+  "apkSha256": "9158971268db032497bf3d3062acdb50ce2028290183a5fadf56c1546d99d709",
+  "apkSha256Debug": "18dd846d5594c2d9d1ebef59ed745898f2eb07ab40625980eccd46883ec2db65",
+  "releaseNotes": "Daddy Live 404/stream resolution: dynamic embed URLs, dlstreams.st relays, seized-mirror blocklist, API schema {channel_name,url}.",
   "mandatory": false
 }
