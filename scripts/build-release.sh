@@ -31,13 +31,13 @@ else
 fi
 
 echo "==> Running unit tests (release + debug)"
-./gradlew testReleaseUnitTest testDebugUnitTest
+bash ./gradlew testReleaseUnitTest testDebugUnitTest
 
 echo "==> Building debug APK (sideload / in-app updater channel)"
-./gradlew assembleDebug -x lintVitalRelease
+bash ./gradlew assembleDebug -x lintVitalRelease
 
 echo "==> Building release APK and AAB"
-./gradlew assembleRelease bundleRelease -x lintVitalRelease "${GRADLE_ARGS[@]}"
+bash ./gradlew assembleRelease bundleRelease -x lintVitalRelease "${GRADLE_ARGS[@]}"
 
 APK_DIR="${ROOT}/app/build/outputs/apk/release"
 BUNDLE_DIR="${ROOT}/app/build/outputs/bundle/release"

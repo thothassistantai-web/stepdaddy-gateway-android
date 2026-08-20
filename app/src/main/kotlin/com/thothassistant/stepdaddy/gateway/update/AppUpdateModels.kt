@@ -19,12 +19,31 @@ data class UpdateManifest(
     val releaseNotes: String? = null,
     val mandatory: Boolean = false,
 ) {
-    fun forCurrentBuild(isDebugBuild: Boolean): UpdateManifest {
-        if (!isDebugBuild) return this
-        val debugUrl = apkUrlDebug?.trim().orEmpty()
-        if (debugUrl.isBlank() || debugUrl == apkUrl) return this
-        return copy(apkUrl = debugUrl)
+    /**
+     * Returns this manifest if the current build has a usable APK URL.
+     * Does **not** overwrite [apkUrl] with the debug URL — both channels stay available
+     * so debug builds can still graduate to the release package.
+     */
+    fun forCurrentBuild(isDebugBuild: Boolean): UpdateManifest? {
+        val url = resolvedApkUrl(isDebugBuild)
+        return takeIf { url.isNotBlank() }
     }
+
+    /** OTA URL for the currently installed applicationId (debug→debug, release→release). */
+    fun resolvedApkUrl(isDebugBuild: Boolean): String {
+        if (!isDebugBuild) return apkUrl.trim()
+        val debugUrl = apkUrlDebug?.trim().orEmpty()
+        return debugUrl.ifBlank { apkUrl.trim() }
+    }
+
+    fun resolvedApkSha256(isDebugBuild: Boolean): String? {
+        if (!isDebugBuild) return apkSha256?.trim()?.takeIf { it.isNotEmpty() }
+        return apkSha256Debug?.trim()?.takeIf { it.isNotEmpty() }
+            ?: apkSha256?.trim()?.takeIf { it.isNotEmpty() }
+    }
+
+    /** Release package URL used by “Graduate to Release” from a debug install. */
+    fun releaseApkUrl(): String = apkUrl.trim()
 }
 
 @Serializable

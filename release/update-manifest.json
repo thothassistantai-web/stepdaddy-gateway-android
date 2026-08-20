@@ -1,10 +1,10 @@
 {
-  "versionCode": 30027,
-  "versionName": "3.0.27",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.27/stepdaddy-gateway-3.0.27-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.27/stepdaddy-gateway-3.0.27-debug.apk",
-  "apkSha256": "9158971268db032497bf3d3062acdb50ce2028290183a5fadf56c1546d99d709",
-  "apkSha256Debug": "18dd846d5594c2d9d1ebef59ed745898f2eb07ab40625980eccd46883ec2db65",
-  "releaseNotes": "Daddy Live 404/stream resolution: dynamic embed URLs, dlstreams.st relays, seized-mirror blocklist, API schema {channel_name,url}.",
+  "versionCode": 30028,
+  "versionName": "3.0.28",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.28/stepdaddy-gateway-3.0.28-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.28/stepdaddy-gateway-3.0.28-debug.apk",
+  "apkSha256": "02c8902b0d6ed2376ae790daba823b4089a5480c225b0a2bfd239359f7a85b47",
+  "apkSha256Debug": "1cf449430f16832256932b2c5f76565a641ebb1ec1f2de79c369c35591896e9c",
+  "releaseNotes": "Old release installs on the lost cert **cannot** OTA \u2014 uninstall then install this APK (or use debug).",
   "mandatory": false
 }

@@ -7,6 +7,19 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.28] - 2026-08-20
+
+### Added
+
+- **New release signing key** — Regenerated release keystore after the previous key was lost. New cert SHA-256 `94:91:41:8C:…:39:75`. Signed release APKs resume OTA for fresh installs. See `docs/KEYSTORE-BACKUP.md`.
+- **Graduate to Release** — Debug builds (Settings / About) can download the signed release APK and open the installer. Debug and release remain different `applicationId`s; graduation is uninstall/side-by-side, not silent conversion.
+- **Signing mismatch messaging** — In-app update path detects certificate mismatch and explains that Android cannot update the same package with a different signer.
+
+### Changed
+
+- **Update manifest channels** — Debug OTA keeps `apkUrl` (release) and `apkUrlDebug` separate so graduation can still fetch the release APK.
+- **Migration docs** — `docs/UPDATES.md`, `docs/INSTALL.md`, `docs/KEYSTORE-BACKUP.md`, and release notes document stranded old-release installs (uninstall required).
+
 ## [3.0.27] - 2026-08-19
 
 ### Fixed

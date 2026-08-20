@@ -342,6 +342,25 @@
     <string name="update_download_failed">Update download failed: %1$s</string>
     <string name="update_download_ready">Update ready — confirm install on screen</string>
     <string name="update_stale_pending_discarded">Removed an outdated update — you’re already on a newer version.</string>
+    <string name="update_signature_mismatch">Cannot update: signing key changed. Uninstall the old release app, then install the new signed APK (or use the debug package for continued OTA). Same package + different signer is not allowed by Android.</string>
+
+    <string name="graduate_release_button">Graduate to Release</string>
+    <string name="graduate_release_hint">Install the signed release package (`…gateway`). Debug (`…gateway.debug`) cannot become release via OTA — uninstall debug or install side-by-side, then open the release app.</string>
+    <string name="graduate_release_title">Graduate to Release?</string>
+    <string name="graduate_release_message">This downloads the signed release APK %1$s.\n\n• Release package: %2$s\n• Your debug package: %3$s\n\nAndroid treats these as different apps. After install, open the release app and uninstall debug when ready. Gateway settings are per-package and will not transfer automatically.</string>
+    <string name="graduate_release_download">Download release APK</string>
+    <string name="graduate_release_fetching">Looking up release APK…</string>
+    <string name="graduate_release_downloading">Downloading release APK…</string>
+    <string name="graduate_release_failed">Graduate failed: %1$s</string>
+    <string name="graduate_release_no_url">No release APK URL in the update manifest.</string>
+    <string name="graduate_release_debug_only">Graduate to Release is only available on the debug build.</string>
+    <string name="graduate_release_install_title">Install signed release</string>
+    <string name="graduate_release_install_message">Release %1$s is ready.\n\n1. Confirm install for package %3$s\n2. Optionally uninstall %2$s afterward\n3. Launch the release StepDaddy Gateway icon\n\nDo not expect debug OTA to replace this package — future updates use the new release signing key.</string>
+    <string name="graduate_release_install_launched">Release installer opened — confirm on device</string>
+
+    <string name="migration_release_note_title">Signing key migration</string>
+    <string name="migration_release_note_body">Devices that still have an old release install (lost signing key) cannot receive OTA. Uninstall `com.thothassistant.stepdaddy.gateway`, then install this newly signed release — or switch to the debug APK for continued OTA. New installs of this signed release can OTA normally going forward.</string>
+    <string name="migration_adb_hint">ADB: adb uninstall com.thothassistant.stepdaddy.gateway &amp;&amp; adb install -r stepdaddy-gateway-*-release.apk</string>
 
     <string name="about_title">About</string>
     <string name="about_subtitle">Gateway build info and installed TiViMate player.</string>

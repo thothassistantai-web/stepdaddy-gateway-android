@@ -40,8 +40,7 @@ class AppUpdateRepository(
             json.decodeFromString(UpdateManifest.serializer(), text)
         }
         return manifest
-            ?.forCurrentBuild(isDebugBuild())
-            ?.takeIf { it.apkUrl.isNotBlank() }
+            .forCurrentBuild(isDebugBuild())
             ?.let { AppUpdateInfo(it, sourceLabel) }
     }
 
@@ -57,6 +56,7 @@ class AppUpdateRepository(
             if (manifestText.isNotBlank()) {
                 val manifest = json.decodeFromString(UpdateManifest.serializer(), manifestText)
                 return manifest.forCurrentBuild(isDebugBuild())
+                    ?: manifest.takeIf { it.apkUrl.isNotBlank() || !it.apkUrlDebug.isNullOrBlank() }
             }
         }
         val apkAsset = selectApkAsset(release.assets) ?: return null

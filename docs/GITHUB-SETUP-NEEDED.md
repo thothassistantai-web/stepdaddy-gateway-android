@@ -73,16 +73,19 @@ When adding `.github/workflows/android-release.yml`:
 
 | Secret name | Contents |
 |-------------|----------|
-| `ANDROID_KEYSTORE_BASE64` | Base64 of `stepdaddy-release.jks` |
-| `ANDROID_KEYSTORE_PASSWORD` | Keystore password |
-| `ANDROID_KEY_ALIAS` | e.g. `stepdaddy` |
-| `ANDROID_KEY_PASSWORD` | Key password |
+| `ANDROID_KEYSTORE_BASE64` / `KEYSTORE_BASE64` | Base64 of `stepdaddy-release.jks` |
+| `ANDROID_KEYSTORE_PASSWORD` / `STORE_PASSWORD` | Keystore password |
+| `ANDROID_KEY_ALIAS` / `KEY_ALIAS` | e.g. `stepdaddy` |
+| `ANDROID_KEY_PASSWORD` / `KEY_PASSWORD` | Key password (PKCS12: same as store) |
 | `GH_PAT` | PAT with `repo` + `workflow` for release upload |
+
+**Status (2026-08-20):** Keystore regenerated; both naming conventions above were set via `gh secret set`. Verify with `gh secret list`. Details: [KEYSTORE-BACKUP.md](KEYSTORE-BACKUP.md).
 
 **Please provide (secure channel only):**
 
-- [ ] Keystore file generated (yes/no) — if no, run `keytool` per [RELEASE.md](RELEASE.md)
-- [ ] Secrets added to repo Settings → Secrets → Actions (yes/no)
+- [x] Keystore file generated (yes) — see [KEYSTORE-BACKUP.md](KEYSTORE-BACKUP.md)
+- [x] Secrets added to repo Settings → Secrets → Actions (yes)
+- [ ] Offline encrypted backup of `.jks` completed by maintainer
 
 ---
 
@@ -90,21 +93,12 @@ When adding `.github/workflows/android-release.yml`:
 
 Required for Play Store and trusted sideload updates.
 
-```bash
-keytool -genkey -v -keystore stepdaddy-release.jks \
-  -alias stepdaddy -keyalg RSA -keysize 2048 -validity 10000
-```
+**Active keystore:** `keystore/stepdaddy-release.jks` (gitignored).  
+**Fingerprint:** `94:91:41:8C:31:B1:A9:A3:60:84:D8:BD:97:F2:E0:80:E4:1E:92:6C:46:0A:DE:D5:5E:F2:2F:E4:6E:C3:39:75`
 
-**Please provide:**
+The previous release key (`ede8ca7d…`) is lost — old release installs cannot OTA. Migration: uninstall + install 3.0.28+ signed release, or use debug as bridge ([UPDATES.md](UPDATES.md)).
 
-| Question | Your answer |
-|----------|-------------|
-| Keystore already exists? | yes / no |
-| Safe backup location | _______________ |
-| `keyAlias` | _______________ |
-| Same key for all future releases? | yes (required for Play) |
-
-Store locally as `keystore.properties` (gitignored) — see [RELEASE.md](RELEASE.md).
+Store locally as `keystore.properties` (gitignored) — see [RELEASE.md](RELEASE.md) and [KEYSTORE-BACKUP.md](KEYSTORE-BACKUP.md).
 
 ---
 

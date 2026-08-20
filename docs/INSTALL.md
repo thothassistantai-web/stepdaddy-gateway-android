@@ -46,6 +46,18 @@ Signed output paths are documented in [RELEASE.md](RELEASE.md).
 
 - **Package:** `com.thothassistant.stepdaddy.gateway`
 
+### Signing key migration (3.0.28+)
+
+The old release signing key is **lost**. Android will **not** let you OTA-update an old release install with a newly signed APK (same package, different certificate).
+
+```bash
+# Required one-time migration for stranded old-release devices
+adb uninstall com.thothassistant.stepdaddy.gateway
+adb install -r release/stepdaddy-gateway-*-release.apk
+```
+
+Alternatively, install the **debug** APK (`…gateway.debug`) for continued in-app OTA, then use **Settings → Graduate to Release** when ready. See [UPDATES.md](UPDATES.md#signing-key-migration-308) and [KEYSTORE-BACKUP.md](KEYSTORE-BACKUP.md).
+
 ### Enable unknown sources
 
 On Android TV: **Settings → Security & restrictions → Unknown sources** → allow your file manager or installer.

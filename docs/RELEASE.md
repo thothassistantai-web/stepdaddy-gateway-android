@@ -61,11 +61,11 @@ Produces:
 
 ### Option A — `keystore.properties` (recommended)
 
-Create keystore once:
+Active keystore after the 3.0.28 migration: see [KEYSTORE-BACKUP.md](KEYSTORE-BACKUP.md). Never regenerate unless you accept stranding all existing release installs.
 
 ```bash
-keytool -genkey -v -keystore stepdaddy-release.jks \
-  -alias stepdaddy -keyalg RSA -keysize 2048 -validity 10000
+# Restore passwords from keyring (optional)
+source scripts/keystore-from-keyring.sh
 ```
 
 `scripts/build-release.sh` reads `keystore.properties` and configures signing via Gradle.
@@ -74,11 +74,11 @@ keytool -genkey -v -keystore stepdaddy-release.jks \
 
 ```bash
 zipalign -v -p 4 app-release-unsigned.apk aligned.apk
-apksigner sign --ks stepdaddy-release.jks --out app-release-signed.apk aligned.apk
-apksigner verify app-release-signed.apk
+apksigner sign --ks keystore/stepdaddy-release.jks --out app-release-signed.apk aligned.apk
+apksigner verify --print-certs app-release-signed.apk
 ```
 
-**Never commit** `.jks` files or passwords.
+**Never commit** `.jks` files or passwords. **Never lose** the current keystore.
 
 ## TiviMate Daddy APK signing (suite note)
 

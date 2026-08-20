@@ -57,6 +57,7 @@ class AboutActivity : AppCompatActivity() {
         textTiviMatePlaylistState = findViewById(R.id.textTiviMatePlaylistState)
 
         bindGatewayInfo()
+        wireMigrationUi()
         tiviMateUpdateCoordinator.addListener(updateListener)
         renderTiviMateState(tiviMateUpdateCoordinator.currentResult())
         refreshTiviMatePlaylistState()
@@ -111,6 +112,21 @@ class AboutActivity : AppCompatActivity() {
             BuildConfig.BUILD_TYPE,
             built,
         )
+    }
+
+    private fun wireMigrationUi() {
+        val isDebugPackage = BuildConfig.APPLICATION_ID.endsWith(".debug")
+        findViewById<View>(R.id.layoutAboutMigrationNote).visibility =
+            if (isDebugPackage) View.GONE else View.VISIBLE
+        val graduateButton = findViewById<MaterialButton>(R.id.buttonGraduateReleaseAbout)
+        if (isDebugPackage) {
+            graduateButton.visibility = View.VISIBLE
+            graduateButton.setOnClickListener {
+                (application as GatewayApp).appUpdateCoordinator.graduateToRelease(this)
+            }
+        } else {
+            graduateButton.visibility = View.GONE
+        }
     }
 
     private fun renderTiviMateState(result: TiviMateUpdateCheckResult?) {

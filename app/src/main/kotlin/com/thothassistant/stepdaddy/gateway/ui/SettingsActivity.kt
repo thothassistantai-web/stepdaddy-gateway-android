@@ -53,6 +53,10 @@ class SettingsActivity : AppCompatActivity() {
         binding.buttonSave.setOnClickListener { saveAndFinish() }
         binding.buttonBack.setOnClickListener { finish() }
         binding.buttonCheckUpdate.setOnClickListener { checkForUpdates(manual = true) }
+        binding.buttonGraduateRelease.setOnClickListener {
+            syncUpdateFieldsFromBinding()
+            updateCoordinator.graduateToRelease(this)
+        }
         binding.buttonOpenAbout.setOnClickListener {
             startActivity(Intent(this, AboutActivity::class.java))
         }
@@ -150,6 +154,10 @@ class SettingsActivity : AppCompatActivity() {
             BuildConfig.BUILD_TYPE,
             built,
         )
+        val isDebugPackage = BuildConfig.APPLICATION_ID.endsWith(".debug")
+        binding.layoutGraduateRelease.visibility = if (isDebugPackage) View.VISIBLE else View.GONE
+        binding.layoutReleaseMigrationNote.visibility =
+            if (isDebugPackage) View.GONE else View.VISIBLE
     }
 
     private fun updateRemoteNetworkVisibility() {

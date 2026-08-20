@@ -175,6 +175,8 @@ Channel parse runs off main thread in current builds. Reinstall latest APK if bo
 | Manifest URL empty | Set in Settings or build-time default |
 | GitHub rate limit | Use release asset `update-manifest.json` |
 | Drive folder | Must be publicly readable |
+| Old release signing key stranded | Uninstall + install 3.0.28+ signed release; OTA impossible across certs — [UPDATES.md](UPDATES.md) |
+| "package appears to be invalid" | HTML 404 saved as APK, or signature mismatch |
 
 ---
 
@@ -182,7 +184,7 @@ Channel parse runs off main thread in current builds. Reinstall latest APK if bo
 
 | Error | Fix |
 |-------|-----|
-| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | `adb uninstall <package>` then reinstall |
+| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | `adb uninstall <package>` then reinstall (often signing-key change) |
 | `INSTALL_FAILED_VERSION_DOWNGRADE` | Uninstall or bump `versionCode` |
 | TiviMate signature clash | Uninstall before switching Daddy/mod/official |
 

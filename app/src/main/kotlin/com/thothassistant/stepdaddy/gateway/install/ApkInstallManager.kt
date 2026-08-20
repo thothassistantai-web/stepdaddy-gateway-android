@@ -68,6 +68,75 @@ class ApkInstallManager(
             }
         }.getOrNull()
 
+    /** SHA-256 of the APK's signing certificate (colon-free uppercase hex), or null. */
+    fun resolveApkSigningCertSha256(apkFile: File): String? =
+        runCatching {
+            val flags = signingFlags()
+            @Suppress("DEPRECATION")
+            val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPackageArchiveInfo(
+                    apkFile.absolutePath,
+                    PackageManager.PackageInfoFlags.of(flags.toLong()),
+                )
+            } else {
+                context.packageManager.getPackageArchiveInfo(apkFile.absolutePath, flags)
+            }
+            signingCertSha256(info)
+        }.getOrNull()
+
+    /** SHA-256 of the installed package's signing certificate, or null if not installed. */
+    fun resolveInstalledSigningCertSha256(packageName: String): String? =
+        runCatching {
+            val flags = signingFlags()
+            @Suppress("DEPRECATION")
+            val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPackageInfo(
+                    packageName,
+                    PackageManager.PackageInfoFlags.of(flags.toLong()),
+                )
+            } else {
+                context.packageManager.getPackageInfo(packageName, flags)
+            }
+            signingCertSha256(info)
+        }.getOrNull()
+
+    /**
+     * True when [apkFile] is signed with a different cert than the installed [packageName].
+     * Android cannot update in-place across signing keys — callers must instruct uninstall.
+     */
+    fun hasSigningCertMismatch(apkFile: File, packageName: String): Boolean {
+        val installed = resolveInstalledSigningCertSha256(packageName) ?: return false
+        val apkCert = resolveApkSigningCertSha256(apkFile) ?: return false
+        return !installed.equals(apkCert, ignoreCase = true)
+    }
+
+    private fun signingFlags(): Int =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            PackageManager.GET_SIGNING_CERTIFICATES
+        } else {
+            @Suppress("DEPRECATION")
+            PackageManager.GET_SIGNATURES
+        }
+
+    private fun signingCertSha256(info: PackageInfo?): String? {
+        if (info == null) return null
+        val certs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val signingInfo = info.signingInfo ?: return null
+            if (signingInfo.hasMultipleSigners()) {
+                signingInfo.apkContentsSigners
+            } else {
+                signingInfo.signingCertificateHistory
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            info.signatures
+        }
+        val first = certs?.firstOrNull()?.toByteArray() ?: return null
+        return MessageDigest.getInstance("SHA-256")
+            .digest(first)
+            .joinToString("") { "%02X".format(it) }
+    }
+
     suspend fun downloadApk(
         entry: InstallAppEntry,
         onProgress: (Int) -> Unit,

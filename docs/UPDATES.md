@@ -2,19 +2,39 @@
 
 StepDaddy Gateway can check for newer APKs without the Play Store. Distribution is via **GitHub Releases** today; **Google Drive** is stubbed for a future release.
 
+## Signing key migration (3.0.28)
+
+The previous **release** signing key was lost. Android **cannot** update `com.thothassistant.stepdaddy.gateway` in-place when the APK signer changes.
+
+| Device state | Can OTA? | What to do |
+|--------------|----------|------------|
+| Old release (lost cert `ede8ca7d…`) | **No** | Uninstall release → install newly signed `*-release.apk`, **or** install debug for continued OTA |
+| Debug (`…gateway.debug`) | **Yes** (debug→debug) | Keep using OTA, or **Settings → Graduate to Release** |
+| New signed release (cert `94:91:41:8C…`) | **Yes** (release→release) | Normal OTA forever after |
+
+```bash
+# Old stranded release → new signed release
+adb uninstall com.thothassistant.stepdaddy.gateway
+adb install -r stepdaddy-gateway-3.0.28-release.apk
+```
+
+Debug and release are **different applicationIds**. Graduating is uninstall/side-by-side + open the release app — not a silent PackageManager conversion. Settings/data do not transfer between packages.
+
+Maintainer keystore backup: [KEYSTORE-BACKUP.md](KEYSTORE-BACKUP.md).
+
 ## Update manifest
 
 The app reads a JSON file with this shape:
 
 ```json
 {
-  "versionCode": 2,
-  "versionName": "1.0.0",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.0/stepdaddy-gateway-1.0.0-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.0/stepdaddy-gateway-1.0.0-debug.apk",
+  "versionCode": 30028,
+  "versionName": "3.0.28",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.28/stepdaddy-gateway-3.0.28-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.28/stepdaddy-gateway-3.0.28-debug.apk",
   "apkSha256": "<sha256-of-release-apk>",
   "apkSha256Debug": "<sha256-of-debug-apk>",
-  "releaseNotes": "Initial public release."
+  "releaseNotes": "Signing key migration."
 }
 ```
 
@@ -63,9 +83,10 @@ Until then, use GitHub Releases or a public static URL.
 | Auto-download | Off | Download APK in background; user still confirms install |
 | Manifest URL | Empty | Primary update source |
 | Drive folder URL | Empty | Fallback stub |
+| Graduate to Release | Debug only | Download signed release APK (different package) |
 
 ## Security
 
 - Only install updates from sources you trust.
-- APKs from this project are **debug/unsigned** until you configure your own release keystore.
+- Release APKs from **3.0.28+** are signed with the new keystore documented in [KEYSTORE-BACKUP.md](KEYSTORE-BACKUP.md).
 - If a GitHub token was ever pasted into chat or committed, **rotate it immediately** in GitHub → Settings → Developer settings.

@@ -15,9 +15,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.resume
 
 /**
  * Process-wide update orchestration: one check chain, no overlapping dialogs, startup grace.
@@ -142,8 +144,124 @@ class AppUpdateCoordinator(
                 dismissActiveDialog()
                 showInstallReadyDialog(host, info, apk, manual = true)
             }.onFailure { exc ->
-                toast(host, host.getString(R.string.update_download_failed, exc.message ?: "error"))
+                toastUpdateFailure(host, exc)
             }
+        }
+    }
+
+    /**
+     * Debug bridge → newly signed release package.
+     * Cannot convert applicationIds in-place; user must install release (side-by-side or after uninstall).
+     */
+    fun graduateToRelease(host: AppCompatActivity) {
+        if (!manager.isDebugBuild()) {
+            toast(host, host.getString(R.string.graduate_release_debug_only))
+            return
+        }
+        if (downloadJob?.isActive == true) return
+        downloadJob = host.lifecycleScope.launch {
+            toast(host, host.getString(R.string.graduate_release_fetching))
+            val fetch = withContext(Dispatchers.IO) { manager.fetchLatestManifest() }
+            val info = fetch.getOrElse { exc ->
+                toast(host, host.getString(R.string.graduate_release_failed, exc.message ?: "error"))
+                return@launch
+            }
+            if (info == null || info.manifest.releaseApkUrl().isBlank()) {
+                toast(host, host.getString(R.string.graduate_release_no_url))
+                return@launch
+            }
+            dismissActiveDialog()
+            val proceed = withContext(Dispatchers.Main) {
+                showGraduateConfirmDialog(host, info)
+            }
+            if (!proceed) return@launch
+            toast(host, host.getString(R.string.graduate_release_downloading))
+            val result = downloadMutex.withLock {
+                withContext(Dispatchers.IO) { manager.downloadReleaseForGraduation(info) { } }
+            }
+            result.onSuccess { apk ->
+                dismissActiveDialog()
+                showGraduateInstallDialog(host, info, apk)
+            }.onFailure { exc ->
+                toastUpdateFailure(host, exc)
+            }
+        }
+    }
+
+    private suspend fun showGraduateConfirmDialog(
+        host: AppCompatActivity,
+        info: AppUpdateInfo,
+    ): Boolean = suspendCancellableCoroutine { cont ->
+        if (!host.isValidHost()) {
+            cont.resume(false)
+            return@suspendCancellableCoroutine
+        }
+        val dialog = AlertDialog.Builder(host)
+            .setTitle(R.string.graduate_release_title)
+            .setMessage(
+                host.getString(
+                    R.string.graduate_release_message,
+                    info.manifest.versionName,
+                    AppUpdateManager.RELEASE_PACKAGE,
+                    AppUpdateManager.DEBUG_PACKAGE,
+                ),
+            )
+            .setPositiveButton(R.string.graduate_release_download) { _, _ ->
+                if (cont.isActive) cont.resume(true)
+            }
+            .setNegativeButton(R.string.update_action_later) { _, _ ->
+                if (cont.isActive) cont.resume(false)
+            }
+            .setOnCancelListener {
+                if (cont.isActive) cont.resume(false)
+            }
+            .create()
+        activeDialogRef = WeakReference(dialog)
+        dialog.show()
+        cont.invokeOnCancellation { runCatching { dialog.dismiss() } }
+    }
+
+    private fun showGraduateInstallDialog(
+        host: AppCompatActivity,
+        info: AppUpdateInfo,
+        apkFile: File,
+    ) {
+        if (!host.isValidHost()) return
+        dismissActiveDialog()
+        val dialog = AlertDialog.Builder(host)
+            .setTitle(R.string.graduate_release_install_title)
+            .setMessage(
+                host.getString(
+                    R.string.graduate_release_install_message,
+                    info.manifest.versionName,
+                    AppUpdateManager.DEBUG_PACKAGE,
+                    AppUpdateManager.RELEASE_PACKAGE,
+                ),
+            )
+            .setPositiveButton(R.string.update_action_install) { _, _ ->
+                if (!manager.canInstallPackages()) {
+                    toast(host, host.getString(R.string.install_apps_unknown_sources_hint))
+                    manager.openInstallPermissionSettings()
+                    return@setPositiveButton
+                }
+                if (manager.launchInstall(apkFile)) {
+                    toast(host, host.getString(R.string.graduate_release_install_launched))
+                } else {
+                    toast(host, host.getString(R.string.install_apps_launch_failed))
+                }
+            }
+            .setNegativeButton(R.string.update_action_later, null)
+            .create()
+        activeDialogRef = WeakReference(dialog)
+        dialog.show()
+    }
+
+    private fun toastUpdateFailure(host: AppCompatActivity, exc: Throwable) {
+        val message = exc.message.orEmpty()
+        if (message.contains("Signing certificate mismatch", ignoreCase = true)) {
+            toast(host, host.getString(R.string.update_signature_mismatch))
+        } else {
+            toast(host, host.getString(R.string.update_download_failed, message.ifBlank { "error" }))
         }
     }
 
@@ -200,6 +318,8 @@ class AppUpdateCoordinator(
                 dismissActiveDialog()
                 awaitPromptWindow()
                 showInstallReadyDialog(host, info, apk, manual = false)
+            }.onFailure { exc ->
+                if (host.isValidHost()) toastUpdateFailure(host, exc)
             }
         }
     }
