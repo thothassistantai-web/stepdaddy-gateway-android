@@ -129,6 +129,9 @@ object PlaylistBuilder {
         supplements.forEach { supplement ->
             if (!SpecialEventLifecycle.isDlhdEventPlaylistVisible(supplement, now)) return@forEach
             val chno = supplementNumbers[supplement.id] ?: return@forEach
+            val stream = supplementStreamLine(supplement, base, dlhdOrigin, streamUrlStyle)
+            // Never emit EXTINF with a blank URL — TiviMate throws ParserException on refresh.
+            if (stream.isBlank()) return@forEach
             val title = supplementDisplayTitle(supplement, titleStyle, nowMs, eventHealthStore)
             val groupTitle = supplementPlaylistGroupTitle(supplement)
             rows += PlaylistRow(
@@ -137,7 +140,7 @@ object PlaylistBuilder {
                 intraGroupOrder = supplementIntraGroupSlot(supplement),
                 chno = chno,
                 extinf = "#EXTINF:-1 ${supplementExtinfAttrs(supplement, base, logoResolver, chno, title, titleStyle)},$title",
-                stream = supplementStreamLine(supplement, base, dlhdOrigin, streamUrlStyle),
+                stream = stream,
             )
         }
 
@@ -641,8 +644,10 @@ object PlaylistBuilder {
 
     private fun escape(value: String): String =
         value
-            .replace("\\", "\\\\")
-            .replace("\"", "\\\"")
+            // IPTV parsers count raw `"`; prefer apostrophe over backslash escapes.
+            .replace("\"", "'")
+            .replace('\u201C', '\'')
+            .replace('\u201D', '\'')
             .replace("\n", " ")
             .replace("\r", " ")
             .trim()

@@ -7,6 +7,14 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.33] - 2026-08-21
+
+### Fixed
+
+- **TiviMate ParserException on consolidated backups** — `/daddy-fallback` and `/supplement-stream` were serving ntv/dulo `resolveManifestUrl` results (bare CDN URL strings) as m3u8 bodies. They now fetch + rewrite real HLS playlists (same path as dedicated ntv/dulo routes) and return `HlsErrorManifest` on failures instead of HTML/JSON error pages. Relative segment URLs are absolutized so ExoPlayer no longer hits gateway 404s for `.ts` paths.
+- **Empty VOD series URLs in playlist** — shelf-suffixed ids (`vod:series:…@shelf`) failed `parseSeriesSupplementId`, emitting `#EXTINF` with a blank URL line (TiviMate parser exception on refresh). Shelf suffix is stripped before parse; blank stream rows are skipped.
+- **M3U attribute quotes** — EXTINF attribute escaping replaces `"` with `'` so plot/cast text cannot break TiviMate’s playlist parser.
+
 ## [3.0.32] - 2026-08-21
 
 ### Changed

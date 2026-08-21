@@ -78,7 +78,9 @@ object TmdbVodConfig {
 
     fun parseSeriesSupplementId(id: String): SeriesEpisodeKey? {
         if (!id.startsWith(SERIES_ID_PREFIX)) return null
-        val parts = id.removePrefix(SERIES_ID_PREFIX).split(':')
+        // Shelf copies use `vod:series:{show}:{season}:{episode}@{shelf}` — strip before parse.
+        val base = id.removePrefix(SERIES_ID_PREFIX).substringBefore(SHELF_SUFFIX)
+        val parts = base.split(':')
         if (parts.size != 3) return null
         val showTmdbId = parts[0].toIntOrNull() ?: return null
         val season = parts[1].toIntOrNull() ?: return null

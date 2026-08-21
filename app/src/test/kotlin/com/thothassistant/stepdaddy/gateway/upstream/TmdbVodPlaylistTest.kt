@@ -135,4 +135,37 @@ class TmdbVodPlaylistTest {
         assertTrue(key != null)
         assertTrue(key!!.showTmdbId == 1399 && key.season == 1 && key.episode == 1)
     }
+
+    @Test
+    fun `shelf-suffixed series ids still emit vod proxy urls`() {
+        val id = TmdbVodConfig.shelfSeriesSupplementId(
+            TmdbVodConfig.seriesSupplementId(285574, 1, 1),
+            "Trending TV Series",
+        )
+        val key = TmdbVodConfig.parseSeriesSupplementId(id)
+        assertTrue(key != null && key!!.showTmdbId == 285574)
+
+        val playlist = PlaylistBuilder.tivimatePlaylist(
+            channels = emptyList(),
+            baseUrl = "http://127.0.0.1:3000",
+            dlhdOrigin = "https://daddylive.eu",
+            supplements = listOf(
+                SupplementChannel(
+                    id = id,
+                    name = "Lanterns - S01E01",
+                    tvgId = "tt26545992",
+                    logo = null,
+                    groupTitle = "📺 Trending TV Series",
+                    streamUrl = "",
+                    tags = listOf("#series", "#vod"),
+                    providerTag = "VOD",
+                    referer = TmdbVodConfig.EMBED_REFERER,
+                    plot = "A detective says \"hello\" and investigates.",
+                ),
+            ),
+        )
+        assertTrue(playlist.contains("http://127.0.0.1:3000/vod/series/285574/1/1.m3u8"))
+        assertFalse(playlist.contains("#EXTINF:-1 tvg-id=\"tt26545992\"\n\n"))
+        assertTrue(playlist.contains("tvg-desc=\"A detective says 'hello' and investigates.\""))
+    }
 }
