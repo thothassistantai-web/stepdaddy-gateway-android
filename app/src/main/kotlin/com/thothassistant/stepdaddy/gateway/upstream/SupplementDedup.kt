@@ -1,6 +1,5 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
-import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror
@@ -23,7 +22,7 @@ object SupplementDedup {
         val daddyIndexes = if (skipDuplicates) {
             SupplementImportMatcher.buildDaddyIndexes(daddyChannels)
         } else {
-            SupplementImportMatcher.DaddyIndexes(emptyMap(), emptyMap())
+            SupplementImportMatcher.emptyIndexes()
         }
 
         val seenUrls = mutableSetOf<String>()
@@ -35,12 +34,26 @@ object SupplementDedup {
 
         for (entry in entries) {
             if (out.size >= maxChannels) break
-            val norm = EpgChannelMapper.normalizeName(entry.name)
             val entryTvgKeys = tvgIdKeys(entry.tvgId)
+            val countryHint = SupplementMatchScorer.countryHintFromPlaylist(entry.sourcePlaylist)
 
-            if (skipDuplicates && SupplementImportMatcher.matchesDaddy(norm, entry.tvgId, daddyIndexes)) {
+            if (skipDuplicates &&
+                SupplementImportMatcher.matchesDaddy(
+                    name = entry.name,
+                    tvgId = entry.tvgId,
+                    indexes = daddyIndexes,
+                    countryHint = countryHint,
+                    sourcePlaylist = entry.sourcePlaylist,
+                )
+            ) {
                 if (consolidate) {
-                    val targetId = SupplementImportMatcher.resolveDaddyChannelId(norm, entry.tvgId, daddyIndexes)
+                    val targetId = SupplementImportMatcher.resolveDaddyChannelId(
+                        name = entry.name,
+                        tvgId = entry.tvgId,
+                        indexes = daddyIndexes,
+                        countryHint = countryHint,
+                        sourcePlaylist = entry.sourcePlaylist,
+                    )
                     if (targetId != null) {
                         val mirror = mirrorFromEntry(entry, label = entry.sourcePlaylist.orEmpty())
                         daddyFallbacks.getOrPut(targetId) { mutableListOf() } += mirror
@@ -106,7 +119,7 @@ object SupplementDedup {
     fun mirrorFromEntry(entry: M3uParser.Entry, label: String): SupplementFallbackMirror =
         SupplementFallbackMirror(
             streamUrl = entry.streamUrl.trim(),
-            label = label.substringAfterLast('/').removeSuffix(".m3u"),
+            label = label.substringAfterLast('/').removeSuffix(".m3u").removeSuffix(".m3u8"),
         )
 
     fun matchesDaddyTvgId(entryTvgId: String?, daddyTvgIds: Set<String>): Boolean =

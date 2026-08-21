@@ -88,6 +88,7 @@ class SupplementSource(
     /** Fire Stick only: skip loading ~4k supplement rows at construct (tens of MB, trips LMK). */
     private val fireLite = FireTvDevice.isFireTv(appContext)
     private val store = SupplementStore(context)
+    private val consolidationOverrides = ConsolidationOverrideStore(context)
     private val eventMetadataStore = EventMetadataStore(context)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val refreshMutex = Mutex()
@@ -99,7 +100,14 @@ class SupplementSource(
     @Volatile private var cached: List<SupplementChannel> =
         if (fireLite) emptyList() else store.readChannels().filterNot { it.id.startsWith("sup:") }
     @Volatile private var daddyChannelFallbacks: Map<String, List<SupplementFallbackMirror>> =
-        if (fireLite) emptyMap() else store.readDaddyFallbacks()
+        if (fireLite) {
+            emptyMap()
+        } else {
+            SupplementFallbackOverridesApplier.apply(
+                store.readDaddyFallbacks(),
+                consolidationOverrides.current(),
+            )
+        }
     @Volatile private var guideSchedules: Map<String, List<SpecialEventsMerger.GuideEventRow>> =
         if (fireLite) emptyMap() else store.readGuideSchedules()
     @Volatile private var lastSync = SupplementSyncSnapshot()
@@ -173,6 +181,56 @@ class SupplementSource(
 
     fun daddyChannelFallbacks(channelId: String): List<SupplementFallbackMirror> =
         daddyChannelFallbacks[channelId].orEmpty()
+
+    fun daddyChannelFallbacksAll(): Map<String, List<SupplementFallbackMirror>> = daddyChannelFallbacks
+
+    fun consolidationOverrideStore(): ConsolidationOverrideStore = consolidationOverrides
+
+    /**
+     * Re-apply persisted manual attachments / denylist onto the last auto-merged fallbacks
+     * and publish the result (also used by the Channel Backups UI).
+     */
+    fun republishDaddyFallbacks(autoFallbacks: Map<String, List<SupplementFallbackMirror>>? = null) {
+        val base = autoFallbacks ?: store.readDaddyFallbacks()
+        val applied = SupplementFallbackOverridesApplier.apply(base, consolidationOverrides.current())
+        daddyChannelFallbacks = applied
+        store.writeDaddyFallbacks(applied)
+    }
+
+    fun removeDaddyFallback(
+        daddyChannelId: String,
+        mirror: SupplementFallbackMirror,
+        denyFutureAutoMatch: Boolean,
+    ) {
+        if (denyFutureAutoMatch) {
+            consolidationOverrides.denyPair(daddyChannelId, mirror)
+        }
+        consolidationOverrides.removeManualAttachment(daddyChannelId, mirror)
+        val next = daddyChannelFallbacks.toMutableMap()
+        val remaining = next[daddyChannelId].orEmpty().filterNot {
+            SupplementMatchScorer.mirrorFingerprint(it) == SupplementMatchScorer.mirrorFingerprint(mirror)
+        }
+        if (remaining.isEmpty()) next.remove(daddyChannelId) else next[daddyChannelId] = remaining
+        daddyChannelFallbacks = next
+        store.writeDaddyFallbacks(next)
+    }
+
+    fun attachManualDaddyFallback(
+        daddyChannelId: String,
+        mirror: SupplementFallbackMirror,
+        supplementName: String = "",
+        supplementSource: String = "",
+        country: String = "",
+    ) {
+        consolidationOverrides.addManualAttachment(
+            daddyChannelId = daddyChannelId,
+            mirror = mirror,
+            supplementName = supplementName,
+            supplementSource = supplementSource,
+            country = country,
+        )
+        republishDaddyFallbacks()
+    }
 
     fun channelCount(): Int = cached.size
 
@@ -675,8 +733,12 @@ class SupplementSource(
             environment = environment,
         )
         if (recovered.daddyFallbacks.isNotEmpty()) {
-            daddyChannelFallbacks = recovered.daddyFallbacks
-            store.writeDaddyFallbacks(recovered.daddyFallbacks)
+            val applied = SupplementFallbackOverridesApplier.apply(
+                recovered.daddyFallbacks,
+                consolidationOverrides.current(),
+            )
+            daddyChannelFallbacks = applied
+            store.writeDaddyFallbacks(applied)
         }
         return recovered.channels
     }
@@ -853,12 +915,15 @@ class SupplementSource(
         val (tmdbVod, tmdbVodStats) = tmdbVodDeferred.await()
         val (tmdbVodSeries, tmdbVodSeriesStats) = tmdbVodSeriesDeferred.await()
 
-        val mergedDaddyFallbacks = SupplementImportHelper.mergeDaddyFallbackMaps(
-            iptvOutcome.daddyFallbacks,
-            ntvOutcome.daddyFallbacks,
-            adultSwimOutcome.daddyFallbacks,
-            freeTvOutcome.daddyFallbacks,
-            duloCxOutcome.daddyFallbacks,
+        val mergedDaddyFallbacks = SupplementFallbackOverridesApplier.apply(
+            SupplementImportHelper.mergeDaddyFallbackMaps(
+                iptvOutcome.daddyFallbacks,
+                ntvOutcome.daddyFallbacks,
+                adultSwimOutcome.daddyFallbacks,
+                freeTvOutcome.daddyFallbacks,
+                duloCxOutcome.daddyFallbacks,
+            ),
+            consolidationOverrides.current(),
         )
         daddyChannelFallbacks = mergedDaddyFallbacks
         store.writeDaddyFallbacks(mergedDaddyFallbacks)

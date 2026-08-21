@@ -50,4 +50,8 @@ interface GatewayAdminActions {
     fun resolveLogo(channelName: String, tvgId: String?): ResolveLogoResult
     fun resolveEpg(channelName: String): ResolveEpgResult
     suspend fun resolveStream(channelId: String, probe: Boolean = false): ResolveStreamResult
+
+    fun listBackups(daddyChannelId: String): com.thothassistant.stepdaddy.gateway.model.AdminBackupsResult
+    fun attachBackup(daddyChannelId: String, supplementId: String): AdminActionResult
+    fun removeBackup(daddyChannelId: String, fingerprint: String, deny: Boolean): AdminActionResult
 }

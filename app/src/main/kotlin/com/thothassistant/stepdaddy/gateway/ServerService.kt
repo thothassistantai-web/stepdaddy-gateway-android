@@ -445,6 +445,7 @@ class ServerService : LifecycleService() {
             client = httpClient,
             context = this,
         )
+        app.activeDaddyLiveClient = daddyLiveClient
         return daddyLiveClient
     }
 
@@ -621,6 +622,7 @@ class ServerService : LifecycleService() {
         }
         gatewayServer?.stop()
         gatewayServer = null
+        (application as? GatewayApp)?.activeDaddyLiveClient = null
         environment.serverRunning = false
         isServiceActive = false
         controlPortServer?.stop()

@@ -82,6 +82,9 @@ class GatewayAdminController(
             AdminEndpoint("POST", "/api/v1/categories/move", "Move channels to a category"),
             AdminEndpoint("POST", "/api/v1/overrides/category", "Set runtime category override"),
             AdminEndpoint("DELETE", "/api/v1/overrides/category", "Remove category override"),
+            AdminEndpoint("GET", "/api/v1/backups?channelId=", "List DaddyLive supplement backups"),
+            AdminEndpoint("POST", "/api/v1/backups/attach", "Attach supplement channel as DaddyLive backup"),
+            AdminEndpoint("POST", "/api/v1/backups/remove", "Remove backup (optional denylist)"),
         ),
     )
 
@@ -601,6 +604,47 @@ class GatewayAdminController(
         autoStartOnLaunch = environment.autoStartOnLaunch,
         autoLaunchTiviMate = environment.autoLaunchTiviMate,
     )
+
+    override fun listBackups(daddyChannelId: String): com.thothassistant.stepdaddy.gateway.model.AdminBackupsResult {
+        val mirrors = app.supplementSource.daddyChannelFallbacks(daddyChannelId)
+        return com.thothassistant.stepdaddy.gateway.model.AdminBackupsResult(
+            daddyChannelId = daddyChannelId,
+            count = mirrors.size,
+            mirrors = mirrors.map { mirror ->
+                com.thothassistant.stepdaddy.gateway.model.AdminBackupMirror(
+                    fingerprint = com.thothassistant.stepdaddy.gateway.upstream.SupplementMatchScorer.mirrorFingerprint(mirror),
+                    label = mirror.label,
+                    streamUrl = mirror.streamUrl,
+                    ntvCdnLiveKey = mirror.ntvCdnLiveKey,
+                    duloChannelId = mirror.duloChannelId,
+                )
+            },
+        )
+    }
+
+    override fun attachBackup(daddyChannelId: String, supplementId: String): AdminActionResult {
+        val supplement = app.supplementSource.channelById(supplementId)
+            ?: return AdminActionResult(ok = false, action = "backups-attach", message = "Supplement not found")
+        val mirror = com.thothassistant.stepdaddy.gateway.upstream.SupplementFallbackMirrorFactory.fromSupplement(supplement)
+        app.supplementSource.attachManualDaddyFallback(
+            daddyChannelId = daddyChannelId,
+            mirror = mirror,
+            supplementName = supplement.name,
+            supplementSource = supplement.providerTag.orEmpty(),
+            country = com.thothassistant.stepdaddy.gateway.upstream.SupplementFallbackMirrorFactory.countryLabel(supplement),
+        )
+        app.playlistCache.invalidate()
+        return AdminActionResult(ok = true, action = "backups-attach", message = "Backup attached")
+    }
+
+    override fun removeBackup(daddyChannelId: String, fingerprint: String, deny: Boolean): AdminActionResult {
+        val mirror = app.supplementSource.daddyChannelFallbacks(daddyChannelId).firstOrNull {
+            com.thothassistant.stepdaddy.gateway.upstream.SupplementMatchScorer.mirrorFingerprint(it) == fingerprint
+        } ?: return AdminActionResult(ok = false, action = "backups-remove", message = "Backup not found")
+        app.supplementSource.removeDaddyFallback(daddyChannelId, mirror, denyFutureAutoMatch = deny)
+        app.playlistCache.invalidate()
+        return AdminActionResult(ok = true, action = "backups-remove", message = "Backup removed")
+    }
 
     companion object {
         private const val REFRESH_TIMEOUT_MS = 120_000L

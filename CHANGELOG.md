@@ -7,6 +7,14 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.31] - 2026-08-21
+
+### Added
+
+- **Smarter channel backup matching** — Consolidate/skip modes use a region- and language-aware score (≥70) instead of normalized-name-only matches. Rejects common false positives (ESPN vs ESPN Deportes, BBC One vs BBC News, US vs UK cousins, CNN vs CNN Türk). Full catalog remains the default.
+- **Channel backups editor** — Settings → Channel backups… to view DaddyLive ↔ supplement mirrors, remove backups, block bad auto-pairs, accept/reject suggestions, and manually attach Free-TV/iptv-org/ntv/dulo streams. Overrides survive refresh. See `docs/CHANNEL-BACKUPS.md`.
+- **Admin backup APIs** — `GET/POST /api/v1/backups*` for list/attach/remove.
+
 ## [3.0.30] - 2026-08-21
 
 ### Added

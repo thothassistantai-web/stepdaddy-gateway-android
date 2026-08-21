@@ -1,7 +1,6 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
 import android.util.Log
-import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import java.util.concurrent.TimeUnit
@@ -44,7 +43,7 @@ class AdultSwimStreamsSource(
         val daddyIndexes = if (skipDuplicates) {
             SupplementImportMatcher.buildDaddyIndexes(daddyChannels)
         } else {
-            SupplementImportMatcher.DaddyIndexes(emptyMap(), emptyMap())
+            SupplementImportMatcher.emptyIndexes()
         }
         val daddyFallbacks = mutableMapOf<String, MutableList<com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror>>()
         val semaphore = Semaphore(AdultSwimStreamsConfig.MAX_CONCURRENT_PROBES)
@@ -68,10 +67,23 @@ class AdultSwimStreamsSource(
                 continue
             }
             probeOk++
-            val norm = EpgChannelMapper.normalizeName(row.name)
-            if (skipDuplicates && SupplementImportMatcher.matchesDaddy(norm, row.tvgId, daddyIndexes)) {
+            if (skipDuplicates &&
+                SupplementImportMatcher.matchesDaddy(
+                    name = row.name,
+                    tvgId = row.tvgId,
+                    indexes = daddyIndexes,
+                    tags = listOf("#us"),
+                    countryHint = "US",
+                )
+            ) {
                 if (consolidate) {
-                    val targetId = SupplementImportMatcher.resolveDaddyChannelId(norm, row.tvgId, daddyIndexes)
+                    val targetId = SupplementImportMatcher.resolveDaddyChannelId(
+                        name = row.name,
+                        tvgId = row.tvgId,
+                        indexes = daddyIndexes,
+                        tags = listOf("#us"),
+                        countryHint = "US",
+                    )
                     if (targetId != null) {
                         daddyFallbacks.getOrPut(targetId) { mutableListOf() } += com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror(
                             streamUrl = AdultSwimStreamsConfig.masterPlaylistUrl(row.slug),

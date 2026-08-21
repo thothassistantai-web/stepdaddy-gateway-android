@@ -3,9 +3,11 @@ package com.thothassistant.stepdaddy.gateway.upstream
 /**
  * How a supplement provider is merged into the TiviMate playlist.
  *
- * - [FULL_CATALOG]: every upstream row (default).
- * - [SKIP_DUPLICATES]: skip rows whose normalized name or tvg-id already exists on DaddyLive.
- * - [CONSOLIDATE_FALLBACKS]: same row count as skip, but attach duplicate streams as failover mirrors.
+ * - [FULL_CATALOG]: every upstream row (default — never silently switched).
+ * - [SKIP_DUPLICATES]: skip rows whose score-based match against DaddyLive is ≥ threshold.
+ * - [CONSOLIDATE_FALLBACKS]: same row count as skip, but attach high-confidence duplicates as failover mirrors.
+ *
+ * Matching is region/language aware; see docs/CHANNEL-BACKUPS.md.
  */
 enum class SupplementImportMode {
     FULL_CATALOG,

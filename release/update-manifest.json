@@ -1,10 +1,10 @@
 {
-  "versionCode": 30030,
-  "versionName": "3.0.30",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.30/stepdaddy-gateway-3.0.30-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.30/stepdaddy-gateway-3.0.30-debug.apk",
-  "apkSha256": "771fa1366537f47e4fa6e5485dfcab0b93183082306a8fed46e780d2611b569c",
-  "apkSha256Debug": "e3930910e4abf5db71d132dea0ec15fc07b1a4a650fbb7eefb0018718c435f53",
-  "releaseNotes": "**Domain relay** \u2014 Temporary DaddyLive host overlay via `domain-relay.json` (banner + AFTV codes when active).",
+  "versionCode": 30031,
+  "versionName": "3.0.31",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.31/stepdaddy-gateway-3.0.31-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.31/stepdaddy-gateway-3.0.31-debug.apk",
+  "apkSha256": "336a0f8f2e0b565d975e7b3c4daf407b8cc21992df452c050a66910d7fbe958f",
+  "apkSha256Debug": "e24e1ee34a65e9a1ccac59a2100ae9323fcd577c8fec61032b6b430e0384e503",
+  "releaseNotes": "Smarter channel backup matching (region/language score) + Settings Channel backups editor. Full catalog stays default.",
   "mandatory": false
 }

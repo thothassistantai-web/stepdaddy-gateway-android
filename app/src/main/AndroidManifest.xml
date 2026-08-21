@@ -93,6 +93,18 @@
             android:parentActivityName=".ui.SettingsActivity" />
 
         <activity
+            android:name=".ui.ChannelBackupsActivity"
+            android:exported="false"
+            android:label="@string/channel_backups_title"
+            android:parentActivityName=".ui.SettingsActivity" />
+
+        <activity
+            android:name=".ui.ChannelBackupDetailActivity"
+            android:exported="false"
+            android:label="@string/channel_backups_title"
+            android:parentActivityName=".ui.ChannelBackupsActivity" />
+
+        <activity
             android:name=".ui.InstallAppsActivity"
             android:exported="false"
             android:label="@string/install_apps_title"

@@ -238,4 +238,32 @@ class AdminRoutes(
             ContentType.Application.Json,
         )
     }
+
+    suspend fun listBackups(call: ApplicationCall) {
+        val channelId = call.request.queryParameters["channelId"].orEmpty()
+        if (channelId.isBlank()) {
+            call.respond(
+                HttpStatusCode.BadRequest,
+                AdminErrorResponse(error = "bad_request", message = "Query parameter channelId is required"),
+            )
+            return
+        }
+        call.respondText(json.encodeToString(admin.listBackups(channelId)), ContentType.Application.Json)
+    }
+
+    suspend fun attachBackup(call: ApplicationCall) {
+        val body = call.receive<com.thothassistant.stepdaddy.gateway.model.AdminBackupAttachRequest>()
+        call.respondText(
+            json.encodeToString(admin.attachBackup(body.daddyChannelId, body.supplementId)),
+            ContentType.Application.Json,
+        )
+    }
+
+    suspend fun removeBackup(call: ApplicationCall) {
+        val body = call.receive<com.thothassistant.stepdaddy.gateway.model.AdminBackupRemoveRequest>()
+        call.respondText(
+            json.encodeToString(admin.removeBackup(body.daddyChannelId, body.fingerprint, body.deny)),
+            ContentType.Application.Json,
+        )
+    }
 }

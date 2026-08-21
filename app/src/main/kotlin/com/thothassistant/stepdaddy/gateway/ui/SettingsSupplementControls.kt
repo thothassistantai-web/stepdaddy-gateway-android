@@ -39,6 +39,9 @@ internal object SettingsSupplementControls {
         binding.buttonIptvOrgPlaylists.setOnClickListener {
             host.startActivity(Intent(host, IptvOrgPlaylistSettingsActivity::class.java))
         }
+        binding.buttonChannelBackups.setOnClickListener {
+            host.startActivity(Intent(host, ChannelBackupsActivity::class.java))
+        }
         binding.switchEnableAllSupplements.setOnCheckedChangeListener { _, checked ->
             if (syncingMaster) return@setOnCheckedChangeListener
             syncingMaster = true

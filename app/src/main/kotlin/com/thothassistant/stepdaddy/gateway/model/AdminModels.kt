@@ -214,6 +214,35 @@ data class CategoryAuditResult(
 )
 
 @Serializable
+data class AdminBackupMirror(
+    val fingerprint: String,
+    val label: String = "",
+    val streamUrl: String = "",
+    val ntvCdnLiveKey: String? = null,
+    val duloChannelId: String? = null,
+)
+
+@Serializable
+data class AdminBackupsResult(
+    val daddyChannelId: String,
+    val count: Int,
+    val mirrors: List<AdminBackupMirror>,
+)
+
+@Serializable
+data class AdminBackupAttachRequest(
+    val daddyChannelId: String,
+    val supplementId: String,
+)
+
+@Serializable
+data class AdminBackupRemoveRequest(
+    val daddyChannelId: String,
+    val fingerprint: String,
+    val deny: Boolean = true,
+)
+
+@Serializable
 data class GatewayLifecycleRequest(
     val scope: String = "http",
 )

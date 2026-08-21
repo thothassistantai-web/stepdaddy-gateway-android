@@ -235,6 +235,25 @@
             android:textColor="@color/on_background_muted"
             android:textSize="12sp" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonChannelBackups"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:minHeight="48dp"
+            android:text="@string/settings_channel_backups_configure"
+            app:icon="@drawable/ic_channel_backups"
+            app:iconGravity="textStart" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/settings_channel_backups_hint"
+            android:textColor="@color/on_background_muted"
+            android:textSize="12sp" />
+
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switchEnableAllSupplements"
             android:layout_width="match_parent"

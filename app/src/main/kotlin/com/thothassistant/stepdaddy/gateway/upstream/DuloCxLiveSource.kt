@@ -1,7 +1,6 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
 import android.util.Log
-import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex
 import com.thothassistant.stepdaddy.gateway.epg.SupplementTvgIdResolver
 import com.thothassistant.stepdaddy.gateway.model.Channel
@@ -89,7 +88,7 @@ class DuloCxLiveSource(
             val daddyIndexes = if (skipDuplicates) {
                 SupplementImportMatcher.buildDaddyIndexes(daddyChannels)
             } else {
-                SupplementImportMatcher.DaddyIndexes(emptyMap(), emptyMap())
+                SupplementImportMatcher.emptyIndexes()
             }
 
             val ranked = catalog
@@ -109,10 +108,25 @@ class DuloCxLiveSource(
                 if (!seenIds.add(row.id)) continue
 
                 val displayName = cleanDisplayName(row.name)
-                val norm = EpgChannelMapper.normalizeName(displayName)
-                if (skipDuplicates && SupplementImportMatcher.matchesDaddy(norm, null, daddyIndexes)) {
+                val regionTag = DuloCxLiveConfig.regionTagFromName(row.name)
+                val countryHint = SupplementMatchScorer.normalizeRegion(regionTag.removePrefix("#"))
+                if (skipDuplicates &&
+                    SupplementImportMatcher.matchesDaddy(
+                        name = displayName,
+                        tvgId = null,
+                        indexes = daddyIndexes,
+                        tags = listOf(regionTag),
+                        countryHint = countryHint,
+                    )
+                ) {
                     if (consolidate) {
-                        val targetId = SupplementImportMatcher.resolveDaddyChannelId(norm, null, daddyIndexes)
+                        val targetId = SupplementImportMatcher.resolveDaddyChannelId(
+                            name = displayName,
+                            tvgId = null,
+                            indexes = daddyIndexes,
+                            tags = listOf(regionTag),
+                            countryHint = countryHint,
+                        )
                         if (targetId != null) {
                             daddyFallbacks.getOrPut(targetId) { mutableListOf() } += SupplementFallbackMirror(
                                 label = DuloCxLiveConfig.PROVIDER_TAG,
@@ -125,7 +139,6 @@ class DuloCxLiveSource(
                     continue
                 }
 
-                val regionTag = DuloCxLiveConfig.regionTagFromName(row.name)
                 val categoryTag = DuloCxLiveConfig.categoryTag(row.category)
                 val tags = listOf(regionTag, categoryTag, "#dulo", "#live")
                 val resolution = GroupTitleResolver.resolve(

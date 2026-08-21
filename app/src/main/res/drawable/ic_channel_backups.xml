@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Stacked screens — backup / mirror streams (same muted style as ic_channels) -->
+    <path
+        android:fillColor="#8B95A8"
+        android:pathData="M4,6h14v2H4V6zM4,11h14v2H4v-2zM4,16h10v2H4v-2z" />
+    <path
+        android:fillColor="#8B95A8"
+        android:pathData="M18,15l4,2.5L18,20v-5z" />
+</vector>

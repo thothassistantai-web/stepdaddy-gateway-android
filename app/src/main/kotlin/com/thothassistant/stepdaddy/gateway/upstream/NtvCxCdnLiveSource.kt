@@ -1,7 +1,6 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
 import android.util.Log
-import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex
 import com.thothassistant.stepdaddy.gateway.epg.SupplementTvgIdResolver
 import com.thothassistant.stepdaddy.gateway.model.Channel
@@ -99,17 +98,29 @@ class NtvCxCdnLiveSource(
             val daddyIndexes = if (skipDuplicates) {
                 SupplementImportMatcher.buildDaddyIndexes(daddyChannels)
             } else {
-                SupplementImportMatcher.DaddyIndexes(emptyMap(), emptyMap())
+                SupplementImportMatcher.emptyIndexes()
             }
             val daddyFallbacks = mutableMapOf<String, MutableList<SupplementFallbackMirror>>()
             val seenKeys = mutableSetOf<String>()
             val channels = mutableListOf<SupplementChannel>()
             for (row in catalog) {
                 if (channels.size >= NtvCxCdnLiveConfig.MAX_CHANNELS) break
-                val norm = EpgChannelMapper.normalizeName(row.name)
-                if (skipDuplicates && SupplementImportMatcher.matchesDaddy(norm, null, daddyIndexes)) {
+                val countryHint = SupplementMatchScorer.normalizeRegion(row.regionCode)
+                if (skipDuplicates &&
+                    SupplementImportMatcher.matchesDaddy(
+                        name = row.name,
+                        tvgId = null,
+                        indexes = daddyIndexes,
+                        countryHint = countryHint,
+                    )
+                ) {
                     if (consolidate) {
-                        val targetId = SupplementImportMatcher.resolveDaddyChannelId(norm, null, daddyIndexes)
+                        val targetId = SupplementImportMatcher.resolveDaddyChannelId(
+                            name = row.name,
+                            tvgId = null,
+                            indexes = daddyIndexes,
+                            countryHint = countryHint,
+                        )
                         if (targetId != null) {
                             val key = NtvCxCdnLiveResolver.ntvKey(
                                 server = row.server,

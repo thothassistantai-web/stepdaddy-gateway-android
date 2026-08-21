@@ -1,8 +1,6 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
-import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.model.Channel
-import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror
 
 object SupplementImportHelper {
@@ -17,17 +15,34 @@ object SupplementImportHelper {
         daddyChannels: List<Channel>,
         importMode: SupplementImportMode,
         mirror: SupplementFallbackMirror,
+        tags: List<String> = emptyList(),
+        countryHint: String? = null,
+        sourcePlaylist: String? = null,
     ): RowDecision {
         if (!importMode.skipsDuplicateRows()) {
             return RowDecision(publish = true)
         }
         val indexes = SupplementImportMatcher.buildDaddyIndexes(daddyChannels)
-        val norm = EpgChannelMapper.normalizeName(name)
-        if (!SupplementImportMatcher.matchesDaddy(norm, tvgId, indexes)) {
+        if (!SupplementImportMatcher.matchesDaddy(
+                name = name,
+                tvgId = tvgId,
+                indexes = indexes,
+                tags = tags,
+                countryHint = countryHint,
+                sourcePlaylist = sourcePlaylist,
+            )
+        ) {
             return RowDecision(publish = true)
         }
         if (importMode.attachesFallbacks()) {
-            val targetId = SupplementImportMatcher.resolveDaddyChannelId(norm, tvgId, indexes)
+            val targetId = SupplementImportMatcher.resolveDaddyChannelId(
+                name = name,
+                tvgId = tvgId,
+                indexes = indexes,
+                tags = tags,
+                countryHint = countryHint,
+                sourcePlaylist = sourcePlaylist,
+            )
             if (targetId != null) {
                 return RowDecision(publish = false, daddyFallback = targetId to mirror)
             }

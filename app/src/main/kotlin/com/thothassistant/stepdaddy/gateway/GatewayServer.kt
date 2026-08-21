@@ -536,6 +536,9 @@ class GatewayServer(
                         post("/categories/move") { admin.moveCategories(call) }
                         post("/overrides/category") { admin.setCategoryOverride(call) }
                         delete("/overrides/category") { admin.clearCategoryOverride(call) }
+                        get("/backups") { admin.listBackups(call) }
+                        post("/backups/attach") { admin.attachBackup(call) }
+                        post("/backups/remove") { admin.removeBackup(call) }
                     }
                 }
             }

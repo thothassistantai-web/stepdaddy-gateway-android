@@ -73,6 +73,20 @@ class GatewayApp : Application() {
     val epgManager: EpgManager
         get() = _epgManager ?: error("Gateway components not initialized")
 
+    @Volatile
+    var activeDaddyLiveClient: com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient? = null
+
+    fun daddyLiveChannels(): List<com.thothassistant.stepdaddy.gateway.model.Channel> {
+        activeDaddyLiveClient?.channels?.takeIf { it.isNotEmpty() }?.let { return it }
+        return runCatching {
+            com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveChannelDiskCache.read(
+                context = this,
+                metaStore = _channelMetaStore,
+                epgChannelMapper = _epgChannelMapper,
+            )
+        }.getOrDefault(emptyList())
+    }
+
     private var _appUpdateCoordinator: com.thothassistant.stepdaddy.gateway.update.AppUpdateCoordinator? = null
 
     val appUpdateCoordinator: com.thothassistant.stepdaddy.gateway.update.AppUpdateCoordinator
