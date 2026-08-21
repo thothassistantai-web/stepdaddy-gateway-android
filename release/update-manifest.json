@@ -1,10 +1,10 @@
 {
-  "versionCode": 30029,
-  "versionName": "3.0.29",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.29/stepdaddy-gateway-3.0.29-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.29/stepdaddy-gateway-3.0.29-debug.apk",
-  "apkSha256": "fdeef76fd8a8cc06b01b75d127138cbb108fb07b992961a51eb2cd7aaf3c48a1",
-  "apkSha256Debug": "84982e810477e0a4586a96c3556eda74cbef020d844cff65b4fbb39139176988",
-  "releaseNotes": "**Dead source removals** \u2014 Strip residual TheTvApp / xyzstreams / MOJ paths so supplement sync and health no longer carry dead streams.",
+  "versionCode": 30030,
+  "versionName": "3.0.30",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.30/stepdaddy-gateway-3.0.30-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.30/stepdaddy-gateway-3.0.30-debug.apk",
+  "apkSha256": "771fa1366537f47e4fa6e5485dfcab0b93183082306a8fed46e780d2611b569c",
+  "apkSha256Debug": "e3930910e4abf5db71d132dea0ec15fc07b1a4a650fbb7eefb0018718c435f53",
+  "releaseNotes": "**Domain relay** \u2014 Temporary DaddyLive host overlay via `domain-relay.json` (banner + AFTV codes when active).",
   "mandatory": false
 }
