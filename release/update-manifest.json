@@ -1,10 +1,10 @@
 {
-  "versionCode": 30032,
-  "versionName": "3.0.32",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.32/stepdaddy-gateway-3.0.32-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.32/stepdaddy-gateway-3.0.32-debug.apk",
-  "apkSha256": "216797ba1f346913139338f18992355d8ad238e7fe37085dd287589a559c3410",
-  "apkSha256Debug": "c25258b45b70d4894bafa6c2c6740d6d33528f19719585670f98940983ed3cb5",
-  "releaseNotes": "**Default = Merge fallbacks** \u2014 Free-TV, iptv-org, ntv, dulo, and Adult Swim now default to smart consolidate (high-confidence score \u226570 only). Multiple perfect matches still attach as backups on one Daddy channel.",
+  "versionCode": 30033,
+  "versionName": "3.0.33",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.33/stepdaddy-gateway-3.0.33-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.33/stepdaddy-gateway-3.0.33-debug.apk",
+  "apkSha256": "6afdde48cba046aa4f40b74ca33a3790ebcf7ebfd3072d6564e9c80f6f421013",
+  "apkSha256Debug": "2164d849b140080fa560aa6c7d984a8601156ea92f0593f897a7fbca1cb0c371",
+  "releaseNotes": "Shelf-suffixed VOD series ids (`vod:series:\u2026@shelf`) parse correctly again \u2014 no blank `#EXTINF` URL lines.",
   "mandatory": false
 }
