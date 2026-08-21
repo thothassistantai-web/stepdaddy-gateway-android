@@ -429,6 +429,8 @@ class HealthRoutes(
             specialEventMirrorsHealthy = mirrorHealth.healthyMirrors,
             specialEventMirrorEvents = mirrorHealth.eventsWithMirrors,
             specialEventAvgMirrorsPerEvent = mirrorHealth.avgMirrorsPerEvent,
+            daddyBackupChannels = supplementSource.daddyChannelFallbacksAll().size,
+            daddyBackupMirrors = supplementSource.daddyChannelFallbacksAll().values.sumOf { it.size },
         )
     }
 

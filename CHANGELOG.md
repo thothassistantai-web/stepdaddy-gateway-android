@@ -7,6 +7,18 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.32] - 2026-08-21
+
+### Changed
+
+- **Default import mode = Merge fallbacks** — Free-TV, iptv-org, ntv, dulo, and Adult Swim default to `CONSOLIDATE_FALLBACKS` (high-confidence score ≥70 attachments only). Full catalog and Skip dupes remain in Settings.
+- **Untouched-install migration** — upgrades still on the old `FULL_CATALOG` default with no explicit import-mode choice flip to consolidate; explicit Full catalog / Skip / Merge choices are kept. See `docs/CHANNEL-BACKUPS.md`.
+
+### Added
+
+- Soft dashboard note `Backups: auto · N channels` when consolidated backups are attached.
+- Settings tip: wrong backup → Channel backups to remove or block.
+
 ## [3.0.31] - 2026-08-21
 
 ### Added

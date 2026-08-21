@@ -36,7 +36,7 @@ class AdultSwimStreamsSource(
 
     suspend fun fetchChannels(
         daddyChannels: List<Channel>,
-        importMode: SupplementImportMode = SupplementImportMode.FULL_CATALOG,
+        importMode: SupplementImportMode = SupplementImportMode.CONSOLIDATE_FALLBACKS,
     ): FetchOutcome = withContext(Dispatchers.IO) {
         val consolidate = importMode.attachesFallbacks()
         val skipDuplicates = importMode.skipsDuplicateRows()

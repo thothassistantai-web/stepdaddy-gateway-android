@@ -39,7 +39,7 @@ class FreeTvIptvSource(
 
     suspend fun fetchChannels(
         daddyChannels: List<Channel>,
-        importMode: SupplementImportMode = SupplementImportMode.FULL_CATALOG,
+        importMode: SupplementImportMode = SupplementImportMode.CONSOLIDATE_FALLBACKS,
         enabledPlaylists: Set<String> = FreeTvIptvConfig.PLAYLIST_FILES.toSet(),
     ): FetchOutcome = withContext(Dispatchers.IO) {
         val playlistFiles = FreeTvIptvConfig.PLAYLIST_FILES.filter { it in enabledPlaylists }

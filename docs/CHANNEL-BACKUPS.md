@@ -2,10 +2,20 @@
 
 How StepDaddy decides when a Free-TV / iptv-org / ntv / dulo stream is the **same channel** as a DaddyLive row, and how to fix mistakes.
 
-## Defaults
+## Defaults (3.0.32+)
 
-- Import mode stays **All channels** (full catalog) unless you change it per provider in Settings.
-- **Merge fallbacks** is optional. It uses the new scorer — it does **not** silently turn itself on for existing installs.
+- Import mode defaults to **Merge fallbacks** (`CONSOLIDATE_FALLBACKS`) for Free-TV, iptv-org, ntv, dulo, and Adult Swim.
+- Only **high-confidence** matches (score ≥ 70, region/language aware) attach as DaddyLive backups.
+- Multiple 100% matches all attach as fallbacks on the same Daddy channel.
+- **All channels** (full catalog) and **Skip dupes** remain selectable per provider in Settings.
+
+### Upgrade migration
+
+On first launch of 3.0.32+:
+
+- If a provider’s stored mode is still the old default (`FULL_CATALOG` / unset) **and** the user never explicitly saved an import-mode choice (`*_import_mode_user_set` = false), it flips to **Merge fallbacks**.
+- If you already chose Skip dupes, Merge fallbacks, or saved Full catalog after touching the spinner, that choice is kept.
+- To go back to separate playlist rows: **Settings →** provider → **All channels** → Save.
 
 ## Why old matching failed
 
@@ -50,6 +60,12 @@ TV/Fire Stick friendly flow:
 
 Overrides live in `files/supplement/consolidation_overrides.json` (manual attachments + denylist) and are re-applied after every supplement sync.
 
+**Tip:** Wrong automatic backup → Channel backups → remove or block. You do not need to turn off Merge fallbacks.
+
+## Soft dashboard note
+
+When backups are attached, health subtitle may show `Backups: auto · N channels` (informational only).
+
 ## Admin API (optional)
 
 When the gateway is running:
@@ -64,5 +80,6 @@ When the gateway is running:
 
 - `SupplementMatchScorer.kt` — scoring
 - `SupplementImportMatcher.kt` — indexes + resolve
+- `SupplementImportModeMigration.kt` — default flip for untouched installs
 - `ConsolidationOverrideStore.kt` — persistence + apply
 - `ChannelBackupsActivity` / `ChannelBackupDetailActivity` — UI

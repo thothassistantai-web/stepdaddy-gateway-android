@@ -19,8 +19,9 @@ internal object SettingsImportModeUi {
     fun read(binding: IncludeSettingsImportModeBinding): SupplementImportMode =
         when (binding.toggleImportMode.checkedButtonId) {
             R.id.buttonImportSkip -> SupplementImportMode.SKIP_DUPLICATES
+            R.id.buttonImportFull -> SupplementImportMode.FULL_CATALOG
             R.id.buttonImportFallback -> SupplementImportMode.CONSOLIDATE_FALLBACKS
-            else -> SupplementImportMode.FULL_CATALOG
+            else -> SupplementImportMode.CONSOLIDATE_FALLBACKS
         }
 
     fun setVisible(binding: IncludeSettingsImportModeBinding, visible: Boolean) {

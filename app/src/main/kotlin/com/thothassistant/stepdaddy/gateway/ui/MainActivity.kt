@@ -685,8 +685,17 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.dashboard_health_starting)
             health.ok && !health.starting -> {
                 val specialSummary = SpecialEventsDashboardRenderer.healthSummaryLine(this, health.supplement)
-                if (specialSummary.isNotBlank()) specialSummary
-                else getString(R.string.dashboard_health_ok_detail)
+                val base = if (specialSummary.isNotBlank()) {
+                    specialSummary
+                } else {
+                    getString(R.string.dashboard_health_ok_detail)
+                }
+                val backupChannels = health.supplement?.daddyBackupChannels ?: 0
+                if (backupChannels > 0) {
+                    "$base · ${getString(R.string.dashboard_backups_soft, backupChannels)}"
+                } else {
+                    base
+                }
             }
             else -> getString(R.string.dashboard_health_starting)
         }

@@ -8,6 +8,7 @@ import com.thothassistant.stepdaddy.gateway.network.NetworkAccessMode
 import com.thothassistant.stepdaddy.gateway.upstream.IptvOrgStreamsConfig
 import com.thothassistant.stepdaddy.gateway.upstream.PlaylistTitleStyle
 import com.thothassistant.stepdaddy.gateway.upstream.SupplementImportMode
+import com.thothassistant.stepdaddy.gateway.upstream.SupplementImportModeMigration
 import com.thothassistant.stepdaddy.gateway.xtream.XtreamCredentials
 import java.security.SecureRandom
 import java.util.Base64
@@ -16,6 +17,10 @@ class GatewayEnvironment(context: Context) {
     val appContext: Context = context.applicationContext
     private val prefs: SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    init {
+        migrateImportModeDefaultsIfNeeded()
+    }
 
     var port: Int
         get() = prefs.getInt(KEY_PORT, BuildConfig.DEFAULT_PORT)
@@ -306,49 +311,63 @@ class GatewayEnvironment(context: Context) {
 
     /**
      * How Adult Swim marathon rows are merged.
+     * Default [SupplementImportMode.CONSOLIDATE_FALLBACKS]; setters mark the mode as user-chosen.
      */
     var supplementAdultSwimImportMode: SupplementImportMode
         get() = SupplementImportMode.fromPref(
             prefs.getString(KEY_SUPPLEMENT_ADULT_SWIM_IMPORT_MODE, BuildConfig.DEFAULT_SUPPLEMENT_IMPORT_MODE),
         )
         set(value) {
-            prefs.edit().putString(KEY_SUPPLEMENT_ADULT_SWIM_IMPORT_MODE, value.name).apply()
+            prefs.edit()
+                .putString(KEY_SUPPLEMENT_ADULT_SWIM_IMPORT_MODE, value.name)
+                .putBoolean(KEY_SUPPLEMENT_ADULT_SWIM_IMPORT_MODE_USER_SET, true)
+                .apply()
         }
 
     /**
      * How Free-TV/IPTV country playlists are merged.
+     * Default [SupplementImportMode.CONSOLIDATE_FALLBACKS]; setters mark the mode as user-chosen.
      */
     var supplementFreeTvImportMode: SupplementImportMode
         get() = SupplementImportMode.fromPref(
             prefs.getString(KEY_SUPPLEMENT_FREE_TV_IMPORT_MODE, BuildConfig.DEFAULT_SUPPLEMENT_IMPORT_MODE),
         )
         set(value) {
-            prefs.edit().putString(KEY_SUPPLEMENT_FREE_TV_IMPORT_MODE, value.name).apply()
+            prefs.edit()
+                .putString(KEY_SUPPLEMENT_FREE_TV_IMPORT_MODE, value.name)
+                .putBoolean(KEY_SUPPLEMENT_FREE_TV_IMPORT_MODE_USER_SET, true)
+                .apply()
         }
 
     /**
      * How dulo.cx Live TV rows are merged.
-     * [SupplementImportMode.FULL_CATALOG] imports the curated slate (default).
-     * [SupplementImportMode.CONSOLIDATE_FALLBACKS] attaches overlaps as DaddyLive failover mirrors.
+     * [SupplementImportMode.CONSOLIDATE_FALLBACKS] attaches overlaps as DaddyLive failover mirrors (default).
+     * [SupplementImportMode.FULL_CATALOG] imports the curated slate as separate rows.
      */
     var supplementDuloCxImportMode: SupplementImportMode
         get() = SupplementImportMode.fromPref(
             prefs.getString(KEY_SUPPLEMENT_DULO_CX_IMPORT_MODE, BuildConfig.DEFAULT_SUPPLEMENT_IMPORT_MODE),
         )
         set(value) {
-            prefs.edit().putString(KEY_SUPPLEMENT_DULO_CX_IMPORT_MODE, value.name).apply()
+            prefs.edit()
+                .putString(KEY_SUPPLEMENT_DULO_CX_IMPORT_MODE, value.name)
+                .putBoolean(KEY_SUPPLEMENT_DULO_CX_IMPORT_MODE_USER_SET, true)
+                .apply()
         }
 
     /**
      * How iptv-org FAST playlists are merged.
-     * [SupplementImportMode.FULL_CATALOG] imports every playlist row (default).
+     * Default [SupplementImportMode.CONSOLIDATE_FALLBACKS].
      */
     var supplementIptvOrgImportMode: SupplementImportMode
         get() = SupplementImportMode.fromPref(
             prefs.getString(KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE, BuildConfig.DEFAULT_SUPPLEMENT_IMPORT_MODE),
         )
         set(value) {
-            prefs.edit().putString(KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE, value.name).apply()
+            prefs.edit()
+                .putString(KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE, value.name)
+                .putBoolean(KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE_USER_SET, true)
+                .apply()
         }
 
     /**
@@ -374,9 +393,9 @@ class GatewayEnvironment(context: Context) {
         filename in iptvOrgEnabledPlaylists
 
     /**
-     * [SupplementImportMode.FULL_CATALOG] includes every 24/7 row (default).
+     * [SupplementImportMode.CONSOLIDATE_FALLBACKS] attaches overlapping supplement streams as DaddyLive failover mirrors (default).
      * [SupplementImportMode.SKIP_DUPLICATES] skips names already on the main DaddyLive list.
-     * [SupplementImportMode.CONSOLIDATE_FALLBACKS] attaches overlapping supplement streams as DaddyLive failover mirrors.
+     * [SupplementImportMode.FULL_CATALOG] includes every 24/7 row as separate playlist entries.
      */
     var supplementNtvCxImportMode: SupplementImportMode
         get() {
@@ -388,7 +407,10 @@ class GatewayEnvironment(context: Context) {
             }
         }
         set(value) {
-            prefs.edit().putString(KEY_SUPPLEMENT_NTV_CX_MERGE_MODE, value.name).apply()
+            prefs.edit()
+                .putString(KEY_SUPPLEMENT_NTV_CX_MERGE_MODE, value.name)
+                .putBoolean(KEY_SUPPLEMENT_NTV_CX_IMPORT_MODE_USER_SET, true)
+                .apply()
         }
 
     /** @deprecated use [supplementNtvCxImportMode] */
@@ -586,6 +608,54 @@ class GatewayEnvironment(context: Context) {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
     }
 
+    /**
+     * Flip untouched installs from the legacy FULL_CATALOG default to smart consolidate.
+     * Skips any provider whose Settings spinner was explicitly saved ([*_USER_SET] prefs).
+     */
+    private fun migrateImportModeDefaultsIfNeeded() {
+        val current = prefs.getInt(KEY_IMPORT_MODE_DEFAULTS_VERSION, 0)
+        if (current >= SupplementImportModeMigration.DEFAULTS_VERSION) return
+        val editor = prefs.edit()
+        migrateOneImportMode(
+            editor,
+            KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE,
+            KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE_USER_SET,
+        )
+        migrateOneImportMode(
+            editor,
+            KEY_SUPPLEMENT_FREE_TV_IMPORT_MODE,
+            KEY_SUPPLEMENT_FREE_TV_IMPORT_MODE_USER_SET,
+        )
+        migrateOneImportMode(
+            editor,
+            KEY_SUPPLEMENT_DULO_CX_IMPORT_MODE,
+            KEY_SUPPLEMENT_DULO_CX_IMPORT_MODE_USER_SET,
+        )
+        migrateOneImportMode(
+            editor,
+            KEY_SUPPLEMENT_NTV_CX_MERGE_MODE,
+            KEY_SUPPLEMENT_NTV_CX_IMPORT_MODE_USER_SET,
+        )
+        migrateOneImportMode(
+            editor,
+            KEY_SUPPLEMENT_ADULT_SWIM_IMPORT_MODE,
+            KEY_SUPPLEMENT_ADULT_SWIM_IMPORT_MODE_USER_SET,
+        )
+        editor.putInt(KEY_IMPORT_MODE_DEFAULTS_VERSION, SupplementImportModeMigration.DEFAULTS_VERSION)
+        editor.apply()
+    }
+
+    private fun migrateOneImportMode(
+        editor: SharedPreferences.Editor,
+        modeKey: String,
+        userSetKey: String,
+    ) {
+        val userSet = prefs.getBoolean(userSetKey, false)
+        val raw = if (prefs.contains(modeKey)) prefs.getString(modeKey, null) else null
+        if (!SupplementImportModeMigration.shouldMigrateToConsolidate(raw, userSet)) return
+        editor.putString(modeKey, SupplementImportModeMigration.targetMode().name)
+    }
+
     companion object {
         private const val PREFS_NAME = "stepdaddy_gateway"
         private const val KEY_PORT = "port"
@@ -622,6 +692,17 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_SUPPLEMENT_FREE_TV_IMPORT_MODE = "supplement_free_tv_import_mode"
         private const val KEY_SUPPLEMENT_DULO_CX_IMPORT_MODE = "supplement_dulo_cx_import_mode"
         private const val KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE = "supplement_iptv_org_import_mode"
+        private const val KEY_SUPPLEMENT_ADULT_SWIM_IMPORT_MODE_USER_SET =
+            "supplement_adult_swim_import_mode_user_set"
+        private const val KEY_SUPPLEMENT_FREE_TV_IMPORT_MODE_USER_SET =
+            "supplement_free_tv_import_mode_user_set"
+        private const val KEY_SUPPLEMENT_DULO_CX_IMPORT_MODE_USER_SET =
+            "supplement_dulo_cx_import_mode_user_set"
+        private const val KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE_USER_SET =
+            "supplement_iptv_org_import_mode_user_set"
+        private const val KEY_SUPPLEMENT_NTV_CX_IMPORT_MODE_USER_SET =
+            "supplement_ntv_cx_import_mode_user_set"
+        private const val KEY_IMPORT_MODE_DEFAULTS_VERSION = "import_mode_defaults_version"
         private const val KEY_IPTV_ORG_ENABLED_PLAYLISTS = "iptv_org_enabled_playlists"
         private const val KEY_SUPPLEMENT_NTV_CX_MERGE_MODE = "supplement_ntv_cx_merge_mode"
         private const val KEY_GATEWAY_EPG_ENABLED = "gateway_epg_enabled"

@@ -34,8 +34,8 @@ fun readStepdaddyVersionProp(name: String, default: String): String {
         ?.trim()
         ?: default
 }
-val stepdaddyVersionName = readStepdaddyVersionProp("STEPDADDY_VERSION", "3.0.31")
-val stepdaddyVersionCode = readStepdaddyVersionProp("VERSION_CODE", "30031").toInt()
+val stepdaddyVersionName = readStepdaddyVersionProp("STEPDADDY_VERSION", "3.0.32")
+val stepdaddyVersionCode = readStepdaddyVersionProp("VERSION_CODE", "30032").toInt()
 
 val localProps = Properties()
 val localPropsFile = rootProject.file("local.properties")
@@ -96,7 +96,7 @@ android {
         buildConfigField("boolean", "DEFAULT_AUTO_CHECK_UPDATES", "true")
         buildConfigField("boolean", "DEFAULT_AUTO_DOWNLOAD_UPDATES", "false")
         buildConfigField("String", "DEFAULT_PLAYLIST_TITLE_STYLE", "\"XTREAM_CATEGORY\"")
-        buildConfigField("String", "DEFAULT_SUPPLEMENT_IMPORT_MODE", "\"FULL_CATALOG\"")
+        buildConfigField("String", "DEFAULT_SUPPLEMENT_IMPORT_MODE", "\"CONSOLIDATE_FALLBACKS\"")
         buildConfigField(
             "String",
             "DEFAULT_UPDATE_MANIFEST_URL",

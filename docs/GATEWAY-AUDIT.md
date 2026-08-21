@@ -89,7 +89,7 @@ ServerService: Gateway listening (1159 channels)
 
 ## FUSA-verified default settings
 
-Fresh install / clear-data loads **full DaddyLive catalog** plus **all supplements** (Special Events, iptv-org, Free-TV, Dulo Live, ntv.cx, Adult Swim) with `FULL_CATALOG` import modes. MoveOnJoy / TheTvApp / xyzstreams / TVPass were removed.
+Fresh install / clear-data loads **full DaddyLive catalog** plus **all supplements** (Special Events, iptv-org, Free-TV, Dulo Live, ntv.cx, Adult Swim) with `CONSOLIDATE_FALLBACKS` import modes (smart backups). MoveOnJoy / TheTvApp / xyzstreams / TVPass were removed.
 
 | Setting | Value |
 |---------|-------|
@@ -98,7 +98,7 @@ Fresh install / clear-data loads **full DaddyLive catalog** plus **all supplemen
 | dlhd_base_url | `https://daddylive.eu` |
 | mirror_urls | `dlstreams.st`, `daddylive.li`, `dlhd.st` |
 | supplement: sports / iptv-org / ntv.cx / adult-swim | all **true** |
-| supplement import modes | **FULL_CATALOG** (opt-in `SKIP_DUPLICATES` per provider in Settings) |
+| supplement import modes | **CONSOLIDATE_FALLBACKS** (opt-in `FULL_CATALOG` / `SKIP_DUPLICATES` per provider in Settings) |
 | setup playlist (`/tivimate-setup-playlist.m3u8`) | **diagnostic** — 50-channel bootstrap (`SETUP_BOOTSTRAP_MAX_CHANNELS`); user catalog at `/tivimate.m3u` |
 | user playlists | `/tivimate.m3u`, `/streamvault.m3u`, `/vlc.m3u` (+ `.m3u8` aliases); `X-Playlist-Kind: user` header |
 | gateway_epg_enabled | true |

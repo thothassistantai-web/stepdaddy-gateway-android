@@ -213,6 +213,7 @@
     <string name="dashboard_health_ok">Health: OK · %1$d DaddyLive channels</string>
     <string name="dashboard_health_starting">Health: loading channels…</string>
     <string name="dashboard_health_error">Health: %1$s</string>
+    <string name="dashboard_backups_soft">Backups: auto · %1$d channels</string>
     <string name="dashboard_activity_idle">Activity: idle</string>
     <string name="dashboard_activity_line">Activity: %1$s\nUpstream: %2$s</string>
     <string name="dashboard_providers">Providers\n  DaddyLive: %1$d\n  iptv-org: %2$d\n  Sports: %3$d\n  XXX Adult: %4$d\n  Total: %5$d</string>
@@ -300,11 +301,11 @@
     <string name="settings_import_mode_skip">Skip dupes</string>
     <string name="settings_import_mode_fallback">Merge fallbacks</string>
     <string name="settings_import_skip_duplicates">Skip channels already on DaddyLive</string>
-    <string name="settings_import_mode_hint">All = separate playlist rows (default). Skip dupes = hide overlapping names when match score is high. Merge fallbacks = attach only high-confidence matches as DaddyLive backups (language/region aware). Fix mistakes in Channel backups.</string>
+    <string name="settings_import_mode_hint">Merge fallbacks = attach only high-confidence matches as DaddyLive backups (default, language/region aware). All channels = separate playlist rows. Skip dupes = hide overlapping names. Wrong backup? Open Channel backups to remove or block.</string>
     <string name="settings_channel_backups_configure">Channel backups…</string>
-    <string name="settings_channel_backups_hint">Review or fix automatic backup matches. Removals and blocks survive refresh.</string>
+    <string name="settings_channel_backups_hint">Review or fix automatic backup matches. Tip: if a backup is wrong, remove it here (or remove + never auto-match again). Changes survive refresh.</string>
     <string name="channel_backups_title">Channel backups</string>
-    <string name="channel_backups_intro">Each DaddyLive channel can have backup streams from Free-TV, iptv-org, ntv, or dulo. Search a channel to add, remove, or block a bad automatic match.</string>
+    <string name="channel_backups_intro">Each DaddyLive channel can have backup streams from Free-TV, iptv-org, ntv, or dulo. Search a channel to add, remove, or block a bad automatic match. Merge fallbacks is the default import mode — use All channels in Settings if you want every supplement as its own row.</string>
     <string name="channel_backups_search_hint">Search DaddyLive channel</string>
     <string name="channel_backups_search">Search</string>
     <string name="channel_backups_status">Showing %1$d channels · %2$d backups attached</string>
