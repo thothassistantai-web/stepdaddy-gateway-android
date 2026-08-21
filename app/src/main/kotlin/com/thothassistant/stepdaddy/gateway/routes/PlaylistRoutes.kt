@@ -36,6 +36,13 @@ class PlaylistRoutes(
         }
     }
 
+    /** TiviMate Smart — same catalog with multi-variant backup stream URLs. */
+    suspend fun tivimateSmartUserPlaylist(call: ApplicationCall) {
+        respondPlaylist(call, PlaylistPaths.KIND_USER, "playlist_unavailable") {
+            buildSmartPlaylistBody()
+        }
+    }
+
     /** Full StreamVault catalog — canonical user playlist. */
     suspend fun streamVaultUserPlaylist(call: ApplicationCall) {
         respondPlaylist(call, PlaylistPaths.KIND_USER, "streamvault_playlist_unavailable") {
@@ -147,9 +154,30 @@ class PlaylistRoutes(
             playlistEpgUrl = resolvedPlaylistEpgUrl(),
             playlistEpgUrlKey = EpgPlaylistUrlResolver.playlistCacheKey(environment),
             eventHealthRevision = eventHealthStore.revision(),
+            playlistFlavor = PlaylistCache.FLAVOR_TIVIMATE,
         )
         playlistCache.getOrBuild(cacheKey) {
             buildPlaylistBodySync(channels, supplements)
+        }
+    }
+
+    private suspend fun buildSmartPlaylistBody(): String = withContext(Dispatchers.IO) {
+        val channels = client.channels
+        val supplements = supplementSource.channels()
+        val cacheKey = playlistCache.computeKey(
+            channelCount = channels.size,
+            supplementCount = supplements.size,
+            supplementSyncedAtMs = supplementSource.lastSyncedAtMs(),
+            channelRevision = client.channelRevision(),
+            logoDbLoaded = logoResolver.isLoaded(),
+            playlistTitleStyle = environment.playlistTitleStyle,
+            playlistEpgUrl = resolvedPlaylistEpgUrl(),
+            playlistEpgUrlKey = EpgPlaylistUrlResolver.playlistCacheKey(environment),
+            eventHealthRevision = eventHealthStore.revision(),
+            playlistFlavor = PlaylistCache.FLAVOR_TIVIMATE_SMART,
+        )
+        playlistCache.getOrBuild(cacheKey) {
+            buildSmartPlaylistBodySync(channels, supplements)
         }
     }
 
@@ -225,6 +253,29 @@ class PlaylistRoutes(
             return PlaylistBuilder.minimalPlaylist(base, epgUrl)
         }
         return PlaylistBuilder.tivimatePlaylist(
+            channels = channels,
+            baseUrl = base,
+            dlhdOrigin = client.activeBaseUrl,
+            logoResolver = logoResolver,
+            channelMetaStore = channelMetaStore,
+            supplements = supplements,
+            titleStyle = environment.playlistTitleStyle,
+            epgUrl = epgUrl,
+            eventHealthStore = eventHealthStore,
+            daddyStreamMode = PlaylistBuilder.DaddyStreamMode.DIRECT,
+        )
+    }
+
+    private fun buildSmartPlaylistBodySync(
+        channels: List<com.thothassistant.stepdaddy.gateway.model.Channel>,
+        supplements: List<com.thothassistant.stepdaddy.gateway.model.SupplementChannel>,
+    ): String {
+        val base = environment.loopbackBase()
+        val epgUrl = resolvedPlaylistEpgUrl()
+        if (channels.isEmpty()) {
+            return PlaylistBuilder.minimalPlaylist(base, epgUrl)
+        }
+        return PlaylistBuilder.tivimateSmartPlaylist(
             channels = channels,
             baseUrl = base,
             dlhdOrigin = client.activeBaseUrl,

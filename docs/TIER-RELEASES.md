@@ -27,7 +27,8 @@ Staged rollout for **Special Events** playlist/EPG work on **StepDaddy Gateway**
 | Client | URL |
 |--------|-----|
 | StreamVault | `http://127.0.0.1:3000/streamvault.m3u` |
-| TiviMate | `http://127.0.0.1:3000/tivimate.m3u` |
+| TiviMate (fast) | `http://127.0.0.1:3000/tivimate.m3u` |
+| TiviMate Smart (backups) | `http://127.0.0.1:3000/tivimate-smart.m3u` |
 | VLC | `http://127.0.0.1:3000/vlc.m3u` |
 | EPG | `http://127.0.0.1:3000/epg.xml` |
 

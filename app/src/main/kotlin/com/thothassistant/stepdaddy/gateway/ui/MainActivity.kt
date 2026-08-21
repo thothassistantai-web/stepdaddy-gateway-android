@@ -274,6 +274,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun bindUrls() {
         views.textPlaylistUrl.text = playlistUrl()
+        views.textSmartPlaylistUrl.text = smartPlaylistUrl()
         views.textEpgUrl.text = epgUrl()
         views.textPort.text = getString(R.string.label_port_value, environment.port)
     }
@@ -327,6 +328,7 @@ class MainActivity : AppCompatActivity() {
         views.buttonHeaderSettings.setOnClickListener { openSettings() }
         views.buttonHeaderUpdate.setOnClickListener { checkForUpdates(manual = true) }
         views.buttonCopyPlaylist.setOnClickListener { copyUrl(playlistUrl()) }
+        views.buttonCopySmartPlaylist.setOnClickListener { copyUrl(smartPlaylistUrl()) }
         views.buttonOpenPlaylist.setOnClickListener { openUrl(playlistUrl()) }
         views.buttonQrPlaylist.setOnClickListener {
             QrCodeDialogController(this, environment, tivimateLaunchCoordinator).show()
@@ -453,6 +455,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun playlistUrl(): String = GatewayUrlBuilder.playlistUrl(environment)
+
+    private fun smartPlaylistUrl(): String = GatewayUrlBuilder.tivimateSmartPlaylistUrl(environment)
 
     private fun epgUrl(): String = GatewayUrlBuilder.epgUrl(environment)
 

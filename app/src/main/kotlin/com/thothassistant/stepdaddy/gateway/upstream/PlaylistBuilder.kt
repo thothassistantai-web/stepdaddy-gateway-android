@@ -12,6 +12,16 @@ object PlaylistBuilder {
         PLAIN,
     }
 
+    /**
+     * How DaddyLive channel stream lines resolve for TiviMate.
+     * [DIRECT] — `/tivimate-stream/{id}` (media playlist, snappy zaps).
+     * [SMART] — `/tivimate-smart-stream/{id}` (multi-variant master when backups exist).
+     */
+    enum class DaddyStreamMode {
+        DIRECT,
+        SMART,
+    }
+
     fun minimalPlaylist(baseUrl: String, epgUrl: String? = null): String =
         PlaylistEpgHeader.line(epgUrl)
 
@@ -76,6 +86,7 @@ object PlaylistBuilder {
         epgUrl: String? = null,
         nowMs: Long = System.currentTimeMillis(),
         eventHealthStore: DlhdEventStreamHealthStore? = null,
+        daddyStreamMode: DaddyStreamMode = DaddyStreamMode.DIRECT,
     ): String = GroupTitleResolver.withResolveCache {
         buildTivimatePlaylist(
             channels = channels,
@@ -88,8 +99,35 @@ object PlaylistBuilder {
             epgUrl = epgUrl,
             nowMs = nowMs,
             eventHealthStore = eventHealthStore,
+            daddyStreamMode = daddyStreamMode,
         )
     }
+
+    /** Same catalog as [tivimatePlaylist] with smart multi-variant stream URLs. */
+    fun tivimateSmartPlaylist(
+        channels: List<Channel>,
+        baseUrl: String,
+        dlhdOrigin: String,
+        logoResolver: LogoResolver? = null,
+        channelMetaStore: ChannelMetaStore? = null,
+        supplements: List<SupplementChannel> = emptyList(),
+        titleStyle: PlaylistTitleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
+        epgUrl: String? = null,
+        nowMs: Long = System.currentTimeMillis(),
+        eventHealthStore: DlhdEventStreamHealthStore? = null,
+    ): String = tivimatePlaylist(
+        channels = channels,
+        baseUrl = baseUrl,
+        dlhdOrigin = dlhdOrigin,
+        logoResolver = logoResolver,
+        channelMetaStore = channelMetaStore,
+        supplements = supplements,
+        titleStyle = titleStyle,
+        epgUrl = epgUrl,
+        nowMs = nowMs,
+        eventHealthStore = eventHealthStore,
+        daddyStreamMode = DaddyStreamMode.SMART,
+    )
 
     private fun buildTivimatePlaylist(
         channels: List<Channel>,
@@ -103,6 +141,7 @@ object PlaylistBuilder {
         streamUrlStyle: StreamUrlStyle = StreamUrlStyle.TIVIMATE_PIPE,
         nowMs: Long = System.currentTimeMillis(),
         eventHealthStore: DlhdEventStreamHealthStore? = null,
+        daddyStreamMode: DaddyStreamMode = DaddyStreamMode.DIRECT,
     ): String {
         val now = Instant.ofEpochMilli(nowMs)
         val base = baseUrl.trimEnd('/')
@@ -122,7 +161,7 @@ object PlaylistBuilder {
                 groupOrder = GroupTitleResolver.groupSortOrder(resolution.groupTitle),
                 chno = chno,
                 extinf = "#EXTINF:-1 ${extinfAttrs(channel, base, logoResolver, channelMetaStore, resolution, chno, title, titleStyle)},$title",
-                stream = channelStreamLine(base, channel.id, dlhdOrigin, streamUrlStyle),
+                stream = channelStreamLine(base, channel.id, dlhdOrigin, streamUrlStyle, daddyStreamMode),
             )
         }
 
@@ -409,11 +448,12 @@ object PlaylistBuilder {
         channelId: String,
         dlhdOrigin: String,
         streamUrlStyle: StreamUrlStyle,
+        daddyStreamMode: DaddyStreamMode = DaddyStreamMode.DIRECT,
     ): String {
-        val streamRoute = if (streamUrlStyle == StreamUrlStyle.PLAIN) {
-            "stream"
-        } else {
-            "tivimate-stream"
+        val streamRoute = when {
+            streamUrlStyle == StreamUrlStyle.PLAIN -> "stream"
+            daddyStreamMode == DaddyStreamMode.SMART -> "tivimate-smart-stream"
+            else -> "tivimate-stream"
         }
         val stream = "${base.trimEnd('/')}/$streamRoute/$channelId.m3u8"
         if (streamUrlStyle == StreamUrlStyle.PLAIN) {

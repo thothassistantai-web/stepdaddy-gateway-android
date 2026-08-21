@@ -104,6 +104,11 @@ adb -s $DEV install -r /tmp/tivimate.apk
 
 Add playlist URLs manually in TiviMate (see [TUTORIAL.md](TUTORIAL.md)).
 
+| Playlist | URL | Use when |
+|----------|-----|----------|
+| **TiviMate (fast)** — recommended | `http://127.0.0.1:3000/tivimate.m3u` | Normal watching — direct streams, snappy zaps |
+| **TiviMate Smart (backups)** | `http://127.0.0.1:3000/tivimate-smart.m3u` | Opt-in consolidate multi-variant failover ([CHANNEL-BACKUPS.md](CHANNEL-BACKUPS.md)) |
+
 ### Signature conflicts
 
 | Error | Fix |

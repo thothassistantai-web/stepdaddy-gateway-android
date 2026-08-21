@@ -24,9 +24,13 @@ object GatewayUrlBuilder {
             }
         }
 
-    /** Canonical TiviMate user playlist (full catalog). */
+    /** Canonical TiviMate user playlist (full catalog, fast direct streams). */
     fun tivimatePlaylistUrl(environment: GatewayEnvironment): String =
         appendPath(effectiveBase(environment), PlaylistPaths.TIVIMATE, environment)
+
+    /** TiviMate Smart playlist — consolidate multi-variant backup masters. */
+    fun tivimateSmartPlaylistUrl(environment: GatewayEnvironment): String =
+        appendPath(effectiveBase(environment), PlaylistPaths.TIVIMATE_SMART, environment)
 
     /** Canonical StreamVault user playlist (full catalog, plain proxy URLs). */
     fun streamVaultPlaylistUrl(environment: GatewayEnvironment): String =

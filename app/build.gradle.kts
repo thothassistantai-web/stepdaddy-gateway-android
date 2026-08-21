@@ -34,8 +34,8 @@ fun readStepdaddyVersionProp(name: String, default: String): String {
         ?.trim()
         ?: default
 }
-val stepdaddyVersionName = readStepdaddyVersionProp("STEPDADDY_VERSION", "3.0.35")
-val stepdaddyVersionCode = readStepdaddyVersionProp("VERSION_CODE", "30035").toInt()
+val stepdaddyVersionName = readStepdaddyVersionProp("STEPDADDY_VERSION", "3.0.36")
+val stepdaddyVersionCode = readStepdaddyVersionProp("VERSION_CODE", "30036").toInt()
 
 val localProps = Properties()
 val localPropsFile = rootProject.file("local.properties")

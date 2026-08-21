@@ -242,6 +242,8 @@ data class TivimateSetup(
     val xtreamPassword: String = "password",
     /** Legacy diagnostic URL (bootstrap or superseded path); still served for backward compatibility. */
     val playlistDiagnostic: String = "",
+    /** Opt-in Smart playlist with consolidate multi-variant backup masters. */
+    val playlistSmart: String = "",
     val epgReady: Boolean = false,
     val epgProgrammeCount: Int = 0,
     val epgAgeSeconds: Long? = null,

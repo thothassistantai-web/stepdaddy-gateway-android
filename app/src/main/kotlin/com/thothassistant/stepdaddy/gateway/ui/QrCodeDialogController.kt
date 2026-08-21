@@ -17,7 +17,7 @@ class QrCodeDialogController(
     private val environment: GatewayEnvironment,
     private val tivimateLaunchCoordinator: TiviMateLaunchCoordinator? = null,
 ) {
-    private enum class UrlKind { PLAYLIST, EPG }
+    private enum class UrlKind { PLAYLIST, PLAYLIST_SMART, EPG }
 
     fun show() {
         val binding = DialogQrCodeBinding.inflate(LayoutInflater.from(activity))
@@ -26,6 +26,11 @@ class QrCodeDialogController(
 
         binding.toggleAccessMode.visibility = View.GONE
         binding.layoutRemoteSection.visibility = View.GONE
+
+        fun playlistUrlForKind(kind: UrlKind): String = when (kind) {
+            UrlKind.PLAYLIST_SMART -> GatewayUrlBuilder.tivimateSmartPlaylistUrl(environment)
+            else -> GatewayUrlBuilder.tivimatePlaylistUrl(environment)
+        }
 
         fun refreshQr() {
             when (mode) {
@@ -54,7 +59,7 @@ class QrCodeDialogController(
                         return
                     }
                     binding.imageQrCode.setImageDrawable(null)
-                    binding.textQrUrl.text = GatewayUrlBuilder.tivimatePlaylistUrl(environment)
+                    binding.textQrUrl.text = playlistUrlForKind(urlKind)
                     binding.textQrError.visibility = View.GONE
                     return
                 }
@@ -74,7 +79,7 @@ class QrCodeDialogController(
             }
 
             val url = when (urlKind) {
-                UrlKind.PLAYLIST -> {
+                UrlKind.PLAYLIST, UrlKind.PLAYLIST_SMART -> {
                     val base = GatewayUrlBuilder.qrBaseUrl(environment)
                     if (base == null) {
                         binding.imageQrCode.setImageDrawable(null)
@@ -88,7 +93,7 @@ class QrCodeDialogController(
                         return
                     }
                     GatewayUrlBuilder.appendAccessToken(
-                        GatewayUrlBuilder.tivimatePlaylistUrl(environment),
+                        playlistUrlForKind(urlKind),
                         if (mode == NetworkAccessMode.REMOTE) environment.remoteAccessToken else "",
                     )
                 }
@@ -130,6 +135,7 @@ class QrCodeDialogController(
             if (!isChecked) return@addOnButtonCheckedListener
             urlKind = when (checkedId) {
                 R.id.buttonUrlEpg -> UrlKind.EPG
+                R.id.buttonUrlPlaylistSmart -> UrlKind.PLAYLIST_SMART
                 else -> UrlKind.PLAYLIST
             }
             refreshQr()

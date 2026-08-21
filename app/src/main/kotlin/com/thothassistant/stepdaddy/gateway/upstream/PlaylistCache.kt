@@ -147,5 +147,8 @@ class PlaylistCache {
 
         /** TiviMate pipe-suffixed stream URLs. */
         const val FLAVOR_TIVIMATE = 0
+
+        /** TiviMate Smart — pipe URLs via /tivimate-smart-stream (multi-variant masters). */
+        const val FLAVOR_TIVIMATE_SMART = 2
     }
 }

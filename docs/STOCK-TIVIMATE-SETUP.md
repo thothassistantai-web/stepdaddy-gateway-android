@@ -74,6 +74,9 @@ In **stock TiviMate**:
    | Same device as Gateway | `http://127.0.0.1:3000/tivimate.m3u` |
    | Another device on LAN | `http://<gateway-lan-ip>:3000/tivimate.m3u` |
 
+   **Recommended:** `/tivimate.m3u` (fast direct streams).  
+   **Optional:** `/tivimate-smart.m3u` exposes consolidate multi-variant backups (slower channel changes). See [CHANNEL-BACKUPS.md](CHANNEL-BACKUPS.md).
+
    Legacy URLs (`/tivimate-setup-playlist.m3u8`, `/tivimate-playlist.m3u8`) still work. The setup path is diagnostic-only (50-channel bootstrap for FUSA probes).
 
    To find the LAN IP:

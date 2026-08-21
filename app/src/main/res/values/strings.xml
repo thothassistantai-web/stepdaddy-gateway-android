@@ -83,6 +83,9 @@
     <string name="card_management">Management</string>
     <string name="card_startup_settings">Startup &amp; TiviMate Settings</string>
     <string name="label_playlist_card">Playlist (M3U)</string>
+    <string name="label_playlist_fast">TiviMate (fast) — recommended</string>
+    <string name="label_playlist_smart">TiviMate Smart (backups)</string>
+    <string name="action_copy_smart">Copy Smart</string>
     <string name="label_epg_card">EPG (XML)</string>
     <string name="stat_channels">Channels</string>
     <string name="stat_programs">Programs</string>
@@ -164,7 +167,8 @@
     <string name="qr_how_it_works_step_1">• On your router, open port forwarding / NAT settings.</string>
     <string name="qr_how_it_works_step_2">• Forward an external TCP port to this device\'s LAN IP on port %1$d.</string>
     <string name="qr_how_it_works_step_3">• Enter your public IP or DDNS hostname above, then scan the QR code from outside your home Wi‑Fi.</string>
-    <string name="qr_url_playlist">Playlist</string>
+    <string name="qr_url_playlist">Fast</string>
+    <string name="qr_url_playlist_smart">Smart</string>
     <string name="qr_url_epg">EPG</string>
     <string name="qr_close">Close</string>
     <string name="qr_error_no_lan_ip">No LAN IP found — connect to Wi‑Fi and try again.</string>

@@ -426,4 +426,27 @@ class PlaylistBuilderTest {
         assertTrue(playlist.contains("Referer=${NtvCxCdnLiveConfig.REFERER}"))
         assertTrue(playlist.contains("INT: ESPN ᴿᴬᵂ"))
     }
+
+    @Test
+    fun `fast tivimate playlist uses direct stream urls`() {
+        val playlist = PlaylistBuilder.tivimatePlaylist(
+            channels = listOf(ch("51", "ESPN USA", listOf("🇺🇸", "#sports"))),
+            baseUrl = "http://127.0.0.1:3000",
+            dlhdOrigin = "https://daddylive.org",
+            daddyStreamMode = PlaylistBuilder.DaddyStreamMode.DIRECT,
+        )
+        assertTrue(playlist.contains("/tivimate-stream/51.m3u8"))
+        assertFalse(playlist.contains("/tivimate-smart-stream/"))
+    }
+
+    @Test
+    fun `smart tivimate playlist uses smart stream urls`() {
+        val playlist = PlaylistBuilder.tivimateSmartPlaylist(
+            channels = listOf(ch("51", "ESPN USA", listOf("🇺🇸", "#sports"))),
+            baseUrl = "http://127.0.0.1:3000",
+            dlhdOrigin = "https://daddylive.org",
+        )
+        assertTrue(playlist.contains("/tivimate-smart-stream/51.m3u8"))
+        assertFalse(playlist.contains("/tivimate-stream/51.m3u8"))
+    }
 }

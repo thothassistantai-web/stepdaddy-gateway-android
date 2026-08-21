@@ -34,8 +34,10 @@ class MainDashboardViews(root: View) {
     val switchTivimateWatch: SwitchCompat = root.findViewById(R.id.switchTivimateWatch)
 
     val textPlaylistUrl: TextView = root.findViewById(R.id.textPlaylistUrl)
+    val textSmartPlaylistUrl: TextView = root.findViewById(R.id.textSmartPlaylistUrl)
     val textTiviMatePlaylistState: TextView = root.findViewById(R.id.textTiviMatePlaylistState)
     val buttonCopyPlaylist: MaterialButton = root.findViewById(R.id.buttonCopyPlaylist)
+    val buttonCopySmartPlaylist: MaterialButton = root.findViewById(R.id.buttonCopySmartPlaylist)
     val buttonOpenPlaylist: MaterialButton = root.findViewById(R.id.buttonOpenPlaylist)
     val buttonQrPlaylist: MaterialButton = root.findViewById(R.id.buttonQrPlaylist)
     val buttonLaunchTivimate: MaterialButton = root.findViewById(R.id.buttonLaunchTivimate)

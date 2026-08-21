@@ -204,6 +204,22 @@ class GatewayServer(
                     get { routes.tivimateUserPlaylist(call) }
                     head { routes.tivimateUserPlaylist(call) }
                 }
+                route(PlaylistPaths.TIVIMATE_BARE) {
+                    get { routes.tivimateUserPlaylist(call) }
+                    head { routes.tivimateUserPlaylist(call) }
+                }
+                route(PlaylistPaths.TIVIMATE_SMART) {
+                    get { routes.tivimateSmartUserPlaylist(call) }
+                    head { routes.tivimateSmartUserPlaylist(call) }
+                }
+                route(PlaylistPaths.TIVIMATE_SMART_M3U8) {
+                    get { routes.tivimateSmartUserPlaylist(call) }
+                    head { routes.tivimateSmartUserPlaylist(call) }
+                }
+                route(PlaylistPaths.TIVIMATE_SMART_BARE) {
+                    get { routes.tivimateSmartUserPlaylist(call) }
+                    head { routes.tivimateSmartUserPlaylist(call) }
+                }
                 route(PlaylistPaths.STREAMVAULT) {
                     get { routes.streamVaultUserPlaylist(call) }
                     head { routes.streamVaultUserPlaylist(call) }
@@ -237,6 +253,28 @@ class GatewayServer(
                     head { routes.streamVaultUserPlaylist(call) }
                 }
                 route("/tivimate-stream/{channelId}.m3u8") {
+                    get {
+                        val channelId = call.parameters["channelId"].orEmpty()
+                        if (channelId.startsWith("dlhd-event-")) {
+                            val token = channelId.removePrefix("dlhd-event-")
+                            dlhdEventStreamRoutes.eventStreamMaster(call, token)
+                        } else {
+                            // Fast path: always direct DaddyLive resolve (media playlist).
+                            // Multi-variant consolidate masters live on /tivimate-smart-stream.
+                            streamRoutes.tivimateStream(call, channelId)
+                        }
+                    }
+                    head {
+                        val channelId = call.parameters["channelId"].orEmpty()
+                        if (channelId.startsWith("dlhd-event-")) {
+                            val token = channelId.removePrefix("dlhd-event-")
+                            dlhdEventStreamRoutes.eventStreamMaster(call, token)
+                        } else {
+                            streamRoutes.tivimateStream(call, channelId)
+                        }
+                    }
+                }
+                route("/tivimate-smart-stream/{channelId}.m3u8") {
                     get {
                         val channelId = call.parameters["channelId"].orEmpty()
                         if (channelId.startsWith("dlhd-event-")) {

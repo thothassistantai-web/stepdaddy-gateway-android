@@ -3,7 +3,8 @@ package com.thothassistant.stepdaddy.gateway.routes
 /**
  * Canonical user playlist URLs and legacy diagnostic aliases.
  *
- * **User** — paste into IPTV apps: [streamvault.m3u], [tivimate.m3u], [vlc.m3u] (+ `.m3u8` aliases).
+ * **User** — paste into IPTV apps: [streamvault.m3u], [tivimate.m3u], [tivimate-smart.m3u], [vlc.m3u]
+ * (+ `.m3u8` / bare-path aliases).
  * **Diagnostic** — bootstrap / legacy paths kept for FUSA probes and existing bookmarks.
  */
 object PlaylistPaths {
@@ -17,9 +18,23 @@ object PlaylistPaths {
     const val STREAMVAULT = "/streamvault.m3u"
     const val STREAMVAULT_M3U8 = "/streamvault.m3u8"
 
-    /** Full TiviMate catalog (pipe-suffixed stream lines). */
+    /**
+     * Full TiviMate catalog — **fast** path: stream URLs hit direct DaddyLive resolve
+     * (`/tivimate-stream/{id}.m3u8`), no multi-variant master for consolidate backups.
+     */
     const val TIVIMATE = "/tivimate.m3u"
     const val TIVIMATE_M3U8 = "/tivimate.m3u8"
+    /** Bare alias for [TIVIMATE]. */
+    const val TIVIMATE_BARE = "/tivimate"
+
+    /**
+     * TiviMate Smart — same catalog/groups, but DaddyLive channels with consolidate backups
+     * point at multi-variant masters (`/tivimate-smart-stream/{id}.m3u8`).
+     */
+    const val TIVIMATE_SMART = "/tivimate-smart.m3u"
+    const val TIVIMATE_SMART_M3U8 = "/tivimate-smart.m3u8"
+    /** Bare alias for [TIVIMATE_SMART]. */
+    const val TIVIMATE_SMART_BARE = "/tivimate-smart"
 
     /** Full catalog for VLC and other generic players (plain proxy URLs). */
     const val VLC = "/vlc.m3u"
@@ -42,6 +57,10 @@ object PlaylistPaths {
         STREAMVAULT_M3U8,
         TIVIMATE,
         TIVIMATE_M3U8,
+        TIVIMATE_BARE,
+        TIVIMATE_SMART,
+        TIVIMATE_SMART_M3U8,
+        TIVIMATE_SMART_BARE,
         VLC,
         VLC_M3U8,
         TIVIMATE_LEGACY,

@@ -165,6 +165,16 @@
                 android:text="@string/qr_url_playlist" />
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonUrlPlaylistSmart"
+                style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:nextFocusDown="@id/imageQrCode"
+                android:text="@string/qr_url_playlist_smart" />
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonUrlEpg"
                 style="@style/Widget.StepDaddyGateway.TvButton.Outlined"
                 android:layout_width="0dp"

@@ -277,6 +277,7 @@ class HealthRoutes(
         return TivimateSetup(
             playlist = "$base${PlaylistPaths.TIVIMATE}",
             playlistDiagnostic = "$base${PlaylistPaths.TIVIMATE_SETUP}",
+            playlistSmart = "$base${PlaylistPaths.TIVIMATE_SMART}",
             epg = playlistEpgUrls.joinToString(","),
             health = "$base/health",
             xtreamServer = base,
@@ -285,11 +286,13 @@ class HealthRoutes(
             hint = if (gatewayEpgOn) {
                 "Xtream login: Server $base, user ${environment.xtreamUsername}, " +
                     "pass ${environment.xtreamPassword}. Gateway auto-imports on launch for x2 mod. " +
-                    "Or M3U: $base${PlaylistPaths.TIVIMATE}."
+                    "Recommended M3U (fast): $base${PlaylistPaths.TIVIMATE}. " +
+                    "Optional Smart (backups): $base${PlaylistPaths.TIVIMATE_SMART}."
             } else {
                 "Xtream: Server $base, user ${environment.xtreamUsername}, " +
-                    "pass ${environment.xtreamPassword} (Movies/Series tabs), " +
-                    "or M3U $base${PlaylistPaths.TIVIMATE}."
+                    "pass ${environment.xtreamPassword} (Movies/Series tabs). " +
+                    "M3U fast: $base${PlaylistPaths.TIVIMATE}; " +
+                    "Smart backups: $base${PlaylistPaths.TIVIMATE_SMART}."
             },
             epgReady = if (gatewayEpgOn) epgManager.epgReady() else playlistEpgUrls.isNotEmpty(),
             epgProgrammeCount = if (gatewayEpgOn) {

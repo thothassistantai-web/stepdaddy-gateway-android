@@ -66,6 +66,17 @@ Overrides live in `files/supplement/consolidation_overrides.json` (manual attach
 
 When backups are attached, health subtitle may show `Backups: auto · N channels` (informational only).
 
+## How backups reach TiviMate (3.0.36+)
+
+Consolidate matching still runs the same way. Exposure to the player is **opt-in**:
+
+| Playlist | Path | Stream resolve |
+|----------|------|----------------|
+| **TiviMate (fast)** — recommended | `/tivimate.m3u` (aliases `/tivimate`, `/tivimate.m3u8`) | Direct DaddyLive media playlist via `/tivimate-stream/{id}.m3u8` — snappy zaps; **no** multi-variant master |
+| **TiviMate Smart (backups)** | `/tivimate-smart.m3u` (aliases `/tivimate-smart`, `/tivimate-smart.m3u8`) | Channels with backups use `/tivimate-smart-stream/{id}.m3u8` multi-variant master (`#EXT-X-STREAM-INF` → `/daddy-fallback/...`) |
+
+Default dashboard / setup / QR copy remains the **fast** URL. Use Smart only when you want ExoPlayer failover across consolidate backups.
+
 ## Admin API (optional)
 
 When the gateway is running:

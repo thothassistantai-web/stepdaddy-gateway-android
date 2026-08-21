@@ -7,6 +7,13 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.36] - 2026-08-21
+
+### Changed
+
+- **TiviMate fast vs Smart playlists** — `/tivimate` / `/tivimate.m3u` / `/tivimate-stream/{id}` always resolve **direct** DaddyLive media playlists (snappy zaps). Consolidate multi-variant masters move to opt-in **`/tivimate-smart.m3u`** → `/tivimate-smart-stream/{id}` (→ `/daddy-fallback/...`). Dashboard, QR, setup, and docs show both; recommended default remains fast.
+- **Xtream / other clients** using `/tivimate-stream` also get the direct path again (no silent master intercept).
+
 ## [3.0.35] - 2026-08-21
 
 ### Fixed
