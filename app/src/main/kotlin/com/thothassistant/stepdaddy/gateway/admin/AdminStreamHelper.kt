@@ -1,6 +1,7 @@
 package com.thothassistant.stepdaddy.gateway.admin
 
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
+import com.thothassistant.stepdaddy.gateway.upstream.DuloCxLiveConfig
 import com.thothassistant.stepdaddy.gateway.upstream.NtvCxCdnLiveConfig
 import java.net.URI
 
@@ -22,6 +23,16 @@ object AdminStreamHelper {
                 ?: NtvCxCdnLiveConfig.REFERER
             val origin = supplement.origin?.trim()?.takeIf { it.isNotEmpty() }
                 ?: NtvCxCdnLiveConfig.ORIGIN
+            return "$stream|User-Agent=$TIVIMATE_USER_AGENT|Referer=$referer|Origin=$origin"
+        }
+        if (supplement.id.startsWith(DuloCxLiveConfig.ID_PREFIX)) {
+            val uuid = supplement.duloChannelId?.trim().orEmpty()
+                .ifEmpty { supplement.id.removePrefix(DuloCxLiveConfig.ID_PREFIX) }
+            val stream = "${base.trimEnd('/')}/dulo-stream/$uuid.m3u8"
+            val referer = supplement.referer?.trim()?.takeIf { it.isNotEmpty() }
+                ?: DuloCxLiveConfig.REFERER
+            val origin = supplement.origin?.trim()?.takeIf { it.isNotEmpty() }
+                ?: DuloCxLiveConfig.ORIGIN
             return "$stream|User-Agent=$TIVIMATE_USER_AGENT|Referer=$referer|Origin=$origin"
         }
         val referer = supplement.referer?.trim()?.takeIf { it.isNotEmpty() }

@@ -58,6 +58,7 @@ data class AdminSettingsSnapshot(
     val supplementNtvCxEnabled: Boolean,
     val supplementAdultSwimEnabled: Boolean,
     val supplementFreeTvEnabled: Boolean,
+    val supplementDuloCxEnabled: Boolean,
     val supplementTmdbMoviesEnabled: Boolean,
     val gatewayEpgEnabled: Boolean,
     val externalEpgUrl: String,
@@ -80,6 +81,9 @@ data class AdminSettingsPatch(
     val supplementNtvCxEnabled: Boolean? = null,
     val supplementAdultSwimEnabled: Boolean? = null,
     val supplementFreeTvEnabled: Boolean? = null,
+    val supplementDuloCxEnabled: Boolean? = null,
+    /** Optional dulo.cx Live TV Supabase JWT for `/dulo-stream/` playback. */
+    val supplementDuloCxAccessToken: String? = null,
     val supplementTmdbMoviesEnabled: Boolean? = null,
     val gatewayEpgEnabled: Boolean? = null,
     val externalEpgUrl: String? = null,

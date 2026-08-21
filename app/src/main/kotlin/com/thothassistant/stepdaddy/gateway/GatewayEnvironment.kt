@@ -229,6 +229,29 @@ class GatewayEnvironment(context: Context) {
         }
 
     /**
+     * When true, merges dulo.cx Live TV catalog (~100 curated rows; HLS via `/dulo-stream/`).
+     * @see DuloCxLiveConfig
+     */
+    var supplementDuloCxEnabled: Boolean
+        get() = prefs.getBoolean(
+            KEY_SUPPLEMENT_DULO_CX_ENABLED,
+            BuildConfig.DEFAULT_SUPPLEMENT_DULO_CX_ENABLED,
+        )
+        set(value) {
+            prefs.edit().putBoolean(KEY_SUPPLEMENT_DULO_CX_ENABLED, value).apply()
+        }
+
+    /**
+     * Optional Supabase access token for dulo.cx Live TV playback sessions.
+     * Catalog fetch is public; playback requires a signed-in Live TV account JWT.
+     */
+    var supplementDuloCxAccessToken: String
+        get() = prefs.getString(KEY_SUPPLEMENT_DULO_CX_ACCESS_TOKEN, "").orEmpty()
+        set(value) {
+            prefs.edit().putString(KEY_SUPPLEMENT_DULO_CX_ACCESS_TOKEN, value.trim()).apply()
+        }
+
+    /**
      * When true, merges TMDB trending / popular movies as VOD rows under 🎬 Movies.
      */
     var supplementTmdbMoviesEnabled: Boolean
@@ -275,6 +298,19 @@ class GatewayEnvironment(context: Context) {
         )
         set(value) {
             prefs.edit().putString(KEY_SUPPLEMENT_FREE_TV_IMPORT_MODE, value.name).apply()
+        }
+
+    /**
+     * How dulo.cx Live TV rows are merged.
+     * [SupplementImportMode.FULL_CATALOG] imports the curated slate (default).
+     * [SupplementImportMode.CONSOLIDATE_FALLBACKS] attaches overlaps as DaddyLive failover mirrors.
+     */
+    var supplementDuloCxImportMode: SupplementImportMode
+        get() = SupplementImportMode.fromPref(
+            prefs.getString(KEY_SUPPLEMENT_DULO_CX_IMPORT_MODE, BuildConfig.DEFAULT_SUPPLEMENT_IMPORT_MODE),
+        )
+        set(value) {
+            prefs.edit().putString(KEY_SUPPLEMENT_DULO_CX_IMPORT_MODE, value.name).apply()
         }
 
     /**
@@ -545,10 +581,13 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_SUPPLEMENT_NTV_CX_ENABLED = "supplement_ntv_cx_enabled"
         private const val KEY_SUPPLEMENT_ADULT_SWIM_ENABLED = "supplement_adult_swim_enabled"
         private const val KEY_SUPPLEMENT_FREE_TV_ENABLED = "supplement_free_tv_enabled"
+        private const val KEY_SUPPLEMENT_DULO_CX_ENABLED = "supplement_dulo_cx_enabled"
+        private const val KEY_SUPPLEMENT_DULO_CX_ACCESS_TOKEN = "supplement_dulo_cx_access_token"
         private const val KEY_SUPPLEMENT_TMDB_MOVIES_ENABLED = "supplement_tmdb_movies_enabled"
         private const val KEY_TMDB_API_KEY = "tmdb_api_key"
         private const val KEY_SUPPLEMENT_ADULT_SWIM_IMPORT_MODE = "supplement_adult_swim_import_mode"
         private const val KEY_SUPPLEMENT_FREE_TV_IMPORT_MODE = "supplement_free_tv_import_mode"
+        private const val KEY_SUPPLEMENT_DULO_CX_IMPORT_MODE = "supplement_dulo_cx_import_mode"
         private const val KEY_SUPPLEMENT_IPTV_ORG_IMPORT_MODE = "supplement_iptv_org_import_mode"
         private const val KEY_IPTV_ORG_ENABLED_PLAYLISTS = "iptv_org_enabled_playlists"
         private const val KEY_SUPPLEMENT_NTV_CX_MERGE_MODE = "supplement_ntv_cx_merge_mode"

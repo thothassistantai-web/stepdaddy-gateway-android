@@ -19,6 +19,10 @@ data class SupplementSyncSnapshot(
     val freeTvChannels: Int = 0,
     val freeTvPlaylistsFetched: Int = 0,
     val freeTvPlaylistsFailed: Int = 0,
+    val duloCxChannels: Int = 0,
+    val duloCxCatalogFetchOk: Boolean = false,
+    val duloCxResolveProbeOk: Boolean = false,
+    val duloCxAuthConfigured: Boolean = false,
     val tmdbVodMovies: Int = 0,
     val tmdbVodSeries: Int = 0,
 )

@@ -156,6 +156,9 @@ internal object DashboardLoadProgressCalculator {
             if (supplement?.freeTvEnabled == true) {
                 add(sourceSlot("Free-TV", freeTvPercent(providers.freeTv, supplement)))
             }
+            if (supplement?.duloCxEnabled == true) {
+                add(sourceSlot("Dulo Live", duloCxPercent(providers.duloCx, supplement)))
+            }
             if (supplement?.ntvCxEnabled == true) {
                 add(sourceSlot("NTV.cx", ntvCxPercent(providers.ntvCx, supplement)))
             }
@@ -235,6 +238,14 @@ internal object DashboardLoadProgressCalculator {
             supplement.freeTvPlaylistsFetched > 0 ->
                 min(100, 40 + supplement.freeTvPlaylistsFetched * 25)
             supplement.supplementSyncInFlight -> 35
+            else -> 10
+        }
+
+    private fun duloCxPercent(count: Int, supplement: SupplementStatus): Int =
+        when {
+            count > 0 -> 100
+            supplement.duloCxCatalogFetchOk -> 100
+            supplement.supplementSyncInFlight -> 40
             else -> 10
         }
 

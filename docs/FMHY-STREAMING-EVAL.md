@@ -18,6 +18,7 @@ Goal: find **stable HTTP APIs or M3U playlists** that fit StepDaddy’s Suppleme
 |---------------------------|---------------------|--------|
 | **iptv-org** (IPTV Tools / playlists) | Yes — GitHub raw M3U | **Already integrated** (`IptvOrgStreamsSource`) |
 | **Free-TV/IPTV** (Awesome IPTV / public playlists) | Yes — curated country M3U, many direct HLS | **Integrated** (`FreeTvIptvSource`, USA/CA/UK) |
+| **Dulo Live** (dulo.cx/live) | Partial — public JSON catalog; HLS via auth'd `/live-gateway/` | **Integrated** (`DuloCxLiveSource`, cap 100) |
 | **NTV** (Live TV ⭐) | Yes — aggregator pattern | **Already integrated** (`NtvCxCdnLiveSource`) |
 | **Adult Swim** (TV Streaming) | Yes — official CDN HLS | **Already integrated** |
 | **Pluto / Tubi / Plex / Xumo / SamsungTVPlus** (Free w/ Ads, Smart TV) | Partially — via iptv-org `us_pluto` / `us_tubi` / … streams | **Covered by iptv-org**; no separate scraper |
@@ -39,6 +40,14 @@ Goal: find **stable HTTP APIs or M3U playlists** that fit StepDaddy’s Suppleme
 - Skips YouTube/Twitch rows; publishes direct HTTP(S) URLs with `#freetv` tags.
 - Settings toggle + import mode; health fields `freeTvEnabled` / `freeTvChannels` / playlists fetched|failed.
 - Complements iptv-org (different curated set, smaller English backup).
+
+**Dulo Live** (`dulo:*` channels):
+
+- Public catalog: `GET https://dulo.cx/api/live-tv/channels` (~233 rows probed; gateway caps at 100 non-supporter).
+- Distinct from ntv.cx — different host, JSON shape, and auth model.
+- Playback: `POST /api/live-tv/playback-session` → `/live-gateway/` HLS (requires Supabase JWT in `supplementDuloCxAccessToken`).
+- Playlist URLs: `/dulo-stream/{uuid}.m3u8`. Consolidate mode attaches `duloChannelId` mirrors onto DaddyLive name matches.
+- Catalog sync works without a token; play returns `dulo_auth_required` until token is set via admin API.
 
 ## Promising but not defaulted
 

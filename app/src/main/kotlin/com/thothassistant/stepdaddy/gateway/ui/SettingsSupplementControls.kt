@@ -11,11 +11,13 @@ internal object SettingsSupplementControls {
         binding.switchSupplementSports.isChecked = environment.supplementSportsEnabled
         binding.switchSupplementIptvOrg.isChecked = environment.supplementIptvOrgEnabled
         binding.switchSupplementFreeTv.isChecked = environment.supplementFreeTvEnabled
+        binding.switchSupplementDuloCx.isChecked = environment.supplementDuloCxEnabled
         binding.switchSupplementNtvCx.isChecked = environment.supplementNtvCxEnabled
         binding.switchSupplementAdultSwim.isChecked = environment.supplementAdultSwimEnabled
         binding.switchSupplementTmdbMovies.isChecked = environment.supplementTmdbMoviesEnabled
         SettingsImportModeUi.load(binding.iptvOrgImportMode, environment.supplementIptvOrgImportMode)
         SettingsImportModeUi.load(binding.freeTvImportMode, environment.supplementFreeTvImportMode)
+        SettingsImportModeUi.load(binding.duloCxImportMode, environment.supplementDuloCxImportMode)
         SettingsImportModeUi.load(binding.ntvCxImportMode, environment.supplementNtvCxImportMode)
         SettingsImportModeUi.load(binding.adultSwimImportMode, environment.supplementAdultSwimImportMode)
         refreshMasterSwitch(binding)
@@ -29,6 +31,7 @@ internal object SettingsSupplementControls {
         binding.switchSupplementSports.setOnCheckedChangeListener(visibilityListener)
         binding.switchSupplementIptvOrg.setOnCheckedChangeListener(visibilityListener)
         binding.switchSupplementFreeTv.setOnCheckedChangeListener(visibilityListener)
+        binding.switchSupplementDuloCx.setOnCheckedChangeListener(visibilityListener)
         binding.switchSupplementNtvCx.setOnCheckedChangeListener(visibilityListener)
         binding.switchSupplementAdultSwim.setOnCheckedChangeListener(visibilityListener)
         binding.switchSupplementTmdbMovies.setOnCheckedChangeListener(visibilityListener)
@@ -41,6 +44,7 @@ internal object SettingsSupplementControls {
             binding.switchSupplementSports.isChecked = checked
             binding.switchSupplementIptvOrg.isChecked = checked
             binding.switchSupplementFreeTv.isChecked = checked
+            binding.switchSupplementDuloCx.isChecked = checked
             binding.switchSupplementNtvCx.isChecked = checked
             binding.switchSupplementAdultSwim.isChecked = checked
             binding.switchSupplementTmdbMovies.isChecked = checked
@@ -54,11 +58,13 @@ internal object SettingsSupplementControls {
         environment.supplementSportsEnabled = binding.switchSupplementSports.isChecked
         environment.supplementIptvOrgEnabled = binding.switchSupplementIptvOrg.isChecked
         environment.supplementFreeTvEnabled = binding.switchSupplementFreeTv.isChecked
+        environment.supplementDuloCxEnabled = binding.switchSupplementDuloCx.isChecked
         environment.supplementNtvCxEnabled = binding.switchSupplementNtvCx.isChecked
         environment.supplementAdultSwimEnabled = binding.switchSupplementAdultSwim.isChecked
         environment.supplementTmdbMoviesEnabled = binding.switchSupplementTmdbMovies.isChecked
         environment.supplementIptvOrgImportMode = SettingsImportModeUi.read(binding.iptvOrgImportMode)
         environment.supplementFreeTvImportMode = SettingsImportModeUi.read(binding.freeTvImportMode)
+        environment.supplementDuloCxImportMode = SettingsImportModeUi.read(binding.duloCxImportMode)
         environment.supplementNtvCxImportMode = SettingsImportModeUi.read(binding.ntvCxImportMode)
         environment.supplementAdultSwimImportMode = SettingsImportModeUi.read(binding.adultSwimImportMode)
     }
@@ -69,6 +75,7 @@ internal object SettingsSupplementControls {
         val allOn = binding.switchSupplementSports.isChecked &&
             binding.switchSupplementIptvOrg.isChecked &&
             binding.switchSupplementFreeTv.isChecked &&
+            binding.switchSupplementDuloCx.isChecked &&
             binding.switchSupplementNtvCx.isChecked &&
             binding.switchSupplementAdultSwim.isChecked &&
             binding.switchSupplementTmdbMovies.isChecked
@@ -81,6 +88,7 @@ internal object SettingsSupplementControls {
         binding.buttonIptvOrgPlaylists.visibility =
             if (binding.switchSupplementIptvOrg.isChecked) View.VISIBLE else View.GONE
         SettingsImportModeUi.setVisible(binding.freeTvImportMode, binding.switchSupplementFreeTv.isChecked)
+        SettingsImportModeUi.setVisible(binding.duloCxImportMode, binding.switchSupplementDuloCx.isChecked)
         SettingsImportModeUi.setVisible(binding.ntvCxImportMode, binding.switchSupplementNtvCx.isChecked)
         SettingsImportModeUi.setVisible(binding.adultSwimImportMode, binding.switchSupplementAdultSwim.isChecked)
     }

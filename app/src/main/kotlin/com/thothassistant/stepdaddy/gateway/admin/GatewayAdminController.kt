@@ -18,6 +18,8 @@ import com.thothassistant.stepdaddy.gateway.network.NetworkAccessMode
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import com.thothassistant.stepdaddy.gateway.upstream.CategoryOverrideStore
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
+import com.thothassistant.stepdaddy.gateway.upstream.DuloCxLiveConfig
+import com.thothassistant.stepdaddy.gateway.upstream.FreeTvIptvConfig
 import com.thothassistant.stepdaddy.gateway.upstream.GroupTitleResolver
 import com.thothassistant.stepdaddy.gateway.model.AdminImportResult
 import com.thothassistant.stepdaddy.gateway.model.AssetExportResult
@@ -110,6 +112,8 @@ class GatewayAdminController(
         patch.supplementNtvCxEnabled?.let { environment.supplementNtvCxEnabled = it }
         patch.supplementAdultSwimEnabled?.let { environment.supplementAdultSwimEnabled = it }
         patch.supplementFreeTvEnabled?.let { environment.supplementFreeTvEnabled = it }
+        patch.supplementDuloCxEnabled?.let { environment.supplementDuloCxEnabled = it }
+        patch.supplementDuloCxAccessToken?.let { environment.supplementDuloCxAccessToken = it }
         patch.supplementTmdbMoviesEnabled?.let { environment.supplementTmdbMoviesEnabled = it }
         patch.gatewayEpgEnabled?.let { environment.gatewayEpgEnabled = it }
         patch.externalEpgUrl?.let { environment.externalEpgUrl = it }
@@ -541,6 +545,8 @@ class GatewayAdminController(
 
     private fun supplementSourceLabel(supplement: SupplementChannel): String = when {
         supplement.id.startsWith("iptv:") -> "iptv-org"
+        supplement.id.startsWith(FreeTvIptvConfig.ID_PREFIX) -> "free-tv"
+        supplement.id.startsWith(DuloCxLiveConfig.ID_PREFIX) -> "dulo.cx"
         supplement.id.startsWith("ntv:") -> "ntv.cx"
         supplement.id.startsWith("dlhd-guide:") ||
             supplement.id.startsWith("dlhd-event:") -> "special-events"
@@ -585,6 +591,7 @@ class GatewayAdminController(
         supplementNtvCxEnabled = environment.supplementNtvCxEnabled,
         supplementAdultSwimEnabled = environment.supplementAdultSwimEnabled,
         supplementFreeTvEnabled = environment.supplementFreeTvEnabled,
+        supplementDuloCxEnabled = environment.supplementDuloCxEnabled,
         supplementTmdbMoviesEnabled = environment.supplementTmdbMoviesEnabled,
         gatewayEpgEnabled = environment.gatewayEpgEnabled,
         externalEpgUrl = environment.externalEpgUrlForDisplay(),

@@ -137,6 +137,7 @@ DaddyLive schedule only (`tv.json` / `tv2.json`). TheTvApp / TVPass / MoveOnJoy 
 |--------|-----|-------|
 | iptv-org | `iptv:*` | GitHub FAST playlists (Pluto, Plex, Xumo, …) |
 | Free-TV/IPTV | `freetv:*` | Curated USA/CA/UK M3U backups ([FMHY eval](docs/FMHY-STREAMING-EVAL.md)) |
+| Dulo Live | `dulo:*` | dulo.cx Live TV JSON catalog; `/dulo-stream/` resolve |
 | ntv.cx | `ntv:*` | 24/7 CDN resolves |
 | Adult Swim | `adultswim:*` | Probed Turner HLS |
 

@@ -15,7 +15,9 @@ import com.thothassistant.stepdaddy.gateway.routes.MoviesRoutes
 import com.thothassistant.stepdaddy.gateway.routes.SeriesRoutes
 import com.thothassistant.stepdaddy.gateway.routes.XtreamApiRoutes
 import com.thothassistant.stepdaddy.gateway.routes.NtvStreamRoutes
+import com.thothassistant.stepdaddy.gateway.routes.DuloStreamRoutes
 import com.thothassistant.stepdaddy.gateway.routes.VodStreamRoutes
+import com.thothassistant.stepdaddy.gateway.upstream.DuloCxLiveResolver
 import com.thothassistant.stepdaddy.gateway.upstream.MovieboxSession
 import com.thothassistant.stepdaddy.gateway.upstream.MovieboxStreamResolver
 import com.thothassistant.stepdaddy.gateway.upstream.VidsrcMovieResolver
@@ -104,16 +106,26 @@ class GatewayServer(
             NtvCxCdnLiveResolver.defaultClient()
         }
         val ntvResolver = NtvCxCdnLiveResolver(ntvHttp)
+        val duloResolver = DuloCxLiveResolver(
+            if (fireLite) FireMemoryGuard.compactHttpClient() else DuloCxLiveResolver.defaultClient(),
+            accessTokenProvider = { environment.supplementDuloCxAccessToken },
+        )
         val supplementFallbackRoutes = SupplementFallbackStreamRoutes(
             environment,
             supplementSource,
             client,
             ntvResolver,
+            duloResolver,
         )
         val ntvStreamRoutes = NtvStreamRoutes(
             environment,
             supplementSource,
             ntvResolver,
+        )
+        val duloStreamRoutes = DuloStreamRoutes(
+            environment,
+            supplementSource,
+            duloResolver,
         )
         val vodStreamCache = VodStreamCache()
         val vodHttpClient = if (fireLite) {
@@ -297,6 +309,10 @@ class GatewayServer(
                 route("/ntv-stream/{token}.m3u8") {
                     get { ntvStreamRoutes.tivimateStream(call, call.parameters["token"].orEmpty()) }
                     head { ntvStreamRoutes.tivimateStream(call, call.parameters["token"].orEmpty()) }
+                }
+                route("/dulo-stream/{channelId}.m3u8") {
+                    get { duloStreamRoutes.stream(call, call.parameters["channelId"].orEmpty()) }
+                    head { duloStreamRoutes.stream(call, call.parameters["channelId"].orEmpty()) }
                 }
                 route("/vod/movie/{tmdbId}.m3u8") {
                     get { vodStreamRoutes.movieStream(call, call.parameters["tmdbId"].orEmpty()) }

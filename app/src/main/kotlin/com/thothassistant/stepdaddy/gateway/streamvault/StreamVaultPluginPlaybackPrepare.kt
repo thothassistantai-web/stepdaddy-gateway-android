@@ -3,6 +3,7 @@ package com.thothassistant.stepdaddy.gateway.streamvault
 import android.util.Log
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.upstream.DlhdEventStreamResolver
+import com.thothassistant.stepdaddy.gateway.upstream.DuloCxLiveConfig
 import com.thothassistant.stepdaddy.gateway.upstream.GatewayConfig
 import com.thothassistant.stepdaddy.gateway.upstream.NtvCxCdnLiveConfig
 import com.thothassistant.stepdaddy.gateway.upstream.SupplementSource
@@ -83,6 +84,15 @@ internal object StreamVaultPluginPlaybackPrepare {
                 val supplement = supplementSource?.ntvChannel(token)
                 supplement?.referer?.trim()?.takeIf { it.isNotEmpty() }?.let { headers["Referer"] = it }
                 supplement?.origin?.trim()?.takeIf { it.isNotEmpty() }?.let { headers["Origin"] = it }
+                userAgent = GatewayConfig.TIVIMATE_USER_AGENT
+            }
+            path.contains("/dulo-stream/") -> {
+                val id = path.substringAfterLast('/').removeSuffix(".m3u8")
+                val supplement = supplementSource?.duloChannel(id)
+                headers["Referer"] = supplement?.referer?.trim()?.takeIf { it.isNotEmpty() }
+                    ?: DuloCxLiveConfig.REFERER
+                headers["Origin"] = supplement?.origin?.trim()?.takeIf { it.isNotEmpty() }
+                    ?: DuloCxLiveConfig.ORIGIN
                 userAgent = GatewayConfig.TIVIMATE_USER_AGENT
             }
             path.contains("/dlhd-event-stream/") ||

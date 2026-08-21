@@ -13,6 +13,7 @@ data class ProviderChannelCounts(
     val ntvCx: Int = 0,
     val adultSwim: Int = 0,
     val freeTv: Int = 0,
+    val duloCx: Int = 0,
     val adult: Int = 0,
     val total: Int = 0,
 )
@@ -37,6 +38,7 @@ object GatewayDashboard {
             ntvCx = supp?.ntvCxCount() ?: 0,
             adultSwim = supp?.adultSwimCount() ?: 0,
             freeTv = supp?.freeTvCount() ?: 0,
+            duloCx = supp?.duloCxCount() ?: 0,
             adult = adult,
             total = dl.size + (supp?.channelCount() ?: 0),
         )

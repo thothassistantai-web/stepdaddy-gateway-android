@@ -89,7 +89,7 @@ ServerService: Gateway listening (1159 channels)
 
 ## FUSA-verified default settings
 
-Fresh install / clear-data loads **full DaddyLive catalog** plus **all supplements** (Special Events, iptv-org, Free-TV, ntv.cx, Adult Swim) with `FULL_CATALOG` import modes. MoveOnJoy / TheTvApp / xyzstreams / TVPass were removed.
+Fresh install / clear-data loads **full DaddyLive catalog** plus **all supplements** (Special Events, iptv-org, Free-TV, Dulo Live, ntv.cx, Adult Swim) with `FULL_CATALOG` import modes. MoveOnJoy / TheTvApp / xyzstreams / TVPass were removed.
 
 | Setting | Value |
 |---------|-------|

@@ -11,4 +11,6 @@ data class SupplementFallbackMirror(
     val origin: String? = null,
     /** Play-time resolve key for ntv.cx fallbacks attached to DaddyLive rows. */
     val ntvCdnLiveKey: String? = null,
+    /** Play-time resolve id for dulo.cx Live TV fallbacks attached to DaddyLive rows. */
+    val duloChannelId: String? = null,
 )

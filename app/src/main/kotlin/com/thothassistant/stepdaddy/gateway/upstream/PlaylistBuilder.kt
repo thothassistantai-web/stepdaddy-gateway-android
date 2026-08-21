@@ -243,6 +243,7 @@ object PlaylistBuilder {
         val title = if (supplement.id.startsWith("iptv:") || supplement.id.startsWith("ntv:") ||
             supplement.id.startsWith("adultswim:") ||
             supplement.id.startsWith(FreeTvIptvConfig.ID_PREFIX) ||
+            supplement.id.startsWith(DuloCxLiveConfig.ID_PREFIX) ||
             supplement.id.startsWith("dlhd-guide:") || supplement.id.startsWith("dlhd-event:") ||
             supplement.id.startsWith(TmdbVodConfig.ID_PREFIX) ||
             supplement.id.startsWith(TmdbVodConfig.SERIES_ID_PREFIX) ||
@@ -325,6 +326,7 @@ object PlaylistBuilder {
         resolution.isAdult -> PlaylistTitleSource.ADULT
         supplement.id.startsWith("adultswim:") -> PlaylistTitleSource.ADULT_SWIM_247
         supplement.id.startsWith(FreeTvIptvConfig.ID_PREFIX) -> PlaylistTitleSource.FAST
+        supplement.id.startsWith(DuloCxLiveConfig.ID_PREFIX) -> PlaylistTitleSource.FAST
         supplement.id.startsWith("dlhd-guide:") -> PlaylistTitleSource.SPECIAL_EVENT_GUIDE
         supplement.id.startsWith("dlhd-event:") -> PlaylistTitleSource.SPECIAL_EVENT
         supplement.id.startsWith("iptv:") || supplement.id.startsWith("ntv:") -> PlaylistTitleSource.FAST
@@ -340,7 +342,10 @@ object PlaylistBuilder {
         SpecialEventSort.supplementIntraSlot(supplement)
 
     private fun supplementResolution(supplement: SupplementChannel): GroupTitleResolver.Resolution {
-        if (supplement.id.startsWith("iptv:") || supplement.id.startsWith(FreeTvIptvConfig.ID_PREFIX)) {
+        if (supplement.id.startsWith("iptv:") ||
+            supplement.id.startsWith(FreeTvIptvConfig.ID_PREFIX) ||
+            supplement.id.startsWith(DuloCxLiveConfig.ID_PREFIX)
+        ) {
             return GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id)
         }
         if (supplement.id.startsWith(TmdbVodConfig.ID_PREFIX)) {
@@ -455,6 +460,19 @@ object PlaylistBuilder {
                 ?: NtvCxCdnLiveConfig.REFERER
             val origin = supplement.origin?.trim()?.takeIf { it.isNotEmpty() }
                 ?: NtvCxCdnLiveConfig.ORIGIN
+            return "$stream|User-Agent=$TIVIMATE_USER_AGENT|Referer=$referer|Origin=$origin"
+        }
+        if (supplement.id.startsWith(DuloCxLiveConfig.ID_PREFIX)) {
+            val uuid = supplement.duloChannelId?.trim().orEmpty()
+                .ifEmpty { supplement.id.removePrefix(DuloCxLiveConfig.ID_PREFIX) }
+            val stream = "${base.trimEnd('/')}/dulo-stream/$uuid.m3u8"
+            if (streamUrlStyle == StreamUrlStyle.PLAIN) {
+                return stream
+            }
+            val referer = supplement.referer?.trim()?.takeIf { it.isNotEmpty() }
+                ?: DuloCxLiveConfig.REFERER
+            val origin = supplement.origin?.trim()?.takeIf { it.isNotEmpty() }
+                ?: DuloCxLiveConfig.ORIGIN
             return "$stream|User-Agent=$TIVIMATE_USER_AGENT|Referer=$referer|Origin=$origin"
         }
         if (supplement.id.startsWith(TmdbVodConfig.ID_PREFIX)) {
@@ -611,6 +629,7 @@ object PlaylistBuilder {
         supplement.id.startsWith(TmdbVodConfig.SERIES_ID_PREFIX) -> supplement.groupTitle.ifBlank { TmdbVodConfig.SERIES_GROUP_TITLE }
         supplement.id.startsWith("adultswim:") -> GroupTitleResolver.ENTERTAINMENT
         supplement.id.startsWith(FreeTvIptvConfig.ID_PREFIX) -> resolution.groupTitle
+        supplement.id.startsWith(DuloCxLiveConfig.ID_PREFIX) -> resolution.groupTitle
         supplement.id.startsWith("dlhd-guide:") ||
             supplement.id.startsWith("dlhd-event:") -> GroupTitleResolver.SPECIAL_EVENTS
         supplement.id.startsWith("iptv:") -> resolution.groupTitle

@@ -232,6 +232,8 @@ object ChannelNumberResolver {
             supplement.id.startsWith("adultswim:") -> GroupTitleResolver.ENTERTAINMENT
             supplement.id.startsWith(FreeTvIptvConfig.ID_PREFIX) ->
                 GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id).groupTitle
+            supplement.id.startsWith(DuloCxLiveConfig.ID_PREFIX) ->
+                GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id).groupTitle
             supplement.id.startsWith(TmdbVodConfig.ID_PREFIX) -> GroupTitleResolver.MOVIES
             supplement.id.startsWith("iptv:") ->
                 GroupTitleResolver.resolve(supplement.name, supplement.tags, supplement.id).groupTitle

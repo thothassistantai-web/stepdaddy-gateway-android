@@ -127,6 +127,7 @@
     <string name="provider_ntv_cx">ntv.cx 24/7</string>
     <string name="provider_adult_swim">Adult Swim</string>
     <string name="provider_free_tv">Free-TV</string>
+    <string name="provider_dulo_cx">Dulo Live</string>
     <string name="provider_sports">Sports</string>
     <string name="provider_adult">XXX Adult</string>
     <string name="dashboard_providers_total">Total: %1$s</string>
@@ -262,10 +263,13 @@
     <string name="settings_mirror_urls">Mirror URLs (comma-separated)</string>
     <string name="settings_section_supplements">Extra channels for TiviMate</string>
     <string name="settings_supplements_intro">DaddyLive is always imported in full as your main list. Turn on extra providers below to add more channels. By default each provider imports its full catalog.</string>
-    <string name="settings_enable_all_supplements">Enable all extra providers (Special Events, iptv-org, Free-TV, ntv.cx, Adult Swim)</string>
+    <string name="settings_enable_all_supplements">Enable all extra providers (Special Events, iptv-org, Free-TV, Dulo Live, ntv.cx, Adult Swim)</string>
     <string name="settings_provider_iptv_org">iptv-org (Pluto, Plex, Xumo, …)</string>
     <string name="settings_provider_free_tv">Free-TV (USA / CA / UK)</string>
     <string name="settings_supplement_free_tv_enable">Enable Free-TV/IPTV curated live backups</string>
+    <string name="settings_provider_dulo_cx">Dulo Live (dulo.cx)</string>
+    <string name="settings_supplement_dulo_cx_enable">Enable Dulo Live TV catalog (~100 channels; Consolidate = DaddyLive backups)</string>
+    <string name="settings_dulo_cx_token_hint">Playback needs a dulo Live TV access token (admin API: supplementDuloCxAccessToken). Catalog sync works without it.</string>
     <string name="settings_iptv_org_playlists_configure">Choose iptv-org playlists…</string>
     <string name="settings_iptv_org_playlists_title">iptv-org playlists</string>
     <string name="settings_iptv_org_playlists_intro">iptv-org combines many upstream FAST playlists. Turn off playlists you do not want imported.</string>

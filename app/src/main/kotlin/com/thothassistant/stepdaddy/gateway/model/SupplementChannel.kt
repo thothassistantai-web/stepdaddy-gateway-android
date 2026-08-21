@@ -21,6 +21,8 @@ data class SupplementChannel(
     val eventSourceUrl: String? = null,
     /** Play-time resolve key for ntv.cx 24/7 (`server|name|regionOrStreamUrl`). */
     val ntvCdnLiveKey: String? = null,
+    /** Play-time resolve id for dulo.cx Live TV (`uuid` from `/api/live-tv/channels`). */
+    val duloChannelId: String? = null,
     /** Stable event key for consolidated mirror rows (`dlhd-event:{eventKey}`). */
     val dlhdEventKey: String? = null,
     /** DaddyLive event stream key: `tv|153` or `tv2|admin/ppv-.../1` (primary mirror). */

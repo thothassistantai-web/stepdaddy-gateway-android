@@ -51,7 +51,7 @@ Expect `ok: true`, `starting: false`, and `channels > 0` before importing playli
 
 Full health includes `specialEventGuides`, `dlhdEventStreams`, and `specialEvents` summary (language/region metadata, schedule times, stream health dots 🟢🔴🟡⚪, lifecycle add/remove). DaddyLive schedule only — TheTvApp/xyzstreams removed.
 
-Live backups also expose `freeTvChannels` / `freeTvEnabled` (Free-TV/IPTV USA/CA/UK). See [FMHY-STREAMING-EVAL.md](FMHY-STREAMING-EVAL.md).
+Live backups also expose `freeTvChannels` / `freeTvEnabled` (Free-TV/IPTV USA/CA/UK) and `duloCxChannels` / `duloCxEnabled` (dulo.cx Live TV). See [FMHY-STREAMING-EVAL.md](FMHY-STREAMING-EVAL.md).
 
 ## Stream proxies
 

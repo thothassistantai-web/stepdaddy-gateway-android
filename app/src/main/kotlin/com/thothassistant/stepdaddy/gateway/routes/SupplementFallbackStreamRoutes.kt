@@ -3,6 +3,7 @@ package com.thothassistant.stepdaddy.gateway.routes
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror
+import com.thothassistant.stepdaddy.gateway.upstream.DuloCxLiveResolver
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
 import com.thothassistant.stepdaddy.gateway.upstream.HlsErrorManifest
 import com.thothassistant.stepdaddy.gateway.upstream.MirrorHlsManifest
@@ -29,6 +30,7 @@ class SupplementFallbackStreamRoutes(
     private val supplementSource: SupplementSource,
     private val daddyLiveClient: DaddyLiveClient,
     private val ntvResolver: NtvCxCdnLiveResolver,
+    private val duloResolver: DuloCxLiveResolver,
     private val httpClient: OkHttpClient = OkHttpClient(),
 ) {
     suspend fun supplementMaster(call: ApplicationCall, supplementId: String) {
@@ -124,6 +126,10 @@ class SupplementFallbackStreamRoutes(
             if (!supplement.ntvCdnLiveKey.isNullOrBlank()) {
                 return@withContext ntvResolver.resolveManifestUrl(supplement.ntvCdnLiveKey!!)
             }
+            val duloId = supplement.duloChannelId?.trim().orEmpty()
+            if (duloId.isNotEmpty()) {
+                return@withContext duloResolver.resolveManifestUrl(duloId)
+            }
             fetchDirectManifest(supplement.streamUrl, supplement.referer, supplement.origin)
         }
 
@@ -132,6 +138,10 @@ class SupplementFallbackStreamRoutes(
             val ntvKey = mirror.ntvCdnLiveKey?.trim().orEmpty()
             if (ntvKey.isNotEmpty()) {
                 return@withContext ntvResolver.resolveManifestUrl(ntvKey)
+            }
+            val duloId = mirror.duloChannelId?.trim().orEmpty()
+            if (duloId.isNotEmpty()) {
+                return@withContext duloResolver.resolveManifestUrl(duloId)
             }
             val url = mirror.streamUrl.trim()
             if (url.isEmpty()) error("fallback_stream_missing")

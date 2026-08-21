@@ -54,6 +54,11 @@ class SupplementSource(
 
     private val adultSwimSource = AdultSwimStreamsSource(AdultSwimStreamsSource.defaultClient())
     private val freeTvSource = FreeTvIptvSource(httpClient)
+    private val duloCxResolver = DuloCxLiveResolver(
+        DuloCxLiveResolver.defaultClient(),
+        accessTokenProvider = { environment.supplementDuloCxAccessToken },
+    )
+    private val duloCxSource = DuloCxLiveSource(duloCxResolver)
     private val tmdbVodCatalogStore = TmdbVodCatalogStore(context)
     private val tmdbVodCatalog = TmdbVodCatalog(context, httpClient, apiKey = { environment.effectiveTmdbApiKey() })
     private val tmdbVodSource = TmdbVodSource(tmdbVodCatalog, tmdbVodCatalogStore)
@@ -132,6 +137,7 @@ class SupplementSource(
         environment.supplementSportsEnabled ||
             environment.supplementIptvOrgEnabled ||
             environment.supplementFreeTvEnabled ||
+            environment.supplementDuloCxEnabled ||
             environment.supplementNtvCxEnabled ||
             environment.supplementAdultSwimEnabled ||
             environment.supplementTmdbMoviesEnabled
@@ -142,6 +148,8 @@ class SupplementSource(
 
     fun freeTvEnabled(): Boolean = environment.supplementFreeTvEnabled
 
+    fun duloCxEnabled(): Boolean = environment.supplementDuloCxEnabled
+
     fun ntvCxEnabled(): Boolean = environment.supplementNtvCxEnabled
 
     fun adultSwimEnabled(): Boolean = environment.supplementAdultSwimEnabled
@@ -151,6 +159,8 @@ class SupplementSource(
     fun adultSwimImportMode(): SupplementImportMode = environment.supplementAdultSwimImportMode
 
     fun freeTvImportMode(): SupplementImportMode = environment.supplementFreeTvImportMode
+
+    fun duloCxImportMode(): SupplementImportMode = environment.supplementDuloCxImportMode
 
     fun ntvCxImportMode(): SupplementImportMode = environment.supplementNtvCxImportMode
 
@@ -182,6 +192,8 @@ class SupplementSource(
     fun adultSwimCount(): Int = cached.count { it.id.startsWith("adultswim:") }
 
     fun freeTvCount(): Int = cached.count { it.id.startsWith(FreeTvIptvConfig.ID_PREFIX) }
+
+    fun duloCxCount(): Int = cached.count { it.id.startsWith(DuloCxLiveConfig.ID_PREFIX) }
 
     fun tmdbVodCount(): Int = cached.count { it.id.startsWith(TmdbVodConfig.ID_PREFIX) }
 
@@ -224,6 +236,12 @@ class SupplementSource(
 
     fun ntvChannel(token: String): SupplementChannel? =
         cached.firstOrNull { it.id == "ntv:$token" }
+
+    fun duloChannel(channelUuid: String): SupplementChannel? =
+        cached.firstOrNull {
+            it.id == "${DuloCxLiveConfig.ID_PREFIX}$channelUuid" ||
+                it.duloChannelId == channelUuid
+        }
 
     fun syncSnapshot(): SupplementSyncSnapshot = lastSync
 
@@ -595,7 +613,7 @@ class SupplementSource(
                 TAG,
                 "Supplement sync: ${merged.size} total " +
                     "(sports=${sportsCount()}, " +
-                    "iptv-org=${iptvOrgCount()}, free-tv=${freeTvCount()}, ntv.cx=${ntvCxCount()}, " +
+                    "iptv-org=${iptvOrgCount()}, free-tv=${freeTvCount()}, dulo.cx=${duloCxCount()}, ntv.cx=${ntvCxCount()}, " +
                     "adultswim=${adultSwimCount()})",
             )
             val enriched = enrichSupplementLogos(merged)
@@ -642,6 +660,7 @@ class SupplementSource(
             iptvOrgChannels = iptvOrgCount(),
             adultSwimChannels = adultSwimCount(),
             freeTvChannels = freeTvCount(),
+            duloCxChannels = duloCxCount(),
             sportsChannels = sportsCount(),
         )
         Log.i(TAG, "Recovered ${recovered.size} supplement channels from disk caches")
@@ -761,6 +780,25 @@ class SupplementSource(
             }
         }
 
+        val duloCxDeferred = async {
+            if (duloCxEnabled()) {
+                runCatching {
+                    duloCxSource.fetchChannels(
+                        daddyChannels = daddyChannels,
+                        importMode = environment.supplementDuloCxImportMode,
+                        nameIndex = nameIndex,
+                        authConfigured = environment.supplementDuloCxAccessToken.isNotBlank(),
+                    )
+                }
+                    .getOrElse { exc ->
+                        Log.w(TAG, "dulo.cx live fetch failed", exc)
+                        DuloCxLiveSource.FetchOutcome(emptyList(), DuloCxLiveResolver.FetchStats())
+                    }
+            } else {
+                DuloCxLiveSource.FetchOutcome(emptyList(), DuloCxLiveResolver.FetchStats())
+            }
+        }
+
         val tmdbVodDeferred = async {
             if (tmdbMoviesEnabled()) {
                 runCatching { tmdbVodSource.fetchChannels() }
@@ -803,6 +841,9 @@ class SupplementSource(
         var freeTvOutcome = freeTvDeferred.await()
         var freeTv = freeTvOutcome.channels
         var freeTvStats = freeTvOutcome.stats
+        var duloCxOutcome = duloCxDeferred.await()
+        var duloCx = duloCxOutcome.channels
+        var duloCxStats = duloCxOutcome.stats
         val (tmdbVod, tmdbVodStats) = tmdbVodDeferred.await()
         val (tmdbVodSeries, tmdbVodSeriesStats) = tmdbVodSeriesDeferred.await()
 
@@ -811,6 +852,7 @@ class SupplementSource(
             ntvOutcome.daddyFallbacks,
             adultSwimOutcome.daddyFallbacks,
             freeTvOutcome.daddyFallbacks,
+            duloCxOutcome.daddyFallbacks,
         )
         daddyChannelFallbacks = mergedDaddyFallbacks
         store.writeDaddyFallbacks(mergedDaddyFallbacks)
@@ -843,6 +885,14 @@ class SupplementSource(
             if (cachedFreeTv.isNotEmpty()) {
                 Log.w(TAG, "Free-TV fetch empty — keeping ${cachedFreeTv.size} cached channels")
                 freeTv = cachedFreeTv
+            }
+        }
+
+        if (duloCx.isEmpty() && duloCxEnabled()) {
+            val cachedDulo = cached.filter { it.id.startsWith(DuloCxLiveConfig.ID_PREFIX) }
+            if (cachedDulo.isNotEmpty()) {
+                Log.w(TAG, "dulo.cx fetch empty — keeping ${cachedDulo.size} cached channels")
+                duloCx = cachedDulo
             }
         }
 
@@ -889,11 +939,15 @@ class SupplementSource(
             freeTvChannels = freeTv.size,
             freeTvPlaylistsFetched = freeTvStats.playlistsFetched,
             freeTvPlaylistsFailed = freeTvStats.playlistsFailed,
+            duloCxChannels = duloCx.size,
+            duloCxCatalogFetchOk = duloCxStats.catalogFetchOk,
+            duloCxResolveProbeOk = duloCxStats.resolveProbeOk,
+            duloCxAuthConfigured = duloCxStats.authConfigured,
             tmdbVodMovies = publishedTmdbVod.size,
             tmdbVodSeries = publishedTmdbVodSeries.size,
         )
 
-        specialEvents + iptvOrg + freeTv + ntvCx + adultSwim + publishedTmdbVod + publishedTmdbVodSeries
+        specialEvents + iptvOrg + freeTv + duloCx + ntvCx + adultSwim + publishedTmdbVod + publishedTmdbVodSeries
     }
 
     private fun fetchSpecialEventsBundle(

@@ -36,6 +36,7 @@ internal object DashboardStatusReporter {
                         append("Providers: DL ${stats.daddylive}")
                         if (stats.iptvOrg > 0) append(" · IPTV ${stats.iptvOrg}")
                         if (stats.freeTv > 0) append(" · FreeTV ${stats.freeTv}")
+                        if (stats.duloCx > 0) append(" · Dulo ${stats.duloCx}")
                         if (stats.sports > 0) append(" · Sports ${stats.sports}")
                         if (stats.ntvCx > 0) append(" · NTV ${stats.ntvCx}")
                         if (stats.adultSwim > 0) append(" · AS ${stats.adultSwim}")

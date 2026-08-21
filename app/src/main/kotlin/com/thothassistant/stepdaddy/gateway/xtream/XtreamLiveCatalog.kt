@@ -3,6 +3,7 @@ package com.thothassistant.stepdaddy.gateway.xtream
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import com.thothassistant.stepdaddy.gateway.upstream.ChannelNumberResolver
+import com.thothassistant.stepdaddy.gateway.upstream.DuloCxLiveConfig
 import com.thothassistant.stepdaddy.gateway.upstream.FreeTvIptvConfig
 import com.thothassistant.stepdaddy.gateway.upstream.GroupTitleResolver
 import com.thothassistant.stepdaddy.gateway.upstream.SpecialEventLifecycle
@@ -162,6 +163,11 @@ object XtreamLiveCatalog {
             supplement.id.startsWith("ntv:") -> {
                 val token = supplement.id.removePrefix("ntv:")
                 "$base/ntv-stream/$token.m3u8"
+            }
+            supplement.id.startsWith(DuloCxLiveConfig.ID_PREFIX) -> {
+                val uuid = supplement.duloChannelId?.trim().orEmpty()
+                    .ifEmpty { supplement.id.removePrefix(DuloCxLiveConfig.ID_PREFIX) }
+                "$base/dulo-stream/$uuid.m3u8"
             }
             supplement.streamUrl.startsWith("http") -> supplement.streamUrl
             else -> gatewayStreamUrl(base, supplement.id)
