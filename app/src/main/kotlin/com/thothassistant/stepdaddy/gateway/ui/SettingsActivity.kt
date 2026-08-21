@@ -122,8 +122,8 @@ class SettingsActivity : AppCompatActivity() {
             },
         )
         updateRemoteNetworkVisibility()
-        binding.editDlhdUrl.setText(environment.dlhdBaseUrl)
-        binding.editMirrorUrls.setText(environment.mirrorUrls.joinToString(","))
+        binding.editDlhdUrl.setText(environment.effectiveDlhdBaseUrl())
+        binding.editMirrorUrls.setText(environment.effectiveMirrorUrls().joinToString(","))
         SettingsSupplementControls.load(binding, environment)
         SettingsSupplementControls.wireListeners(binding, this)
         SettingsAudioControls.load(binding, environment)
@@ -154,6 +154,12 @@ class SettingsActivity : AppCompatActivity() {
             BuildConfig.BUILD_TYPE,
             built,
         )
+        val relayStatus = (application as GatewayApp).domainRelayManager.currentStatus()
+        binding.textDomainRelayStatus.text = if (relayStatus.active) {
+            getString(R.string.domain_relay_status_active, relayStatus.version, relayStatus.source)
+        } else {
+            getString(R.string.domain_relay_status_inactive)
+        }
         val isDebugPackage = BuildConfig.APPLICATION_ID.endsWith(".debug")
         binding.layoutGraduateRelease.visibility = if (isDebugPackage) View.VISIBLE else View.GONE
         binding.layoutReleaseMigrationNote.visibility =

@@ -96,7 +96,7 @@ class DaddyLiveClient(
     private var channelRevision: Int = 0
 
     @Volatile
-    var activeBaseUrl: String = environment.dlhdBaseUrl
+    var activeBaseUrl: String = environment.effectiveDlhdBaseUrl()
         private set
 
     private var lastChannelRefreshMs: Long = 0L
@@ -624,8 +624,8 @@ class DaddyLiveClient(
     private fun orderedMirrorUrls(): List<String> =
         MirrorLatencyTracker.orderedMirrorUrls(
             activeBaseUrl = activeBaseUrl,
-            dlhdBaseUrl = environment.dlhdBaseUrl,
-            configuredMirrors = environment.mirrorUrls,
+            dlhdBaseUrl = environment.effectiveDlhdBaseUrl(),
+            configuredMirrors = environment.effectiveMirrorUrls(),
             mirrorLatencyMs = mirrorLatencyTracker::mirrorLatencyMs,
             isExcluded = { baseUrl ->
                 isMirrorBlocked(baseUrl) ||
@@ -916,6 +916,14 @@ class DaddyLiveClient(
         )
         outageModeUntilMs = System.currentTimeMillis() + backoff
         recordHealingAction("upstream_outage_open $reason backoffMs=$backoff opens=$consecutiveOutageOpens")
+        requestDomainRelayRefreshOnOutage()
+    }
+
+    private fun requestDomainRelayRefreshOnOutage() {
+        val app = appContext as? com.thothassistant.stepdaddy.gateway.GatewayApp ?: return
+        refreshScope.launch {
+            runCatching { app.domainRelayManager.refreshOnOutage() }
+        }
     }
 
     private fun clearGlobalOutageIfOpen() {
@@ -966,7 +974,7 @@ class DaddyLiveClient(
                 channels = parsed
                 channelRevision++
             }
-            activeBaseUrl = root.optString("base_url", environment.dlhdBaseUrl)
+            activeBaseUrl = root.optString("base_url", environment.effectiveDlhdBaseUrl())
             lastChannelRefreshMs = root.optLong("saved_at", 0L)
         } catch (_: Exception) {
             // Ignore corrupt cache.

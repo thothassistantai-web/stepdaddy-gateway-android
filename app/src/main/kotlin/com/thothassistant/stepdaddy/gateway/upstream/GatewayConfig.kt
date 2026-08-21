@@ -1,5 +1,7 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
+import com.thothassistant.stepdaddy.gateway.relay.DomainRelayRuntime
+
 object GatewayConfig {
     const val USER_AGENT =
         "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:137.0) Gecko/20100101 Firefox/137.0"
@@ -13,14 +15,15 @@ object GatewayConfig {
         "https://resportz.cfd",
         "https://resportz.live",
     )
-    /** Active dlhd relay hosts (dlhd.pk/st redirect to dlstreams.st as of 2026-08). */
-    val DLHD_RELAY_HOSTS = listOf(
+    private val DEFAULT_DLHD_RELAY_HOSTS = listOf(
         "https://dlstreams.st",
         "https://dlhd.st",
         "https://dlhd.pk",
     )
-    /** dlhd embed hosts used for direct m3u8 fetches with embed referer. */
-    val DLHD_EMBED_HOSTS = listOf(
+    /** Active dlhd relay hosts (dlhd.pk/st redirect to dlstreams.st as of 2026-08). */
+    val DLHD_RELAY_HOSTS: List<String>
+        get() = DomainRelayRuntime.relayHosts ?: DEFAULT_DLHD_RELAY_HOSTS
+    private val DEFAULT_DLHD_EMBED_HOSTS = listOf(
         "https://dlstreams.st",
         "https://dlhd.st",
         "https://dlhd.pk",
@@ -30,9 +33,11 @@ object GatewayConfig {
         "https://daddylive.eu",
         "https://daddylive.at",
     )
+    /** dlhd embed hosts used for direct m3u8 fetches with embed referer. */
+    val DLHD_EMBED_HOSTS: List<String>
+        get() = DomainRelayRuntime.embedHosts ?: DEFAULT_DLHD_EMBED_HOSTS
     /** Relay paths — player/casting first (watch/cast often 403/404 on current mirrors). */
-    val DLHD_PK_STREAM_PATHS = listOf("player", "casting", "watch", "cast", "plus")
-    /** Wizard/setup M3U cap — full catalog (~5k ch) blocks FUSA for minutes; bootstrap must be fast. */
+    val DLHD_PK_STREAM_PATHS = listOf("player", "casting", "watch", "cast", "plus")    /** Wizard/setup M3U cap — full catalog (~5k ch) blocks FUSA for minutes; bootstrap must be fast. */
     const val SETUP_BOOTSTRAP_MAX_CHANNELS = 50
     const val CHANNEL_REFRESH_INTERVAL_MS = 600_000L
     const val STREAM_CACHE_TTL_MS = 60_000L
@@ -77,7 +82,7 @@ object GatewayConfig {
     const val STREAM_FAILURE_INVALIDATE_THRESHOLD = 2
     const val HEALING_LOG_MAX = 20
 
-    val DADDYLIVE_HOSTS = setOf(
+    private val DEFAULT_DADDYLIVE_HOSTS = setOf(
         "daddylive.org",
         "daddylive.li",
         "daddylive.eu",
@@ -88,10 +93,28 @@ object GatewayConfig {
         "dlhd.li",
         "dlhd.org",
     )
-    /** Mirrors excluded from automatic rotation (seized, deprecated, or structurally broken). */
-    val DADDYLIVE_BLOCKED_HOSTS = setOf(
+    val DADDYLIVE_HOSTS: Set<String>
+        get() {
+            val relay = DomainRelayRuntime
+            val extra = buildSet {
+                relay.primary?.let { hostFromUrl(it)?.let { h -> add(h) } }
+                relay.mirrors?.forEach { hostFromUrl(it)?.let { h -> add(h) } }
+                relay.relayHosts?.forEach { hostFromUrl(it)?.let { h -> add(h) } }
+                relay.embedHosts?.forEach { hostFromUrl(it)?.let { h -> add(h) } }
+            }
+            return if (extra.isEmpty()) DEFAULT_DADDYLIVE_HOSTS else DEFAULT_DADDYLIVE_HOSTS + extra
+        }
+    private val DEFAULT_DADDYLIVE_BLOCKED_HOSTS = setOf(
         "daddylive.org",
     )
+    /** Mirrors excluded from automatic rotation (seized, deprecated, or structurally broken). */
+    val DADDYLIVE_BLOCKED_HOSTS: Set<String>
+        get() = DomainRelayRuntime.blockedHosts ?: DEFAULT_DADDYLIVE_BLOCKED_HOSTS
+
+    private fun hostFromUrl(baseUrl: String): String? =
+        runCatching {
+            java.net.URL(baseUrl.trimEnd('/')).host.lowercase().takeIf { it.isNotBlank() }
+        }.getOrNull()
     /** EMA weight for mirror/path latency samples (higher = more reactive). */
     const val MIRROR_LATENCY_EMA_ALPHA = 0.35
     /** Sort rank for mirrors with no latency history yet. */

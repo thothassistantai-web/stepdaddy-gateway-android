@@ -1,5 +1,7 @@
 package com.thothassistant.stepdaddy.gateway.model
 
+import com.thothassistant.stepdaddy.gateway.relay.DomainRelayHealth
+import com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayHealth
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -101,6 +103,13 @@ data class SupplementStatus(
     val tmdbMoviesEnabled: Boolean = false,
     val tmdbVodMovies: Int = 0,
     val tmdbVodSeries: Int = 0,
+    val vodCatalogRelayActive: Boolean = false,
+    val vodCatalogRelayVersion: Int = 0,
+    val vodCatalogRelayMovies: Int = 0,
+    val vodCatalogRelayShows: Int = 0,
+    val vodCatalogRelayProbed: Int = 0,
+    val vodCatalogRelayProbeOk: Int = 0,
+    val vodCatalogRelayDeadPruned: Int = 0,
     /** Epoch ms of the last DaddyLive Special Events scrape. */
     val lastSpecialEventsSyncMs: Long? = null,
     /** Seconds since [lastSpecialEventsSyncMs]; null when never scraped. */
@@ -209,6 +218,12 @@ data class HealthResponse(
     val tivimateEvents: TiviMateHealthEvents? = null,
     val mirrorStats: MirrorStats? = null,
     val audio: AudioPlaybackPrefs? = null,
+    val domainRelayActive: Boolean = false,
+    val domainRelayVersion: Int = 0,
+    val domainRelaySource: String = "",
+    val domainRelayFetchedAtMs: Long = 0L,
+    val domainRelay: DomainRelayHealth? = null,
+    val vodCatalogRelay: VodCatalogRelayHealth? = null,
 )
 
 @Serializable

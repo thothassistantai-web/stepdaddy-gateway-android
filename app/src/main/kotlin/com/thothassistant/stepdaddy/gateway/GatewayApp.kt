@@ -80,7 +80,33 @@ class GatewayApp : Application() {
             ?: com.thothassistant.stepdaddy.gateway.update.AppUpdateCoordinator(
                 this,
                 gatewayEnvironment,
+                domainRelayManager,
+                vodCatalogRelayManager,
             ).also { _appUpdateCoordinator = it }
+
+    private var _domainRelayManager: com.thothassistant.stepdaddy.gateway.relay.DomainRelayManager? = null
+
+    val domainRelayManager: com.thothassistant.stepdaddy.gateway.relay.DomainRelayManager
+        get() = _domainRelayManager
+            ?: com.thothassistant.stepdaddy.gateway.relay.DomainRelayManager(
+                this,
+                gatewayEnvironment,
+            ).also { manager ->
+                _domainRelayManager = manager
+                manager.applyCachedIfPresent()
+            }
+
+    private var _vodCatalogRelayManager: com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayManager? = null
+
+    val vodCatalogRelayManager: com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayManager
+        get() = _vodCatalogRelayManager
+            ?: com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayManager(
+                this,
+                gatewayEnvironment,
+            ).also { manager ->
+                _vodCatalogRelayManager = manager
+                manager.applyCachedIfPresent()
+            }
 
     private var _tiviMateUpdateCoordinator:
         com.thothassistant.stepdaddy.gateway.update.TiviMateUpdateCoordinator? = null
@@ -99,6 +125,9 @@ class GatewayApp : Application() {
         GatewayNotifier.createChannels(this)
         gatewayEnvironment = GatewayEnvironment(this)
         gatewayEnvironment.clearBootStaleState()
+        // Apply last-good domain relay before any upstream work (no network).
+        domainRelayManager.applyCachedIfPresent()
+        vodCatalogRelayManager.applyCachedIfPresent()
 
         if (gatewayEnvironment.startOnBoot) {
             ScreenWakeRegistrar.register(this)

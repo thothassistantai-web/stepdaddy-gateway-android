@@ -25,4 +25,11 @@ data class SupplementSyncSnapshot(
     val duloCxAuthConfigured: Boolean = false,
     val tmdbVodMovies: Int = 0,
     val tmdbVodSeries: Int = 0,
+    val vodCatalogRelayActive: Boolean = false,
+    val vodCatalogRelayVersion: Int = 0,
+    val vodCatalogRelayMovies: Int = 0,
+    val vodCatalogRelayShows: Int = 0,
+    val vodCatalogRelayProbed: Int = 0,
+    val vodCatalogRelayProbeOk: Int = 0,
+    val vodCatalogRelayDeadPruned: Int = 0,
 )

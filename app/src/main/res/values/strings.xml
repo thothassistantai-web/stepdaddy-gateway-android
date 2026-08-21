@@ -144,6 +144,10 @@
     <string name="footer_memory">Memory: %1$d MB</string>
     <string name="footer_memory_placeholder">Memory: —</string>
     <string name="footer_update_available">Update: New release %1$s</string>
+    <string name="domain_relay_banner">Temporary backup source — update soon or streams may stop. AFTV: release 4860686 · debug 1401588. Tap to check for update.</string>
+    <string name="domain_relay_banner_force">Backup source expired — update now or streams may stop. AFTV: release 4860686 · debug 1401588. Tap to check for update.</string>
+    <string name="domain_relay_status_active">Domain relay active (v%1$d · %2$s)</string>
+    <string name="domain_relay_status_inactive">Domain relay: using compiled defaults</string>
     <string name="toast_server_restarting">Restarting gateway…</string>
     <string name="toast_open_url_failed">Could not open URL</string>
     <string name="dialog_qr_title">Gateway QR code</string>
@@ -282,6 +286,10 @@
     <string name="settings_provider_adult_swim">Adult Swim 24/7</string>
     <string name="settings_provider_tmdb_movies">Movies (VOD)</string>
     <string name="settings_supplement_tmdb_movies_enable">Enable latest movies &amp; shows catalog (🎬 Movies / 📺 Shows — vsembed + Moviebox fallback)</string>
+    <string name="settings_vod_catalog_relay_enable">Live VOD overlay (GitHub finds — dedupe + dead-link probe)</string>
+    <string name="vod_catalog_relay_note">VOD overlay active — %1$d movies · %2$d shows (v%3$d)</string>
+    <string name="vod_catalog_relay_status_active">VOD catalog relay active (v%1$d · %2$d movies · %3$d shows)</string>
+    <string name="vod_catalog_relay_status_inactive">VOD catalog relay: idle</string>
     <string name="settings_supplement_adult_swim_enable">Enable Adult Swim marathon streams</string>
     <string name="settings_provider_sports">Live sports events</string>
     <string name="settings_supplement_iptv_org_enable">Enable iptv-org streams</string>

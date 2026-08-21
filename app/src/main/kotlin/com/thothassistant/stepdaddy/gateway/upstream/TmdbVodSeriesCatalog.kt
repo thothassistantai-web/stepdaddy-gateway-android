@@ -64,7 +64,17 @@ class TmdbVodSeriesCatalog(
             )
         }
         val cap = VodCatalogLimits.seriesCap(context)
-        return VodShelfPriority.capEpisodes(episodes, cap)
+        val capped = VodShelfPriority.capEpisodes(episodes, cap)
+        return if (com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.isApplied) {
+            val overlay = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.overlayShows()
+            val merged = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayMerge.mergeEpisodesIntoCatalog(
+                capped,
+                overlay,
+            )
+            VodShelfPriority.capEpisodes(merged, cap)
+        } else {
+            capped
+        }
     }
 
     private fun toEpisode(

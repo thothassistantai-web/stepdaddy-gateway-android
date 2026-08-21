@@ -155,21 +155,29 @@ class TmdbVodCatalog(
         }
 
         val beforeDedup = merged.values.toList()
-        val deduped = VodMovieDedup.dedupe(beforeDedup)
-        if (deduped.removedCount > 0) {
+        val withRelay = if (com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.isApplied) {
+            val overlay = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.overlayMovies()
+            com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayMerge.mergeMoviesIntoCatalog(
+                beforeDedup,
+                overlay,
+            )
+        } else {
+            VodMovieDedup.dedupe(beforeDedup)
+        }
+        if (withRelay.removedCount > 0) {
             Log.i(
                 TAG,
-                "VOD movie dedup: removed ${deduped.removedCount} duplicate movies " +
-                    "(${deduped.inputCount} -> ${deduped.outputCount})",
+                "VOD movie dedup: removed ${withRelay.removedCount} duplicate movies " +
+                    "(${withRelay.inputCount} -> ${withRelay.outputCount})",
             )
         }
 
         val cap = VodCatalogLimits.movieCap(context)
-        val capped = VodShelfPriority.capMovies(deduped.movies, cap)
+        val capped = VodShelfPriority.capMovies(withRelay.movies, cap)
 
         return CatalogResult(
             movies = capped,
-            dedupRemoved = deduped.removedCount,
+            dedupRemoved = withRelay.removedCount,
         )
     }
 

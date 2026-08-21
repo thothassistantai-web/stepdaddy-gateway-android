@@ -7,6 +7,13 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.30] - 2026-08-21
+
+### Added
+
+- **Domain relay** — GitHub-hosted `release/domain-relay.json` updates DaddyLive primary/mirrors/blocked/relay hosts without an APK bump. Cache + boot/outage fetch; dashboard banner with AFTV codes when hosts diverge from compile-time defaults. See `docs/DOMAIN-RELAY.md`.
+- **VOD catalog relay** — Live overlay `release/vod-catalog-relay.json` for newly found movies/shows with stream candidates, TMDB/title+year dedupe, dead-link probe/cooldown, and resolve preference for working mirrors. Settings toggle (default on). See `docs/VOD-CATALOG-RELAY.md`.
+
 ## [3.0.29] - 2026-08-20
 
 ### Added

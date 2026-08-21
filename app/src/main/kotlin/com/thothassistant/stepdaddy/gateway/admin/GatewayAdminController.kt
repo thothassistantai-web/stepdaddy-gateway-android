@@ -482,7 +482,7 @@ class GatewayAdminController(
             val playUrl = AdminStreamHelper.daddylivePlayUrl(
                 base,
                 channel.id,
-                AdminStreamHelper.dlhdOrigin(environment.dlhdBaseUrl),
+                AdminStreamHelper.dlhdOrigin(environment.effectiveDlhdBaseUrl()),
             )
             val probeResult = if (probe) probeDaddyliveStream(channel.id) else null
             return ResolveStreamResult(

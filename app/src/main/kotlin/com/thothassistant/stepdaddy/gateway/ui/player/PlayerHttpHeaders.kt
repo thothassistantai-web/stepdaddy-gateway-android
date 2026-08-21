@@ -15,7 +15,7 @@ object PlayerHttpHeaders {
         GatewayUrlBuilder.tivimatePlaylistUrl(environment)
 
     fun requestProperties(environment: GatewayEnvironment): Map<String, String> {
-        val origin = environment.dlhdBaseUrl.trimEnd('/')
+        val origin = environment.effectiveDlhdBaseUrl().trimEnd('/')
         return mapOf(
             "Referer" to "$origin/",
             "Origin" to origin,

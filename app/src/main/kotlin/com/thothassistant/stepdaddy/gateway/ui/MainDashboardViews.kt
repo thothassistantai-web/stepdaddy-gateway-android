@@ -68,4 +68,6 @@ class MainDashboardViews(root: View) {
     val buttonFooterScrollTop: ImageButton = root.findViewById(R.id.buttonFooterScrollTop)
     val scrollDashboard: ScrollView = root.findViewById(R.id.scrollDashboard)
     val textGatewayHud: TextView = root.findViewById(R.id.textGatewayHud)
+    val textDomainRelayBanner: TextView = root.findViewById(R.id.textDomainRelayBanner)
+    val textVodCatalogRelayNote: TextView = root.findViewById(R.id.textVodCatalogRelayNote)
 }

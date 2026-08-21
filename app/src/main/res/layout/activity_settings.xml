@@ -398,6 +398,15 @@
             android:text="@string/settings_supplement_tmdb_movies_enable"
             android:textColor="@color/on_background" />
 
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchVodCatalogRelay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:minHeight="48dp"
+            android:text="@string/settings_vod_catalog_relay_enable"
+            android:textColor="@color/on_background" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -694,6 +703,14 @@
             android:textColor="@color/on_background"
             android:textSize="16sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textDomainRelayStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/on_background_muted"
+            android:textSize="12sp" />
 
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switchAutoCheckUpdates"

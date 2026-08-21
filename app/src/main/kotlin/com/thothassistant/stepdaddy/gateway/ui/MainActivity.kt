@@ -37,6 +37,10 @@ import com.thothassistant.stepdaddy.gateway.install.InstallAppsCatalogRepository
 import com.thothassistant.stepdaddy.gateway.model.HealthResponse
 import com.thothassistant.stepdaddy.gateway.update.AppUpdateCoordinator
 import com.thothassistant.stepdaddy.gateway.update.AppUpdateInfo
+import com.thothassistant.stepdaddy.gateway.relay.DomainRelayManager
+import com.thothassistant.stepdaddy.gateway.relay.DomainRelayStatus
+import com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayManager
+import com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayStatus
 import com.thothassistant.stepdaddy.gateway.network.GatewayPeerScanner
 import com.thothassistant.stepdaddy.gateway.network.GatewayUrlBuilder
 import com.thothassistant.stepdaddy.gateway.network.LanAddressResolver
@@ -62,12 +66,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var catalogRepository: InstallAppsCatalogRepository
     private lateinit var installManager: ApkInstallManager
     private lateinit var updateCoordinator: AppUpdateCoordinator
+    private lateinit var domainRelayManager: DomainRelayManager
+    private lateinit var vodCatalogRelayManager: VodCatalogRelayManager
     private var pollJob: Job? = null
     private var clockJob: Job? = null
     private var restartJob: Job? = null
     private var peerScanJob: Job? = null
     private lateinit var tivimateLaunchCoordinator: TiviMateLaunchCoordinator
     private val mainUpdateListener: (AppUpdateInfo?) -> Unit = { onUpdateAvailability(it) }
+    private val domainRelayListener: (DomainRelayStatus) -> Unit = { onDomainRelayStatus(it) }
+    private val vodCatalogRelayListener: (VodCatalogRelayStatus) -> Unit = { onVodCatalogRelayStatus(it) }
     private var pendingUpdateInfo: AppUpdateInfo? = null
     private var lastGatewayOnline = false
     private var pollTicks = 0
@@ -118,6 +126,11 @@ class MainActivity : AppCompatActivity() {
         updateCoordinator = (application as GatewayApp).appUpdateCoordinator
         updateCoordinator.setPrimaryHost(this)
         updateCoordinator.addAvailabilityListener(mainUpdateListener)
+        domainRelayManager = (application as GatewayApp).domainRelayManager
+        domainRelayManager.addListener(domainRelayListener)
+        vodCatalogRelayManager = (application as GatewayApp).vodCatalogRelayManager
+        vodCatalogRelayManager.addListener(vodCatalogRelayListener)
+        views.textDomainRelayBanner.setOnClickListener { checkForUpdates(manual = true) }
         requestRuntimePermissions()
         bindUrls()
         bindVersion()
@@ -198,6 +211,12 @@ class MainActivity : AppCompatActivity() {
         if (::updateCoordinator.isInitialized) {
             updateCoordinator.removeAvailabilityListener(mainUpdateListener)
             updateCoordinator.setPrimaryHost(null)
+        }
+        if (::domainRelayManager.isInitialized) {
+            domainRelayManager.removeListener(domainRelayListener)
+        }
+        if (::vodCatalogRelayManager.isInitialized) {
+            vodCatalogRelayManager.removeListener(vodCatalogRelayListener)
         }
         if (::bottomPanel.isInitialized) {
             bottomPanel.onDestroy()
@@ -366,6 +385,37 @@ class MainActivity : AppCompatActivity() {
             info.manifest.versionName,
         )
         views.textFooterUpdate.visibility = View.VISIBLE
+    }
+
+    private fun onDomainRelayStatus(status: DomainRelayStatus) {
+        if (!::views.isInitialized) return
+        if (!status.active) {
+            views.textDomainRelayBanner.visibility = View.GONE
+            return
+        }
+        views.textDomainRelayBanner.text = getString(
+            if (status.forceUpdateDue) {
+                R.string.domain_relay_banner_force
+            } else {
+                R.string.domain_relay_banner
+            },
+        )
+        views.textDomainRelayBanner.visibility = View.VISIBLE
+    }
+
+    private fun onVodCatalogRelayStatus(status: VodCatalogRelayStatus) {
+        if (!::views.isInitialized) return
+        if (!status.active || (status.movies == 0 && status.shows == 0)) {
+            views.textVodCatalogRelayNote.visibility = View.GONE
+            return
+        }
+        views.textVodCatalogRelayNote.text = getString(
+            R.string.vod_catalog_relay_note,
+            status.movies,
+            status.shows,
+            status.version,
+        )
+        views.textVodCatalogRelayNote.visibility = View.VISIBLE
     }
 
     private fun showTivimateInstallPicker() {

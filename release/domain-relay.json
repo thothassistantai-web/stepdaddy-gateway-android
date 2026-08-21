@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "minAppVersion": "3.0.0",
+  "forceUpdateAfter": null,
+  "message": "Temporary backup source — update soon or streams may stop.",
+  "sources": {
+    "daddylive": {
+      "primary": "https://daddylive.eu",
+      "mirrors": [
+        "https://dlstreams.st",
+        "https://daddylive.li",
+        "https://dlhd.st"
+      ],
+      "blocked": [
+        "daddylive.org"
+      ],
+      "relayHosts": [
+        "https://dlstreams.st",
+        "https://dlhd.st",
+        "https://dlhd.pk"
+      ],
+      "embedHosts": [
+        "https://dlstreams.st",
+        "https://dlhd.st",
+        "https://dlhd.pk",
+        "https://dlhd.li",
+        "https://dlhd.org",
+        "https://daddylive.li",
+        "https://daddylive.eu",
+        "https://daddylive.at"
+      ]
+    }
+  }
+}

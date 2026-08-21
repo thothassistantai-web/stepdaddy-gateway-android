@@ -8,11 +8,15 @@ import androidx.lifecycle.lifecycleScope
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.R
 import com.thothassistant.stepdaddy.gateway.install.ApkInstallManager
+import com.thothassistant.stepdaddy.gateway.relay.DomainRelayManager
+import com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayManager
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -27,6 +31,8 @@ import kotlin.coroutines.resume
 class AppUpdateCoordinator(
     context: Context,
     private val environment: GatewayEnvironment,
+    private val domainRelayManager: DomainRelayManager? = null,
+    private val vodCatalogRelayManager: VodCatalogRelayManager? = null,
 ) {
     private val appContext = context.applicationContext
     private val manager = AppUpdateManager(appContext, environment, ApkInstallManager(appContext))
@@ -276,7 +282,27 @@ class AppUpdateCoordinator(
         }
         checkJob = host.lifecycleScope.launch {
             if (manual) toast(host, host.getString(R.string.update_checking))
-            val result = withContext(Dispatchers.IO) { manager.checkForUpdate() }
+            val result = withContext(Dispatchers.IO) {
+                coroutineScope {
+                    val relayDeferred = domainRelayManager?.let { mgr ->
+                        async { runCatching { mgr.refresh(reason = if (manual) "update-check-manual" else "startup") } }
+                    }
+                    val vodRelayDeferred = vodCatalogRelayManager?.let { mgr ->
+                        async {
+                            runCatching {
+                                mgr.refresh(
+                                    reason = if (manual) "update-check-manual" else "startup",
+                                    probeStreams = true,
+                                )
+                            }
+                        }
+                    }
+                    val update = manager.checkForUpdate()
+                    relayDeferred?.await()
+                    vodRelayDeferred?.await()
+                    update
+                }
+            }
             result.onSuccess { info ->
                 notifyAvailability(info)
                 autoCheckCompleted = true

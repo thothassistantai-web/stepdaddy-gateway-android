@@ -17,8 +17,8 @@ internal object SupplementSpecialEventsSupport {
     ): Pair<List<DaddyLiveEventResolver.ParsedEvent>, DaddyLiveEventResolver.ResolveStats> {
         val mirrorBases = linkedSetOf<String>()
         mirrorBases += primaryBase.trimEnd('/')
-        mirrorBases += environment.dlhdBaseUrl.trimEnd('/')
-        environment.mirrorUrls.forEach { mirrorBases += it.trimEnd('/') }
+        mirrorBases += environment.effectiveDlhdBaseUrl().trimEnd('/')
+        environment.effectiveMirrorUrls().forEach { mirrorBases += it.trimEnd('/') }
 
         for (base in mirrorBases) {
             if (base.isEmpty()) continue

@@ -102,6 +102,26 @@ android {
             "DEFAULT_UPDATE_MANIFEST_URL",
             "\"https://api.github.com/repos/thothassistantai-web/stepdaddy-gateway-android/releases/latest\"",
         )
+        buildConfigField(
+            "String",
+            "DEFAULT_DOMAIN_RELAY_URL",
+            "\"https://raw.githubusercontent.com/thothassistantai-web/stepdaddy-gateway-android/main/release/domain-relay.json\"",
+        )
+        buildConfigField(
+            "String",
+            "DEFAULT_DOMAIN_RELAY_RELEASE_URL",
+            "\"https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/latest/download/domain-relay.json\"",
+        )
+        buildConfigField(
+            "String",
+            "DEFAULT_VOD_CATALOG_RELAY_URL",
+            "\"https://raw.githubusercontent.com/thothassistantai-web/stepdaddy-gateway-android/main/release/vod-catalog-relay.json\"",
+        )
+        buildConfigField(
+            "String",
+            "DEFAULT_VOD_CATALOG_RELAY_RELEASE_URL",
+            "\"https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/latest/download/vod-catalog-relay.json\"",
+        )
         buildConfigField("String", "DEFAULT_UPDATE_DRIVE_FOLDER_URL", "\"\"")
         buildConfigField(
             "String",

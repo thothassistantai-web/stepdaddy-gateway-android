@@ -15,6 +15,7 @@ internal object SettingsSupplementControls {
         binding.switchSupplementNtvCx.isChecked = environment.supplementNtvCxEnabled
         binding.switchSupplementAdultSwim.isChecked = environment.supplementAdultSwimEnabled
         binding.switchSupplementTmdbMovies.isChecked = environment.supplementTmdbMoviesEnabled
+        binding.switchVodCatalogRelay.isChecked = environment.vodCatalogRelayEnabled
         SettingsImportModeUi.load(binding.iptvOrgImportMode, environment.supplementIptvOrgImportMode)
         SettingsImportModeUi.load(binding.freeTvImportMode, environment.supplementFreeTvImportMode)
         SettingsImportModeUi.load(binding.duloCxImportMode, environment.supplementDuloCxImportMode)
@@ -62,6 +63,7 @@ internal object SettingsSupplementControls {
         environment.supplementNtvCxEnabled = binding.switchSupplementNtvCx.isChecked
         environment.supplementAdultSwimEnabled = binding.switchSupplementAdultSwim.isChecked
         environment.supplementTmdbMoviesEnabled = binding.switchSupplementTmdbMovies.isChecked
+        environment.vodCatalogRelayEnabled = binding.switchVodCatalogRelay.isChecked
         environment.supplementIptvOrgImportMode = SettingsImportModeUi.read(binding.iptvOrgImportMode)
         environment.supplementFreeTvImportMode = SettingsImportModeUi.read(binding.freeTvImportMode)
         environment.supplementDuloCxImportMode = SettingsImportModeUi.read(binding.duloCxImportMode)

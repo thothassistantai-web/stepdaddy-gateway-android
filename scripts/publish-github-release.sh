@@ -29,6 +29,8 @@ MANIFEST="${RELEASE_DIR}/update-manifest.json"
 NOTES_FILE="${RELEASE_DIR}/RELEASE-NOTES-${VERSION_NAME}.md"
 AFTV_MD="${RELEASE_DIR}/AFTV-CODES.md"
 AFTV_JSON="${RELEASE_DIR}/aftv-codes.json"
+DOMAIN_RELAY="${RELEASE_DIR}/domain-relay.json"
+VOD_RELAY="${RELEASE_DIR}/vod-catalog-relay.json"
 
 ASSETS_ONLY=0
 if [[ "${1:-}" == "--assets-only" ]]; then
@@ -66,7 +68,7 @@ trap cleanup EXIT
   bash "${ROOT}/scripts/aftv-shortener.sh" --release-notes-snippet
   echo ""
   echo "---"
-  echo "Assets: versioned APKs + versionless \`stepdaddy-gateway-release.apk\` / \`stepdaddy-gateway-debug.apk\` for AFTV stable URLs + \`update-manifest.json\`."
+  echo "Assets: versioned APKs + versionless \`stepdaddy-gateway-release.apk\` / \`stepdaddy-gateway-debug.apk\` for AFTV stable URLs + \`update-manifest.json\` + \`domain-relay.json\` + \`vod-catalog-relay.json\`."
 } >"${BODY_FILE}"
 
 upload_assets() {
@@ -84,6 +86,12 @@ upload_assets() {
   fi
   if [[ -f "${AFTV_JSON}" ]]; then
     args+=("${AFTV_JSON}")
+  fi
+  if [[ -f "${DOMAIN_RELAY}" ]]; then
+    args+=("${DOMAIN_RELAY}")
+  fi
+  if [[ -f "${VOD_RELAY}" ]]; then
+    args+=("${VOD_RELAY}")
   fi
   local aab="${RELEASE_DIR}/stepdaddy-gateway-${VERSION_NAME}.aab"
   if [[ -f "${aab}" ]]; then
@@ -124,6 +132,8 @@ else
     [[ -f "${MANIFEST}" ]] && create_args+=("${MANIFEST}")
     [[ -f "${AFTV_MD}" ]] && create_args+=("${AFTV_MD}")
     [[ -f "${AFTV_JSON}" ]] && create_args+=("${AFTV_JSON}")
+    [[ -f "${DOMAIN_RELAY}" ]] && create_args+=("${DOMAIN_RELAY}")
+    [[ -f "${VOD_RELAY}" ]] && create_args+=("${VOD_RELAY}")
     aab="${RELEASE_DIR}/stepdaddy-gateway-${VERSION_NAME}.aab"
     [[ -f "${aab}" ]] && create_args+=("${aab}")
     gh release create "${create_args[@]}"

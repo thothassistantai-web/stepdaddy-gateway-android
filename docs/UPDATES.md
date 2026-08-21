@@ -75,6 +75,11 @@ Settings exposes **Google Drive folder URL** (`update_drive_folder_url`). Behavi
 
 Until then, use GitHub Releases or a public static URL.
 
+## Related remote config
+
+- [DOMAIN-RELAY.md](DOMAIN-RELAY.md) — DaddyLive host overlay (`domain-relay.json`)
+- [VOD-CATALOG-RELAY.md](VOD-CATALOG-RELAY.md) — live movie/show overlay (`vod-catalog-relay.json`)
+
 ## User settings
 
 | Setting | Default | Description |

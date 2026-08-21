@@ -35,6 +35,7 @@ class SupplementSource(
     private val httpClient: OkHttpClient = SupplementConfig.defaultHttpClient(),
     private val iptvOrgEpgRepository: IptvOrgEpgRepository = IptvOrgEpgRepository(context, httpClient),
 ) {
+    private val appContext = context.applicationContext
     private val fastEpgCatalog = FastEpgCatalog(context)
     private val fastChannelTvgIdResolver = FastChannelTvgIdResolver(fastEpgCatalog, epgChannelMapper)
     private val iptvOrgSource = IptvOrgStreamsSource(
@@ -84,7 +85,6 @@ class SupplementSource(
         )
     }
 
-    private val appContext = context.applicationContext
     /** Fire Stick only: skip loading ~4k supplement rows at construct (tens of MB, trips LMK). */
     private val fireLite = FireTvDevice.isFireTv(appContext)
     private val store = SupplementStore(context)
@@ -523,7 +523,7 @@ class SupplementSource(
             specialEventsRefreshInFlight = true
             try {
                 val scheduleBase = dlhdScheduleBaseUrl?.trim()?.trimEnd('/').orEmpty()
-                    .ifEmpty { environment.dlhdBaseUrl.trimEnd('/') }
+                    .ifEmpty { environment.effectiveDlhdBaseUrl().trimEnd('/') }
                 val (dlhdStats, bundle) = fetchSpecialEventsBundle(scheduleBase)
                 val enriched = enrichSupplementLogos(bundle.channels)
                 val eventsScanned = dlhdStats.tvEvents + dlhdStats.tv2Events
@@ -691,7 +691,7 @@ class SupplementSource(
         var dlhdEventStreams = 0
         val specialEvents = if (sportsEnabled()) {
             val scheduleBase = dlhdScheduleBaseUrl?.trim()?.trimEnd('/').orEmpty()
-                .ifEmpty { environment.dlhdBaseUrl.trimEnd('/') }
+                .ifEmpty { environment.effectiveDlhdBaseUrl().trimEnd('/') }
             val (dlhdStats, bundle) = fetchSpecialEventsBundle(scheduleBase)
             dlhdEventsScanned = dlhdStats.tvEvents + dlhdStats.tv2Events
             applySpecialEventsBundle(bundle, dlhdEventsScanned)
@@ -801,6 +801,12 @@ class SupplementSource(
 
         val tmdbVodDeferred = async {
             if (tmdbMoviesEnabled()) {
+                if (environment.vodCatalogRelayEnabled) {
+                    runCatching {
+                        val app = appContext as? com.thothassistant.stepdaddy.gateway.GatewayApp
+                        app?.vodCatalogRelayManager?.refresh(reason = "vod-sync", probeStreams = true)
+                    }
+                }
                 runCatching { tmdbVodSource.fetchChannels() }
                     .getOrElse { exc ->
                         Log.w(TAG, "TMDB VOD fetch failed", exc)
@@ -945,6 +951,13 @@ class SupplementSource(
             duloCxAuthConfigured = duloCxStats.authConfigured,
             tmdbVodMovies = publishedTmdbVod.size,
             tmdbVodSeries = publishedTmdbVodSeries.size,
+            vodCatalogRelayActive = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status().active,
+            vodCatalogRelayVersion = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.version,
+            vodCatalogRelayMovies = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status().movies,
+            vodCatalogRelayShows = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status().shows,
+            vodCatalogRelayProbed = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status().probed,
+            vodCatalogRelayProbeOk = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status().probeOk,
+            vodCatalogRelayDeadPruned = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status().deadPruned,
         )
 
         specialEvents + iptvOrg + freeTv + duloCx + ntvCx + adultSwim + publishedTmdbVod + publishedTmdbVodSeries

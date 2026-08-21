@@ -75,6 +75,19 @@ class GatewayEnvironment(context: Context) {
             prefs.edit().putString(KEY_DLHD_BASE_URL, value.trimEnd('/')).apply()
         }
 
+    /** True when Settings / admin saved a custom DaddyLive primary (takes precedence over relay). */
+    val hasUserCustomizedDlhdBaseUrl: Boolean
+        get() = prefs.contains(KEY_DLHD_BASE_URL)
+
+    /**
+     * Effective catalog primary: User Settings > domain-relay overlay > compiled default.
+     */
+    fun effectiveDlhdBaseUrl(): String {
+        if (hasUserCustomizedDlhdBaseUrl) return dlhdBaseUrl
+        return com.thothassistant.stepdaddy.gateway.relay.DomainRelayRuntime.primary
+            ?: BuildConfig.DEFAULT_DLHD_BASE_URL
+    }
+
     var mirrorUrls: List<String>
         get() {
             val raw = prefs.getString(KEY_MIRROR_URLS, DEFAULT_MIRRORS_CSV) ?: DEFAULT_MIRRORS_CSV
@@ -83,6 +96,19 @@ class GatewayEnvironment(context: Context) {
         set(value) {
             prefs.edit().putString(KEY_MIRROR_URLS, value.joinToString(",")).apply()
         }
+
+    /** True when Settings / admin saved custom mirror URLs (takes precedence over relay). */
+    val hasUserCustomizedMirrorUrls: Boolean
+        get() = prefs.contains(KEY_MIRROR_URLS)
+
+    /**
+     * Effective mirror list: User Settings > domain-relay overlay > compiled defaults.
+     */
+    fun effectiveMirrorUrls(): List<String> {
+        if (hasUserCustomizedMirrorUrls) return mirrorUrls
+        return com.thothassistant.stepdaddy.gateway.relay.DomainRelayRuntime.mirrors
+            ?: DEFAULT_MIRRORS_CSV.split(',').map { it.trim().trimEnd('/') }.filter { it.isNotEmpty() }
+    }
 
     var startOnBoot: Boolean
         get() = prefs.getBoolean(KEY_START_ON_BOOT, true)
@@ -430,6 +456,13 @@ class GatewayEnvironment(context: Context) {
             prefs.edit().putBoolean(KEY_AUTO_CHECK_UPDATES, value).apply()
         }
 
+    /** When true, fetch GitHub vod-catalog-relay.json and merge live movie/show finds. */
+    var vodCatalogRelayEnabled: Boolean
+        get() = prefs.getBoolean(KEY_VOD_CATALOG_RELAY_ENABLED, true)
+        set(value) {
+            prefs.edit().putBoolean(KEY_VOD_CATALOG_RELAY_ENABLED, value).apply()
+        }
+
     /** When true, download available updates automatically in the background. */
     var autoDownloadUpdates: Boolean
         get() = prefs.getBoolean(KEY_AUTO_DOWNLOAD_UPDATES, BuildConfig.DEFAULT_AUTO_DOWNLOAD_UPDATES)
@@ -596,6 +629,7 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_IPTV_ORG_EPG_ENABLED = "iptv_org_epg_enabled"
         private const val KEY_IPTV_ORG_EPG_URL = "iptv_org_epg_url"
         private const val KEY_AUTO_CHECK_UPDATES = "auto_check_updates"
+        private const val KEY_VOD_CATALOG_RELAY_ENABLED = "vod_catalog_relay_enabled"
         private const val KEY_AUTO_DOWNLOAD_UPDATES = "auto_download_updates"
         private const val KEY_UPDATE_MANIFEST_URL = "update_manifest_url"
         private const val KEY_UPDATE_DRIVE_FOLDER_URL = "update_drive_folder_url"

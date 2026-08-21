@@ -23,6 +23,7 @@ import com.thothassistant.stepdaddy.gateway.model.HealthResponse
 import com.thothassistant.stepdaddy.gateway.model.TiviMateHealthEvents
 import com.thothassistant.stepdaddy.gateway.model.StreamVaultSetup
 import com.thothassistant.stepdaddy.gateway.model.TivimateSetup
+import com.thothassistant.stepdaddy.gateway.relay.DomainRelayRuntime
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
 import com.thothassistant.stepdaddy.gateway.upstream.GroupTitleResolver
 import com.thothassistant.stepdaddy.gateway.upstream.PlaylistCache
@@ -96,7 +97,7 @@ class HealthRoutes(
                 serviceActive = true,
             ),
             mirrorStats = buildMirrorStats(),
-        )
+        ).withDomainRelay()
     }
 
     private fun buildFullHealthPayload(): HealthResponse {
@@ -208,6 +209,21 @@ class HealthRoutes(
                 lastTimestamp = lastTiviMateEvent?.timestamp,
             ),
             mirrorStats = buildMirrorStats(),
+        ).withDomainRelay()
+    }
+
+    private fun HealthResponse.withDomainRelay(): HealthResponse {
+        val snap = DomainRelayRuntime.healthSnapshot(
+            userCustomizedPrimary = environment.hasUserCustomizedDlhdBaseUrl,
+            userCustomizedMirrors = environment.hasUserCustomizedMirrorUrls,
+        )
+        return copy(
+            domainRelayActive = snap.active,
+            domainRelayVersion = snap.version,
+            domainRelaySource = snap.source,
+            domainRelayFetchedAtMs = snap.fetchedAtMs,
+            domainRelay = snap,
+            vodCatalogRelay = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.healthSnapshot(),
         )
     }
 
@@ -390,6 +406,13 @@ class HealthRoutes(
             tmdbMoviesEnabled = supplementSource.tmdbMoviesEnabled(),
             tmdbVodMovies = supplementSource.tmdbVodCount().takeIf { it > 0 } ?: sync.tmdbVodMovies,
             tmdbVodSeries = supplementSource.tmdbVodSeriesCount().takeIf { it > 0 } ?: sync.tmdbVodSeries,
+            vodCatalogRelayActive = sync.vodCatalogRelayActive,
+            vodCatalogRelayVersion = sync.vodCatalogRelayVersion,
+            vodCatalogRelayMovies = sync.vodCatalogRelayMovies,
+            vodCatalogRelayShows = sync.vodCatalogRelayShows,
+            vodCatalogRelayProbed = sync.vodCatalogRelayProbed,
+            vodCatalogRelayProbeOk = sync.vodCatalogRelayProbeOk,
+            vodCatalogRelayDeadPruned = sync.vodCatalogRelayDeadPruned,
             iptvOrgPlaylistsFetched = sync.iptvOrgPlaylistsFetched,
             iptvOrgPlaylistsFailed = sync.iptvOrgPlaylistsFailed,
             blockedTokenProxy = sync.blockedTokenProxy,

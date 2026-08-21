@@ -127,6 +127,10 @@ Python chain (legacy):
 
 Kotlin (`ResportzParser`): tries API embed URL, then `dlstreams.st` relay paths (`player`, `casting`, …), then legacy resportz hosts. Relay hosts rotate via mirror latency tracker.
 
+**Domain relay:** optional GitHub JSON (`docs/DOMAIN-RELAY.md`) overlays primary/mirrors/blocked/relay hosts at runtime (User Settings > relay > compiled defaults).
+
+**VOD catalog relay:** optional GitHub JSON (`docs/VOD-CATALOG-RELAY.md`) merges newly found movies/shows into the TMDB/vsembed catalog with dedupe + dead-link probe; `VodMovieResolver` prefers working relay streams.
+
 ### Special Events
 
 DaddyLive schedule only (`tv.json` / `tv2.json`). TheTvApp / TVPass / MoveOnJoy / xyzstreams supplements were removed. Guide channels use **HLS `.m3u8` wrappers** (not raw `.mp4`) so TiviMate lists them under Live TV. See `SpecialEventsMerger`, `GuideScheduleHlsManifest`.
@@ -164,8 +168,8 @@ Kotlin **light EPG** (`epg/` package):
 |--------------|-------------------|
 | `PORT=3000` | `GatewayEnvironment.port` (default 3000) |
 | `API_URL=http://127.0.0.1:3000` | `loopbackBase()` |
-| `DLHD_BASE_URL` | `GatewayEnvironment.dlhdBaseUrl` |
-| `DLHD_BASE_URLS` | `GatewayEnvironment.mirrorUrls` |
+| `DLHD_BASE_URL` | `GatewayEnvironment.effectiveDlhdBaseUrl()` |
+| `DLHD_BASE_URLS` | `GatewayEnvironment.effectiveMirrorUrls()` |
 | `START_ON_BOOT=TRUE` | `BootReceiver` + `startOnBoot` pref |
 | `TIVIMATE_DIRECT_STREAMS=TRUE` | Hard-coded direct mode |
 | `CHANNEL_REFRESH_INTERVAL_SECONDS=600` | `GatewayConfig.CHANNEL_REFRESH_INTERVAL_MS` |

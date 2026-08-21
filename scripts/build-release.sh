@@ -144,6 +144,14 @@ if [[ -f "${ROOT}/scripts/aftv-shortener.sh" ]]; then
   bash "${ROOT}/scripts/aftv-shortener.sh" --regen || true
 fi
 
+# Ensure domain-relay + vod-catalog-relay assets are present for publish
+if [[ ! -f "${RELEASE_DIR}/domain-relay.json" && -f "${ROOT}/release/domain-relay.json" ]]; then
+  cp -f "${ROOT}/release/domain-relay.json" "${RELEASE_DIR}/domain-relay.json"
+fi
+if [[ ! -f "${RELEASE_DIR}/vod-catalog-relay.json" && -f "${ROOT}/release/vod-catalog-relay.json" ]]; then
+  cp -f "${ROOT}/release/vod-catalog-relay.json" "${RELEASE_DIR}/vod-catalog-relay.json"
+fi
+
 echo ""
 echo "Build complete."
 echo "  Debug APK (dev):    app/build/outputs/apk/debug/app-debug.apk"

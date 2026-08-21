@@ -112,6 +112,25 @@ class AboutActivity : AppCompatActivity() {
             BuildConfig.BUILD_TYPE,
             built,
         )
+        val relayStatus = (application as GatewayApp).domainRelayManager.currentStatus()
+        val relayView = findViewById<TextView>(R.id.textDomainRelayStatus)
+        relayView.text = if (relayStatus.active) {
+            getString(R.string.domain_relay_status_active, relayStatus.version, relayStatus.source)
+        } else {
+            getString(R.string.domain_relay_status_inactive)
+        }
+        val vodStatus = (application as GatewayApp).vodCatalogRelayManager.currentStatus()
+        // Append VOD relay line under domain relay status when present.
+        if (vodStatus.active) {
+            relayView.append(
+                "\n" + getString(
+                    R.string.vod_catalog_relay_status_active,
+                    vodStatus.version,
+                    vodStatus.movies,
+                    vodStatus.shows,
+                ),
+            )
+        }
     }
 
     private fun wireMigrationUi() {
