@@ -129,6 +129,35 @@ class TmdbVodPlaylistTest {
     }
 
     @Test
+    fun `shelf-suffixed movie ids still emit clean vod proxy urls`() {
+        val id = TmdbVodConfig.shelfSupplementId(1083381, "Popular Movies")
+        assertTrue(id.contains("@"))
+        assertTrue(TmdbVodConfig.tmdbIdFromSupplementId(id) == "1083381")
+
+        val playlist = PlaylistBuilder.tivimatePlaylist(
+            channels = emptyList(),
+            baseUrl = "http://127.0.0.1:3000",
+            dlhdOrigin = "https://daddylive.eu",
+            supplements = listOf(
+                SupplementChannel(
+                    id = id,
+                    name = "Backrooms (2026)",
+                    tvgId = "tt123",
+                    logo = null,
+                    groupTitle = "🎬 Popular Movies",
+                    streamUrl = "",
+                    tags = listOf("#movies", "#vod"),
+                    providerTag = "VOD",
+                    referer = TmdbVodConfig.EMBED_REFERER,
+                ),
+            ),
+        )
+        assertTrue(playlist.contains("http://127.0.0.1:3000/vod/movie/1083381.m3u8"))
+        assertFalse(playlist.contains("vod/movie/1083381@"))
+        assertFalse(playlist.contains("popular_movies.m3u8"))
+    }
+
+    @Test
     fun `parseSeriesSupplementId round trips episode key`() {
         val id = TmdbVodConfig.seriesSupplementId(1399, 1, 1)
         val key = TmdbVodConfig.parseSeriesSupplementId(id)

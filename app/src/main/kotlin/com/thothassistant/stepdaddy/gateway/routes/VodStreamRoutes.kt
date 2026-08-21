@@ -105,7 +105,8 @@ class VodStreamRoutes(
             respondError(call, HttpStatusCode.NotFound, "tmdb_movies_disabled")
             return
         }
-        val normalizedId = tmdbId.trim()
+        // Defense: strip shelf suffix if a stale playlist still requests /vod/movie/550@shelf.m3u8
+        val normalizedId = tmdbId.trim().substringBefore(TmdbVodConfig.SHELF_SUFFIX)
         if (normalizedId.isEmpty() || !normalizedId.all { it.isDigit() }) {
             respondError(call, HttpStatusCode.BadRequest, "invalid_tmdb_id")
             return

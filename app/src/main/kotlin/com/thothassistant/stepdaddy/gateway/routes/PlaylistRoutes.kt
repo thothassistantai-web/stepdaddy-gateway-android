@@ -121,6 +121,10 @@ class PlaylistRoutes(
             call.response.header(HttpHeaders.CacheControl, "no-cache, no-store, must-revalidate")
             call.response.header(HttpHeaders.Pragma, "no-cache")
             call.response.header(PlaylistPaths.HEADER_KIND, kind)
+            call.response.header(
+                PlaylistPaths.HEADER_REV,
+                com.thothassistant.stepdaddy.gateway.epg.PlaylistEpgHeader.PLAYLIST_REV,
+            )
             call.respondText(body, ContentType("application", "vnd.apple.mpegurl"))
         } catch (exc: Exception) {
             call.respond(

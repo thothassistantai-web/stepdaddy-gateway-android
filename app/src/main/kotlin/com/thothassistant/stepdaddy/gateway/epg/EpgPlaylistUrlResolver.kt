@@ -64,17 +64,21 @@ object EpgPlaylistUrlResolver {
 
 /** Builds the `#EXTM3U` header with optional `url-tvg` / `x-tvg-url` attributes. */
 object PlaylistEpgHeader {
+    /** Bumped with releases so TiviMate re-fetches treat the catalog as changed. */
+    const val PLAYLIST_REV = "3.0.34"
+
     fun line(epgUrls: List<String>): String {
         val urls = epgUrls.map { it.trim() }.filter { it.isNotEmpty() }
-        if (urls.isEmpty()) return "#EXTM3U\n"
+        val rev = "stepdaddy-rev=\"$PLAYLIST_REV\""
+        if (urls.isEmpty()) return "#EXTM3U $rev\n"
         val joined = joinUrls(urls)
         val escaped = joined.replace("\\", "\\\\").replace("\"", "\\\"")
-        return "#EXTM3U url-tvg=\"$escaped\" x-tvg-url=\"$escaped\"\n"
+        return "#EXTM3U url-tvg=\"$escaped\" x-tvg-url=\"$escaped\" $rev\n"
     }
 
     fun line(epgUrl: String?): String {
         val trimmed = epgUrl?.trim().orEmpty()
-        if (trimmed.isEmpty()) return "#EXTM3U\n"
+        if (trimmed.isEmpty()) return line(emptyList())
         return line(EpgConfig.parseExternalEpgUrls(trimmed))
     }
 

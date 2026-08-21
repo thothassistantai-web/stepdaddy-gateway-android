@@ -258,12 +258,16 @@ class SupplementFallbackStreamRoutes(
         if (!text.contains("#EXT", ignoreCase = true) && !text.startsWith("#EXTM3U", ignoreCase = true)) {
             error("invalid_manifest")
         }
+        // Proxy segments through /vod-content|/content so ExoPlayer never fetches CDN
+        // URLs without the required Referer (403/Source error on many backups).
+        val segmentReferer = refererHost.trim().takeIf { it.isNotEmpty() }
         return M3u8Rewriter.rewrite(
             m3u8Text = text,
             m3u8Url = m3u8Url,
             refererHost = refererHost,
-            useProxy = false,
+            useProxy = true,
             apiUrl = environment.loopbackBase(),
+            segmentReferer = segmentReferer,
         )
     }
 

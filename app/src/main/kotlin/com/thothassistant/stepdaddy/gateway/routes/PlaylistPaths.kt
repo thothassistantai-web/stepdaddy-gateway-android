@@ -8,6 +8,8 @@ package com.thothassistant.stepdaddy.gateway.routes
  */
 object PlaylistPaths {
     const val HEADER_KIND = "X-Playlist-Kind"
+    /** Playlist body revision — forces clients/caches to treat catalog as fresh after fixes. */
+    const val HEADER_REV = "X-Playlist-Rev"
     const val KIND_USER = "user"
     const val KIND_DIAGNOSTIC = "diagnostic"
 

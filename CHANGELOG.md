@@ -7,6 +7,14 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.34] - 2026-08-21
+
+### Fixed
+
+- **Shelf movie URLs still broke TiviMate** — `vod:tmdb:{id}@{shelf}` rows were written as `/vod/movie/{id}@{shelf}.m3u8`, which returns `invalid_tmdb_id` / empty HLS (ParserException on tune). Playlist now strips the shelf suffix (same as series); `/vod/movie/` also accepts stale `@shelf` paths.
+- **Daddy/supplement fallback CDN segments** — fallback mirrors now rewrite through `/vod-content`/`/content` with Referer so ExoPlayer no longer fetches raw CDN URLs that 403 without headers.
+- **Playlist cache bust** — `#EXTM3U` carries `stepdaddy-rev="3.0.34"` and `X-Playlist-Rev` so TiviMate refresh picks up the fixed catalog.
+
 ## [3.0.33] - 2026-08-21
 
 ### Fixed

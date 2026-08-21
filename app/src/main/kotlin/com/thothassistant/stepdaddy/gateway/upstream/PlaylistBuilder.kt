@@ -479,7 +479,9 @@ object PlaylistBuilder {
             return "$stream|User-Agent=$TIVIMATE_USER_AGENT|Referer=$referer|Origin=$origin"
         }
         if (supplement.id.startsWith(TmdbVodConfig.ID_PREFIX)) {
-            val tmdbId = supplement.id.removePrefix(TmdbVodConfig.ID_PREFIX)
+            // Shelf copies use vod:tmdb:{id}@{shelf} — strip before building /vod/movie/{id}.m3u8
+            // or TiviMate hits invalid_tmdb_id / empty HLS (ParserException).
+            val tmdbId = TmdbVodConfig.tmdbIdFromSupplementId(supplement.id) ?: return ""
             // HLS proxy; tvg-type="movie" in EXTINF puts rows in TiviMate Movies tab (not Live TV).
             val stream = "${base.trimEnd('/')}/vod/movie/$tmdbId.m3u8"
             if (streamUrlStyle == StreamUrlStyle.PLAIN) {
