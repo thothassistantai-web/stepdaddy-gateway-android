@@ -34,12 +34,14 @@ class TmdbVodPlaylistTest {
 
         assertTrue(playlist.contains("group-title=\"🎬 Movies\""))
         assertTrue(playlist.contains("tvg-type=\"movie\""))
-        assertTrue(playlist.contains("tvg-logo=\"https://image.tmdb.org/t/p/w600_and_h900_bestv2/poster.jpg\""))
+        assertTrue(playlist.contains("tvg-logo=\"http://127.0.0.1:3000/logo/"))
         assertTrue(playlist.contains("tvg-desc=\"An insomniac office worker"))
         assertTrue(playlist.contains("http://127.0.0.1:3000/vod/movie/550.m3u8"))
         assertTrue(playlist.contains("Fight Club (1999)"))
         assertFalse(playlist.contains("US: FIGHT CLUB"))
         assertFalse(playlist.contains("ᴸᴵⱽᴱ"))
+        // Direct TMDB CDN must not appear — proxied through gateway /logo/
+        assertFalse(playlist.contains("tvg-logo=\"https://image.tmdb.org"))
     }
 
     @Test
@@ -65,7 +67,8 @@ class TmdbVodPlaylistTest {
         assertTrue(playlist.contains("Fight Club (1999)"))
         assertFalse(playlist.contains("US: FIGHT CLUB"))
         assertFalse(playlist.contains("ᴸᴵⱽᴱ"))
-        assertTrue(playlist.contains("poster/large/tt0137523"))
+        assertTrue(playlist.contains("tvg-logo=\"http://127.0.0.1:3000/logo/"))
+        assertFalse(playlist.contains("images.metahub.space"))
     }
 
     @Test

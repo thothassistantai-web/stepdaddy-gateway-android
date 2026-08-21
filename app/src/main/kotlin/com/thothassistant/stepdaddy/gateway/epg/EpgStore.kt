@@ -30,6 +30,8 @@ class EpgStore private constructor(
   private val json = Json { ignoreUnknownKeys = true }
   private val feedsDir = File(root, "feeds").also { it.mkdirs() }
   val servedXml: File = File(root, "epg.xml")
+  /** Gzip twin of [servedXml] for TiviMate downloads (~10× smaller than raw XMLTV). */
+  val servedXmlGzip: File = File(root, "epg.xml.gz")
   private val metaFile = File(root, "meta.json")
 
   @Volatile
@@ -105,6 +107,7 @@ class EpgStore private constructor(
       tmp.copyTo(servedXml, overwrite = true)
       tmp.delete()
     }
+    writeGzipSibling(servedXml)
     meta = EpgMeta(
         builtAtMs = System.currentTimeMillis(),
         channelCount = channelCount,
@@ -147,6 +150,34 @@ class EpgStore private constructor(
     meta = EpgMeta(state = "pending", lastError = null)
     saveMeta()
     if (servedXml.isFile) servedXml.delete()
+    if (servedXmlGzip.isFile) servedXmlGzip.delete()
+  }
+
+  /** Ensure gzip twin exists (lazy backfill for builds written before gzip support). */
+  fun ensureGzipSibling(): File? {
+    if (!servedXml.isFile || servedXml.length() <= 0L) return null
+    if (servedXmlGzip.isFile &&
+        servedXmlGzip.length() > 0L &&
+        servedXmlGzip.lastModified() >= servedXml.lastModified()
+    ) {
+      return servedXmlGzip
+    }
+    return writeGzipSibling(servedXml)
+  }
+
+  private fun writeGzipSibling(xmlFile: File): File? {
+    if (!xmlFile.isFile || xmlFile.length() <= 0L) return null
+    return runCatching {
+      val tmp = File(root, "epg.xml.gz.tmp")
+      java.util.zip.GZIPOutputStream(tmp.outputStream().buffered()).use { gz ->
+        xmlFile.inputStream().buffered().use { input -> input.copyTo(gz) }
+      }
+      if (!tmp.renameTo(servedXmlGzip)) {
+        tmp.copyTo(servedXmlGzip, overwrite = true)
+        tmp.delete()
+      }
+      servedXmlGzip
+    }.getOrNull()
   }
 
   fun trimFeedCache() {

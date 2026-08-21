@@ -11,12 +11,13 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytes
+import java.io.File
+import java.security.MessageDigest
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.io.File
-import java.util.concurrent.TimeUnit
 
 class LogoRoutes(
     private val cacheDir: File,
@@ -34,10 +35,10 @@ class LogoRoutes(
             return
         }
         cacheDir.mkdirs()
-        val fileName = upstreamUrl.substringAfterLast('/').take(120).ifBlank { "logo.bin" }
-        val cacheFile = File(cacheDir, fileName)
+        // Hash the full URL — many CDNs use the same trailing path (/img, logo.png).
+        val cacheFile = File(cacheDir, cacheKey(upstreamUrl))
         if (cacheFile.exists() && cacheFile.length() > 0L) {
-            respondCached(call, cacheFile)
+            respondCached(call, cacheFile, upstreamUrl)
             return
         }
         try {
@@ -61,12 +62,13 @@ class LogoRoutes(
             cacheFile.writeBytes(bytes)
             call.response.header(HttpHeaders.CacheControl, "public, max-age=86400")
             call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
-            call.respondBytes(bytes, contentTypeFor(fileName))
-        } catch (exc: Exception) {
+            call.respondBytes(bytes, contentTypeFor(upstreamUrl))
+        } catch (_: Exception) {
             if (cacheFile.exists() && cacheFile.length() > 0L) {
-                respondCached(call, cacheFile)
+                respondCached(call, cacheFile, upstreamUrl)
                 return
             }
+            // Fail fast with placeholder so TiviMate/Glide never spin on dead CDNs.
             respondFallback(call)
         }
     }
@@ -77,31 +79,39 @@ class LogoRoutes(
         call.respondBytes(fallbackSvg, ContentType.Image.SVG)
     }
 
-    private suspend fun respondCached(call: ApplicationCall, cacheFile: File) {
+    private suspend fun respondCached(call: ApplicationCall, cacheFile: File, upstreamUrl: String) {
         val bytes = withContext(Dispatchers.IO) { cacheFile.readBytes() }
         call.response.header(HttpHeaders.CacheControl, "public, max-age=86400")
         call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
-        call.respondBytes(bytes, contentTypeFor(cacheFile.name))
+        call.respondBytes(bytes, contentTypeFor(upstreamUrl))
     }
 
-    private fun contentTypeFor(fileName: String): ContentType {
-        val ext = fileName.substringAfterLast('.', "").lowercase()
-        return when (ext) {
-            "svg" -> ContentType.Image.SVG
-            "png" -> ContentType.Image.PNG
-            "jpg", "jpeg" -> ContentType.Image.JPEG
-            "webp" -> ContentType("image", "webp")
-            "gif" -> ContentType.Image.GIF
-            else -> ContentType.defaultForFilePath(fileName)
+    private fun contentTypeFor(upstreamUrl: String): ContentType {
+        val path = upstreamUrl.substringBefore('?').lowercase()
+        val ext = path.substringAfterLast('.', "")
+        return when {
+            ext == "svg" || path.endsWith(".svg") -> ContentType.Image.SVG
+            ext == "png" || path.endsWith("/img") -> ContentType.Image.PNG
+            ext == "jpg" || ext == "jpeg" -> ContentType.Image.JPEG
+            ext == "webp" -> ContentType("image", "webp")
+            ext == "gif" -> ContentType.Image.GIF
+            else -> ContentType.defaultForFilePath(path.substringAfterLast('/').ifBlank { "logo.jpg" })
         }
     }
 
     companion object {
+        /** Keep logo proxy snappy — Metahub/CDN stalls must not block TiviMate channel list. */
         private fun defaultClient(): OkHttpClient =
             OkHttpClient.Builder()
-                .connectTimeout(10, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .callTimeout(35, TimeUnit.SECONDS)
+                .connectTimeout(2, TimeUnit.SECONDS)
+                .readTimeout(3, TimeUnit.SECONDS)
+                .callTimeout(4, TimeUnit.SECONDS)
                 .build()
+
+        fun cacheKey(upstreamUrl: String): String {
+            val digest = MessageDigest.getInstance("SHA-256")
+                .digest(upstreamUrl.toByteArray(Charsets.UTF_8))
+            return digest.joinToString("") { "%02x".format(it) }.take(40) + ".bin"
+        }
     }
 }

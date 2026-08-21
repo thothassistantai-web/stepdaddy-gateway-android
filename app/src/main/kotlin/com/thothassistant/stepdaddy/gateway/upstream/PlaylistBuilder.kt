@@ -546,9 +546,20 @@ object PlaylistBuilder {
         }
         val logo = when {
             supplement.id.startsWith(TmdbVodConfig.ID_PREFIX) ||
-                supplement.id.startsWith(TmdbVodConfig.SERIES_ID_PREFIX) ->
-                TmdbVodConfig.normalizePosterUrl(supplement.logo)
+                supplement.id.startsWith(TmdbVodConfig.SERIES_ID_PREFIX) -> {
+                val poster = TmdbVodConfig.normalizePosterUrl(supplement.logo)
                     ?: supplement.logo?.takeIf { it.startsWith("http") }
+                // Proxy Metahub/external posters through /logo/ so slow CDNs fail fast to SVG
+                // instead of leaving TiviMate's Glide spinner running for many seconds.
+                when {
+                    poster.isNullOrBlank() -> null
+                    poster.startsWith(base) || poster.startsWith("/ui/") ->
+                        if (poster.startsWith("/")) "$base$poster" else poster
+                    poster.startsWith("http://") || poster.startsWith("https://") ->
+                        "$base/logo/${UrlSafeBase64.encode(poster)}"
+                    else -> poster
+                }
+            }
             else -> logoResolver?.resolvePlaylistLogoUrl(
                 apiBase = base,
                 channelName = supplement.name,

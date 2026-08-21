@@ -208,6 +208,14 @@ class EpgManager(
           store.servedXml.takeIf { it.isFile && it.length() > 0L }
       }
 
+  /** Gzip twin of [servedXmlFile] for Accept-Encoding / /epg.xml.gz (lazy-built if missing). */
+  fun servedXmlGzipFile(): java.io.File? =
+      if (!isGatewayEpgEnabled()) {
+          null
+      } else {
+          store.ensureGzipSibling()?.takeIf { it.isFile && it.length() > 0L }
+      }
+
   fun hasCachedProgrammes(): Boolean =
       isGatewayEpgEnabled() && store.meta.programmeCount > 0 && servedXmlFile() != null
 

@@ -1,10 +1,10 @@
 {
-  "versionCode": 30033,
-  "versionName": "3.0.33",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.33/stepdaddy-gateway-3.0.33-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.33/stepdaddy-gateway-3.0.33-debug.apk",
-  "apkSha256": "6afdde48cba046aa4f40b74ca33a3790ebcf7ebfd3072d6564e9c80f6f421013",
-  "apkSha256Debug": "2164d849b140080fa560aa6c7d984a8601156ea92f0593f897a7fbca1cb0c371",
-  "releaseNotes": "Shelf-suffixed VOD series ids (`vod:series:\u2026@shelf`) parse correctly again \u2014 no blank `#EXTINF` URL lines.",
+  "versionCode": 30035,
+  "versionName": "3.0.35",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.35/stepdaddy-gateway-3.0.35-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.35/stepdaddy-gateway-3.0.35-debug.apk",
+  "apkSha256": "7c21634c82f1b147575ab194575eeb8d3aa124231bfe005de6029ddc8598cc11",
+  "apkSha256Debug": "e3bf65f3bc276ae38f7caf62be0a557ac4be09dfc5c0da4ce1c4f28ce038e9ed",
+  "releaseNotes": "See CHANGELOG.md",
   "mandatory": false
 }

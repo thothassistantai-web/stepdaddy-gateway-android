@@ -9,6 +9,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
+import io.ktor.server.request.header
 import io.ktor.server.request.httpMethod
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
@@ -79,6 +80,27 @@ class EpgRoutes(
         }
     }
 
+    /** Explicit gzip twin (~3MB vs ~26MB) for clients that request /epg.xml.gz. */
+    suspend fun epgXmlGzip(call: ApplicationCall) {
+        if (!epgManager.gatewayEpgEnabled()) {
+            call.respond(HttpStatusCode.NotFound, mapOf("error" to "gateway_epg_disabled"))
+            return
+        }
+        if (epgManager.servedXmlFile() == null || !epgManager.hasCachedProgrammes()) {
+            call.respond(HttpStatusCode.ServiceUnavailable, mapOf("error" to "epg_unavailable"))
+            return
+        }
+        val gz = epgManager.servedXmlGzipFile()
+        if (gz == null) {
+            call.respond(HttpStatusCode.ServiceUnavailable, mapOf("error" to "epg_gzip_unavailable"))
+            return
+        }
+        call.response.header(HttpHeaders.CacheControl, "public, max-age=300")
+        call.response.header(HttpHeaders.ContentType, "application/xml; charset=UTF-8")
+        call.response.header(HttpHeaders.ContentEncoding, "gzip")
+        call.respondFile(gz)
+    }
+
     suspend fun sportsEpgXml(call: ApplicationCall) {
         val file = supplementSource?.sportsEpgXmlFile()
         if (file == null) {
@@ -95,6 +117,20 @@ class EpgRoutes(
         call.response.header(HttpHeaders.CacheControl, "public, max-age=300")
         if (stale) {
             call.response.header("X-EPG-Status", "stale")
+        }
+        val accept = call.request.header(HttpHeaders.AcceptEncoding).orEmpty()
+        val mainXml = epgManager.servedXmlFile()
+        if (accept.contains("gzip", ignoreCase = true) &&
+            mainXml != null &&
+            file.absolutePath == mainXml.absolutePath
+        ) {
+            val gz = epgManager.servedXmlGzipFile()
+            if (gz != null && gz.isFile && gz.length() > 0L) {
+                call.response.header(HttpHeaders.ContentEncoding, "gzip")
+                call.response.header(HttpHeaders.Vary, HttpHeaders.AcceptEncoding)
+                call.respondFile(gz)
+                return
+            }
         }
         call.respondFile(file)
     }

@@ -493,6 +493,10 @@ class GatewayServer(
                     get { epgRoutes.epgXml(call) }
                     head { epgRoutes.epgXml(call) }
                 }
+                route("/epg.xml.gz") {
+                    get { epgRoutes.epgXmlGzip(call) }
+                    head { epgRoutes.epgXmlGzip(call) }
+                }
                 route("/sports-epg.xml") {
                     get { epgRoutes.sportsEpgXml(call) }
                     head { epgRoutes.sportsEpgXml(call) }

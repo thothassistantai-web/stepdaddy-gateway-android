@@ -7,6 +7,15 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.35] - 2026-08-21
+
+### Fixed
+
+- **TiviMate endless channel/logo spinner** — three compounding issues:
+  1. Playlist pointed TiviMate at a **26MB uncompressed** `/epg.xml`; now serves `/epg.xml.gz` (~3MB) and gzip when `Accept-Encoding` allows.
+  2. **Metahub VOD posters** were direct HTTPS (3–7s each); playlist now proxies them via `/logo/` with **4s call timeout** and SVG fallback so Glide never hangs.
+  3. `/logo/` cache keyed only the filename (`/img`, `logo.png`) so unrelated logos collided; cache key is now a SHA-256 of the full URL.
+
 ## [3.0.34] - 2026-08-21
 
 ### Fixed
