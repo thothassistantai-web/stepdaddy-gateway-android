@@ -317,7 +317,7 @@ class PlaylistBuilderTest {
     @Test
     fun `empty epg url omits tvg attributes`() {
         val playlist = PlaylistBuilder.minimalPlaylist("http://127.0.0.1:3000", null)
-        assertEquals("#EXTM3U\n", playlist)
+        assertEquals("#EXTM3U stepdaddy-rev=\"${PlaylistEpgHeader.PLAYLIST_REV}\"\n", playlist)
     }
 
     @Test

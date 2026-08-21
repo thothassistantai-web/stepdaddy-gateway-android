@@ -7,9 +7,9 @@ import org.junit.Test
 class EpgPlaylistUrlResolverTest {
     @Test
     fun `header omits tvg attributes when url list empty`() {
-        assertEquals("#EXTM3U\n", PlaylistEpgHeader.line(emptyList()))
-        assertEquals("#EXTM3U\n", PlaylistEpgHeader.line(null))
-        assertEquals("#EXTM3U\n", PlaylistEpgHeader.line(""))
+        assertEquals("#EXTM3U stepdaddy-rev=\"${PlaylistEpgHeader.PLAYLIST_REV}\"\n", PlaylistEpgHeader.line(emptyList()))
+        assertEquals("#EXTM3U stepdaddy-rev=\"${PlaylistEpgHeader.PLAYLIST_REV}\"\n", PlaylistEpgHeader.line(null))
+        assertEquals("#EXTM3U stepdaddy-rev=\"${PlaylistEpgHeader.PLAYLIST_REV}\"\n", PlaylistEpgHeader.line(""))
     }
 
     @Test
@@ -22,6 +22,7 @@ class EpgPlaylistUrlResolverTest {
         assertTrue(line.startsWith("#EXTM3U url-tvg=\""))
         assertTrue(line.contains("US2.xml.gz,https://epgshare01.online/epgshare01/epg_ripper_US_SPORTS1.xml.gz\""))
         assertTrue(line.contains("x-tvg-url=\""))
+        assertTrue(line.contains("stepdaddy-rev=\"${PlaylistEpgHeader.PLAYLIST_REV}\""))
     }
 
     @Test
