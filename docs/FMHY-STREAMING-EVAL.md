@@ -55,3 +55,9 @@ Goal: find **stable HTTP APIs or M3U playlists** that fit StepDaddy’s Suppleme
 - **Official free ad-supported apps** (Pluto/Tubi APIs): better as documented expansions of iptv-org playlist selection than new scrapers.
 - **Public-domain / Archive VOD shelves**: needs a dedicated VOD catalog design; leave as future work.
 - **xyzstreams sports schedule pages**: could theoretically feed Special Events if a stable JSON API appears; do not scrape the ad-heavy SPA until then.
+
+## SimilarWeb competitors (dulo.tv)
+
+Follow-up eval of [SimilarWeb competitors for dulo.tv](https://www.similarweb.com/website/dulo.tv/competitors/) and affinity peers: see **[DULO-COMPETITORS-EVAL.md](DULO-COMPETITORS-EVAL.md)**.
+
+**Result:** peers are almost all pirate VOD SPAs (MyFlixer / FlixBay / VidPlay / Cineby / HydraHD / …). No new public M3U/JSON live sources worth integrating; VOD already covered by TMDB + vsembed; dulo.cx Live already shipped. **No code changes** from that pass.
