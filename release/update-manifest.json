@@ -1,10 +1,10 @@
 {
-  "versionCode": 30028,
-  "versionName": "3.0.28",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.28/stepdaddy-gateway-3.0.28-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.28/stepdaddy-gateway-3.0.28-debug.apk",
-  "apkSha256": "02c8902b0d6ed2376ae790daba823b4089a5480c225b0a2bfd239359f7a85b47",
-  "apkSha256Debug": "1cf449430f16832256932b2c5f76565a641ebb1ec1f2de79c369c35591896e9c",
-  "releaseNotes": "Old release installs on the lost cert **cannot** OTA \u2014 uninstall then install this APK (or use debug).",
+  "versionCode": 30029,
+  "versionName": "3.0.29",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.29/stepdaddy-gateway-3.0.29-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.29/stepdaddy-gateway-3.0.29-debug.apk",
+  "apkSha256": "fdeef76fd8a8cc06b01b75d127138cbb108fb07b992961a51eb2cd7aaf3c48a1",
+  "apkSha256Debug": "84982e810477e0a4586a96c3556eda74cbef020d844cff65b4fbb39139176988",
+  "releaseNotes": "**Dead source removals** \u2014 Strip residual TheTvApp / xyzstreams / MOJ paths so supplement sync and health no longer carry dead streams.",
   "mandatory": false
 }

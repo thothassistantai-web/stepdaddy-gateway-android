@@ -182,6 +182,8 @@ class PlaylistBuilderTest {
             dlhdOrigin = "https://daddylive.org",
             supplements = supplements,
             titleStyle = PlaylistTitleStyle.XTREAM_CATEGORY,
+            // Keep fixture event inside the active window (stop is 2026-06-28T16:00Z).
+            nowMs = java.time.Instant.parse("2026-06-28T14:00:00Z").toEpochMilli(),
         )
 
         assertTrue(playlist.contains("group-title=\"News\""))

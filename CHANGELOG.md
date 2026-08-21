@@ -7,9 +7,20 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.29] - 2026-08-20
+
 ### Added
 
-- **AFTV Downloader stable codes** — Versionless GitHub release assets (`stepdaddy-gateway-release.apk` / `-debug.apk`) plus `scripts/aftv-shortener.sh` / `publish-github-release.sh` so one permanent numeric Downloader code always hits the latest APK. See `docs/AFTV-DOWNLOADER.md`.
+- **dulo.cx Live TV tier** — Supplement source with public catalog sync, `/dulo-stream/{uuid}.m3u8` playback proxy, consolidate Free-TV-style backups onto DaddyLive name matches, and admin setting `supplementDuloCxAccessToken`. Health exposes `duloCxAuthConfigured` / resolve probe fields. Auth helper: `docs/DULO-AUTH.md`, `scripts/dulo-cx-auth.sh`.
+- **Free-TV live backups** — Additional Free-TV mirror rows for consolidate fallback when primary DaddyLive streams fail.
+
+### Removed
+
+- **Dead TheTvApp / xyzstreams / MOJ residue** — Dropped leftover routes, EPG generators, settings toggles, and agents for sources that no longer resolve.
+
+### Changed
+
+- **AFTV Downloader reminder** — Permanent codes remain Release `4860686` / Debug `1401588` via versionless latest assets.
 
 ## [3.0.28] - 2026-08-20
 
