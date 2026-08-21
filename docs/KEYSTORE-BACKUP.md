@@ -32,6 +32,8 @@ secret-tool lookup application stepdaddy-gateway attribute key-password
 secret-tool lookup application stepdaddy-gateway attribute key-alias
 ```
 
+For **dulo.cx Live TV** account/JWT recovery (separate keyring attrs under `service=dulo.cx`), see [DULO-AUTH.md](DULO-AUTH.md). Never store those secrets in this file.
+
 Re-store:
 
 ```bash

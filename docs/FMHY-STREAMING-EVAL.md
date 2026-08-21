@@ -46,6 +46,7 @@ Goal: find **stable HTTP APIs or M3U playlists** that fit StepDaddy’s Suppleme
 - Public catalog: `GET https://dulo.cx/api/live-tv/channels` (~233 rows probed; gateway caps at 100 non-supporter).
 - Distinct from ntv.cx — different host, JSON shape, and auth model.
 - Playback: `POST /api/live-tv/playback-session` → `/live-gateway/` HLS (requires Supabase JWT in `supplementDuloCxAccessToken`).
+- Auth / keyring refresh: [DULO-AUTH.md](DULO-AUTH.md) + `scripts/dulo-cx-auth.sh`.
 - Playlist URLs: `/dulo-stream/{uuid}.m3u8`. Consolidate mode attaches `duloChannelId` mirrors onto DaddyLive name matches.
 - Catalog sync works without a token; play returns `dulo_auth_required` until token is set via admin API.
 

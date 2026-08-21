@@ -21,6 +21,10 @@ release/*-VERSION-*.txt
 .env
 .env.local
 local.properties
+# Machine-local secrets (never commit)
+**/dulo-cx.env
+**/dulo-cx-access-token*
+**/dulo-access-token*
 docs/store-assets/*.png
 reports/
 scripts/.cache/
