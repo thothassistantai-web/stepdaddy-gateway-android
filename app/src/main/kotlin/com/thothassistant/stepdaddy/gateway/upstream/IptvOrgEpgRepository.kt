@@ -141,13 +141,20 @@ class IptvOrgEpgRepository(
         const val BUNDLED_ASSET_XML = "epg/iptv_org_fast_epg.xml"
         val BUNDLED_ASSET_PATHS = listOf(BUNDLED_ASSET_DAT, BUNDLED_ASSET_GZ, BUNDLED_ASSET_XML)
 
-        private fun defaultClient(): OkHttpClient =
-            OkHttpClient.Builder()
+        private fun defaultClient(): OkHttpClient {
+            val dispatcher = okhttp3.Dispatcher().apply {
+                maxRequests = SupplementConfig.HTTP_MAX_REQUESTS
+                maxRequestsPerHost = SupplementConfig.HTTP_MAX_REQUESTS_PER_HOST
+            }
+            return OkHttpClient.Builder()
+                .dispatcher(dispatcher)
                 .connectTimeout(20, TimeUnit.SECONDS)
                 .readTimeout(IptvOrgEpgConfig.DOWNLOAD_TIMEOUT_MS, TimeUnit.MILLISECONDS)
                 .writeTimeout(20, TimeUnit.SECONDS)
                 .callTimeout(IptvOrgEpgConfig.DOWNLOAD_TIMEOUT_MS + 10_000L, TimeUnit.MILLISECONDS)
+                .retryOnConnectionFailure(true)
                 .build()
+        }
     }
 
     private fun logDebug(message: String) {

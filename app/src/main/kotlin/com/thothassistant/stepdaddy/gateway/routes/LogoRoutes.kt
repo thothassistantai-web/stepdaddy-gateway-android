@@ -37,8 +37,17 @@ class LogoRoutes(
         cacheDir.mkdirs()
         // Hash the full URL — many CDNs use the same trailing path (/img, logo.png).
         val cacheFile = File(cacheDir, cacheKey(upstreamUrl))
+        val failMarker = File(cacheDir, cacheKey(upstreamUrl) + ".fail")
         if (cacheFile.exists() && cacheFile.length() > 0L) {
             respondCached(call, cacheFile, upstreamUrl)
+            return
+        }
+        // Negative-cache dead CDNs so TiviMate does not re-wait the full upstream timeout
+        // on every channel-list image request.
+        if (failMarker.exists() &&
+            System.currentTimeMillis() - failMarker.lastModified() < FAIL_CACHE_TTL_MS
+        ) {
+            respondFallback(call)
             return
         }
         try {
@@ -59,6 +68,7 @@ class LogoRoutes(
                 respondFallback(call)
                 return
             }
+            runCatching { failMarker.delete() }
             cacheFile.writeBytes(bytes)
             call.response.header(HttpHeaders.CacheControl, "public, max-age=86400")
             call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
@@ -68,6 +78,7 @@ class LogoRoutes(
                 respondCached(call, cacheFile, upstreamUrl)
                 return
             }
+            runCatching { failMarker.writeText("1") }
             // Fail fast with placeholder so TiviMate/Glide never spin on dead CDNs.
             respondFallback(call)
         }
@@ -80,7 +91,9 @@ class LogoRoutes(
     }
 
     private suspend fun respondCached(call: ApplicationCall, cacheFile: File, upstreamUrl: String) {
-        val bytes = withContext(Dispatchers.IO) { cacheFile.readBytes() }
+        // Avoid Dispatchers.IO — under supplement/EPG stampede, cache hits were waiting seconds
+        // on a saturated pool even for tiny already-on-disk logos.
+        val bytes = cacheFile.readBytes()
         call.response.header(HttpHeaders.CacheControl, "public, max-age=86400")
         call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
         call.respondBytes(bytes, contentTypeFor(upstreamUrl))
@@ -100,13 +113,22 @@ class LogoRoutes(
     }
 
     companion object {
+        private const val FAIL_CACHE_TTL_MS = 6 * 3600_000L
+
         /** Keep logo proxy snappy — Metahub/CDN stalls must not block TiviMate channel list. */
-        private fun defaultClient(): OkHttpClient =
-            OkHttpClient.Builder()
-                .connectTimeout(2, TimeUnit.SECONDS)
-                .readTimeout(3, TimeUnit.SECONDS)
-                .callTimeout(4, TimeUnit.SECONDS)
+        private fun defaultClient(): OkHttpClient {
+            val dispatcher = okhttp3.Dispatcher().apply {
+                maxRequests = 4
+                maxRequestsPerHost = 2
+            }
+            return OkHttpClient.Builder()
+                .dispatcher(dispatcher)
+                .connectTimeout(1, TimeUnit.SECONDS)
+                .readTimeout(2, TimeUnit.SECONDS)
+                .callTimeout(2, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(false)
                 .build()
+        }
 
         fun cacheKey(upstreamUrl: String): String {
             val digest = MessageDigest.getInstance("SHA-256")

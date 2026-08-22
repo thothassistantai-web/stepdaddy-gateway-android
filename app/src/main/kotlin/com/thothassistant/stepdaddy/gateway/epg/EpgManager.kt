@@ -28,6 +28,10 @@ class EpgManager(
   private val tvtvFetcher = tvtvFetcher
   @Volatile
   private var buildInFlight = false
+
+  init {
+    recoverStaleBuildingState()
+  }
   @Volatile
   private var tvtvFollowUpScheduled = false
   @Volatile
@@ -57,6 +61,21 @@ class EpgManager(
   fun ageSeconds(): Long? = if (isGatewayEpgEnabled()) store.ageSeconds() else null
 
   fun isServeStale(): Boolean = isGatewayEpgEnabled() && store.isServeStale()
+
+
+  /** After crash/force-stop, meta can be stuck in "building" with no in-flight job. */
+  private fun recoverStaleBuildingState() {
+    if (store.meta.state != "building") return
+    val recovered =
+        if (store.servedXml.exists() && store.meta.programmeCount > 0) {
+          store.updateState("ready")
+          "ready (${store.meta.programmeCount} programmes)"
+        } else {
+          store.updateState("idle")
+          "idle"
+        }
+    Log.w(TAG, "Recovered stale EPG building state → $recovered")
+  }
 
   fun scheduleRefresh(
       channels: List<Channel>,
@@ -141,11 +160,26 @@ class EpgManager(
         val elapsed = (System.currentTimeMillis() - started) / 1000.0
         if (result.programmeCount <= 0 && tvgIds.isNotEmpty()) {
           runCatching { result.outputFile.delete() }
+          val hadPriorProgrammes =
+              store.servedXml.exists() &&
+                  store.servedXml.length() > 0L &&
+                  store.meta.programmeCount > 0
           store.updateState(
-              "error",
+              if (hadPriorProgrammes) "ready" else "error",
               "No programme data from feeds (${tvgIds.size} mapped ids)",
           )
-          Log.w(TAG, "EPG build produced 0 programmes for ${tvgIds.size} tvg ids in ${elapsed}s — will retry")
+          if (hadPriorProgrammes) {
+            Log.w(
+                TAG,
+                "EPG build produced 0 programmes — keeping prior guide " +
+                    "(${store.meta.programmeCount} programmes)",
+            )
+          } else {
+            Log.w(
+                TAG,
+                "EPG build produced 0 programmes for ${tvgIds.size} tvg ids in ${elapsed}s — will retry",
+            )
+          }
           return
         }
         store.writeServedXmlFromFile(
@@ -176,10 +210,20 @@ class EpgManager(
         } else {
           Log.w(TAG, "EPG build failed", exc)
         }
+        val hadPriorProgrammes =
+            store.servedXml.exists() &&
+                store.servedXml.length() > 0L &&
+                store.meta.programmeCount > 0
         store.updateState(
-            if (store.servedXml.exists()) "ready" else "error",
+            if (hadPriorProgrammes) "ready" else "error",
             exc.message?.take(200) ?: exc.javaClass.simpleName,
         )
+        if (hadPriorProgrammes) {
+          Log.i(
+              TAG,
+              "EPG build failed — serving prior guide (${store.meta.programmeCount} programmes)",
+          )
+        }
       } finally {
         buildInFlight = false
       }

@@ -23,7 +23,7 @@ object AdultSwimStreamsConfig {
     /** Cap total probe wait when a previous adultswim: cache exists. */
     const val PROBE_BUDGET_MS = 45_000L
 
-    const val MAX_CONCURRENT_PROBES = 4
+    const val MAX_CONCURRENT_PROBES = 2
 
     data class MarathonStream(
         val slug: String,

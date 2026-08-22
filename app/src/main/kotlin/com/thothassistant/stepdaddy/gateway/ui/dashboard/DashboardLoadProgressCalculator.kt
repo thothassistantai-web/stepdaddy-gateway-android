@@ -215,41 +215,69 @@ internal object DashboardLoadProgressCalculator {
         else -> 5
     }
 
+    /**
+     * True after at least one supplement sync wave finished (or left durable evidence),
+     * even when some sources returned empty / all-failed catalogs.
+     */
+    private fun syncSettled(supplement: SupplementStatus): Boolean {
+        if (supplement.supplementSyncInFlight) return false
+        return supplement.channels > 0 ||
+            supplement.lastSpecialEventsSyncMs != null ||
+            supplement.iptvOrgPlaylistsTotal > 0 ||
+            supplement.iptvOrgPlaylistsFetched > 0 ||
+            supplement.iptvOrgPlaylistsFailed > 0 ||
+            supplement.freeTvPlaylistsFetched > 0 ||
+            supplement.freeTvPlaylistsFailed > 0 ||
+            supplement.adultSwimProbed > 0 ||
+            supplement.ntvCxChannels > 0 ||
+            supplement.duloCxCatalogFetchOk ||
+            supplement.tmdbVodMovies > 0 ||
+            supplement.tmdbVodSeries > 0 ||
+            supplement.sportsEventsScanned > 0
+    }
+
     private fun sportsPercent(count: Int, supplement: SupplementStatus): Int =
         when {
             count > 0 -> 100
             supplement.sportsEventsScanned > 0 -> 100
+            syncSettled(supplement) -> 100
+            // Special-events scrape finished empty while other slots still finalize.
+            supplement.lastSpecialEventsSyncMs != null -> 100
             supplement.supplementSyncInFlight -> 50
             else -> 12
         }
 
-    private fun iptvOrgPercent(count: Int, supplement: SupplementStatus): Int =
-        when {
-            count > 0 &&
-                (supplement.iptvOrgPlaylistsTotal <= 0 ||
-                    supplement.iptvOrgPlaylistsFetched >= supplement.iptvOrgPlaylistsTotal) &&
-                !supplement.supplementSyncInFlight -> 100
+    private fun iptvOrgPercent(count: Int, supplement: SupplementStatus): Int {
+        val total = supplement.iptvOrgPlaylistsTotal
+        val attempted = supplement.iptvOrgPlaylistsFetched + supplement.iptvOrgPlaylistsFailed
+        val waveComplete = total > 0 && attempted >= total
+        return when {
             count > 0 && !supplement.supplementSyncInFlight -> 100
-            supplement.iptvOrgPlaylistsTotal > 0 ->
+            // Playlist wave finished (success or all-failed) — don't wait on FAST EPG / other slots.
+            waveComplete -> 100
+            syncSettled(supplement) -> 100
+            total > 0 ->
                 min(
                     99,
                     max(
                         5,
-                        (supplement.iptvOrgPlaylistsFetched * 100) / supplement.iptvOrgPlaylistsTotal,
+                        (attempted * 100) / total,
                     ),
                 )
             supplement.iptvOrgPlaylistsFetched > 0 ->
-                min(100, 40 + supplement.iptvOrgPlaylistsFetched * 2)
+                min(99, 40 + supplement.iptvOrgPlaylistsFetched * 2)
             count > 0 -> 85
             supplement.supplementSyncInFlight -> 35
             else -> 10
         }
+    }
 
     private fun freeTvPercent(count: Int, supplement: SupplementStatus): Int =
         when {
             count > 0 -> 100
-            supplement.freeTvPlaylistsFetched > 0 ->
-                min(100, 40 + supplement.freeTvPlaylistsFetched * 25)
+            // Fetch attempt finished (empty/failed counts are durable once the Free-TV deferred returns).
+            supplement.freeTvPlaylistsFetched > 0 || supplement.freeTvPlaylistsFailed > 0 -> 100
+            syncSettled(supplement) -> 100
             supplement.supplementSyncInFlight -> 35
             else -> 10
         }
@@ -258,6 +286,14 @@ internal object DashboardLoadProgressCalculator {
         when {
             count > 0 -> 100
             supplement.duloCxCatalogFetchOk -> 100
+            syncSettled(supplement) -> 100
+            // Sibling sources already finished — treat empty/failed dulo as done while sync finalizes.
+            supplement.duloCxChannels == 0 &&
+                !supplement.duloCxCatalogFetchOk &&
+                (supplement.iptvOrgPlaylistsTotal > 0 ||
+                    supplement.adultSwimProbed > 0 ||
+                    supplement.freeTvPlaylistsFailed > 0 ||
+                    supplement.ntvCxChannels > 0) -> 100
             supplement.supplementSyncInFlight -> 40
             else -> 10
         }
@@ -266,6 +302,7 @@ internal object DashboardLoadProgressCalculator {
         when {
             count > 0 -> 100
             supplement.ntvCxResolveProbeOk -> 100
+            syncSettled(supplement) -> 100
             supplement.supplementSyncInFlight -> 40
             else -> 10
         }
@@ -273,9 +310,9 @@ internal object DashboardLoadProgressCalculator {
     private fun adultSwimPercent(count: Int, supplement: SupplementStatus): Int =
         when {
             count > 0 -> 100
-            supplement.adultSwimProbed > 0 && supplement.adultSwimProbeOk >= supplement.adultSwimProbed -> 100
-            supplement.adultSwimProbed > 0 ->
-                min(95, 35 + (supplement.adultSwimProbeOk * 65 / supplement.adultSwimProbed))
+            // Probe wave finished (including all-failed probeOk=0).
+            supplement.adultSwimProbed > 0 -> 100
+            syncSettled(supplement) -> 100
             supplement.supplementSyncInFlight -> 35
             else -> 10
         }

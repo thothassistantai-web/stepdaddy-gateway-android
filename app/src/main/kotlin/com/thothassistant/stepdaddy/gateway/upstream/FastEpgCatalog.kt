@@ -227,7 +227,7 @@ class FastEpgCatalog(
         /** Roku gzip ~3.4MB; Tubi plain XML ~3MB — headroom for future growth. */
         private const val MAX_BYTES = 48 * 1024 * 1024L
         private const val CACHE_TTL_MS = 12 * 3600_000L
-        private const val MAX_CONCURRENT_FEEDS = 4
+        private const val MAX_CONCURRENT_FEEDS = 2
         private const val USER_AGENT = "Mozilla/5.0 StepDaddy-Gateway/1.0"
 
         val FEED_URLS: Map<String, String> = mapOf(
@@ -244,13 +244,20 @@ class FastEpgCatalog(
             // Stirr: omitted — no stable public XMLTV feed (mjh CDN 404).
         )
 
-        private fun defaultClient(): OkHttpClient =
-            OkHttpClient.Builder()
+        private fun defaultClient(): OkHttpClient {
+            val dispatcher = okhttp3.Dispatcher().apply {
+                maxRequests = SupplementConfig.HTTP_MAX_REQUESTS
+                maxRequestsPerHost = SupplementConfig.HTTP_MAX_REQUESTS_PER_HOST
+            }
+            return OkHttpClient.Builder()
+                .dispatcher(dispatcher)
                 .connectTimeout(20, TimeUnit.SECONDS)
                 .readTimeout(90, TimeUnit.SECONDS)
                 .writeTimeout(20, TimeUnit.SECONDS)
                 .callTimeout(120, TimeUnit.SECONDS)
                 .followRedirects(true)
+                .retryOnConnectionFailure(true)
                 .build()
+        }
     }
 }

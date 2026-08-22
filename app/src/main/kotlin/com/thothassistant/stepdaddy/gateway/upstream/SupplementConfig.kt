@@ -41,7 +41,7 @@ object SupplementConfig {
 
     const val SYNC_INTERVAL_MS = 6 * 3600_000L
 
-    const val DOWNLOAD_TIMEOUT_MS = 45_000L
+    const val DOWNLOAD_TIMEOUT_MS = 25_000L
 
     const val MAX_M3U_BYTES = 8 * 1024 * 1024
 
@@ -55,11 +55,22 @@ object SupplementConfig {
     /** @deprecated Stored on disk from older builds; maps to [GroupTitleResolver.SPECIAL_EVENTS]. */
     const val LEGACY_SPORTS_GROUP_TITLE = "🏈 | Special Events"
 
-    fun defaultHttpClient(): okhttp3.OkHttpClient =
-        okhttp3.OkHttpClient.Builder()
+    /** Cap parallel outbound calls so DNS/TLS stampede does not wedge phone networks. */
+    const val HTTP_MAX_REQUESTS = 6
+    const val HTTP_MAX_REQUESTS_PER_HOST = 2
+
+    fun defaultHttpClient(): okhttp3.OkHttpClient {
+        val dispatcher = okhttp3.Dispatcher().apply {
+            maxRequests = HTTP_MAX_REQUESTS
+            maxRequestsPerHost = HTTP_MAX_REQUESTS_PER_HOST
+        }
+        return okhttp3.OkHttpClient.Builder()
+            .dispatcher(dispatcher)
             .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(DOWNLOAD_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
             .writeTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
             .callTimeout(DOWNLOAD_TIMEOUT_MS + 5_000L, java.util.concurrent.TimeUnit.MILLISECONDS)
+            .retryOnConnectionFailure(true)
             .build()
+    }
 }

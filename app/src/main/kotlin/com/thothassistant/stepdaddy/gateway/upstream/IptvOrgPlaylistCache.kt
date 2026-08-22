@@ -12,8 +12,23 @@ import okhttp3.Request
  */
 class IptvOrgPlaylistCache(
     context: Context,
-    private val httpClient: OkHttpClient,
+    httpClient: OkHttpClient,
 ) {
+    /** Isolated client so GitHub/CDN fetches are not queued behind AdultSwim/TMDB stampede. */
+    private val fetchClient: OkHttpClient = httpClient.newBuilder()
+        .dispatcher(
+            okhttp3.Dispatcher().apply {
+                maxRequests = 2
+                maxRequestsPerHost = 2
+            },
+        )
+        .connectTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(8, java.util.concurrent.TimeUnit.SECONDS)
+        .writeTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+        .callTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+        .retryOnConnectionFailure(false)
+        .build()
+
     private val dir = File(context.applicationContext.filesDir, "supplement/iptv-org").also { it.mkdirs() }
 
     data class FetchResult(
@@ -27,68 +42,81 @@ class IptvOrgPlaylistCache(
         bodyFile(filename).takeIf { it.isFile }?.length() ?: 0L
 
     fun fetch(filename: String): FetchResult? {
-        val url = IptvOrgStreamsConfig.rawUrl(filename)
         val bodyFile = bodyFile(filename)
         val meta = readMeta(filename)
-        val request = Request.Builder()
-            .url(url)
-            .header("User-Agent", SupplementConfig.USER_AGENT)
-            .apply {
-                meta.etag?.takeIf { it.isNotBlank() }?.let { header("If-None-Match", it) }
-                meta.lastModified?.takeIf { it.isNotBlank() }?.let { header("If-Modified-Since", it) }
-            }
-            .get()
-            .build()
-        return runCatching {
-            httpClient.newCall(request).execute().use { response ->
-                when {
-                    response.code == 304 && bodyFile.isFile && bodyFile.length() > 0L -> {
-                        FetchResult(
-                            filename = filename,
-                            body = bodyFile.readText(Charsets.UTF_8),
-                            fromCache = true,
-                            httpStatus = 304,
-                        )
+        val urls = IptvOrgStreamsConfig.candidateUrls(filename)
+        var lastExc: Exception? = null
+        for ((index, url) in urls.withIndex()) {
+            val request = Request.Builder()
+                .url(url)
+                .header("User-Agent", SupplementConfig.USER_AGENT)
+                .apply {
+                    // Conditional headers only for GitHub raw (CDN ETags differ).
+                    if (url.startsWith(IptvOrgStreamsConfig.RAW_BASE_URL)) {
+                        meta.etag?.takeIf { it.isNotBlank() }?.let { header("If-None-Match", it) }
+                        meta.lastModified?.takeIf { it.isNotBlank() }?.let { header("If-Modified-Since", it) }
                     }
-                    response.isSuccessful -> {
-                        val bytes = response.body?.bytes() ?: return null
-                        if (bytes.isEmpty()) return null
-                        if (bytes.size > IptvOrgStreamsConfig.MAX_BYTES_PER_PLAYLIST) {
-                            Log.w(TAG, "iptv-org playlist too large: $filename (${bytes.size} bytes)")
-                            return null
+                }
+                .get()
+                .build()
+            val result = runCatching {
+                fetchClient.newCall(request).execute().use { response ->
+                    when {
+                        response.code == 304 && bodyFile.isFile && bodyFile.length() > 0L -> {
+                            FetchResult(
+                                filename = filename,
+                                body = bodyFile.readText(Charsets.UTF_8),
+                                fromCache = true,
+                                httpStatus = 304,
+                            )
                         }
-                        val text = bytes.toString(Charsets.UTF_8)
-                        val sha = sha256Hex(bytes)
-                        if (meta.sha256 == sha && bodyFile.isFile) {
-                            // Body unchanged despite 200
-                            return FetchResult(filename, bodyFile.readText(Charsets.UTF_8), fromCache = true, httpStatus = 200)
+                        response.isSuccessful -> {
+                            val bytes = response.body?.bytes() ?: return@use null
+                            if (bytes.isEmpty()) return@use null
+                            if (bytes.size > IptvOrgStreamsConfig.MAX_BYTES_PER_PLAYLIST) {
+                                Log.w(TAG, "iptv-org playlist too large: $filename (${bytes.size} bytes)")
+                                return@use null
+                            }
+                            val text = bytes.toString(Charsets.UTF_8)
+                            val sha = sha256Hex(bytes)
+                            if (meta.sha256 == sha && bodyFile.isFile) {
+                                FetchResult(filename, bodyFile.readText(Charsets.UTF_8), fromCache = true, httpStatus = 200)
+                            } else {
+                                bodyFile.writeBytes(bytes)
+                                writeMeta(
+                                    filename,
+                                    Meta(
+                                        etag = if (url.startsWith(IptvOrgStreamsConfig.RAW_BASE_URL)) response.header("ETag") else meta.etag,
+                                        lastModified = if (url.startsWith(IptvOrgStreamsConfig.RAW_BASE_URL)) response.header("Last-Modified") else meta.lastModified,
+                                        sha256 = sha,
+                                        syncedAt = System.currentTimeMillis(),
+                                        sizeBytes = bytes.size.toLong(),
+                                    ),
+                                )
+                                if (index > 0) {
+                                    Log.i(TAG, "iptv-org fetched via CDN[$index]: $filename")
+                                }
+                                FetchResult(filename, text, fromCache = false, httpStatus = response.code)
+                            }
                         }
-                        bodyFile.writeBytes(bytes)
-                        writeMeta(
-                            filename,
-                            Meta(
-                                etag = response.header("ETag"),
-                                lastModified = response.header("Last-Modified"),
-                                sha256 = sha,
-                                syncedAt = System.currentTimeMillis(),
-                                sizeBytes = bytes.size.toLong(),
-                            ),
-                        )
-                        FetchResult(filename, text, fromCache = false, httpStatus = response.code)
-                    }
-                    else -> {
-                        Log.w(TAG, "iptv-org fetch failed ${response.code} $filename")
-                        cachedBodyOrNull(filename)?.let {
-                            FetchResult(filename, it, fromCache = true, httpStatus = response.code)
+                        else -> {
+                            Log.w(TAG, "iptv-org fetch failed ${response.code} $filename via $url")
+                            null
                         }
                     }
                 }
+            }.getOrElse { exc ->
+                lastExc = exc as? Exception ?: Exception(exc)
+                Log.w(TAG, "iptv-org fetch error $filename via $url (${exc.message})")
+                null
             }
-        }.getOrElse { exc ->
-            Log.w(TAG, "iptv-org fetch error $filename", exc)
-            cachedBodyOrNull(filename)?.let {
-                FetchResult(filename, it, fromCache = true, httpStatus = 0)
-            }
+            if (result != null) return result
+        }
+        if (lastExc != null) {
+            Log.w(TAG, "iptv-org all mirrors failed $filename", lastExc)
+        }
+        return cachedBodyOrNull(filename)?.let {
+            FetchResult(filename, it, fromCache = true, httpStatus = 0)
         }
     }
 

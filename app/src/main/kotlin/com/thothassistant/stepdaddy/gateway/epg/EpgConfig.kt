@@ -67,7 +67,23 @@ object EpgConfig {
   /** Feed disk cache TTL before re-download. */
   const val FEED_CACHE_TTL_MS = 3600_000L
 
-  const val DOWNLOAD_TIMEOUT_MS = 60_000L
+  /** Primary feed download budget (US2 / sports / locals). */
+  const val DOWNLOAD_TIMEOUT_MS = 25_000L
+
+  /**
+   * Gap-fill feeds must fail fast — serial 60s timeouts previously blocked EPG readiness
+   * for many minutes while primary programmes were already merged into the part file.
+   */
+  const val GAP_FILL_DOWNLOAD_TIMEOUT_MS = 12_000L
+
+  /** Max uncached gap-fill feeds to attempt over the network per build. */
+  const val MAX_GAP_FILL_NETWORK_ATTEMPTS = 3
+
+  /**
+   * Once primary/tvtv merge already produced this many programmes, gap-fill is cache-only
+   * so we can publish a ready guide without waiting on regional CDN stalls.
+   */
+  const val MIN_PROGRAMMES_BEFORE_CACHE_ONLY_GAP = 50
 
   /** Cap total feed cache on disk (primary + on-demand regional gap-fill; trim after each build). */
   const val MAX_FEED_CACHE_BYTES = 320 * 1024 * 1024L

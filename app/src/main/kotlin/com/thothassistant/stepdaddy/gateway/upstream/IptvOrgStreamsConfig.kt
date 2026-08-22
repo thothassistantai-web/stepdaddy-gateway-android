@@ -8,6 +8,15 @@ object IptvOrgStreamsConfig {
     const val RAW_BASE_URL =
         "https://raw.githubusercontent.com/iptv-org/iptv/master/streams/"
 
+    /**
+     * Fallback CDNs when GitHub raw times out on phone networks.
+     * Prefer jsDelivr — same bytes, often reachable when raw.githubusercontent.com stalls.
+     */
+    val CDN_BASE_URLS: List<String> = listOf(
+        "https://cdn.jsdelivr.net/gh/iptv-org/iptv@master/streams/",
+        "https://fastly.jsdelivr.net/gh/iptv-org/iptv@master/streams/",
+    )
+
     /** Inclusive range: uk.m3u … us_xumo.m3u (39 playlists). */
     val PLAYLIST_FILES: List<String> = listOf(
         "uk.m3u",
@@ -56,11 +65,11 @@ object IptvOrgStreamsConfig {
 
     const val MAX_BYTES_PER_PLAYLIST = 2 * 1024 * 1024
 
-    /** Phone / non-Fire concurrency for GitHub raw fetches. */
-    const val MAX_CONCURRENT_FETCH = 6
+    /** Phone / non-Fire concurrency for GitHub raw fetches (keep modest to avoid DNS storms). */
+    const val MAX_CONCURRENT_FETCH = 2
 
     /** Fire Stick / low-RAM concurrency. */
-    const val MAX_CONCURRENT_FETCH_FIRE = 4
+    const val MAX_CONCURRENT_FETCH_FIRE = 1
 
     /**
      * Prefer these first when cache sizes are unknown so progressive publish
@@ -104,6 +113,10 @@ object IptvOrgStreamsConfig {
     )
 
     fun rawUrl(filename: String): String = RAW_BASE_URL + filename
+
+    fun candidateUrls(filename: String): List<String> =
+        // Prefer jsDelivr first on phone networks — raw.githubusercontent.com often stalls.
+        (CDN_BASE_URLS + listOf(RAW_BASE_URL)).map { it + filename }
 
     /** Provider suffix for TiviMate display title, e.g. us_pluto.m3u → Pluto. */
     fun providerTagFor(filename: String): String {

@@ -12,6 +12,9 @@ class LightEpgBuilder(
     private val tvtvFetcher: TvtvUsEpgFetcher? = null,
     private val httpClient: OkHttpClient = defaultClient(),
 ) {
+  /** Consecutive feed download failures in the current build (resets on success). */
+  private var consecutiveFeedFailures = 0
+
   fun build(
       tvgIds: Set<String>,
       supplementEpgFile: File? = null,
@@ -27,6 +30,7 @@ class LightEpgBuilder(
       placeholderExcludeIds: Set<String> = emptySet(),
       tvtvGapFillEnabled: Boolean = true,
   ): BuildResult {
+    consecutiveFeedFailures = 0
     val output = File(store.servedXml.parentFile, "epg.build.part")
     val allIds = tvgIds + supplementTvgIds + sportsTvgIds + fastEpgTvgIds
     if (allIds.isEmpty()) {
@@ -110,7 +114,32 @@ class LightEpgBuilder(
           ).toSet()
       if (epgshareGapIds.isNotEmpty()) {
         val gapGrouped = groupTvgIdsByGapFillFeed(epgshareGapIds)
-        gapGrouped.keys.forEach { url -> ensureFeedCached(url) }
+        val cacheOnlyGap = programmeCount >= EpgConfig.MIN_PROGRAMMES_BEFORE_CACHE_ONLY_GAP
+        var networkBudget =
+            if (cacheOnlyGap) 0 else EpgConfig.MAX_GAP_FILL_NETWORK_ATTEMPTS
+        if (cacheOnlyGap) {
+          android.util.Log.i(
+              "LightEpgBuilder",
+              "EPG gap-fill cache-only ($programmeCount programmes already merged)",
+          )
+        }
+        gapGrouped.keys.forEach { url ->
+          val cache = store.feedCacheFile(url)
+          val hasCache = cache.exists() && cache.length() > 0L
+          if (hasCache) {
+            // Never block the build refreshing regional feeds that we already have.
+            return@forEach
+          }
+          if (networkBudget <= 0) {
+            android.util.Log.w(
+                "LightEpgBuilder",
+                "EPG gap-fill skipped (no cache, network budget exhausted): $url",
+            )
+            return@forEach
+          }
+          networkBudget--
+          ensureFeedCached(url, timeoutMs = EpgConfig.GAP_FILL_DOWNLOAD_TIMEOUT_MS)
+        }
         val gapExpansion = idBridge?.expandWantedIds(epgshareGapIds)
             ?: EpgTvgIdMatcher.expandWantedIds(epgshareGapIds)
         gapGrouped.forEach { (url, playlistIds) ->
@@ -417,36 +446,85 @@ class LightEpgBuilder(
     programmeCountRef(programmeCount)
   }
 
-  private fun ensureFeedCached(url: String) {
+  private fun ensureFeedCached(
+      url: String,
+      timeoutMs: Long = EpgConfig.DOWNLOAD_TIMEOUT_MS,
+  ) {
     val cache = store.feedCacheFile(url)
-    if (store.isFeedFresh(cache)) return
+    if (store.isFeedFresh(cache)) {
+      consecutiveFeedFailures = 0
+      return
+    }
+    if (consecutiveFeedFailures >= MAX_CONSECUTIVE_FEED_FAILURES) {
+      if (cache.exists() && cache.length() > 0L) {
+        android.util.Log.w(
+            "LightEpgBuilder",
+            "EPG feed skip (network budget exhausted), using stale cache: $url",
+        )
+      } else {
+        android.util.Log.w(
+            "LightEpgBuilder",
+            "EPG feed skip (network budget exhausted): $url",
+        )
+      }
+      return
+    }
     val request = Request.Builder()
         .url(url)
         .header("User-Agent", EpgConfig.USER_AGENT)
         .get()
         .build()
     val tmp = File(cache.parentFile, "${cache.name}.part")
-    httpClient.newCall(request).execute().use { response ->
-      if (!response.isSuccessful) error("feed_download_failed:${response.code}")
-      val body = response.body ?: error("feed_empty")
-      val sink = tmp.outputStream()
-      val max = EpgConfig.MAX_FEED_BYTES.toLong()
-      var total = 0L
-      body.byteStream().use { input ->
-        val buffer = ByteArray(64 * 1024)
-        while (true) {
-          val read = input.read(buffer)
-          if (read <= 0) break
-          total += read
-          if (total > max) error("feed_exceeded_max_bytes")
-          sink.write(buffer, 0, read)
+    val client =
+        if (timeoutMs == EpgConfig.DOWNLOAD_TIMEOUT_MS) {
+          httpClient
+        } else {
+          httpClient
+              .newBuilder()
+              .connectTimeout(minOf(10_000L, timeoutMs), TimeUnit.MILLISECONDS)
+              .readTimeout(timeoutMs, TimeUnit.MILLISECONDS)
+              .writeTimeout(minOf(15_000L, timeoutMs), TimeUnit.MILLISECONDS)
+              .callTimeout(timeoutMs + 2_000L, TimeUnit.MILLISECONDS)
+              .build()
         }
+    try {
+      client.newCall(request).execute().use { response ->
+        if (!response.isSuccessful) error("feed_download_failed:${response.code}")
+        val body = response.body ?: error("feed_empty")
+        val sink = tmp.outputStream()
+        val max = EpgConfig.MAX_FEED_BYTES.toLong()
+        var total = 0L
+        body.byteStream().use { input ->
+          val buffer = ByteArray(64 * 1024)
+          while (true) {
+            val read = input.read(buffer)
+            if (read <= 0) break
+            total += read
+            if (total > max) error("feed_exceeded_max_bytes")
+            sink.write(buffer, 0, read)
+          }
+        }
+        sink.close()
       }
-      sink.close()
-    }
-    if (!tmp.renameTo(cache)) {
-      cache.writeBytes(tmp.readBytes())
-      tmp.delete()
+      if (!tmp.renameTo(cache)) {
+        cache.writeBytes(tmp.readBytes())
+        tmp.delete()
+      }
+      consecutiveFeedFailures = 0
+    } catch (exc: Exception) {
+      runCatching { tmp.delete() }
+      consecutiveFeedFailures++
+      if (cache.exists() && cache.length() > 0L) {
+        android.util.Log.w(
+            "LightEpgBuilder",
+            "EPG feed refresh failed, using stale cache: $url (${exc.message})",
+        )
+        return
+      }
+      android.util.Log.w(
+          "LightEpgBuilder",
+          "EPG feed unavailable, skipping (no cache): $url (${exc.message})",
+      )
     }
   }
 
@@ -462,6 +540,8 @@ class LightEpgBuilder(
   )
 
   companion object {
+    private const val MAX_CONSECUTIVE_FEED_FAILURES = 3
+
     fun emptyXml(): ByteArray =
         """<?xml version="1.0" encoding="UTF-8"?><tv generator-info-name="StepDaddy Gateway"></tv>"""
             .toByteArray(Charsets.UTF_8)
@@ -620,12 +700,19 @@ class LightEpgBuilder(
     private fun feed(name: String): String =
         "https://epgshare01.online/epgshare01/epg_ripper_${name}.xml.gz"
 
-    private fun defaultClient(): OkHttpClient =
-        OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(EpgConfig.DOWNLOAD_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-            .writeTimeout(15, TimeUnit.SECONDS)
-            .callTimeout(EpgConfig.DOWNLOAD_TIMEOUT_MS + 5_000L, TimeUnit.MILLISECONDS)
-            .build()
+    private fun defaultClient(): OkHttpClient {
+      val dispatcher = okhttp3.Dispatcher().apply {
+        maxRequests = 6
+        maxRequestsPerHost = 2
+      }
+      return OkHttpClient.Builder()
+          .dispatcher(dispatcher)
+          .connectTimeout(15, TimeUnit.SECONDS)
+          .readTimeout(EpgConfig.DOWNLOAD_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+          .writeTimeout(15, TimeUnit.SECONDS)
+          .callTimeout(EpgConfig.DOWNLOAD_TIMEOUT_MS + 5_000L, TimeUnit.MILLISECONDS)
+          .retryOnConnectionFailure(true)
+          .build()
+    }
   }
 }

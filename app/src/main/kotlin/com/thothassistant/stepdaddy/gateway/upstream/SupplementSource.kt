@@ -963,13 +963,17 @@ class SupplementSource(
                 }
             }
 
-            // FAST EPG: disk index immediately; refresh in parallel (never gate providers).
+            // FAST EPG: load disk index immediately; stagger network refresh behind iptv-org
+            // playlist wave so GitHub raw + mjh feeds do not stampede DNS together.
             val fastEpgDeferred = async {
                 if (environment.gatewayEpgEnabled && iptvOrgEnabled() && environment.iptvOrgEpgEnabled) {
                     runCatching {
                         fastEpgCatalog.loadIndexFromDisk()
                         val staleOrEmpty =
                             fastEpgCatalog.isStale() || fastEpgCatalog.cachedFeedFiles().isEmpty()
+                        if (staleOrEmpty) {
+                            delay(8_000L)
+                        }
                         fastEpgCatalog.refreshAsync(force = staleOrEmpty)
                     }.onFailure { exc -> Log.w(TAG, "FAST EPG refresh failed", exc) }
                 }
@@ -1273,15 +1277,20 @@ class SupplementSource(
             tmdbVodDeferred.await()
             tmdbVodSeriesDeferred.await()
 
-            // Finish FAST refresh so the final backfill below can use a fresh index.
-            runCatching { fastEpgDeferred.await() }
+            // Finish FAST refresh with a hard ceiling — GitHub/mjh stalls must not hold
+            // supplementSyncInFlight forever (Sources UI / progress depends on it clearing).
+            withTimeoutOrNull(90_000L) {
+                runCatching { fastEpgDeferred.await() }
+            } ?: Log.w(TAG, "FAST EPG await timed out — continuing sync finalize")
 
             if (environment.gatewayEpgEnabled && iptvOrgEnabled() && environment.iptvOrgEpgEnabled) {
-                runCatching {
-                    iptvOrgEpgRepository.refresh(
-                        environment.iptvOrgEpgUrl.takeIf { it.isNotBlank() },
-                    )
-                }.onFailure { exc -> Log.w(TAG, "iptv-org EPG refresh failed", exc) }
+                withTimeoutOrNull(60_000L) {
+                    runCatching {
+                        iptvOrgEpgRepository.refresh(
+                            environment.iptvOrgEpgUrl.takeIf { it.isNotBlank() },
+                        )
+                    }.onFailure { exc -> Log.w(TAG, "iptv-org EPG refresh failed", exc) }
+                } ?: Log.w(TAG, "iptv-org EPG refresh timed out — continuing")
             }
 
             val mergedDaddyFallbacks = SupplementFallbackOverridesApplier.apply(
@@ -1447,6 +1456,7 @@ class SupplementSource(
     companion object {
         private const val TAG = "SupplementSource"
         /** iptv-org fetches 39 playlists + FAST EPG on slow STBs (e.g. MiTV) can exceed 2 min. */
-        private const val SYNC_MAX_MS = 900_000L
+        /** Hard ceiling for one supplement merge; GitHub/CDN stalls must not freeze Sources UI. */
+        private const val SYNC_MAX_MS = 360_000L
     }
 }
