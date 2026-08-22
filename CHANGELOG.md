@@ -7,6 +7,12 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.37] - 2026-08-21
+
+### Fixed
+
+- **Smart playlist auto backups** — `SupplementMatchScorer` now treats exact `tvg-id` as authoritative before region/language filters, and treats `INT`/`WW` (plus `WORLD`/`GLOBAL` → `WW`) as wildcard regions. Free-TV / dulo rows tagged `INT` while DaddyLive encodes `.us` no longer score 0; USB verify recovered ~266 channels / ~631 mirrors.
+
 ## [3.0.36] - 2026-08-21
 
 ### Changed

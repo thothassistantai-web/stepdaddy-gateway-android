@@ -89,6 +89,14 @@ object SupplementMatchScorer {
         )
         val reasons = mutableListOf<String>()
 
+        // Exact tvg-id is authoritative (already region-encoded, e.g. CNN.us). Do not let a
+        // coarse INT/WW country hint or language strip block a perfect identity match.
+        val tvgHit = tvgIdsMatch(daddyTvgId, candidateTvgId)
+        if (tvgHit) {
+            reasons += "tvg_id"
+            return 100 to reasons
+        }
+
         if (daddy.languageMarkers != candidate.languageMarkers &&
             (daddy.languageMarkers.isNotEmpty() || candidate.languageMarkers.isNotEmpty())
         ) {
@@ -97,12 +105,6 @@ object SupplementMatchScorer {
 
         if (!regionsCompatible(daddy.region, candidate.region)) {
             return 0 to listOf("region_mismatch:${daddy.region}|${candidate.region}")
-        }
-
-        val tvgHit = tvgIdsMatch(daddyTvgId, candidateTvgId)
-        if (tvgHit) {
-            reasons += "tvg_id"
-            return 100 to reasons
         }
 
         if (daddy.coreName.isEmpty() || candidate.coreName.isEmpty()) {
@@ -210,8 +212,12 @@ object SupplementMatchScorer {
     ): Boolean {
         if (left == null && right == null) return !requireBoth
         if (left == null || right == null) return !requireBoth
+        if (isWildcardRegion(left) || isWildcardRegion(right)) return true
         return left == right
     }
+
+    private fun isWildcardRegion(region: String): Boolean =
+        region in WILDCARD_REGIONS
 
     private fun qualityStripped(name: String): String {
         var s = name.lowercase(Locale.US)
@@ -322,7 +328,13 @@ object SupplementMatchScorer {
         "IT" to "IT",
         "TR" to "TR",
         "INT" to "INT",
+        "WW" to "WW",
+        "WORLD" to "WW",
+        "GLOBAL" to "WW",
     )
+
+    /** International / world markers — compatible with any concrete region. */
+    private val WILDCARD_REGIONS = setOf("INT", "WW")
 
     private val FLAG_TO_REGION = mapOf(
         "🇺🇸" to "US",

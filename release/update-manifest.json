@@ -1,10 +1,10 @@
 {
-  "versionCode": 30036,
-  "versionName": "3.0.36",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.36/stepdaddy-gateway-3.0.36-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.36/stepdaddy-gateway-3.0.36-debug.apk",
-  "apkSha256": "e9b35f041160f4130fb2823c603ac4c74d8814c83ca3dda863393ed1c6c9b06a",
-  "apkSha256Debug": "d71cb6acf102f5f518b861f0b43cddb3afd90133c742660b89ee59fcf6ceee34",
-  "releaseNotes": "**TiviMate (fast)** \u2014 `/tivimate.m3u` and `/tivimate-stream/{id}` always serve direct DaddyLive media playlists (no multi-variant master intercept). Snappy channel changes again.",
+  "versionCode": 30037,
+  "versionName": "3.0.37",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.37/stepdaddy-gateway-3.0.37-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.37/stepdaddy-gateway-3.0.37-debug.apk",
+  "apkSha256": "7298f4839c17bb9f4318510c13b27375019e47f94d115a849f250a9a4cfeeff6",
+  "apkSha256Debug": "5accb715ca5577d55353523b3144c76659b72bb10b56b1277267497f4d83d591",
+  "releaseNotes": "**Smart consolidate backups** \u2014 exact `tvg-id` matches win before region/language filters; `INT`/`WW` country hints are wildcards so Free-TV / dulo international tags still attach to DaddyLive `.us` (etc.) rows.",
   "mandatory": false
 }

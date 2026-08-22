@@ -38,11 +38,12 @@ Previously, overlap used:
 
 Rules of thumb:
 
-- **Region conflict → never match**
-- **Language marker mismatch → never match**
+- **Exact tvg-id** (including `@HD`) scores 100 first — authoritative even when a candidate country hint is `INT`/`WW`
+- **`INT` / `WW`** (and aliases `WORLD` / `GLOBAL` → `WW`) are wildcard regions compatible with any concrete region
+- **Region conflict → never match** (concrete regions only)
+- **Language marker mismatch → never match** (skipped for exact tvg-id hits)
 - **Core names must be identical** (no fuzzy substring; avoids `CNN` ⊂ `CNN Türk` after stripping)
 - **Short cores** (≤4 letters) need region agreement or an exact quality-stripped label
-- **Exact tvg-id** (including `@HD`) scores 100 when regions are compatible
 
 Skip-dupes and Merge-fallbacks both use this scorer.
 

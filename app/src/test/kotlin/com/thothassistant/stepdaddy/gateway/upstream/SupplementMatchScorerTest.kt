@@ -84,6 +84,33 @@ class SupplementMatchScorerTest {
     }
 
     @Test
+    fun `accepts exact tvg-id even when candidate country hint is INT`() {
+        // Free-TV / dulo often tag rows INT while DaddyLive tvg encodes .us — must still consolidate.
+        val daddy = Channel(id = "345", name = "CNN USA", tags = listOf("🇺🇸", "#news"), tvgId = "CNN.us")
+        val match = SupplementMatchScorer.bestMatch(
+            candidateName = "CNN",
+            candidateTvgId = "CNN.us",
+            indexes = indexes(daddy),
+            candidateCountryHint = "INT",
+        )
+        assertEquals("345", match?.daddyChannelId)
+        assertEquals(100, match?.score)
+    }
+
+    @Test
+    fun `INT country hint is compatible with US core-name match`() {
+        val daddy = Channel(id = "327", name = "MSNBC", tags = listOf("🇺🇸", "#news"), tvgId = "MSNBC.us")
+        val match = SupplementMatchScorer.bestMatch(
+            candidateName = "MSNBC",
+            candidateTvgId = null,
+            indexes = indexes(daddy),
+            candidateCountryHint = "INT",
+        )
+        assertEquals("327", match?.daddyChannelId)
+        assertTrue(match!!.score >= SupplementMatchScorer.MIN_SCORE)
+    }
+
+    @Test
     fun `accepts short name with region hint from playlist`() {
         val daddy = Channel(id = "3", name = "CNN", tags = listOf("🇺🇸", "#news"), tvgId = "CNN.us")
         val match = SupplementMatchScorer.bestMatch(
