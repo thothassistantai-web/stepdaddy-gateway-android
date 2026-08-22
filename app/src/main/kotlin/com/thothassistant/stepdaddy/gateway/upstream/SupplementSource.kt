@@ -1098,37 +1098,41 @@ class SupplementSource(
                         AdultSwimStreamsSource.FetchStats(),
                     )
                 }
-                runCatching {
-                    adultSwimSource.fetchChannels(
-                        daddyChannels,
-                        environment.supplementAdultSwimImportMode,
-                        probeBudgetMs = if (hasAdultSwimCache) {
-                            AdultSwimStreamsConfig.PROBE_BUDGET_MS
-                        } else {
-                            null
-                        },
-                        preferCachedOnBudgetExceed = hasAdultSwimCache,
+                val outcome = withTimeoutOrNull(AdultSwimStreamsConfig.PROBE_BUDGET_MS + 3_000L) {
+                    runCatching {
+                        adultSwimSource.fetchChannels(
+                            daddyChannels,
+                            environment.supplementAdultSwimImportMode,
+                            probeBudgetMs = AdultSwimStreamsConfig.PROBE_BUDGET_MS,
+                            preferCachedOnBudgetExceed = hasAdultSwimCache,
+                        )
+                    }.getOrElse { emptyAdultSwimOutcome(it) }
+                } ?: run {
+                    Log.w(TAG, "adult swim sync slot timed out — prefer cache / empty")
+                    AdultSwimStreamsSource.FetchOutcome(
+                        emptyList(),
+                        AdultSwimStreamsSource.FetchStats(
+                            catalogRows = AdultSwimStreamsConfig.CATALOG.size,
+                            probeBudgetExceeded = true,
+                        ),
                     )
-                }.getOrElse { exc ->
-                    Log.w(TAG, "adult swim fetch failed", exc)
-                    AdultSwimStreamsSource.FetchOutcome(emptyList(), AdultSwimStreamsSource.FetchStats())
-                }.also { outcome ->
-                    var channels = outcome.channels
-                    if (channels.isEmpty()) {
-                        val cachedAdultSwim = previousCached.filter { it.id.startsWith("adultswim:") }
-                        if (cachedAdultSwim.isNotEmpty()) {
-                            Log.w(
-                                TAG,
-                                "adult swim probe empty — keeping ${cachedAdultSwim.size} cached channels",
-                            )
-                            channels = cachedAdultSwim
-                        }
-                    }
-                    adultSwimStats = outcome.stats
-                    adultSwimFallbacks = outcome.daddyFallbacks
-                    adultSwimReady = channels
-                    publishProgress()
                 }
+                var channels = outcome.channels
+                if (channels.isEmpty()) {
+                    val cachedAdultSwim = previousCached.filter { it.id.startsWith("adultswim:") }
+                    if (cachedAdultSwim.isNotEmpty()) {
+                        Log.w(
+                            TAG,
+                            "adult swim probe empty — keeping ${cachedAdultSwim.size} cached channels",
+                        )
+                        channels = cachedAdultSwim
+                    }
+                }
+                adultSwimStats = outcome.stats
+                adultSwimFallbacks = outcome.daddyFallbacks
+                adultSwimReady = channels
+                publishProgress()
+                outcome.copy(channels = channels)
             }
 
             val freeTvDeferred = async {
@@ -1136,29 +1140,36 @@ class SupplementSource(
                     freeTvReady = emptyList()
                     return@async FreeTvIptvSource.FetchOutcome(emptyList(), FreeTvIptvSource.FetchStats())
                 }
-                runCatching {
-                    freeTvSource.fetchChannels(
-                        daddyChannels,
-                        environment.supplementFreeTvImportMode,
+                val outcome = withTimeoutOrNull(FreeTvIptvConfig.FETCH_BUDGET_MS) {
+                    runCatching {
+                        freeTvSource.fetchChannels(
+                            daddyChannels,
+                            environment.supplementFreeTvImportMode,
+                        )
+                    }.getOrElse { emptyFreeTvOutcome(it) }
+                } ?: run {
+                    Log.w(TAG, "Free-TV sync slot timed out — prefer cache / empty")
+                    FreeTvIptvSource.FetchOutcome(
+                        emptyList(),
+                        FreeTvIptvSource.FetchStats(
+                            playlistsFailed = FreeTvIptvConfig.PLAYLIST_FILES.size,
+                        ),
                     )
-                }.getOrElse { exc ->
-                    Log.w(TAG, "Free-TV fetch failed", exc)
-                    FreeTvIptvSource.FetchOutcome(emptyList(), FreeTvIptvSource.FetchStats())
-                }.also { outcome ->
-                    var channels = outcome.channels
-                    if (channels.isEmpty()) {
-                        val cachedFreeTv =
-                            previousCached.filter { it.id.startsWith(FreeTvIptvConfig.ID_PREFIX) }
-                        if (cachedFreeTv.isNotEmpty()) {
-                            Log.w(TAG, "Free-TV fetch empty — keeping ${cachedFreeTv.size} cached channels")
-                            channels = cachedFreeTv
-                        }
-                    }
-                    freeTvStats = outcome.stats
-                    freeTvFallbacks = outcome.daddyFallbacks
-                    freeTvReady = channels
-                    publishProgress()
                 }
+                var channels = outcome.channels
+                if (channels.isEmpty()) {
+                    val cachedFreeTv =
+                        previousCached.filter { it.id.startsWith(FreeTvIptvConfig.ID_PREFIX) }
+                    if (cachedFreeTv.isNotEmpty()) {
+                        Log.w(TAG, "Free-TV fetch empty — keeping ${cachedFreeTv.size} cached channels")
+                        channels = cachedFreeTv
+                    }
+                }
+                freeTvStats = outcome.stats
+                freeTvFallbacks = outcome.daddyFallbacks
+                freeTvReady = channels
+                publishProgress()
+                outcome.copy(channels = channels)
             }
 
             val duloCxDeferred = async {
@@ -1169,31 +1180,38 @@ class SupplementSource(
                         DuloCxLiveResolver.FetchStats(),
                     )
                 }
-                runCatching {
-                    duloCxSource.fetchChannels(
-                        daddyChannels = daddyChannels,
-                        importMode = environment.supplementDuloCxImportMode,
-                        nameIndex = nameIndex,
-                        authConfigured = environment.supplementDuloCxAccessToken.isNotBlank(),
+                val outcome = withTimeoutOrNull(DuloCxLiveConfig.CATALOG_FETCH_BUDGET_MS) {
+                    runCatching {
+                        duloCxSource.fetchChannels(
+                            daddyChannels = daddyChannels,
+                            importMode = environment.supplementDuloCxImportMode,
+                            nameIndex = nameIndex,
+                            authConfigured = environment.supplementDuloCxAccessToken.isNotBlank(),
+                        )
+                    }.getOrElse { emptyDuloOutcome(it) }
+                } ?: run {
+                    Log.w(TAG, "dulo.cx sync slot timed out — prefer cache / empty")
+                    DuloCxLiveSource.FetchOutcome(
+                        emptyList(),
+                        DuloCxLiveResolver.FetchStats(
+                            authConfigured = environment.supplementDuloCxAccessToken.isNotBlank(),
+                        ),
                     )
-                }.getOrElse { exc ->
-                    Log.w(TAG, "dulo.cx live fetch failed", exc)
-                    DuloCxLiveSource.FetchOutcome(emptyList(), DuloCxLiveResolver.FetchStats())
-                }.also { outcome ->
-                    var channels = outcome.channels
-                    if (channels.isEmpty()) {
-                        val cachedDulo =
-                            previousCached.filter { it.id.startsWith(DuloCxLiveConfig.ID_PREFIX) }
-                        if (cachedDulo.isNotEmpty()) {
-                            Log.w(TAG, "dulo.cx fetch empty — keeping ${cachedDulo.size} cached channels")
-                            channels = cachedDulo
-                        }
-                    }
-                    duloCxStats = outcome.stats
-                    duloFallbacks = outcome.daddyFallbacks
-                    duloReady = channels
-                    publishProgress()
                 }
+                var channels = outcome.channels
+                if (channels.isEmpty()) {
+                    val cachedDulo =
+                        previousCached.filter { it.id.startsWith(DuloCxLiveConfig.ID_PREFIX) }
+                    if (cachedDulo.isNotEmpty()) {
+                        Log.w(TAG, "dulo.cx fetch empty — keeping ${cachedDulo.size} cached channels")
+                        channels = cachedDulo
+                    }
+                }
+                duloCxStats = outcome.stats
+                duloFallbacks = outcome.daddyFallbacks
+                duloReady = channels
+                publishProgress()
+                outcome.copy(channels = channels)
             }
 
             val tmdbVodDeferred = async {
@@ -1458,5 +1476,23 @@ class SupplementSource(
         /** iptv-org fetches 39 playlists + FAST EPG on slow STBs (e.g. MiTV) can exceed 2 min. */
         /** Hard ceiling for one supplement merge; GitHub/CDN stalls must not freeze Sources UI. */
         private const val SYNC_MAX_MS = 360_000L
+
+        private fun emptyAdultSwimOutcome(exc: Throwable): AdultSwimStreamsSource.FetchOutcome {
+            Log.w(TAG, "adult swim fetch failed", exc)
+            return AdultSwimStreamsSource.FetchOutcome(
+                emptyList(),
+                AdultSwimStreamsSource.FetchStats(),
+            )
+        }
+
+        private fun emptyFreeTvOutcome(exc: Throwable): FreeTvIptvSource.FetchOutcome {
+            Log.w(TAG, "Free-TV fetch failed", exc)
+            return FreeTvIptvSource.FetchOutcome(emptyList(), FreeTvIptvSource.FetchStats())
+        }
+
+        private fun emptyDuloOutcome(exc: Throwable): DuloCxLiveSource.FetchOutcome {
+            Log.w(TAG, "dulo.cx live fetch failed", exc)
+            return DuloCxLiveSource.FetchOutcome(emptyList(), DuloCxLiveResolver.FetchStats())
+        }
     }
 }

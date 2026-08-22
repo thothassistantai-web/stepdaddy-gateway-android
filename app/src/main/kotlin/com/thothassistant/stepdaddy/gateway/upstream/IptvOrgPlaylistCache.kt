@@ -160,8 +160,9 @@ class IptvOrgPlaylistCache(
         if (anyTransportFailure) {
             noteFailure()
         }
+        val errMsg = lastExc?.message
         if (lastExc != null && cachedBody == null) {
-            logFetchWarn("iptv-org all mirrors failed $filename: ${lastExc.message}")
+            logFetchWarn("iptv-org all mirrors failed $filename: $errMsg")
         } else if (lastExc != null && cachedBody != null) {
             logDegradedOnce("iptv-org CDN unreachable — serving disk cache ($filename)")
         }
@@ -247,9 +248,9 @@ class IptvOrgPlaylistCache(
         private val lastDegradedMs = AtomicLong(0L)
 
         /** Prefer IPv4 — some LTE stacks hang on IPv6 AAAA for GitHub/CDN hosts. */
-        val IPV4_PREFER_DNS: Dns = Dns { hostname ->
-            val all = Dns.SYSTEM.lookup(hostname)
-            all.sortedBy { addr: InetAddress -> if (addr is Inet4Address) 0 else 1 }
+        val IPV4_PREFER_DNS: Dns = object : Dns {
+            override fun lookup(hostname: String): List<InetAddress> =
+                Dns.SYSTEM.lookup(hostname).sortedBy { addr -> if (addr is Inet4Address) 0 else 1 }
         }
 
         fun isCircuitOpen(now: Long = System.currentTimeMillis()): Boolean =

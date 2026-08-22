@@ -31,6 +31,13 @@ object DuloCxLiveConfig {
 
     const val MAX_CHANNELS_JSON_BYTES = 2 * 1024 * 1024
 
+    /** Catalog JSON fetch wall-clock budget — do not block supplement sync on dulo.cx hangs. */
+    const val CATALOG_FETCH_BUDGET_MS = 18_000L
+
+    const val CONNECT_TIMEOUT_MS = 8_000L
+    const val READ_TIMEOUT_MS = 12_000L
+    const val CALL_TIMEOUT_MS = 15_000L
+
     const val USER_AGENT =
         "Mozilla/5.0 (Linux; Android 11; Android TV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 

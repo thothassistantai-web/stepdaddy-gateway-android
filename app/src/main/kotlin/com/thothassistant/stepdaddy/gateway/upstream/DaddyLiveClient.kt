@@ -256,7 +256,8 @@ class DaddyLiveClient(
             }
         }
         streamCacheMisses++
-        if (isGlobalOutageActive()) {
+        // Prefer stale-good early when mirrors are already known-dead / cooling (fewer TiviMate spinners).
+        if (isGlobalOutageActive() || likelyUpstreamDegraded()) {
             serveStaleStreamFromCaches(cacheKey, channelId, now)?.let { return it }
         }
         try {
@@ -328,6 +329,8 @@ class DaddyLiveClient(
             if (hedged != null) {
                 return hedged
             }
+            // Hedged race missed — prefer stale-good over a long serial walk when LTE is wedged.
+            serveStaleUpstreamFromCaches(channelId, System.currentTimeMillis())?.let { return it }
         }
         return fetchManifestSerial(channelId, mirrors, startedAtMs)
     }
@@ -934,6 +937,14 @@ class DaddyLiveClient(
     }
 
     fun isGlobalOutageActive(): Boolean = System.currentTimeMillis() < outageModeUntilMs
+
+    /** True when mirrors look unhealthy enough to prefer stale-good over a long resolve. */
+    private fun likelyUpstreamDegraded(): Boolean {
+        if (consecutiveOutageOpens > 0) return true
+        if (deadMirrors.isNotEmpty()) return true
+        if (lastUpstreamSuccessMs <= 0L && mirrorFailureCounts.isNotEmpty()) return true
+        return false
+    }
 
     fun outageRemainingMs(): Long = (outageModeUntilMs - System.currentTimeMillis()).coerceAtLeast(0L)
 

@@ -3,17 +3,25 @@ package com.thothassistant.stepdaddy.gateway.upstream
 import android.util.Log
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
+import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.resume
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import okhttp3.Call
+import okhttp3.Callback
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 
 /**
  * Fetches Adult Swim marathon HLS streams; only publishes slugs that pass a live probe.
@@ -37,14 +45,15 @@ class AdultSwimStreamsSource(
     )
 
     /**
-     * @param probeBudgetMs when set, caps the whole probe phase; remaining probes are cancelled.
-     * @param preferCachedOnBudgetExceed when budget is exceeded, return empty channels so the
-     *   caller can retain its adultswim: disk/memory cache (existing empty-fetch retention).
+     * @param probeBudgetMs caps the whole probe phase; remaining probes are cancelled and
+     *   partial successes are kept. Defaults to [AdultSwimStreamsConfig.PROBE_BUDGET_MS].
+     * @param preferCachedOnBudgetExceed when budget is exceeded with zero successes, return empty
+     *   channels so the caller can retain its adultswim: disk/memory cache.
      */
     suspend fun fetchChannels(
         daddyChannels: List<Channel>,
         importMode: SupplementImportMode = SupplementImportMode.FULL_CATALOG,
-        probeBudgetMs: Long? = null,
+        probeBudgetMs: Long? = AdultSwimStreamsConfig.PROBE_BUDGET_MS,
         preferCachedOnBudgetExceed: Boolean = false,
     ): FetchOutcome = withContext(Dispatchers.IO) {
         val skipDuplicates = importMode.skipsDuplicateRows()
@@ -52,18 +61,28 @@ class AdultSwimStreamsSource(
         val daddyIndexes = SupplementImportMatcher.buildDaddyIndexes(daddyChannels)
         val daddyFallbacks = mutableMapOf<String, MutableList<com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror>>()
 
-        val probeResults = runProbes(probeBudgetMs)
-        if (probeResults == null) {
+        val budget = (probeBudgetMs ?: AdultSwimStreamsConfig.PROBE_BUDGET_MS).coerceAtLeast(1_000L)
+        val (probeResults, budgetExceeded) = runProbes(budget)
+        if (budgetExceeded) {
             Log.w(
                 TAG,
-                "adult swim probe budget exceeded" +
-                    (probeBudgetMs?.let { " after ${it}ms" } ?: "") +
-                    if (preferCachedOnBudgetExceed) " — prefer cache" else "",
+                "adult swim probe budget exceeded after ${budget}ms " +
+                    "(partial=${probeResults.size}/${AdultSwimStreamsConfig.CATALOG.size})" +
+                    if (preferCachedOnBudgetExceed && probeResults.none { it.second }) {
+                        " — prefer cache"
+                    } else {
+                        ""
+                    },
             )
+        }
+
+        if (preferCachedOnBudgetExceed && budgetExceeded && probeResults.none { it.second }) {
             return@withContext FetchOutcome(
                 channels = emptyList(),
                 stats = FetchStats(
                     catalogRows = AdultSwimStreamsConfig.CATALOG.size,
+                    probed = probeResults.size,
+                    probeOk = 0,
                     probeBudgetExceeded = true,
                 ),
             )
@@ -95,12 +114,13 @@ class AdultSwimStreamsSource(
                     countryHint = "US",
                 )
                 if (targetId != null) {
-                    daddyFallbacks.getOrPut(targetId) { mutableListOf() } += com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror(
-                        streamUrl = AdultSwimStreamsConfig.masterPlaylistUrl(row.slug),
-                        label = AdultSwimStreamsConfig.PROVIDER_TAG,
-                        referer = AdultSwimStreamsConfig.REFERER,
-                        origin = AdultSwimStreamsConfig.ORIGIN,
-                    )
+                    daddyFallbacks.getOrPut(targetId) { mutableListOf() } +=
+                        com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror(
+                            streamUrl = AdultSwimStreamsConfig.masterPlaylistUrl(row.slug),
+                            label = AdultSwimStreamsConfig.PROVIDER_TAG,
+                            referer = AdultSwimStreamsConfig.REFERER,
+                            origin = AdultSwimStreamsConfig.ORIGIN,
+                        )
                 }
                 if (skipDuplicates) continue
             }
@@ -126,33 +146,47 @@ class AdultSwimStreamsSource(
                 probeOk = probeOk,
                 channelsAfterDedup = channels.size,
                 daddyFallbacksAttached = daddyFallbacks.values.sumOf { it.size },
+                probeBudgetExceeded = budgetExceeded,
             ),
             daddyFallbacks = daddyFallbacks,
         )
     }
 
+    /**
+     * Runs probes under a hard wall-clock budget. OkHttp calls are cancelled on timeout so
+     * coroutine cancellation is not blocked by [okhttp3.Call.execute].
+     */
     private suspend fun runProbes(
-        probeBudgetMs: Long?,
-    ): List<Pair<AdultSwimStreamsConfig.MarathonStream, Boolean>>? {
+        probeBudgetMs: Long,
+    ): Pair<List<Pair<AdultSwimStreamsConfig.MarathonStream, Boolean>>, Boolean> {
+        val probeClient = httpClient.newBuilder()
+            .retryOnConnectionFailure(false)
+            .connectTimeout(AdultSwimStreamsConfig.PROBE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            .readTimeout(AdultSwimStreamsConfig.PROBE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            .writeTimeout(AdultSwimStreamsConfig.PROBE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            .callTimeout(AdultSwimStreamsConfig.PROBE_TIMEOUT_MS + 1_000L, TimeUnit.MILLISECONDS)
+            .build()
+        val completed = ConcurrentHashMap<String, Pair<AdultSwimStreamsConfig.MarathonStream, Boolean>>()
         val semaphore = Semaphore(AdultSwimStreamsConfig.MAX_CONCURRENT_PROBES)
-        suspend fun probeAll(): List<Pair<AdultSwimStreamsConfig.MarathonStream, Boolean>> =
+        val finishedAll = withTimeoutOrNull(probeBudgetMs) {
             coroutineScope {
                 AdultSwimStreamsConfig.CATALOG.map { row ->
                     async {
                         semaphore.withPermit {
-                            row to probeMasterPlaylist(row.slug)
+                            ensureActive()
+                            val ok = probeMasterPlaylist(row.slug, probeClient)
+                            completed[row.slug] = row to ok
                         }
                     }
                 }.awaitAll()
             }
-        return if (probeBudgetMs != null && probeBudgetMs > 0L) {
-            withTimeoutOrNull(probeBudgetMs) { probeAll() }
-        } else {
-            probeAll()
-        }
+            true
+        } != null
+        val ordered = AdultSwimStreamsConfig.CATALOG.mapNotNull { row -> completed[row.slug] }
+        return ordered to !finishedAll
     }
 
-    private fun probeMasterPlaylist(slug: String): Boolean {
+    private suspend fun probeMasterPlaylist(slug: String, client: OkHttpClient): Boolean {
         val url = AdultSwimStreamsConfig.masterPlaylistUrl(slug)
         val request = Request.Builder()
             .url(url)
@@ -161,32 +195,48 @@ class AdultSwimStreamsSource(
             .header("Origin", AdultSwimStreamsConfig.ORIGIN)
             .get()
             .build()
-        return runCatching {
-            val client = httpClient.newBuilder()
-                .readTimeout(AdultSwimStreamsConfig.PROBE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                .callTimeout(AdultSwimStreamsConfig.PROBE_TIMEOUT_MS + 5_000L, TimeUnit.MILLISECONDS)
-                .build()
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return false
-                val body = response.body?.string()?.trimStart().orEmpty()
-                body.startsWith("#EXTM3U") && body.contains("#EXT-X-STREAM-INF")
-            }
-        }.getOrElse { exc ->
+        return try {
+            val body = awaitCallBody(client, request) ?: return false
+            val trimmed = body.trimStart()
+            trimmed.startsWith("#EXTM3U") && trimmed.contains("#EXT-X-STREAM-INF")
+        } catch (exc: Exception) {
             Log.d(TAG, "probe error $slug: ${exc.message}")
             false
         }
     }
+
+    private suspend fun awaitCallBody(client: OkHttpClient, request: Request): String? =
+        suspendCancellableCoroutine { cont ->
+            val call = client.newCall(request)
+            cont.invokeOnCancellation { call.cancel() }
+            call.enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    if (cont.isActive) cont.resume(null)
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    response.use { resp ->
+                        if (!cont.isActive) return
+                        if (!resp.isSuccessful) {
+                            cont.resume(null)
+                            return
+                        }
+                        cont.resume(resp.body?.string())
+                    }
+                }
+            })
+        }
 
     companion object {
         private const val TAG = "AdultSwimStreamsSource"
 
         fun defaultClient(): OkHttpClient =
             OkHttpClient.Builder()
-                .retryOnConnectionFailure(true)
-                .connectTimeout(15, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(false)
+                .connectTimeout(AdultSwimStreamsConfig.PROBE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
                 .readTimeout(AdultSwimStreamsConfig.PROBE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                .writeTimeout(15, TimeUnit.SECONDS)
-                .callTimeout(AdultSwimStreamsConfig.PROBE_TIMEOUT_MS + 10_000L, TimeUnit.MILLISECONDS)
+                .writeTimeout(AdultSwimStreamsConfig.PROBE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                .callTimeout(AdultSwimStreamsConfig.PROBE_TIMEOUT_MS + 2_000L, TimeUnit.MILLISECONDS)
                 .build()
     }
 }

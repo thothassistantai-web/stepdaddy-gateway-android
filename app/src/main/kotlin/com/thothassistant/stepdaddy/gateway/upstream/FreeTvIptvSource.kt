@@ -31,11 +31,11 @@ class FreeTvIptvSource(
             },
         )
         .dns(IptvOrgPlaylistCache.IPV4_PREFER_DNS)
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .writeTimeout(15, TimeUnit.SECONDS)
-        .callTimeout(40, TimeUnit.SECONDS)
-        .retryOnConnectionFailure(true)
+        .connectTimeout(FreeTvIptvConfig.CONNECT_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        .readTimeout(FreeTvIptvConfig.READ_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        .writeTimeout(FreeTvIptvConfig.CONNECT_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        .callTimeout(FreeTvIptvConfig.CALL_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        .retryOnConnectionFailure(false)
         .build()
 
     data class FetchStats(
@@ -155,8 +155,9 @@ class FreeTvIptvSource(
             }
             if (result != null) return result
         }
+        val errMsg = lastExc?.message
         if (lastExc != null) {
-            Log.w(TAG, "Free-TV all mirrors failed $filename (${lastExc.message})")
+            Log.w(TAG, "Free-TV all mirrors failed $filename ($errMsg)")
         } else {
             Log.w(TAG, "Free-TV all mirrors failed $filename")
         }

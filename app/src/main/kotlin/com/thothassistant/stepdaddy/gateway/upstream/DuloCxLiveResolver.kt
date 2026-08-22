@@ -220,9 +220,11 @@ class DuloCxLiveResolver(
 
         fun defaultClient(): OkHttpClient =
             OkHttpClient.Builder()
-                .connectTimeout(20, TimeUnit.SECONDS)
-                .readTimeout(45, TimeUnit.SECONDS)
-                .writeTimeout(20, TimeUnit.SECONDS)
+                .connectTimeout(DuloCxLiveConfig.CONNECT_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                .readTimeout(DuloCxLiveConfig.READ_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                .writeTimeout(DuloCxLiveConfig.CONNECT_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                .callTimeout(DuloCxLiveConfig.CALL_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                .retryOnConnectionFailure(false)
                 .followRedirects(true)
                 .followSslRedirects(true)
                 .build()

@@ -33,6 +33,14 @@ object FreeTvIptvConfig {
     const val MAX_CHANNELS_AFTER_DEDUP = 200
     const val MAX_BYTES_PER_PLAYLIST = 512 * 1024
 
+    /** Whole Free-TV wave wall-clock budget (all playlists + mirrors). */
+    const val FETCH_BUDGET_MS = 28_000L
+
+    /** Per-URL attempt — fail fast on phone LTE, then rotate CDN / raw mirrors. */
+    const val CONNECT_TIMEOUT_MS = 8_000L
+    const val READ_TIMEOUT_MS = 12_000L
+    const val CALL_TIMEOUT_MS = 15_000L
+
     fun rawUrl(filename: String): String = RAW_BASE_URL + filename
 
     fun candidateUrls(filename: String): List<String> =

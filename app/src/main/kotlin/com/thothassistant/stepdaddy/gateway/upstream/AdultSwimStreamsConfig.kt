@@ -18,12 +18,13 @@ object AdultSwimStreamsConfig {
 
     const val PLAYER_NAME = "top-2.18.1"
 
-    const val PROBE_TIMEOUT_MS = 25_000L
+    /** Per-slug HTTPS probe — keep short so phone LTE hangs do not wedge supplement sync. */
+    const val PROBE_TIMEOUT_MS = 8_000L
 
-    /** Cap total probe wait when a previous adultswim: cache exists. */
-    const val PROBE_BUDGET_MS = 45_000L
+    /** Hard ceiling for the whole Adult Swim probe wave (always applied). */
+    const val PROBE_BUDGET_MS = 22_000L
 
-    const val MAX_CONCURRENT_PROBES = 2
+    const val MAX_CONCURRENT_PROBES = 3
 
     data class MarathonStream(
         val slug: String,

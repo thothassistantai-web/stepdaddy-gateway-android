@@ -46,13 +46,13 @@ object GatewayConfig {
     const val UPSTREAM_STALE_TTL_MS = 600_000L
     const val STALE_STREAM_TTL_MS = 600_000L
     /** Total budget for one stream resolve (all mirrors). */
-    const val STREAM_FETCH_TIMEOUT_MS = 45_000L
+    const val STREAM_FETCH_TIMEOUT_MS = 28_000L
     /** Per-mirror attempt — fail fast on dead mirrors, then rotate. */
-    const val MIRROR_ATTEMPT_TIMEOUT_MS = 12_000L
+    const val MIRROR_ATTEMPT_TIMEOUT_MS = 8_000L
     /** Cap parallel stream resolves — keep modest so iptv CDN + TiviMate do not wedge LTE. */
     const val UPSTREAM_FETCH_MAX_CONCURRENT = 3
     /** Max wait for a fetch slot when TiviMate requests several channels at once. */
-    const val UPSTREAM_FETCH_WAIT_MS = 25_000L
+    const val UPSTREAM_FETCH_WAIT_MS = 18_000L
     const val DEAD_MIRROR_TTL_MS = 300_000L
     const val MIRROR_FAILURE_BACKOFF_BASE_MS = 10_000L
     const val MIRROR_FAILURE_BACKOFF_MAX_MS = 180_000L
