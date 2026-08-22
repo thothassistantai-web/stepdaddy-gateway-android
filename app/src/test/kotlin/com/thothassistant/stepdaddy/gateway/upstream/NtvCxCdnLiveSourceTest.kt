@@ -22,7 +22,7 @@ class NtvCxCdnLiveSourceTest {
     )
 
     @Test
-    fun `ALL mode keeps rows that match main list names`() {
+    fun `ALL mode keeps rows that match main list names and attaches smart fallbacks`() {
         val channels = NtvCxCdnLiveSource.buildChannels(
             catalog = catalog,
             daddyChannels = daddy,
@@ -31,10 +31,11 @@ class NtvCxCdnLiveSourceTest {
         assertEquals(2, channels.channels.size)
         assertTrue(channels.channels.any { it.name == "ESPN" && it.providerTag == "CDN" })
         assertTrue(channels.channels.any { it.name == "AzamSports 1" && it.providerTag == "Falcon" })
+        assertEquals(1, channels.daddyFallbacks["70"]?.size)
     }
 
     @Test
-    fun `SUPPLEMENT_ONLY mode skips normalized main-list names`() {
+    fun `SUPPLEMENT_ONLY mode skips normalized main-list names but attaches smart fallbacks`() {
         val channels = NtvCxCdnLiveSource.buildChannels(
             catalog = catalog,
             daddyChannels = daddy,
@@ -42,6 +43,7 @@ class NtvCxCdnLiveSourceTest {
         )
         assertEquals(1, channels.channels.size)
         assertEquals("AzamSports 1", channels.channels.single().name)
+        assertEquals(1, channels.daddyFallbacks["70"]?.size)
     }
 
     @Test

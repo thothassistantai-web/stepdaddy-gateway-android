@@ -38,13 +38,9 @@ class AdultSwimStreamsSource(
         daddyChannels: List<Channel>,
         importMode: SupplementImportMode = SupplementImportMode.FULL_CATALOG,
     ): FetchOutcome = withContext(Dispatchers.IO) {
-        val consolidate = importMode.attachesFallbacks()
         val skipDuplicates = importMode.skipsDuplicateRows()
-        val daddyIndexes = if (skipDuplicates) {
-            SupplementImportMatcher.buildDaddyIndexes(daddyChannels)
-        } else {
-            SupplementImportMatcher.emptyIndexes()
-        }
+        // Always index Daddy for Smart failover attachments, independent of catalog import mode.
+        val daddyIndexes = SupplementImportMatcher.buildDaddyIndexes(daddyChannels)
         val daddyFallbacks = mutableMapOf<String, MutableList<com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror>>()
         val semaphore = Semaphore(AdultSwimStreamsConfig.MAX_CONCURRENT_PROBES)
         val probeResults = coroutineScope {
@@ -67,8 +63,7 @@ class AdultSwimStreamsSource(
                 continue
             }
             probeOk++
-            if (skipDuplicates &&
-                SupplementImportMatcher.matchesDaddy(
+            if (SupplementImportMatcher.matchesDaddy(
                     name = row.name,
                     tvgId = row.tvgId,
                     indexes = daddyIndexes,
@@ -76,24 +71,22 @@ class AdultSwimStreamsSource(
                     countryHint = "US",
                 )
             ) {
-                if (consolidate) {
-                    val targetId = SupplementImportMatcher.resolveDaddyChannelId(
-                        name = row.name,
-                        tvgId = row.tvgId,
-                        indexes = daddyIndexes,
-                        tags = listOf("#us"),
-                        countryHint = "US",
+                val targetId = SupplementImportMatcher.resolveDaddyChannelId(
+                    name = row.name,
+                    tvgId = row.tvgId,
+                    indexes = daddyIndexes,
+                    tags = listOf("#us"),
+                    countryHint = "US",
+                )
+                if (targetId != null) {
+                    daddyFallbacks.getOrPut(targetId) { mutableListOf() } += com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror(
+                        streamUrl = AdultSwimStreamsConfig.masterPlaylistUrl(row.slug),
+                        label = AdultSwimStreamsConfig.PROVIDER_TAG,
+                        referer = AdultSwimStreamsConfig.REFERER,
+                        origin = AdultSwimStreamsConfig.ORIGIN,
                     )
-                    if (targetId != null) {
-                        daddyFallbacks.getOrPut(targetId) { mutableListOf() } += com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror(
-                            streamUrl = AdultSwimStreamsConfig.masterPlaylistUrl(row.slug),
-                            label = AdultSwimStreamsConfig.PROVIDER_TAG,
-                            referer = AdultSwimStreamsConfig.REFERER,
-                            origin = AdultSwimStreamsConfig.ORIGIN,
-                        )
-                    }
                 }
-                continue
+                if (skipDuplicates) continue
             }
             channels += SupplementChannel(
                 id = "adultswim:${row.slug}",

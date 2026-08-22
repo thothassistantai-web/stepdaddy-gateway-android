@@ -44,7 +44,7 @@ class DuloCxLiveSourceTest {
     )
 
     @Test
-    fun `FULL_CATALOG keeps non-supporter playable rows`() {
+    fun `FULL_CATALOG keeps non-supporter playable rows and attaches smart fallbacks`() {
         val result = DuloCxLiveSource.buildChannels(
             catalog = catalog,
             daddyChannels = daddy,
@@ -54,10 +54,12 @@ class DuloCxLiveSourceTest {
         assertTrue(result.channels.all { it.id.startsWith("dulo:") })
         assertTrue(result.channels.any { it.duloChannelId == "espn-id" })
         assertTrue(result.channels.none { it.duloChannelId == "vip-id" })
+        assertEquals(1, result.daddyFallbacks["70"]?.size)
+        assertEquals("espn-id", result.daddyFallbacks["70"]?.first()?.duloChannelId)
     }
 
     @Test
-    fun `SKIP_DUPLICATES drops daddy name overlaps`() {
+    fun `SKIP_DUPLICATES drops daddy name overlaps but attaches smart fallbacks`() {
         val result = DuloCxLiveSource.buildChannels(
             catalog = catalog,
             daddyChannels = daddy,
@@ -65,6 +67,7 @@ class DuloCxLiveSourceTest {
         )
         assertEquals(1, result.channels.size)
         assertEquals("local-id", result.channels.single().duloChannelId)
+        assertEquals(1, result.daddyFallbacks["70"]?.size)
     }
 
     @Test

@@ -17,13 +17,11 @@ object SupplementDedup {
         importMode: SupplementImportMode = SupplementImportMode.FULL_CATALOG,
         mapChannel: (M3uParser.Entry, String) -> SupplementChannel,
     ): FilterResult {
-        val consolidate = importMode.attachesFallbacks()
+        // Catalog publish follows Settings; daddy fallback map always attaches high-confidence
+        // matches so /tivimate-smart can failover even when import mode is FULL_CATALOG.
+        val consolidateInternal = importMode.attachesFallbacks()
         val skipDuplicates = importMode.skipsDuplicateRows()
-        val daddyIndexes = if (skipDuplicates) {
-            SupplementImportMatcher.buildDaddyIndexes(daddyChannels)
-        } else {
-            SupplementImportMatcher.emptyIndexes()
-        }
+        val daddyIndexes = SupplementImportMatcher.buildDaddyIndexes(daddyChannels)
 
         val seenUrls = mutableSetOf<String>()
         val seenTvgIds = mutableSetOf<String>()
@@ -37,41 +35,38 @@ object SupplementDedup {
             val entryTvgKeys = tvgIdKeys(entry.tvgId)
             val countryHint = SupplementMatchScorer.countryHintFromPlaylist(entry.sourcePlaylist)
 
-            if (skipDuplicates &&
-                SupplementImportMatcher.matchesDaddy(
+            val matchesDaddy = SupplementImportMatcher.matchesDaddy(
+                name = entry.name,
+                tvgId = entry.tvgId,
+                indexes = daddyIndexes,
+                countryHint = countryHint,
+                sourcePlaylist = entry.sourcePlaylist,
+            )
+            if (matchesDaddy) {
+                val targetId = SupplementImportMatcher.resolveDaddyChannelId(
                     name = entry.name,
                     tvgId = entry.tvgId,
                     indexes = daddyIndexes,
                     countryHint = countryHint,
                     sourcePlaylist = entry.sourcePlaylist,
                 )
-            ) {
-                if (consolidate) {
-                    val targetId = SupplementImportMatcher.resolveDaddyChannelId(
-                        name = entry.name,
-                        tvgId = entry.tvgId,
-                        indexes = daddyIndexes,
-                        countryHint = countryHint,
-                        sourcePlaylist = entry.sourcePlaylist,
-                    )
-                    if (targetId != null) {
-                        val mirror = mirrorFromEntry(entry, label = entry.sourcePlaylist.orEmpty())
-                        daddyFallbacks.getOrPut(targetId) { mutableListOf() } += mirror
-                    }
+                if (targetId != null) {
+                    val mirror = mirrorFromEntry(entry, label = entry.sourcePlaylist.orEmpty())
+                    daddyFallbacks.getOrPut(targetId) { mutableListOf() } += mirror
                 }
-                continue
+                if (skipDuplicates) continue
             }
 
             val urlKey = entry.streamUrl.trim().lowercase()
             if (urlKey.isNotEmpty() && urlKey in seenUrls) {
-                if (consolidate) {
+                if (consolidateInternal) {
                     attachInternalFallback(out, primaryByTvg, entryTvgKeys, entry)
                 }
                 continue
             }
 
             if (entryTvgKeys.isNotEmpty() && entryTvgKeys.any { it in seenTvgIds }) {
-                if (consolidate) {
+                if (consolidateInternal) {
                     attachInternalFallback(out, primaryByTvg, entryTvgKeys, entry)
                 }
                 continue

@@ -2,12 +2,12 @@
 
 How StepDaddy decides when a Free-TV / iptv-org / ntv / dulo stream is the **same channel** as a DaddyLive row, and how to fix mistakes.
 
-## Defaults (3.0.38+)
+## Defaults (3.0.39+)
 
 - Import mode defaults to **All channels** (`FULL_CATALOG`) for Free-TV, iptv-org, ntv, dulo, and Adult Swim — every provider row is a separate playlist entry.
-- **Merge fallbacks** (`CONSOLIDATE_FALLBACKS`) and **Skip dupes** remain selectable per provider in Settings.
-- Automatic backups only attach when Merge fallbacks is chosen (high-confidence score ≥ 70, region/language aware).
-- Smart playlist **`/tivimate-smart`** remains available for opt-in ExoPlayer failover across consolidate backups; recommended default playlist stays **`/tivimate`** (fast).
+- **Merge fallbacks** (`CONSOLIDATE_FALLBACKS`) and **Skip dupes** remain selectable per provider in Settings (controls whether overlaps appear as separate catalog rows).
+- **Smart playlist `/tivimate-smart` always attaches merge-style Daddy backups** (score ≥ 70) during supplement sync, even when Settings stay on Full catalog — for testing failover without flipping import mode.
+- Fast playlist **`/tivimate`** stays direct-only (never multi-variant / never uses backups on the stream path).
 
 ### Upgrade migration (import_mode_defaults_version = 3)
 
@@ -15,7 +15,7 @@ On first launch of 3.0.38+:
 
 - If a provider’s stored mode is still the previous auto-default (`CONSOLIDATE_FALLBACKS` / unset) **and** the user never explicitly saved an import-mode choice (`*_import_mode_user_set` = false), it flips to **All channels**.
 - If you already chose Skip dupes, Merge fallbacks, or saved Full catalog after touching the toggle, that choice is kept.
-- To enable automatic backups again: **Settings →** provider → **Merge fallbacks** → Save, then point TiviMate at `/tivimate-smart.m3u` if you want failover.
+- For failover testing with Full catalog: point TiviMate at `/tivimate-smart.m3u` (backups attach automatically). Merge fallbacks still hides overlapping supplement rows from the catalog if you prefer that layout.
 
 ## Why old matching failed
 
@@ -67,16 +67,16 @@ Overrides live in `files/supplement/consolidation_overrides.json` (manual attach
 
 When backups are attached, health subtitle may show `Backups: auto · N channels` (informational only).
 
-## How backups reach TiviMate (3.0.36+)
+## How backups reach TiviMate (3.0.39+)
 
-Consolidate matching still runs the same way. Exposure to the player is **opt-in**:
+Match-scored Daddy backups are cached on every supplement sync (independent of Settings import mode). Exposure to the player is playlist-opt-in:
 
 | Playlist | Path | Stream resolve |
 |----------|------|----------------|
 | **TiviMate (fast)** — recommended | `/tivimate.m3u` (aliases `/tivimate`, `/tivimate.m3u8`) | Direct DaddyLive media playlist via `/tivimate-stream/{id}.m3u8` — snappy zaps; **no** multi-variant master |
-| **TiviMate Smart (backups)** | `/tivimate-smart.m3u` (aliases `/tivimate-smart`, `/tivimate-smart.m3u8`) | Channels with backups use `/tivimate-smart-stream/{id}.m3u8` multi-variant master (`#EXT-X-STREAM-INF` → `/daddy-fallback/...`) |
+| **TiviMate Smart (backups)** | `/tivimate-smart.m3u` (aliases `/tivimate-smart`, `/tivimate-smart.m3u8`) | Channels with backups use `/tivimate-smart-stream/{id}.m3u8` multi-variant master (`#EXT-X-STREAM-INF` → `/daddy-fallback/...`). **Forces merge-style backups** even under Full catalog. |
 
-Default dashboard / setup / QR copy remains the **fast** URL. Use Smart only when you want ExoPlayer failover across consolidate backups.
+Default dashboard / setup / QR copy remains the **fast** URL. Use Smart when you want ExoPlayer failover.
 
 ## Admin API (optional)
 

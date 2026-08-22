@@ -1,11 +1,11 @@
 {
-  "versionCode": 30038,
-  "versionName": "3.0.38",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.38/stepdaddy-gateway-3.0.38-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.38/stepdaddy-gateway-3.0.38-debug.apk",
-  "apkSha256": "028cb60e15d508b293d4bf331ace5c4d95eddded876ba34328d2b96223dde273",
-  "apkSha256Debug": "10eb75f1d407dc26cc6292b19e9d0fdd5e9bd67b81342ea63661ea6d2140246b",
-  "releaseNotes": "**Full catalog is the default again** \u2014 supplement providers import every row as separate playlist entries. Merge fallbacks stays available in Settings; use Smart playlist `/tivimate-smart` when you want backup failover.",
+  "versionCode": 30039,
+  "versionName": "3.0.39",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.39/stepdaddy-gateway-3.0.39-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.39/stepdaddy-gateway-3.0.39-debug.apk",
+  "apkSha256": "c90f4bc20832476720ca8cf6bef6ca511df6519c52b6f5bddc303882fbdc55ba",
+  "apkSha256Debug": "97398195d47d54307b4507d55614da6148343e1649a6174346c4d30f977507b5",
+  "releaseNotes": "See CHANGELOG.md",
   "updateType": "optional",
   "mandatory": false
 }

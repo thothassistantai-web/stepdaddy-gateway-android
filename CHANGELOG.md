@@ -7,6 +7,16 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.39] - 2026-08-21
+
+### Changed
+
+- **Smart always merge-style backups** — `/tivimate-smart` attaches match-scored Daddy fallbacks on every supplement sync even when Settings import mode is Full catalog / Skip dupes. Fast `/tivimate` stays direct-only. Catalog publish behavior still follows Settings.
+
+### Notes
+
+- Tip: use Smart for failover testing without flipping Merge fallbacks. Refresh TiviMate playlist after upgrade if entries still point at old URLs.
+
 ## [3.0.38] - 2026-08-21
 
 ### Changed

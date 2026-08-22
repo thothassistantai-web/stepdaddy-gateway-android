@@ -307,11 +307,11 @@
     <string name="settings_import_mode_skip">Skip dupes</string>
     <string name="settings_import_mode_fallback">Merge fallbacks</string>
     <string name="settings_import_skip_duplicates">Skip channels already on DaddyLive</string>
-    <string name="settings_import_mode_hint">All channels = every provider row as its own playlist entry (default). Merge fallbacks = attach only high-confidence matches as DaddyLive backups (language/region aware; use Smart playlist /tivimate-smart). Skip dupes = hide overlapping names. Wrong backup? Open Channel backups to remove or block.</string>
+    <string name="settings_import_mode_hint">All channels = every provider row as its own playlist entry (default). Merge fallbacks = hide overlapping names from the catalog (same as Skip) while labeling consolidate mode. Smart playlist /tivimate-smart always attaches merge-style backups for failover, even on All channels. Skip dupes = hide overlapping names. Wrong backup? Open Channel backups to remove or block.</string>
     <string name="settings_channel_backups_configure">Channel backups…</string>
     <string name="settings_channel_backups_hint">Review or fix automatic backup matches. Tip: if a backup is wrong, remove it here (or remove + never auto-match again). Changes survive refresh.</string>
     <string name="channel_backups_title">Channel backups</string>
-    <string name="channel_backups_intro">Each DaddyLive channel can have backup streams from Free-TV, iptv-org, ntv, or dulo. Search a channel to add, remove, or block a bad automatic match. All channels is the default import mode — choose Merge fallbacks in Settings if you want automatic backups, then use Smart playlist (/tivimate-smart) in TiviMate.</string>
+    <string name="channel_backups_intro">Each DaddyLive channel can have backup streams from Free-TV, iptv-org, ntv, or dulo. Search a channel to add, remove, or block a bad automatic match. Smart playlist (/tivimate-smart) always uses merge-style backups for failover even when Settings stay on All channels; fast /tivimate stays direct-only.</string>
     <string name="channel_backups_search_hint">Search DaddyLive channel</string>
     <string name="channel_backups_search">Search</string>
     <string name="channel_backups_status">Showing %1$d channels · %2$d backups attached</string>

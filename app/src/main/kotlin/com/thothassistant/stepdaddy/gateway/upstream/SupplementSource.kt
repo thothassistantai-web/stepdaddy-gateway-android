@@ -656,41 +656,46 @@ class SupplementSource(
             if (merged == null) {
                 Log.w(TAG, "Supplement sync timed out after ${SYNC_MAX_MS}ms — keeping cache")
                 retainOrRecoverCache(daddyChannels)
-                return
-            }
-            if (merged.isEmpty()) {
+            } else if (merged.isEmpty()) {
                 Log.w(TAG, "Supplement sync returned 0 channels — not overwriting cache")
                 retainOrRecoverCache(daddyChannels)
-                return
-            }
-            // Publish merged catalog immediately so M3U/health reflect supplements during logo enrich.
-            cached = merged
-            store.writeChannels(merged)
-            applyNameEpgOverrides()
-            Log.i(
-                TAG,
-                "Supplement sync: ${merged.size} total " +
-                    "(sports=${sportsCount()}, " +
-                    "iptv-org=${iptvOrgCount()}, free-tv=${freeTvCount()}, dulo.cx=${duloCxCount()}, ntv.cx=${ntvCxCount()}, " +
-                    "adultswim=${adultSwimCount()})",
-            )
-            val enriched = enrichSupplementLogos(merged)
-            if (enriched !== merged) {
-                cached = enriched
-                store.writeChannels(enriched)
+            } else {
+                // Publish merged catalog immediately so M3U/health reflect supplements during logo enrich.
+                cached = merged
+                store.writeChannels(merged)
+                applyNameEpgOverrides()
+                Log.i(
+                    TAG,
+                    "Supplement sync: ${merged.size} total " +
+                        "(sports=${sportsCount()}, " +
+                        "iptv-org=${iptvOrgCount()}, free-tv=${freeTvCount()}, dulo.cx=${duloCxCount()}, ntv.cx=${ntvCxCount()}, " +
+                        "adultswim=${adultSwimCount()})",
+                )
+                val enriched = enrichSupplementLogos(merged)
+                if (enriched !== merged) {
+                    cached = enriched
+                    store.writeChannels(enriched)
+                }
             }
         } catch (exc: Exception) {
             Log.w(TAG, "Supplement sync failed — keeping cache", exc)
             retainOrRecoverCache(daddyChannels)
         } finally {
+            // Always (re)attach Smart merge-style backups from published rows so FULL_CATALOG
+            // and timeout/cache-recovery paths still feed /tivimate-smart failover.
+            ensureSmartDaddyFallbacks(daddyChannels)
             refreshInFlight = false
             onRefreshComplete?.invoke()
         }
     }
 
     fun recoverFromDiskIfNeeded(daddyChannels: List<Channel>): Int {
-        if (cached.isNotEmpty()) return cached.size
+        if (cached.isNotEmpty()) {
+            ensureSmartDaddyFallbacks(daddyChannels)
+            return cached.size
+        }
         retainOrRecoverCache(daddyChannels)
+        ensureSmartDaddyFallbacks(daddyChannels)
         if (cached.isNotEmpty()) {
             onRefreshComplete?.invoke()
         }
@@ -722,6 +727,31 @@ class SupplementSource(
             sportsChannels = sportsCount(),
         )
         Log.i(TAG, "Recovered ${recovered.size} supplement channels from disk caches")
+    }
+
+    /**
+     * Merge fetch-time consolidate maps with score matches against published supplement rows,
+     * then apply Channel Backups overrides. Safe to call after cache restore / sync timeout.
+     */
+    private fun ensureSmartDaddyFallbacks(daddyChannels: List<Channel>) {
+        if (daddyChannels.isEmpty() || cached.isEmpty()) return
+        val fromPublished = SmartDaddyFallbacksBuilder.fromSupplements(daddyChannels, cached)
+        val merged = SupplementFallbackOverridesApplier.apply(
+            SupplementImportHelper.mergeDaddyFallbackMaps(daddyChannelFallbacks, fromPublished),
+            consolidationOverrides.current(),
+        ).mapValues { (_, mirrors) ->
+            mirrors.distinctBy { SupplementMatchScorer.mirrorFingerprint(it) }
+        }.filterValues { it.isNotEmpty() }
+        if (merged.isEmpty() && daddyChannelFallbacks.isEmpty()) return
+        daddyChannelFallbacks = merged
+        store.writeDaddyFallbacks(merged)
+        if (merged.isNotEmpty()) {
+            Log.i(
+                TAG,
+                "Smart daddy fallbacks ready: ${merged.values.sumOf { it.size }} mirrors " +
+                    "on ${merged.size} DaddyLive channels",
+            )
+        }
     }
 
     private fun recoverChannelsFromDiskCaches(daddyChannels: List<Channel>): List<SupplementChannel> {

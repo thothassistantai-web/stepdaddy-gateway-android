@@ -122,7 +122,7 @@ class SupplementDedupTest {
     }
 
     @Test
-    fun `FULL_CATALOG keeps daddy name matches`() {
+    fun `FULL_CATALOG keeps daddy name matches and attaches smart fallbacks`() {
         val daddy = listOf(ch("1", "ESPN USA", "ESPN.us"))
         val entries = listOf(
             M3uParser.Entry(name = "ESPN USA", streamUrl = "https://example.com/espn.m3u8"),
@@ -134,6 +134,26 @@ class SupplementDedupTest {
             mapChannel = ::mapTestChannel,
         )
         assertEquals(1, out.channels.size)
+        assertEquals(1, out.daddyFallbacks["1"]?.size)
+        assertEquals("https://example.com/espn.m3u8", out.daddyFallbacks["1"]?.first()?.streamUrl)
+    }
+
+    @Test
+    fun `SKIP_DUPLICATES still attaches smart daddy fallbacks`() {
+        val daddy = listOf(ch("70", "ESPN USA", "ESPN.us"))
+        val entries = listOf(
+            M3uParser.Entry(name = "ESPN USA", streamUrl = "https://example.com/espn-fast.m3u8"),
+            M3uParser.Entry(name = "DAZN USA", streamUrl = "https://example.com/dazn.m3u8"),
+        )
+        val out = SupplementDedup.filterNewChannels(
+            entries,
+            daddy,
+            importMode = SupplementImportMode.SKIP_DUPLICATES,
+            mapChannel = ::mapTestChannel,
+        )
+        assertEquals(1, out.channels.size)
+        assertEquals("DAZN USA", out.channels.first().name)
+        assertEquals(1, out.daddyFallbacks["70"]?.size)
     }
 
     @Test

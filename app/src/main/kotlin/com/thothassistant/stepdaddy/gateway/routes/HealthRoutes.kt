@@ -287,12 +287,12 @@ class HealthRoutes(
                 "Xtream login: Server $base, user ${environment.xtreamUsername}, " +
                     "pass ${environment.xtreamPassword}. Gateway auto-imports on launch for x2 mod. " +
                     "Recommended M3U (fast): $base${PlaylistPaths.TIVIMATE}. " +
-                    "Optional Smart (backups): $base${PlaylistPaths.TIVIMATE_SMART}."
+                    "Smart (merge-style backups always): $base${PlaylistPaths.TIVIMATE_SMART}."
             } else {
                 "Xtream: Server $base, user ${environment.xtreamUsername}, " +
                     "pass ${environment.xtreamPassword} (Movies/Series tabs). " +
                     "M3U fast: $base${PlaylistPaths.TIVIMATE}; " +
-                    "Smart backups: $base${PlaylistPaths.TIVIMATE_SMART}."
+                    "Smart (merge-style backups always): $base${PlaylistPaths.TIVIMATE_SMART}."
             },
             epgReady = if (gatewayEpgOn) epgManager.epgReady() else playlistEpgUrls.isNotEmpty(),
             epgProgrammeCount = if (gatewayEpgOn) {

@@ -1,13 +1,14 @@
 package com.thothassistant.stepdaddy.gateway.upstream
 
 /**
- * How a supplement provider is merged into the TiviMate playlist.
+ * How a supplement provider is merged into the TiviMate playlist catalog.
  *
  * - [FULL_CATALOG]: every upstream row (default — see [SupplementImportModeMigration]).
  * - [SKIP_DUPLICATES]: skip rows whose score-based match against DaddyLive is ≥ threshold.
- * - [CONSOLIDATE_FALLBACKS]: same row count as skip, but attach high-confidence duplicates as failover mirrors
- *   (opt-in; Smart playlist `/tivimate-smart` exposes backups to TiviMate).
+ * - [CONSOLIDATE_FALLBACKS]: same row count as skip (overlaps not published as separate rows).
  *
+ * Smart playlist `/tivimate-smart` always attaches match-scored Daddy backups (as if merge was on),
+ * even under [FULL_CATALOG]. Fast `/tivimate` never uses multi-variant masters.
  * Matching is region/language aware; see docs/CHANNEL-BACKUPS.md.
  */
 enum class SupplementImportMode {

@@ -98,7 +98,7 @@ Fresh install / clear-data loads **full DaddyLive catalog** plus **all supplemen
 | dlhd_base_url | `https://daddylive.eu` |
 | mirror_urls | `dlstreams.st`, `daddylive.li`, `dlhd.st` |
 | supplement: sports / iptv-org / ntv.cx / adult-swim | all **true** |
-| supplement import modes | **FULL_CATALOG** (opt-in `CONSOLIDATE_FALLBACKS` / `SKIP_DUPLICATES` per provider in Settings; Smart playlist `/tivimate-smart` for backup failover) |
+| supplement import modes | **FULL_CATALOG** (opt-in `CONSOLIDATE_FALLBACKS` / `SKIP_DUPLICATES` for catalog rows; Smart `/tivimate-smart` always attaches merge-style backups) |
 | setup playlist (`/tivimate-setup-playlist.m3u8`) | **diagnostic** — 50-channel bootstrap (`SETUP_BOOTSTRAP_MAX_CHANNELS`); user catalog at `/tivimate.m3u` |
 | user playlists | `/tivimate.m3u`, `/streamvault.m3u`, `/vlc.m3u` (+ `.m3u8` aliases); `X-Playlist-Kind: user` header |
 | gateway_epg_enabled | true |

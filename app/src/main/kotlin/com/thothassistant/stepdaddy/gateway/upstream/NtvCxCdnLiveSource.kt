@@ -93,51 +93,44 @@ class NtvCxCdnLiveSource(
             mergeMode: SupplementImportMode,
             nameIndex: IptvOrgNameIndex? = null,
         ): BuildResult {
-            val consolidate = mergeMode.attachesFallbacks()
             val skipDuplicates = mergeMode.skipsDuplicateRows()
-            val daddyIndexes = if (skipDuplicates) {
-                SupplementImportMatcher.buildDaddyIndexes(daddyChannels)
-            } else {
-                SupplementImportMatcher.emptyIndexes()
-            }
+            // Always index Daddy for Smart failover attachments, independent of catalog import mode.
+            val daddyIndexes = SupplementImportMatcher.buildDaddyIndexes(daddyChannels)
             val daddyFallbacks = mutableMapOf<String, MutableList<SupplementFallbackMirror>>()
             val seenKeys = mutableSetOf<String>()
             val channels = mutableListOf<SupplementChannel>()
             for (row in catalog) {
                 if (channels.size >= NtvCxCdnLiveConfig.MAX_CHANNELS) break
                 val countryHint = SupplementMatchScorer.normalizeRegion(row.regionCode)
-                if (skipDuplicates &&
-                    SupplementImportMatcher.matchesDaddy(
+                if (SupplementImportMatcher.matchesDaddy(
                         name = row.name,
                         tvgId = null,
                         indexes = daddyIndexes,
                         countryHint = countryHint,
                     )
                 ) {
-                    if (consolidate) {
-                        val targetId = SupplementImportMatcher.resolveDaddyChannelId(
+                    val targetId = SupplementImportMatcher.resolveDaddyChannelId(
+                        name = row.name,
+                        tvgId = null,
+                        indexes = daddyIndexes,
+                        countryHint = countryHint,
+                    )
+                    if (targetId != null) {
+                        val key = NtvCxCdnLiveResolver.ntvKey(
+                            server = row.server,
                             name = row.name,
-                            tvgId = null,
-                            indexes = daddyIndexes,
-                            countryHint = countryHint,
+                            regionCode = row.regionCode,
+                            streamPageUrl = row.streamPageUrl,
                         )
-                        if (targetId != null) {
-                            val key = NtvCxCdnLiveResolver.ntvKey(
-                                server = row.server,
-                                name = row.name,
-                                regionCode = row.regionCode,
-                                streamPageUrl = row.streamPageUrl,
-                            )
-                            val (referer, origin, providerTag) = ntvMirrorHeaders(row.server)
-                            daddyFallbacks.getOrPut(targetId) { mutableListOf() } += SupplementFallbackMirror(
-                                label = providerTag,
-                                referer = referer,
-                                origin = origin,
-                                ntvCdnLiveKey = key,
-                            )
-                        }
+                        val (referer, origin, providerTag) = ntvMirrorHeaders(row.server)
+                        daddyFallbacks.getOrPut(targetId) { mutableListOf() } += SupplementFallbackMirror(
+                            label = providerTag,
+                            referer = referer,
+                            origin = origin,
+                            ntvCdnLiveKey = key,
+                        )
                     }
-                    continue
+                    if (skipDuplicates) continue
                 }
                 val key = NtvCxCdnLiveResolver.ntvKey(
                     server = row.server,

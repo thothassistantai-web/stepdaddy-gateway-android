@@ -83,13 +83,9 @@ class DuloCxLiveSource(
             nameIndex: IptvOrgNameIndex? = null,
             maxChannels: Int = DuloCxLiveConfig.MAX_CHANNELS,
         ): BuildResult {
-            val consolidate = importMode.attachesFallbacks()
             val skipDuplicates = importMode.skipsDuplicateRows()
-            val daddyIndexes = if (skipDuplicates) {
-                SupplementImportMatcher.buildDaddyIndexes(daddyChannels)
-            } else {
-                SupplementImportMatcher.emptyIndexes()
-            }
+            // Always index Daddy for Smart failover attachments, independent of catalog import mode.
+            val daddyIndexes = SupplementImportMatcher.buildDaddyIndexes(daddyChannels)
 
             val ranked = catalog
                 .filter { it.playable && !it.supporterOnly && it.id.isNotBlank() }
@@ -110,8 +106,7 @@ class DuloCxLiveSource(
                 val displayName = cleanDisplayName(row.name)
                 val regionTag = DuloCxLiveConfig.regionTagFromName(row.name)
                 val countryHint = SupplementMatchScorer.normalizeRegion(regionTag.removePrefix("#"))
-                if (skipDuplicates &&
-                    SupplementImportMatcher.matchesDaddy(
+                if (SupplementImportMatcher.matchesDaddy(
                         name = displayName,
                         tvgId = null,
                         indexes = daddyIndexes,
@@ -119,24 +114,22 @@ class DuloCxLiveSource(
                         countryHint = countryHint,
                     )
                 ) {
-                    if (consolidate) {
-                        val targetId = SupplementImportMatcher.resolveDaddyChannelId(
-                            name = displayName,
-                            tvgId = null,
-                            indexes = daddyIndexes,
-                            tags = listOf(regionTag),
-                            countryHint = countryHint,
+                    val targetId = SupplementImportMatcher.resolveDaddyChannelId(
+                        name = displayName,
+                        tvgId = null,
+                        indexes = daddyIndexes,
+                        tags = listOf(regionTag),
+                        countryHint = countryHint,
+                    )
+                    if (targetId != null) {
+                        daddyFallbacks.getOrPut(targetId) { mutableListOf() } += SupplementFallbackMirror(
+                            label = DuloCxLiveConfig.PROVIDER_TAG,
+                            referer = DuloCxLiveConfig.REFERER,
+                            origin = DuloCxLiveConfig.ORIGIN,
+                            duloChannelId = row.id,
                         )
-                        if (targetId != null) {
-                            daddyFallbacks.getOrPut(targetId) { mutableListOf() } += SupplementFallbackMirror(
-                                label = DuloCxLiveConfig.PROVIDER_TAG,
-                                referer = DuloCxLiveConfig.REFERER,
-                                origin = DuloCxLiveConfig.ORIGIN,
-                                duloChannelId = row.id,
-                            )
-                        }
                     }
-                    continue
+                    if (skipDuplicates) continue
                 }
 
                 val categoryTag = DuloCxLiveConfig.categoryTag(row.category)
