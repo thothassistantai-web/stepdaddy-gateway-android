@@ -28,13 +28,15 @@ The app reads a JSON file with this shape:
 
 ```json
 {
-  "versionCode": 30028,
-  "versionName": "3.0.28",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.28/stepdaddy-gateway-3.0.28-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.28/stepdaddy-gateway-3.0.28-debug.apk",
+  "versionCode": 30038,
+  "versionName": "3.0.38",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.38/stepdaddy-gateway-3.0.38-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.38/stepdaddy-gateway-3.0.38-debug.apk",
   "apkSha256": "<sha256-of-release-apk>",
   "apkSha256Debug": "<sha256-of-debug-apk>",
-  "releaseNotes": "Signing key migration."
+  "releaseNotes": "Full catalog default + optional/mandatory updates.",
+  "updateType": "optional",
+  "mandatory": false
 }
 ```
 
@@ -46,9 +48,44 @@ The app reads a JSON file with this shape:
 | `apkUrlDebug` | No | Debug package (`com.thothassistant.stepdaddy.gateway.debug`); used when the installed app is a debug build |
 | `apkSha256` | No | SHA-256 checksum for `apkUrl` (release) |
 | `apkSha256Debug` | No | SHA-256 checksum for `apkUrlDebug` |
-| `releaseNotes` | No | Markdown/plain text in the dialog |
+| `releaseNotes` | No | Markdown/plain text appended in the dialog |
+| `updateType` | No | `"optional"` (default) or `"mandatory"` |
+| `mandatory` | No | Legacy boolean; `true` forces mandatory (same as `updateType: "mandatory"`) |
+| `minSupportedVersionCode` | No | If installed `versionCode` is below this, treat as mandatory even when optional |
+| `minVersionCode` | No | Legacy alias of `minSupportedVersionCode` |
+| `title` | No | Dialog title override |
+| `message` | No | Dialog body override (release notes still appended when different) |
 
 Example file in repo: [release/update-manifest.example.json](../release/update-manifest.example.json).
+
+### Optional vs mandatory (user experience)
+
+| Policy | User sees | Can dismiss? |
+|--------|-----------|--------------|
+| **Optional** (default) | Dashboard footer “Optional update…”, dismissible dialog with **Later** | Yes — check again next launch / periodic |
+| **Mandatory** | Footer “Required update…”, non-cancelable dialog, install dialog without Later | Soft-block: dialog reappears on resume until installed |
+
+Boot + dashboard resume + 6h periodic check (when auto-check is on) all use `AppUpdateCoordinator`.
+
+### Maintainer: ship a mandatory emergency APK
+
+1. Build/publish as usual (`scripts/build-release.sh` / `scripts/publish-github-release.sh`).
+2. Edit `release/update-manifest.json` (or set `UPDATE_TYPE=mandatory` before `build-release.sh`) so the published asset includes:
+
+```json
+{
+  "updateType": "mandatory",
+  "mandatory": true,
+  "title": "Security update required",
+  "message": "Please install this build to keep the gateway working.",
+  "minSupportedVersionCode": 30038
+}
+```
+
+3. `minSupportedVersionCode` alone also forces mandatory for older installs even if `updateType` stays `"optional"`.
+4. Normal releases should leave `"updateType": "optional"` / `"mandatory": false` (the release script default).
+
+See [RELEASE.md](RELEASE.md) for the full publish checklist.
 
 ## Primary channel — GitHub Releases
 

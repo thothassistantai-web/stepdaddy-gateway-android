@@ -118,16 +118,20 @@ Permanent Fire TV short codes point at the versionless latest URLs. AFTVnews has
 
 ```json
 {
-  "versionCode": 3,
-  "versionName": "1.0.1",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.4/stepdaddy-gateway-1.0.4-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v1.0.4/stepdaddy-gateway-1.0.4-debug.apk",
+  "versionCode": 30038,
+  "versionName": "3.0.38",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.38/stepdaddy-gateway-3.0.38-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.38/stepdaddy-gateway-3.0.38-debug.apk",
   "apkSha256": "<sha256-of-release-apk>",
   "apkSha256Debug": "<sha256-of-debug-apk>",
   "releaseNotes": "Boot reliability fixes.",
+  "updateType": "optional",
   "mandatory": false
 }
 ```
+
+- Default releases: `"updateType": "optional"` (script default).
+- Emergency force-update: set `"updateType": "mandatory"` and/or `"mandatory": true`, optionally with `minSupportedVersionCode`, `title`, and `message`. See [UPDATES.md](UPDATES.md).
 
 The in-app updater also accepts GitHub Releases API responses when `DEFAULT_UPDATE_MANIFEST_URL` points at `.../releases/latest`.
 

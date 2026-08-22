@@ -8,38 +8,55 @@ import org.junit.Test
 class SupplementImportModeMigrationTest {
     @Test
     fun `null stored mode migrates when not user-set`() {
-        assertTrue(SupplementImportModeMigration.shouldMigrateToConsolidate(null, userSet = false))
+        assertTrue(SupplementImportModeMigration.shouldMigrateToFullCatalog(null, userSet = false))
     }
 
     @Test
-    fun `FULL_CATALOG migrates when not user-set`() {
-        assertTrue(SupplementImportModeMigration.shouldMigrateToConsolidate("FULL_CATALOG", userSet = false))
-        assertTrue(SupplementImportModeMigration.shouldMigrateToConsolidate("full_catalog", userSet = false))
-        assertTrue(SupplementImportModeMigration.shouldMigrateToConsolidate("ALL", userSet = false))
+    fun `CONSOLIDATE migrates when not user-set`() {
+        assertTrue(
+            SupplementImportModeMigration.shouldMigrateToFullCatalog("CONSOLIDATE_FALLBACKS", userSet = false),
+        )
+        assertTrue(
+            SupplementImportModeMigration.shouldMigrateToFullCatalog("consolidate_fallbacks", userSet = false),
+        )
+        assertTrue(SupplementImportModeMigration.shouldMigrateToFullCatalog("", userSet = false))
     }
 
     @Test
-    fun `user-set FULL_CATALOG is respected`() {
-        assertFalse(SupplementImportModeMigration.shouldMigrateToConsolidate("FULL_CATALOG", userSet = true))
-    }
-
-    @Test
-    fun `skip and consolidate are left alone`() {
-        assertFalse(SupplementImportModeMigration.shouldMigrateToConsolidate("SKIP_DUPLICATES", userSet = false))
+    fun `user-set CONSOLIDATE is respected`() {
         assertFalse(
-            SupplementImportModeMigration.shouldMigrateToConsolidate("CONSOLIDATE_FALLBACKS", userSet = false),
+            SupplementImportModeMigration.shouldMigrateToFullCatalog("CONSOLIDATE_FALLBACKS", userSet = true),
         )
     }
 
     @Test
-    fun `fromPref empty uses consolidate default`() {
-        assertEquals(SupplementImportMode.CONSOLIDATE_FALLBACKS, SupplementImportMode.fromPref(null))
-        assertEquals(SupplementImportMode.CONSOLIDATE_FALLBACKS, SupplementImportMode.fromPref(""))
-        assertEquals(SupplementImportMode.FULL_CATALOG, SupplementImportMode.fromPref("FULL_CATALOG"))
+    fun `user-set FULL_CATALOG is respected`() {
+        assertFalse(SupplementImportModeMigration.shouldMigrateToFullCatalog("FULL_CATALOG", userSet = true))
     }
 
     @Test
-    fun `target mode is consolidate`() {
-        assertEquals(SupplementImportMode.CONSOLIDATE_FALLBACKS, SupplementImportModeMigration.targetMode())
+    fun `skip and explicit full catalog tokens are left alone when stored`() {
+        assertFalse(SupplementImportModeMigration.shouldMigrateToFullCatalog("SKIP_DUPLICATES", userSet = false))
+        assertFalse(SupplementImportModeMigration.shouldMigrateToFullCatalog("FULL_CATALOG", userSet = false))
+    }
+
+    @Test
+    fun `fromPref empty uses full catalog default`() {
+        assertEquals(SupplementImportMode.FULL_CATALOG, SupplementImportMode.fromPref(null))
+        assertEquals(SupplementImportMode.FULL_CATALOG, SupplementImportMode.fromPref(""))
+        assertEquals(
+            SupplementImportMode.CONSOLIDATE_FALLBACKS,
+            SupplementImportMode.fromPref("CONSOLIDATE_FALLBACKS"),
+        )
+    }
+
+    @Test
+    fun `target mode is full catalog`() {
+        assertEquals(SupplementImportMode.FULL_CATALOG, SupplementImportModeMigration.targetMode())
+    }
+
+    @Test
+    fun `defaults version bumped for full catalog flip`() {
+        assertEquals(3, SupplementImportModeMigration.DEFAULTS_VERSION)
     }
 }

@@ -31,12 +31,8 @@ class AppUpdateManager(
     fun isUpdateAvailable(info: AppUpdateInfo): Boolean =
         info.manifest.versionCode > currentVersionCode
 
-    fun isMandatory(info: AppUpdateInfo): Boolean {
-        val manifest = info.manifest
-        if (manifest.mandatory) return true
-        val minVersion = manifest.minVersionCode ?: return false
-        return currentVersionCode < minVersion
-    }
+    fun isMandatory(info: AppUpdateInfo): Boolean =
+        UpdatePolicy.isMandatory(info.manifest, currentVersionCode)
 
     fun shouldPrompt(info: AppUpdateInfo): Boolean {
         if (!isUpdateAvailable(info)) return false

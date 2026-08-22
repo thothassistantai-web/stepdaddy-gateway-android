@@ -164,6 +164,7 @@ class MainActivity : AppCompatActivity() {
         if (::updateCoordinator.isInitialized) {
             updateCoordinator.setPrimaryHost(this)
             updateCoordinator.flushPendingPrompts(this)
+            updateCoordinator.maybePeriodicCheck(this)
         }
         bottomPanel.onResume()
         GatewayHud.attachHost(gatewayHudHost)
@@ -327,6 +328,7 @@ class MainActivity : AppCompatActivity() {
         views.buttonAbout.setOnClickListener { openAbout() }
         views.buttonHeaderSettings.setOnClickListener { openSettings() }
         views.buttonHeaderUpdate.setOnClickListener { checkForUpdates(manual = true) }
+        views.textFooterUpdate.setOnClickListener { checkForUpdates(manual = true) }
         views.buttonCopyPlaylist.setOnClickListener { copyUrl(playlistUrl()) }
         views.buttonCopySmartPlaylist.setOnClickListener { copyUrl(smartPlaylistUrl()) }
         views.buttonOpenPlaylist.setOnClickListener { openUrl(playlistUrl()) }
@@ -382,9 +384,19 @@ class MainActivity : AppCompatActivity() {
             views.textFooterUpdate.visibility = View.GONE
             return
         }
+        val mandatory = updateCoordinator.manager().isMandatory(info)
         views.textFooterUpdate.text = getString(
-            R.string.footer_update_available,
+            if (mandatory) {
+                R.string.footer_update_available_mandatory
+            } else {
+                R.string.footer_update_available_optional
+            },
             info.manifest.versionName,
+        )
+        views.textFooterUpdate.setTextColor(
+            getColor(
+                if (mandatory) R.color.footer_update_mandatory else R.color.footer_update,
+            ),
         )
         views.textFooterUpdate.visibility = View.VISIBLE
     }

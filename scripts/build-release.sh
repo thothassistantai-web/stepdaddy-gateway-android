@@ -133,7 +133,8 @@ manifest = {
     "apkSha256": os.environ.get("APK_SHA256", ""),
     "apkSha256Debug": os.environ.get("APK_SHA256_DEBUG", ""),
     "releaseNotes": os.environ.get("RELEASE_NOTES", "See CHANGELOG.md"),
-    "mandatory": False,
+    "updateType": os.environ.get("UPDATE_TYPE", "optional"),
+    "mandatory": os.environ.get("UPDATE_TYPE", "optional").lower() == "mandatory",
 }
 Path(os.environ["MANIFEST"]).write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 print(f"==> Update manifest: {os.environ['MANIFEST']}")

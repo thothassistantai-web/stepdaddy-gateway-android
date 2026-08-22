@@ -49,6 +49,9 @@ class AppUpdateCoordinator(
     private var autoCheckCompleted = false
 
     @Volatile
+    private var lastAutoCheckAtMs = 0L
+
+    @Volatile
     private var promptedVersionCode = -1
 
     @Volatile
@@ -118,7 +121,32 @@ class AppUpdateCoordinator(
             pendingUpdatePrompt?.let { info ->
                 pendingUpdatePrompt = null
                 showUpdateDialog(host, info, manual = false)
+                return@launch
             }
+            // Soft-block: re-show a mandatory update that is still outstanding.
+            if (activeDialogRef?.get()?.isShowing == true) return@launch
+            availableUpdate?.takeIf { manager.isMandatory(it) }?.let { info ->
+                val pending = manager.pendingApkFile()
+                if (pending != null && pendingVersionMatches(pending, info)) {
+                    showInstallReadyDialog(host, info, pending, manual = false)
+                } else {
+                    showUpdateDialog(host, info, manual = false)
+                }
+            }
+        }
+    }
+
+    /**
+     * Periodic recheck while the dashboard is foregrounded (boot / resume / cooldown).
+     * Skips when auto-check is disabled or a check already ran recently.
+     */
+    fun maybePeriodicCheck(host: AppCompatActivity) {
+        if (!environment.autoCheckUpdates) return
+        val now = System.currentTimeMillis()
+        if (now - lastAutoCheckAtMs < PERIODIC_CHECK_MS && autoCheckCompleted) return
+        host.lifecycleScope.launch {
+            awaitPromptWindow()
+            runCheck(host, manual = false)
         }
     }
 
@@ -306,6 +334,7 @@ class AppUpdateCoordinator(
             result.onSuccess { info ->
                 notifyAvailability(info)
                 autoCheckCompleted = true
+                lastAutoCheckAtMs = System.currentTimeMillis()
                 if (info == null) {
                     if (manual) toast(host, host.getString(R.string.update_none))
                     return@onSuccess
@@ -315,7 +344,14 @@ class AppUpdateCoordinator(
                     return@onSuccess
                 }
                 if (!manual && !manager.shouldPrompt(info)) return@onSuccess
-                if (!manual && promptedVersionCode >= info.manifest.versionCode) return@onSuccess
+                // Optional: suppress duplicate auto prompts for the same version.
+                // Mandatory: always allow re-prompt (soft-block).
+                if (!manual &&
+                    !manager.isMandatory(info) &&
+                    promptedVersionCode >= info.manifest.versionCode
+                ) {
+                    return@onSuccess
+                }
                 awaitPromptWindow()
                 showUpdateDialog(host, info, manual)
             }.onFailure { exc ->
@@ -389,15 +425,17 @@ class AppUpdateCoordinator(
             if (!manual) pendingUpdatePrompt = info
             return
         }
-        if (!manual && promptedVersionCode >= info.manifest.versionCode) return
-        dismissActiveDialog()
         val mandatory = manager.isMandatory(info)
+        if (!manual && !mandatory && promptedVersionCode >= info.manifest.versionCode) return
+        // Avoid stacking identical optional dialogs; mandatory may re-show after resume.
+        if (activeDialogRef?.get()?.isShowing == true && !mandatory) return
+        dismissActiveDialog()
         val dialog = AppUpdateDialogHelper.buildUpdateDialog(
             activity = dialogHost,
             info = info,
             mandatory = mandatory,
             onUpdate = {
-                promptedVersionCode = info.manifest.versionCode
+                if (!mandatory) promptedVersionCode = info.manifest.versionCode
                 downloadAndInstall(dialogHost, info, showProgressToast = true)
             },
             onDismiss = {
@@ -410,7 +448,7 @@ class AppUpdateCoordinator(
         )
         activeDialogRef = WeakReference(dialog)
         dialog.show()
-        if (!manual) promptedVersionCode = info.manifest.versionCode
+        if (!manual && !mandatory) promptedVersionCode = info.manifest.versionCode
     }
 
     private fun showInstallReadyDialog(
@@ -423,13 +461,16 @@ class AppUpdateCoordinator(
             if (!manual) pendingInstallPrompt = info to apkFile
             return
         }
-        if (!manual && installPromptVersionCode >= info.manifest.versionCode) return
+        val mandatory = manager.isMandatory(info)
+        if (!manual && !mandatory && installPromptVersionCode >= info.manifest.versionCode) return
+        if (activeDialogRef?.get()?.isShowing == true && !mandatory) return
         dismissActiveDialog()
         val dialog = AppUpdateDialogHelper.buildInstallReadyDialog(
             activity = dialogHost,
             info = info,
+            mandatory = mandatory,
             onInstall = {
-                installPromptVersionCode = info.manifest.versionCode
+                if (!mandatory) installPromptVersionCode = info.manifest.versionCode
                 if (!manager.canInstallPackages()) {
                     toast(dialogHost, dialogHost.getString(R.string.install_apps_unknown_sources_hint))
                     manager.openInstallPermissionSettings()
@@ -443,7 +484,7 @@ class AppUpdateCoordinator(
             },
             onDismiss = {
                 activeDialogRef = null
-                installPromptVersionCode = info.manifest.versionCode
+                if (!mandatory) installPromptVersionCode = info.manifest.versionCode
             },
         )
         activeDialogRef = WeakReference(dialog)
@@ -486,5 +527,7 @@ class AppUpdateCoordinator(
     companion object {
         private const val STARTUP_GRACE_MS = 12_000L
         private const val READY_BANNER_GRACE_MS = 8_000L
+        /** Minimum gap between automatic update checks while the app is in use. */
+        private const val PERIODIC_CHECK_MS = 6 * 60 * 60 * 1000L
     }
 }

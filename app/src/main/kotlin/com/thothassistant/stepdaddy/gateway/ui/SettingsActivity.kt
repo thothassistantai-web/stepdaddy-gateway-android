@@ -33,6 +33,11 @@ class SettingsActivity : AppCompatActivity() {
     private val settingsUpdateListener: (AppUpdateInfo?) -> Unit = { info ->
         binding.textUpdateStatus.text = when {
             info == null -> getString(R.string.settings_update_none, BuildConfig.VERSION_NAME)
+            updateCoordinator.manager().isMandatory(info) -> getString(
+                R.string.settings_update_available_mandatory,
+                info.manifest.versionName,
+                info.manifest.versionCode,
+            )
             else -> getString(
                 R.string.settings_update_available,
                 info.manifest.versionName,

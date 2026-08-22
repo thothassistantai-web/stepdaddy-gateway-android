@@ -7,7 +7,13 @@ import kotlinx.serialization.Serializable
 data class UpdateManifest(
     val versionCode: Int,
     val versionName: String,
+    /**
+     * Legacy minimum: if installed versionCode is below this, treat update as mandatory.
+     * Prefer [minSupportedVersionCode] in new manifests.
+     */
     val minVersionCode: Int? = null,
+    /** Alias of [minVersionCode] — force mandatory when installed code is older than this. */
+    val minSupportedVersionCode: Int? = null,
     /** Stable / release package OTA URL (`com.thothassistant.stepdaddy.gateway`). */
     val apkUrl: String,
     /** Debug package OTA URL (`com.thothassistant.stepdaddy.gateway.debug`). */
@@ -17,7 +23,17 @@ data class UpdateManifest(
     /** Optional SHA-256 checksum for `apkUrlDebug`. */
     val apkSha256Debug: String? = null,
     val releaseNotes: String? = null,
+    /** Legacy boolean; `true` forces a mandatory update. Prefer [updateType]. */
     val mandatory: Boolean = false,
+    /**
+     * `"optional"` (default) or `"mandatory"`.
+     * See [UpdatePolicy] and docs/UPDATES.md.
+     */
+    val updateType: String? = null,
+    /** Optional dialog title override. */
+    val title: String? = null,
+    /** Optional dialog body override (falls back to [releaseNotes]). */
+    val message: String? = null,
 ) {
     /**
      * Returns this manifest if the current build has a usable APK URL.

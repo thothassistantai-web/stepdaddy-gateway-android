@@ -96,7 +96,7 @@ android {
         buildConfigField("boolean", "DEFAULT_AUTO_CHECK_UPDATES", "true")
         buildConfigField("boolean", "DEFAULT_AUTO_DOWNLOAD_UPDATES", "false")
         buildConfigField("String", "DEFAULT_PLAYLIST_TITLE_STYLE", "\"XTREAM_CATEGORY\"")
-        buildConfigField("String", "DEFAULT_SUPPLEMENT_IMPORT_MODE", "\"CONSOLIDATE_FALLBACKS\"")
+        buildConfigField("String", "DEFAULT_SUPPLEMENT_IMPORT_MODE", "\"FULL_CATALOG\"")
         buildConfigField(
             "String",
             "DEFAULT_UPDATE_MANIFEST_URL",

@@ -14,7 +14,7 @@ object SupplementDedup {
         entries: List<M3uParser.Entry>,
         daddyChannels: List<Channel>,
         maxChannels: Int = Int.MAX_VALUE,
-        importMode: SupplementImportMode = SupplementImportMode.CONSOLIDATE_FALLBACKS,
+        importMode: SupplementImportMode = SupplementImportMode.FULL_CATALOG,
         mapChannel: (M3uParser.Entry, String) -> SupplementChannel,
     ): FilterResult {
         val consolidate = importMode.attachesFallbacks()

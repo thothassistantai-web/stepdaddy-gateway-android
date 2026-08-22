@@ -311,7 +311,7 @@ class GatewayEnvironment(context: Context) {
 
     /**
      * How Adult Swim marathon rows are merged.
-     * Default [SupplementImportMode.CONSOLIDATE_FALLBACKS]; setters mark the mode as user-chosen.
+     * Default [SupplementImportMode.FULL_CATALOG]; setters mark the mode as user-chosen.
      */
     var supplementAdultSwimImportMode: SupplementImportMode
         get() = SupplementImportMode.fromPref(
@@ -326,7 +326,7 @@ class GatewayEnvironment(context: Context) {
 
     /**
      * How Free-TV/IPTV country playlists are merged.
-     * Default [SupplementImportMode.CONSOLIDATE_FALLBACKS]; setters mark the mode as user-chosen.
+     * Default [SupplementImportMode.FULL_CATALOG]; setters mark the mode as user-chosen.
      */
     var supplementFreeTvImportMode: SupplementImportMode
         get() = SupplementImportMode.fromPref(
@@ -341,8 +341,8 @@ class GatewayEnvironment(context: Context) {
 
     /**
      * How dulo.cx Live TV rows are merged.
-     * [SupplementImportMode.CONSOLIDATE_FALLBACKS] attaches overlaps as DaddyLive failover mirrors (default).
-     * [SupplementImportMode.FULL_CATALOG] imports the curated slate as separate rows.
+     * [SupplementImportMode.FULL_CATALOG] imports the curated slate as separate rows (default).
+     * [SupplementImportMode.CONSOLIDATE_FALLBACKS] attaches overlaps as DaddyLive failover mirrors.
      */
     var supplementDuloCxImportMode: SupplementImportMode
         get() = SupplementImportMode.fromPref(
@@ -357,7 +357,7 @@ class GatewayEnvironment(context: Context) {
 
     /**
      * How iptv-org FAST playlists are merged.
-     * Default [SupplementImportMode.CONSOLIDATE_FALLBACKS].
+     * Default [SupplementImportMode.FULL_CATALOG].
      */
     var supplementIptvOrgImportMode: SupplementImportMode
         get() = SupplementImportMode.fromPref(
@@ -393,9 +393,9 @@ class GatewayEnvironment(context: Context) {
         filename in iptvOrgEnabledPlaylists
 
     /**
-     * [SupplementImportMode.CONSOLIDATE_FALLBACKS] attaches overlapping supplement streams as DaddyLive failover mirrors (default).
+     * [SupplementImportMode.FULL_CATALOG] includes every 24/7 row as separate playlist entries (default).
+     * [SupplementImportMode.CONSOLIDATE_FALLBACKS] attaches overlapping supplement streams as DaddyLive failover mirrors.
      * [SupplementImportMode.SKIP_DUPLICATES] skips names already on the main DaddyLive list.
-     * [SupplementImportMode.FULL_CATALOG] includes every 24/7 row as separate playlist entries.
      */
     var supplementNtvCxImportMode: SupplementImportMode
         get() {
@@ -609,7 +609,7 @@ class GatewayEnvironment(context: Context) {
     }
 
     /**
-     * Flip untouched installs from the legacy FULL_CATALOG default to smart consolidate.
+     * Flip untouched installs from the previous CONSOLIDATE default back to FULL_CATALOG.
      * Skips any provider whose Settings spinner was explicitly saved ([*_USER_SET] prefs).
      */
     private fun migrateImportModeDefaultsIfNeeded() {
@@ -652,7 +652,7 @@ class GatewayEnvironment(context: Context) {
     ) {
         val userSet = prefs.getBoolean(userSetKey, false)
         val raw = if (prefs.contains(modeKey)) prefs.getString(modeKey, null) else null
-        if (!SupplementImportModeMigration.shouldMigrateToConsolidate(raw, userSet)) return
+        if (!SupplementImportModeMigration.shouldMigrateToFullCatalog(raw, userSet)) return
         editor.putString(modeKey, SupplementImportModeMigration.targetMode().name)
     }
 

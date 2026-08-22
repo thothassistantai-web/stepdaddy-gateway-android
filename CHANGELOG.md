@@ -7,6 +7,21 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.38] - 2026-08-21
+
+### Changed
+
+- **Default import mode = Full catalog** — Free-TV, iptv-org, ntv, dulo, and Adult Swim default to `FULL_CATALOG` again. Merge fallbacks remains opt-in; Smart playlist `/tivimate-smart` still exposes consolidate backups.
+- **Untouched-install migration (v3)** — installs auto-migrated to consolidate with no explicit choice flip back to full catalog; explicit Merge / Skip / Full choices are kept. See `docs/CHANNEL-BACKUPS.md`.
+
+### Added
+
+- **Optional vs mandatory in-app updates** — `update-manifest.json` supports `updateType` (`optional`|`mandatory`), legacy `mandatory`, `minSupportedVersionCode`, and optional `title`/`message`. Optional updates are dismissible; mandatory soft-blocks with a persistent non-cancelable dialog + distinct dashboard footer. Docs: `docs/UPDATES.md`.
+
+### Notes
+
+- Ships on top of **3.0.37** scorer fixes (exact `tvg-id` / `INT`/`WW` wildcards). Prefer this tag over reusing 3.0.37 for product changes.
+
 ## [3.0.37] - 2026-08-21
 
 ### Fixed

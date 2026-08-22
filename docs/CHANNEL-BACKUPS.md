@@ -2,20 +2,20 @@
 
 How StepDaddy decides when a Free-TV / iptv-org / ntv / dulo stream is the **same channel** as a DaddyLive row, and how to fix mistakes.
 
-## Defaults (3.0.32+)
+## Defaults (3.0.38+)
 
-- Import mode defaults to **Merge fallbacks** (`CONSOLIDATE_FALLBACKS`) for Free-TV, iptv-org, ntv, dulo, and Adult Swim.
-- Only **high-confidence** matches (score ≥ 70, region/language aware) attach as DaddyLive backups.
-- Multiple 100% matches all attach as fallbacks on the same Daddy channel.
-- **All channels** (full catalog) and **Skip dupes** remain selectable per provider in Settings.
+- Import mode defaults to **All channels** (`FULL_CATALOG`) for Free-TV, iptv-org, ntv, dulo, and Adult Swim — every provider row is a separate playlist entry.
+- **Merge fallbacks** (`CONSOLIDATE_FALLBACKS`) and **Skip dupes** remain selectable per provider in Settings.
+- Automatic backups only attach when Merge fallbacks is chosen (high-confidence score ≥ 70, region/language aware).
+- Smart playlist **`/tivimate-smart`** remains available for opt-in ExoPlayer failover across consolidate backups; recommended default playlist stays **`/tivimate`** (fast).
 
-### Upgrade migration
+### Upgrade migration (import_mode_defaults_version = 3)
 
-On first launch of 3.0.32+:
+On first launch of 3.0.38+:
 
-- If a provider’s stored mode is still the old default (`FULL_CATALOG` / unset) **and** the user never explicitly saved an import-mode choice (`*_import_mode_user_set` = false), it flips to **Merge fallbacks**.
-- If you already chose Skip dupes, Merge fallbacks, or saved Full catalog after touching the spinner, that choice is kept.
-- To go back to separate playlist rows: **Settings →** provider → **All channels** → Save.
+- If a provider’s stored mode is still the previous auto-default (`CONSOLIDATE_FALLBACKS` / unset) **and** the user never explicitly saved an import-mode choice (`*_import_mode_user_set` = false), it flips to **All channels**.
+- If you already chose Skip dupes, Merge fallbacks, or saved Full catalog after touching the toggle, that choice is kept.
+- To enable automatic backups again: **Settings →** provider → **Merge fallbacks** → Save, then point TiviMate at `/tivimate-smart.m3u` if you want failover.
 
 ## Why old matching failed
 

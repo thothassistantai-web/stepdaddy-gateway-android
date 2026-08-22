@@ -23,4 +23,5 @@
     <color name="bar_pink">#EC4899</color>
     <color name="bar_track">#243044</color>
     <color name="footer_update">#5FD48A</color>
+    <color name="footer_update_mandatory">#F5C451</color>
 </resources>
