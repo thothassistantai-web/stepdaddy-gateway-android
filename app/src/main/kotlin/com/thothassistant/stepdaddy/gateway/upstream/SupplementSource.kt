@@ -680,11 +680,16 @@ class SupplementSource(
                         "iptv-org=${iptvOrgCount()}, free-tv=${freeTvCount()}, dulo.cx=${duloCxCount()}, ntv.cx=${ntvCxCount()}, " +
                         "adultswim=${adultSwimCount()})",
                 )
+                // Settle Sources UI before slow logo enrich — catalog is already durable.
+                ensureSmartDaddyFallbacks(daddyChannels)
+                refreshInFlight = false
+                onRefreshComplete?.invoke()
                 val enriched = enrichSupplementLogos(merged)
                 if (enriched !== merged) {
                     cached = enriched
                     store.writeChannels(enriched)
                 }
+                return
             }
         } catch (exc: Exception) {
             Log.w(TAG, "Supplement sync failed — keeping cache", exc)
@@ -692,9 +697,11 @@ class SupplementSource(
         } finally {
             // Always (re)attach Smart merge-style backups from published rows so FULL_CATALOG
             // and timeout/cache-recovery paths still feed /tivimate-smart failover.
-            ensureSmartDaddyFallbacks(daddyChannels)
-            refreshInFlight = false
-            onRefreshComplete?.invoke()
+            if (refreshInFlight) {
+                ensureSmartDaddyFallbacks(daddyChannels)
+                refreshInFlight = false
+                onRefreshComplete?.invoke()
+            }
         }
     }
 
