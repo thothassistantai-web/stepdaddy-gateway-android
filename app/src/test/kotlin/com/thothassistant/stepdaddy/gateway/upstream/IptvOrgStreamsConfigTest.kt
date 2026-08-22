@@ -26,10 +26,13 @@ class IptvOrgStreamsConfigTest {
     }
 
     @Test
-    fun `provider tag formats known slugs`() {
-        assertEquals("Pluto", IptvOrgStreamsConfig.providerTagFor("us_pluto.m3u"))
-        assertEquals("FireTV", IptvOrgStreamsConfig.providerTagFor("us_firetv.m3u"))
-        assertEquals("BBC", IptvOrgStreamsConfig.providerTagFor("uk_bbc.m3u"))
-        assertEquals("", IptvOrgStreamsConfig.providerTagFor("us.m3u"))
+    fun `candidate urls prefer jsdelivr before github raw`() {
+        val urls = IptvOrgStreamsConfig.candidateUrls("uk_bbc.m3u")
+        assertTrue(urls.first().startsWith("https://cdn.jsdelivr.net/"))
+        assertTrue(urls.any { it.contains("gcore.jsdelivr.net") })
+        assertEquals(
+            "https://raw.githubusercontent.com/iptv-org/iptv/master/streams/uk_bbc.m3u",
+            urls.last(),
+        )
     }
 }

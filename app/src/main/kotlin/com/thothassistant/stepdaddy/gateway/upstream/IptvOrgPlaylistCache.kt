@@ -3,12 +3,21 @@ package com.thothassistant.stepdaddy.gateway.upstream
 import android.content.Context
 import android.util.Log
 import java.io.File
+import java.net.Inet4Address
+import java.net.InetAddress
 import java.security.MessageDigest
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
+import okhttp3.Dns
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
 /**
  * Per-playlist disk cache for iptv-org GitHub M3Us with ETag / Last-Modified support.
+ *
+ * Phone LTE (esp. MVNOs) often ICMP-pings GitHub/jsDelivr but stalls on HTTPS reads.
+ * Soft TTL + CDN circuit breaker prefer disk over burning minutes on mirror timeouts.
  */
 class IptvOrgPlaylistCache(
     context: Context,
@@ -19,14 +28,15 @@ class IptvOrgPlaylistCache(
         .dispatcher(
             okhttp3.Dispatcher().apply {
                 maxRequests = 2
-                maxRequestsPerHost = 2
+                maxRequestsPerHost = 1
             },
         )
-        .connectTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
-        .readTimeout(8, java.util.concurrent.TimeUnit.SECONDS)
-        .writeTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
-        .callTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
-        .retryOnConnectionFailure(false)
+        .dns(IPV4_PREFER_DNS)
+        .connectTimeout(CONNECT_TIMEOUT_SEC, TimeUnit.SECONDS)
+        .readTimeout(READ_TIMEOUT_SEC, TimeUnit.SECONDS)
+        .writeTimeout(CONNECT_TIMEOUT_SEC, TimeUnit.SECONDS)
+        .callTimeout(CALL_TIMEOUT_SEC, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
         .build()
 
     private val dir = File(context.applicationContext.filesDir, "supplement/iptv-org").also { it.mkdirs() }
@@ -44,78 +54,119 @@ class IptvOrgPlaylistCache(
     fun fetch(filename: String): FetchResult? {
         val bodyFile = bodyFile(filename)
         val meta = readMeta(filename)
+        val cachedBody = cachedBodyOrNull(filename)
+
+        // Warm disk within soft TTL — avoid stampeding GitHub/CDN on every sync.
+        if (cachedBody != null && meta.syncedAt > 0L) {
+            val ageMs = System.currentTimeMillis() - meta.syncedAt
+            if (ageMs in 0 until CACHE_SOFT_TTL_MS) {
+                return FetchResult(filename, cachedBody, fromCache = true, httpStatus = 0)
+            }
+        }
+
+        // Circuit open: skip mirror walk and serve any disk we have.
+        if (isCircuitOpen() && cachedBody != null) {
+            logDegradedOnce("iptv-org CDN circuit open — serving disk cache for $filename")
+            return FetchResult(filename, cachedBody, fromCache = true, httpStatus = 0)
+        }
+
         val urls = IptvOrgStreamsConfig.candidateUrls(filename)
         var lastExc: Exception? = null
+        var anyTransportFailure = false
         for ((index, url) in urls.withIndex()) {
-            val request = Request.Builder()
-                .url(url)
-                .header("User-Agent", SupplementConfig.USER_AGENT)
-                .apply {
-                    // Conditional headers only for GitHub raw (CDN ETags differ).
-                    if (url.startsWith(IptvOrgStreamsConfig.RAW_BASE_URL)) {
-                        meta.etag?.takeIf { it.isNotBlank() }?.let { header("If-None-Match", it) }
-                        meta.lastModified?.takeIf { it.isNotBlank() }?.let { header("If-Modified-Since", it) }
-                    }
+            // After first transport failure on a cold sync, try one retry with backoff then next mirror.
+            repeat(ATTEMPTS_PER_URL) { attempt ->
+                if (attempt > 0) {
+                    Thread.sleep(RETRY_BACKOFF_MS * attempt)
                 }
-                .get()
-                .build()
-            val result = runCatching {
-                fetchClient.newCall(request).execute().use { response ->
-                    when {
-                        response.code == 304 && bodyFile.isFile && bodyFile.length() > 0L -> {
-                            FetchResult(
-                                filename = filename,
-                                body = bodyFile.readText(Charsets.UTF_8),
-                                fromCache = true,
-                                httpStatus = 304,
-                            )
+                val request = Request.Builder()
+                    .url(url)
+                    .header("User-Agent", SupplementConfig.USER_AGENT)
+                    .apply {
+                        // Conditional headers only for GitHub raw (CDN ETags differ).
+                        if (url.startsWith(IptvOrgStreamsConfig.RAW_BASE_URL)) {
+                            meta.etag?.takeIf { it.isNotBlank() }?.let { header("If-None-Match", it) }
+                            meta.lastModified?.takeIf { it.isNotBlank() }?.let { header("If-Modified-Since", it) }
                         }
-                        response.isSuccessful -> {
-                            val bytes = response.body?.bytes() ?: return@use null
-                            if (bytes.isEmpty()) return@use null
-                            if (bytes.size > IptvOrgStreamsConfig.MAX_BYTES_PER_PLAYLIST) {
-                                Log.w(TAG, "iptv-org playlist too large: $filename (${bytes.size} bytes)")
-                                return@use null
-                            }
-                            val text = bytes.toString(Charsets.UTF_8)
-                            val sha = sha256Hex(bytes)
-                            if (meta.sha256 == sha && bodyFile.isFile) {
-                                FetchResult(filename, bodyFile.readText(Charsets.UTF_8), fromCache = true, httpStatus = 200)
-                            } else {
-                                bodyFile.writeBytes(bytes)
-                                writeMeta(
-                                    filename,
-                                    Meta(
-                                        etag = if (url.startsWith(IptvOrgStreamsConfig.RAW_BASE_URL)) response.header("ETag") else meta.etag,
-                                        lastModified = if (url.startsWith(IptvOrgStreamsConfig.RAW_BASE_URL)) response.header("Last-Modified") else meta.lastModified,
-                                        sha256 = sha,
-                                        syncedAt = System.currentTimeMillis(),
-                                        sizeBytes = bytes.size.toLong(),
-                                    ),
+                    }
+                    .get()
+                    .build()
+                val result = runCatching {
+                    fetchClient.newCall(request).execute().use { response ->
+                        when {
+                            response.code == 304 && bodyFile.isFile && bodyFile.length() > 0L -> {
+                                noteSuccess()
+                                FetchResult(
+                                    filename = filename,
+                                    body = bodyFile.readText(Charsets.UTF_8),
+                                    fromCache = true,
+                                    httpStatus = 304,
                                 )
-                                if (index > 0) {
-                                    Log.i(TAG, "iptv-org fetched via CDN[$index]: $filename")
+                            }
+                            response.isSuccessful -> {
+                                val bytes = response.body?.bytes() ?: return@use null
+                                if (bytes.isEmpty()) return@use null
+                                if (bytes.size > IptvOrgStreamsConfig.MAX_BYTES_PER_PLAYLIST) {
+                                    Log.w(TAG, "iptv-org playlist too large: $filename (${bytes.size} bytes)")
+                                    return@use null
                                 }
-                                FetchResult(filename, text, fromCache = false, httpStatus = response.code)
+                                val text = bytes.toString(Charsets.UTF_8)
+                                val sha = sha256Hex(bytes)
+                                noteSuccess()
+                                if (meta.sha256 == sha && bodyFile.isFile) {
+                                    FetchResult(filename, bodyFile.readText(Charsets.UTF_8), fromCache = true, httpStatus = 200)
+                                } else {
+                                    bodyFile.writeBytes(bytes)
+                                    writeMeta(
+                                        filename,
+                                        Meta(
+                                            etag = if (url.startsWith(IptvOrgStreamsConfig.RAW_BASE_URL)) {
+                                                response.header("ETag")
+                                            } else {
+                                                meta.etag
+                                            },
+                                            lastModified = if (url.startsWith(IptvOrgStreamsConfig.RAW_BASE_URL)) {
+                                                response.header("Last-Modified")
+                                            } else {
+                                                meta.lastModified
+                                            },
+                                            sha256 = sha,
+                                            syncedAt = System.currentTimeMillis(),
+                                            sizeBytes = bytes.size.toLong(),
+                                        ),
+                                    )
+                                    if (index > 0) {
+                                        Log.i(TAG, "iptv-org fetched via CDN[$index]: $filename")
+                                    }
+                                    FetchResult(filename, text, fromCache = false, httpStatus = response.code)
+                                }
+                            }
+                            else -> {
+                                logFetchWarn("iptv-org fetch failed ${response.code} $filename via $url")
+                                null
                             }
                         }
-                        else -> {
-                            Log.w(TAG, "iptv-org fetch failed ${response.code} $filename via $url")
-                            null
-                        }
                     }
+                }.getOrElse { exc ->
+                    lastExc = exc as? Exception ?: Exception(exc)
+                    anyTransportFailure = true
+                    logFetchWarn("iptv-org fetch error $filename via $url (${exc.message})")
+                    null
                 }
-            }.getOrElse { exc ->
-                lastExc = exc as? Exception ?: Exception(exc)
-                Log.w(TAG, "iptv-org fetch error $filename via $url (${exc.message})")
-                null
+                if (result != null) return result
             }
-            if (result != null) return result
         }
-        if (lastExc != null) {
-            Log.w(TAG, "iptv-org all mirrors failed $filename", lastExc)
+
+        if (anyTransportFailure) {
+            noteFailure()
         }
-        return cachedBodyOrNull(filename)?.let {
+        if (lastExc != null && cachedBody == null) {
+            logFetchWarn("iptv-org all mirrors failed $filename: ${lastExc.message}")
+        } else if (lastExc != null && cachedBody != null) {
+            logDegradedOnce("iptv-org CDN unreachable — serving disk cache ($filename)")
+        }
+
+        return cachedBody?.let {
             FetchResult(filename, it, fromCache = true, httpStatus = 0)
         }
     }
@@ -175,5 +226,66 @@ class IptvOrgPlaylistCache(
 
     companion object {
         private const val TAG = "IptvOrgPlaylistCache"
+
+        /** Prefer disk within this window before spending timeouts on mirrors. */
+        private const val CACHE_SOFT_TTL_MS = 12 * 3600_000L
+
+        /** GitHub/jsDelivr need headroom on MVNO LTE (ICMP works; HTTPS stalls). */
+        private const val CONNECT_TIMEOUT_SEC = 15L
+        private const val READ_TIMEOUT_SEC = 30L
+        private const val CALL_TIMEOUT_SEC = 40L
+        private const val ATTEMPTS_PER_URL = 2
+        private const val RETRY_BACKOFF_MS = 750L
+
+        private const val CIRCUIT_FAILURES_TO_OPEN = 4
+        private const val CIRCUIT_OPEN_MS = 10 * 60_000L
+        private const val WARN_EVERY_MS = 30_000L
+
+        private val consecutiveFailures = AtomicInteger(0)
+        private val circuitOpenUntilMs = AtomicLong(0L)
+        private val lastWarnMs = AtomicLong(0L)
+        private val lastDegradedMs = AtomicLong(0L)
+
+        /** Prefer IPv4 — some LTE stacks hang on IPv6 AAAA for GitHub/CDN hosts. */
+        val IPV4_PREFER_DNS: Dns = Dns { hostname ->
+            val all = Dns.SYSTEM.lookup(hostname)
+            all.sortedBy { addr: InetAddress -> if (addr is Inet4Address) 0 else 1 }
+        }
+
+        fun isCircuitOpen(now: Long = System.currentTimeMillis()): Boolean =
+            now < circuitOpenUntilMs.get()
+
+        private fun noteSuccess() {
+            consecutiveFailures.set(0)
+            circuitOpenUntilMs.set(0L)
+        }
+
+        private fun noteFailure() {
+            val n = consecutiveFailures.incrementAndGet()
+            if (n >= CIRCUIT_FAILURES_TO_OPEN) {
+                circuitOpenUntilMs.set(System.currentTimeMillis() + CIRCUIT_OPEN_MS)
+                logDegradedOnce(
+                    "iptv-org CDN circuit open for ${CIRCUIT_OPEN_MS / 1000}s after $n failures",
+                )
+            }
+        }
+
+        private fun logFetchWarn(message: String) {
+            val now = System.currentTimeMillis()
+            val prev = lastWarnMs.get()
+            if (now - prev >= WARN_EVERY_MS && lastWarnMs.compareAndSet(prev, now)) {
+                Log.w(TAG, message)
+            } else {
+                Log.d(TAG, message)
+            }
+        }
+
+        private fun logDegradedOnce(message: String) {
+            val now = System.currentTimeMillis()
+            val prev = lastDegradedMs.get()
+            if (now - prev >= WARN_EVERY_MS && lastDegradedMs.compareAndSet(prev, now)) {
+                Log.w(TAG, message)
+            }
+        }
     }
 }

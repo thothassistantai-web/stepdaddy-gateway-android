@@ -4,6 +4,7 @@ import android.util.Log
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import java.security.MessageDigest
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -19,8 +20,24 @@ import okhttp3.Request
  * Skips YouTube/Twitch rows; publishes direct HTTP(S) stream URLs.
  */
 class FreeTvIptvSource(
-    private val httpClient: OkHttpClient,
+    httpClient: OkHttpClient,
 ) {
+    /** Isolated + IPv4-preferring client so GitHub raw stalls do not wedge the shared pool. */
+    private val fetchClient: OkHttpClient = httpClient.newBuilder()
+        .dispatcher(
+            okhttp3.Dispatcher().apply {
+                maxRequests = 2
+                maxRequestsPerHost = 1
+            },
+        )
+        .dns(IptvOrgPlaylistCache.IPV4_PREFER_DNS)
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(15, TimeUnit.SECONDS)
+        .callTimeout(40, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
+        .build()
+
     data class FetchStats(
         val playlistsFetched: Int = 0,
         val playlistsFailed: Int = 0,
@@ -46,7 +63,7 @@ class FreeTvIptvSource(
         if (playlistFiles.isEmpty()) {
             return@withContext FetchOutcome(emptyList(), FetchStats())
         }
-        val semaphore = Semaphore(3)
+        val semaphore = Semaphore(1)
         val parsed = coroutineScope {
             playlistFiles.map { filename ->
                 async {
@@ -99,40 +116,51 @@ class FreeTvIptvSource(
     )
 
     private fun fetchPlaylist(filename: String): PlaylistResult? {
-        val url = FreeTvIptvConfig.rawUrl(filename)
-        val request = Request.Builder()
-            .url(url)
-            .header("User-Agent", SupplementConfig.USER_AGENT)
-            .get()
-            .build()
-        return runCatching {
-            httpClient.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    Log.w(TAG, "Free-TV fetch failed ${response.code} $filename")
-                    return null
-                }
-                val body = response.body ?: return null
-                val bytes = body.bytes()
-                if (bytes.isEmpty()) return null
-                if (bytes.size > FreeTvIptvConfig.MAX_BYTES_PER_PLAYLIST) {
-                    Log.w(TAG, "Free-TV playlist too large: $filename (${bytes.size} bytes)")
-                    return null
-                }
-                val text = bytes.toString(Charsets.UTF_8)
-                var skipped = 0
-                val entries = M3uParser.parse(text).mapNotNull { entry ->
-                    if (!FreeTvIptvConfig.isPlayableHttpStream(entry.streamUrl)) {
-                        skipped++
-                        return@mapNotNull null
+        val urls = FreeTvIptvConfig.candidateUrls(filename)
+        var lastExc: Exception? = null
+        for (url in urls) {
+            val request = Request.Builder()
+                .url(url)
+                .header("User-Agent", SupplementConfig.USER_AGENT)
+                .get()
+                .build()
+            val result = runCatching {
+                fetchClient.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        Log.d(TAG, "Free-TV fetch failed ${response.code} $filename via $url")
+                        return@use null
                     }
-                    entry.copy(sourcePlaylist = filename)
+                    val body = response.body ?: return@use null
+                    val bytes = body.bytes()
+                    if (bytes.isEmpty()) return@use null
+                    if (bytes.size > FreeTvIptvConfig.MAX_BYTES_PER_PLAYLIST) {
+                        Log.w(TAG, "Free-TV playlist too large: $filename (${bytes.size} bytes)")
+                        return@use null
+                    }
+                    val text = bytes.toString(Charsets.UTF_8)
+                    var skipped = 0
+                    val entries = M3uParser.parse(text).mapNotNull { entry ->
+                        if (!FreeTvIptvConfig.isPlayableHttpStream(entry.streamUrl)) {
+                            skipped++
+                            return@mapNotNull null
+                        }
+                        entry.copy(sourcePlaylist = filename)
+                    }
+                    PlaylistResult(filename, entries, skipped)
                 }
-                PlaylistResult(filename, entries, skipped)
+            }.getOrElse { exc ->
+                lastExc = exc as? Exception ?: Exception(exc)
+                Log.d(TAG, "Free-TV fetch error $filename via $url (${exc.message})")
+                null
             }
-        }.getOrElse { exc ->
-            Log.w(TAG, "Free-TV fetch error $filename", exc)
-            null
+            if (result != null) return result
         }
+        if (lastExc != null) {
+            Log.w(TAG, "Free-TV all mirrors failed $filename (${lastExc.message})")
+        } else {
+            Log.w(TAG, "Free-TV all mirrors failed $filename")
+        }
+        return null
     }
 
     private fun toFreeTvChannel(entry: M3uParser.Entry, playlistFile: String): SupplementChannel {

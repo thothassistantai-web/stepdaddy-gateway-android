@@ -740,12 +740,23 @@ class MainActivity : AppCompatActivity() {
                 add(getString(R.string.dashboard_error_streams, healing?.streamFailures ?: 0))
             }
             if ((health.supplement?.iptvOrgPlaylistsFailed ?: 0) > 0) {
-                add(
-                    getString(
-                        R.string.dashboard_error_iptv_playlists,
-                        health.supplement?.iptvOrgPlaylistsFailed ?: 0,
-                    ),
-                )
+                val s = health.supplement
+                when {
+                    s?.iptvOrgCdnDegraded == true && (s.iptvOrgChannels > 0 || (s.iptvOrgPlaylistsFromCache ?: 0) > 0) ->
+                        add(
+                            getString(
+                                R.string.dashboard_warn_iptv_cdn_cache,
+                                s.iptvOrgPlaylistsFromCache,
+                                s.iptvOrgChannels,
+                            ),
+                        )
+                    s?.iptvOrgCdnDegraded == true ->
+                        add(getString(R.string.dashboard_warn_iptv_cdn_unreachable))
+                    (s?.iptvOrgPlaylistsFetched ?: 0) == 0 && (s?.iptvOrgChannels ?: 0) == 0 ->
+                        add(getString(R.string.dashboard_warn_iptv_cdn_unreachable))
+                    // Partial mirror misses while some playlists loaded — stay quiet.
+                    else -> Unit
+                }
             }
             SpecialEventsDashboardRenderer.staleWarning(this@MainActivity, health.supplement)?.let { add(it) }
             fetchError?.let { add(it) }

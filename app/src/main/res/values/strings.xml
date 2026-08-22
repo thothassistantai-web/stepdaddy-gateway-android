@@ -228,6 +228,8 @@
     <string name="dashboard_error_outage">Upstream outage mode</string>
     <string name="dashboard_error_streams">Stream failures: %1$d</string>
     <string name="dashboard_error_iptv_playlists">iptv-org playlists failed: %1$d</string>
+    <string name="dashboard_warn_iptv_cdn_unreachable">iptv-org degraded: GitHub/CDN unreachable on this network</string>
+    <string name="dashboard_warn_iptv_cdn_cache">iptv-org degraded: serving %1$d cached playlists (%2$d channels)</string>
     <string name="dashboard_error_special_events_stale">Special Events scrape stale (last %1$s ago)</string>
     <string name="label_special_events_health">Special Events</string>
     <string name="special_events_status_ok">Healthy</string>

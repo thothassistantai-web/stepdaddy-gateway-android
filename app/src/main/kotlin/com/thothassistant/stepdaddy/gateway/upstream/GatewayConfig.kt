@@ -37,7 +37,8 @@ object GatewayConfig {
     val DLHD_EMBED_HOSTS: List<String>
         get() = DomainRelayRuntime.embedHosts ?: DEFAULT_DLHD_EMBED_HOSTS
     /** Relay paths — player/casting first (watch/cast often 403/404 on current mirrors). */
-    val DLHD_PK_STREAM_PATHS = listOf("player", "casting", "watch", "cast", "plus")    /** Wizard/setup M3U cap — full catalog (~5k ch) blocks FUSA for minutes; bootstrap must be fast. */
+    val DLHD_PK_STREAM_PATHS = listOf("player", "casting", "watch", "cast", "plus")
+    /** Wizard/setup M3U cap — full catalog (~5k ch) blocks FUSA for minutes; bootstrap must be fast. */
     const val SETUP_BOOTSTRAP_MAX_CHANNELS = 50
     const val CHANNEL_REFRESH_INTERVAL_MS = 600_000L
     const val STREAM_CACHE_TTL_MS = 60_000L
@@ -48,9 +49,10 @@ object GatewayConfig {
     const val STREAM_FETCH_TIMEOUT_MS = 45_000L
     /** Per-mirror attempt — fail fast on dead mirrors, then rotate. */
     const val MIRROR_ATTEMPT_TIMEOUT_MS = 12_000L
-    const val UPSTREAM_FETCH_MAX_CONCURRENT = 2
+    /** Cap parallel stream resolves — keep modest so iptv CDN + TiviMate do not wedge LTE. */
+    const val UPSTREAM_FETCH_MAX_CONCURRENT = 3
     /** Max wait for a fetch slot when TiviMate requests several channels at once. */
-    const val UPSTREAM_FETCH_WAIT_MS = 20_000L
+    const val UPSTREAM_FETCH_WAIT_MS = 25_000L
     const val DEAD_MIRROR_TTL_MS = 300_000L
     const val MIRROR_FAILURE_BACKOFF_BASE_MS = 10_000L
     const val MIRROR_FAILURE_BACKOFF_MAX_MS = 180_000L
@@ -65,10 +67,10 @@ object GatewayConfig {
     const val INVALIDATE_COOLDOWN_MS = 180_000L
     const val CHANNEL_MIRROR_COOLDOWN_BASE_MS = 20_000L
     const val CHANNEL_MIRROR_COOLDOWN_MAX_MS = 180_000L
-    const val UPSTREAM_CONNECT_TIMEOUT_SEC = 5L
-    const val UPSTREAM_READ_TIMEOUT_SEC = 20L
+    const val UPSTREAM_CONNECT_TIMEOUT_SEC = 8L
+    const val UPSTREAM_READ_TIMEOUT_SEC = 22L
     const val UPSTREAM_WRITE_TIMEOUT_SEC = 20L
-    const val UPSTREAM_CALL_TIMEOUT_SEC = 22L
+    const val UPSTREAM_CALL_TIMEOUT_SEC = 28L
     val PREWARM_CHANNEL_IDS = listOf("857", "51", "360")
     val WATCHDOG_PROBE_CHANNEL_IDS = listOf("51", "857")
     /** Known-good channels for outage canary probes and poison-cascade ordering tests. */

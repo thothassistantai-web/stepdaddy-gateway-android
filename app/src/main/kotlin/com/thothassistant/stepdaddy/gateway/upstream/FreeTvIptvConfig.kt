@@ -16,6 +16,13 @@ object FreeTvIptvConfig {
     const val RAW_BASE_URL =
         "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlists/"
 
+    /** Same bytes via jsDelivr when raw.githubusercontent.com stalls on phone LTE. */
+    val CDN_BASE_URLS: List<String> = listOf(
+        "https://cdn.jsdelivr.net/gh/Free-TV/IPTV@master/playlists/",
+        "https://fastly.jsdelivr.net/gh/Free-TV/IPTV@master/playlists/",
+        "https://gcore.jsdelivr.net/gh/Free-TV/IPTV@master/playlists/",
+    )
+
     /** High-value English-language backups; keep small for Fire Stick sync time. */
     val PLAYLIST_FILES: List<String> = listOf(
         "playlist_usa.m3u8",
@@ -27,6 +34,9 @@ object FreeTvIptvConfig {
     const val MAX_BYTES_PER_PLAYLIST = 512 * 1024
 
     fun rawUrl(filename: String): String = RAW_BASE_URL + filename
+
+    fun candidateUrls(filename: String): List<String> =
+        (CDN_BASE_URLS + listOf(RAW_BASE_URL)).map { it + filename }
 
     fun countryTagFor(filename: String): String = when {
         filename.contains("usa", ignoreCase = true) -> "#us"

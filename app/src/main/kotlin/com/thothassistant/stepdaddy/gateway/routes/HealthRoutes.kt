@@ -26,6 +26,7 @@ import com.thothassistant.stepdaddy.gateway.model.TivimateSetup
 import com.thothassistant.stepdaddy.gateway.relay.DomainRelayRuntime
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
 import com.thothassistant.stepdaddy.gateway.upstream.GroupTitleResolver
+import com.thothassistant.stepdaddy.gateway.upstream.IptvOrgPlaylistCache
 import com.thothassistant.stepdaddy.gateway.upstream.PlaylistCache
 import com.thothassistant.stepdaddy.gateway.upstream.SupplementSource
 import com.thothassistant.stepdaddy.gateway.upstream.SupplementSyncSnapshot
@@ -420,6 +421,9 @@ class HealthRoutes(
             iptvOrgPlaylistsFailed = sync.iptvOrgPlaylistsFailed,
             iptvOrgPlaylistsTotal = sync.iptvOrgPlaylistsTotal,
             iptvOrgPlaylistsFromCache = sync.iptvOrgPlaylistsFromCache,
+            iptvOrgCdnDegraded = IptvOrgPlaylistCache.isCircuitOpen() ||
+                (sync.iptvOrgPlaylistsFailed > 0 &&
+                    sync.iptvOrgPlaylistsFetched - sync.iptvOrgPlaylistsFromCache <= 0),
             blockedTokenProxy = sync.blockedTokenProxy,
             lastSpecialEventsSyncMs = lastSyncMs,
             specialEventsScrapeAgeSeconds = SpecialEventsHealthSummary.ageSeconds(lastSyncMs, nowMs),

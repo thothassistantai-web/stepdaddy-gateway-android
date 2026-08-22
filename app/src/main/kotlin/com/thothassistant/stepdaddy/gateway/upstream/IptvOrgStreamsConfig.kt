@@ -10,11 +10,13 @@ object IptvOrgStreamsConfig {
 
     /**
      * Fallback CDNs when GitHub raw times out on phone networks.
-     * Prefer jsDelivr — same bytes, often reachable when raw.githubusercontent.com stalls.
+     * Prefer jsDelivr variants — same bytes, often reachable when raw.githubusercontent.com stalls.
      */
     val CDN_BASE_URLS: List<String> = listOf(
         "https://cdn.jsdelivr.net/gh/iptv-org/iptv@master/streams/",
         "https://fastly.jsdelivr.net/gh/iptv-org/iptv@master/streams/",
+        "https://gcore.jsdelivr.net/gh/iptv-org/iptv@master/streams/",
+        "https://testingcf.jsdelivr.net/gh/iptv-org/iptv@master/streams/",
     )
 
     /** Inclusive range: uk.m3u … us_xumo.m3u (39 playlists). */
@@ -65,8 +67,8 @@ object IptvOrgStreamsConfig {
 
     const val MAX_BYTES_PER_PLAYLIST = 2 * 1024 * 1024
 
-    /** Phone / non-Fire concurrency for GitHub raw fetches (keep modest to avoid DNS storms). */
-    const val MAX_CONCURRENT_FETCH = 2
+    /** Phone / non-Fire concurrency for GitHub raw fetches (1 avoids LTE HTTPS stampede). */
+    const val MAX_CONCURRENT_FETCH = 1
 
     /** Fire Stick / low-RAM concurrency. */
     const val MAX_CONCURRENT_FETCH_FIRE = 1

@@ -77,6 +77,11 @@ data class SupplementStatus(
     val iptvOrgPlaylistsFailed: Int = 0,
     val iptvOrgPlaylistsTotal: Int = 0,
     val iptvOrgPlaylistsFromCache: Int = 0,
+    /**
+     * True when iptv-org network mirrors failed and channels (if any) came from disk
+     * or the catalog is empty because GitHub/CDN is unreachable on this network.
+     */
+    val iptvOrgCdnDegraded: Boolean = false,
     val blockedTokenProxy: Int = 0,
     val ntvCxEnabled: Boolean = false,
     val ntvCxChannels: Int = 0,
