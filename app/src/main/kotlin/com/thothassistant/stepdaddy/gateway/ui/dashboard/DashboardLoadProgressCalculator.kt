@@ -313,6 +313,12 @@ internal object DashboardLoadProgressCalculator {
             // Probe wave finished (including all-failed probeOk=0).
             supplement.adultSwimProbed > 0 -> 100
             syncSettled(supplement) -> 100
+            // Sibling sources finished while Adult Swim HTTPS probes still run — don't pin Sources UI.
+            supplement.adultSwimChannels == 0 &&
+                (supplement.iptvOrgPlaylistsTotal > 0 ||
+                    supplement.freeTvPlaylistsFailed > 0 ||
+                    supplement.freeTvPlaylistsFetched > 0 ||
+                    supplement.ntvCxChannels > 0) -> 100
             supplement.supplementSyncInFlight -> 35
             else -> 10
         }
