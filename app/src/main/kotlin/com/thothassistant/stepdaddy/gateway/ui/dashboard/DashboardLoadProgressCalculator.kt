@@ -198,7 +198,7 @@ internal object DashboardLoadProgressCalculator {
         return LoadProgress(
             phase = "loading",
             percent = max(8, avgPercent),
-            etaSeconds = max(15L, remaining * 25L),
+            etaSeconds = max(15L, remaining * 8L),
             detail = detail,
         )
     }
@@ -225,9 +225,22 @@ internal object DashboardLoadProgressCalculator {
 
     private fun iptvOrgPercent(count: Int, supplement: SupplementStatus): Int =
         when {
-            count > 0 -> 100
+            count > 0 &&
+                (supplement.iptvOrgPlaylistsTotal <= 0 ||
+                    supplement.iptvOrgPlaylistsFetched >= supplement.iptvOrgPlaylistsTotal) &&
+                !supplement.supplementSyncInFlight -> 100
+            count > 0 && !supplement.supplementSyncInFlight -> 100
+            supplement.iptvOrgPlaylistsTotal > 0 ->
+                min(
+                    99,
+                    max(
+                        5,
+                        (supplement.iptvOrgPlaylistsFetched * 100) / supplement.iptvOrgPlaylistsTotal,
+                    ),
+                )
             supplement.iptvOrgPlaylistsFetched > 0 ->
-                min(100, 40 + supplement.iptvOrgPlaylistsFetched * 20)
+                min(100, 40 + supplement.iptvOrgPlaylistsFetched * 2)
+            count > 0 -> 85
             supplement.supplementSyncInFlight -> 35
             else -> 10
         }

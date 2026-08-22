@@ -10,6 +10,8 @@ data class SupplementSyncSnapshot(
     val iptvOrgChannels: Int = 0,
     val iptvOrgPlaylistsFetched: Int = 0,
     val iptvOrgPlaylistsFailed: Int = 0,
+    val iptvOrgPlaylistsTotal: Int = 0,
+    val iptvOrgPlaylistsFromCache: Int = 0,
     val iptvOrgEntriesParsed: Int = 0,
     val ntvCxChannels: Int = 0,
     val ntvCxResolveProbeOk: Boolean = false,

@@ -44,6 +44,8 @@ class SupplementSource(
         fastEpgCatalog = fastEpgCatalog,
         fastChannelTvgIdResolver = fastChannelTvgIdResolver,
         nameIndex = nameIndex,
+        lowRamDevice = FireTvDevice.isFireTv(context) ||
+            com.thothassistant.stepdaddy.gateway.LowRamTvDevice.needsMemoryLite(context),
     )
     private val ntvCxCatalogStore = NtvCxCatalogStore(context)
     private val ntvCxSource = NtvCxCdnLiveSource(
@@ -316,16 +318,23 @@ class SupplementSource(
         return fastEpgCatalog.cachedFeedFiles()
     }
 
-    /** Download FAST provider guides if missing; backfill mjh hash tvg-ids on cached iptv-org rows. */
+    /** Load FAST index from disk (non-blocking); kick background refresh; backfill iptv-org tvg-ids. */
     fun prepareFastEpgForBuild(): Int {
         applyNameEpgOverrides()
         if (!environment.iptvOrgEpgEnabled || !iptvOrgEnabled()) return 0
         runCatching {
-            fastEpgCatalog.refresh(
-                force = fastEpgCatalog.isStale() || fastEpgCatalog.cachedFeedFiles().isEmpty(),
-            )
+            fastEpgCatalog.loadIndexFromDisk()
+            val staleOrEmpty =
+                fastEpgCatalog.isStale() || fastEpgCatalog.cachedFeedFiles().isEmpty()
+            if (staleOrEmpty || !fastEpgCatalog.hasUsableIndex()) {
+                scope.launch {
+                    runCatching {
+                        fastEpgCatalog.refreshAsync(force = staleOrEmpty)
+                    }.onFailure { exc -> Log.w(TAG, "FAST EPG background refresh failed", exc) }
+                }
+            }
         }.onFailure { exc ->
-            Log.w(TAG, "FAST EPG refresh failed", exc)
+            Log.w(TAG, "FAST EPG disk load failed", exc)
             return 0
         }
         return backfillFastTvgIdsFromCatalog()
@@ -773,107 +782,389 @@ class SupplementSource(
         return recovered.channels
     }
 
+    /**
+     * Progressive mid-sync publish: merge ready pieces (retain previous cache for still-loading
+     * prefixes) so Free-TV/ntv/dulo appear before iptv-org / Adult Swim finish.
+     */
+    private fun publishPartialSupplementCatalog(
+        previousCached: List<SupplementChannel>,
+        specialEvents: List<SupplementChannel>?,
+        iptvOrg: List<SupplementChannel>?,
+        freeTv: List<SupplementChannel>?,
+        duloCx: List<SupplementChannel>?,
+        ntvCx: List<SupplementChannel>?,
+        adultSwim: List<SupplementChannel>?,
+        tmdbVod: List<SupplementChannel>?,
+        tmdbVodSeries: List<SupplementChannel>?,
+        daddyFallbackMaps: List<Map<String, List<SupplementFallbackMirror>>>,
+        syncPatch: SupplementSyncSnapshot,
+    ) {
+        val merged = SupplementPartialPublisher.mergePieces(
+            previousCached = previousCached,
+            specialEvents = specialEvents,
+            iptvOrg = iptvOrg,
+            freeTv = freeTv,
+            duloCx = duloCx,
+            ntvCx = ntvCx,
+            adultSwim = adultSwim,
+            tmdbVod = tmdbVod,
+            tmdbVodSeries = tmdbVodSeries,
+        )
+        cached = merged
+        store.writeChannels(merged)
+        lastSync = syncPatch
+
+        val mergedDaddyFallbacks = SupplementPartialPublisher.mergeDaddyFallbacks(
+            daddyFallbackMaps,
+            consolidationOverrides,
+        )
+        if (mergedDaddyFallbacks.isNotEmpty()) {
+            daddyChannelFallbacks = mergedDaddyFallbacks
+            store.writeDaddyFallbacks(mergedDaddyFallbacks)
+        }
+    }
+
     private suspend fun mergeSupplements(
         daddyChannels: List<Channel>,
         dlhdScheduleBaseUrl: String? = null,
     ): List<SupplementChannel> =
         coroutineScope {
-        var dlhdEventsScanned = 0
-        var specialEventGuides = 0
-        var dlhdEventStreams = 0
-        val specialEvents = if (sportsEnabled()) {
-            val scheduleBase = dlhdScheduleBaseUrl?.trim()?.trimEnd('/').orEmpty()
-                .ifEmpty { environment.effectiveDlhdBaseUrl().trimEnd('/') }
-            val (dlhdStats, bundle) = fetchSpecialEventsBundle(scheduleBase)
-            dlhdEventsScanned = dlhdStats.tvEvents + dlhdStats.tv2Events
-            applySpecialEventsBundle(bundle, dlhdEventsScanned)
-            specialEventGuides = specialEventGuideCount()
-            dlhdEventStreams = dlhdEventStreamCount()
-            bundle.channels
-        } else {
-            emptyList()
-        }
+            val previousCached = cached
+            val publishLock = Mutex()
 
-        if (environment.gatewayEpgEnabled && iptvOrgEnabled() && environment.iptvOrgEpgEnabled) {
-            runCatching {
-                fastEpgCatalog.refresh(
-                    force = fastEpgCatalog.isStale() || fastEpgCatalog.cachedFeedFiles().isEmpty(),
+            var specialEventsReady: List<SupplementChannel>? = if (sportsEnabled()) null else emptyList()
+            var iptvReady: List<SupplementChannel>? = if (iptvOrgEnabled()) null else emptyList()
+            var freeTvReady: List<SupplementChannel>? = if (freeTvEnabled()) null else emptyList()
+            var duloReady: List<SupplementChannel>? = if (duloCxEnabled()) null else emptyList()
+            var ntvReady: List<SupplementChannel>? = if (ntvCxEnabled()) null else emptyList()
+            var adultSwimReady: List<SupplementChannel>? = if (adultSwimEnabled()) null else emptyList()
+            var tmdbVodReady: List<SupplementChannel>? = if (tmdbMoviesEnabled()) null else emptyList()
+            var tmdbSeriesReady: List<SupplementChannel>? = if (tmdbMoviesEnabled()) null else emptyList()
+
+            var dlhdEventsScanned = 0
+            var specialEventGuides = 0
+            var dlhdEventStreams = 0
+            var iptvStats = IptvOrgStreamsSource.FetchStats()
+            var ntvStats = NtvCxCdnLiveResolver.FetchStats()
+            var adultSwimStats = AdultSwimStreamsSource.FetchStats()
+            var freeTvStats = FreeTvIptvSource.FetchStats()
+            var duloCxStats = DuloCxLiveResolver.FetchStats()
+
+            var iptvFallbacks: Map<String, List<SupplementFallbackMirror>> = emptyMap()
+            var ntvFallbacks: Map<String, List<SupplementFallbackMirror>> = emptyMap()
+            var adultSwimFallbacks: Map<String, List<SupplementFallbackMirror>> = emptyMap()
+            var freeTvFallbacks: Map<String, List<SupplementFallbackMirror>> = emptyMap()
+            var duloFallbacks: Map<String, List<SupplementFallbackMirror>> = emptyMap()
+
+            fun currentSyncSnapshot(
+                specialEvents: List<SupplementChannel>?,
+                iptvOrg: List<SupplementChannel>?,
+                freeTv: List<SupplementChannel>?,
+                duloCx: List<SupplementChannel>?,
+                ntvCx: List<SupplementChannel>?,
+                adultSwim: List<SupplementChannel>?,
+                tmdbVod: List<SupplementChannel>?,
+                tmdbVodSeries: List<SupplementChannel>?,
+            ): SupplementSyncSnapshot {
+                val relay = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status()
+                return SupplementSyncSnapshot(
+                    sportsChannels = specialEvents?.size ?: lastSync.sportsChannels,
+                    specialEventGuides = specialEventGuides.takeIf { specialEvents != null }
+                        ?: lastSync.specialEventGuides,
+                    dlhdEventStreams = dlhdEventStreams.takeIf { specialEvents != null }
+                        ?: lastSync.dlhdEventStreams,
+                    sportsEventsScanned = dlhdEventsScanned.takeIf { specialEvents != null }
+                        ?: lastSync.sportsEventsScanned,
+                    iptvOrgChannels = iptvOrg?.size ?: lastSync.iptvOrgChannels,
+                    iptvOrgPlaylistsFetched = iptvStats.playlistsFetched.takeIf { iptvOrg != null }
+                        ?: lastSync.iptvOrgPlaylistsFetched,
+                    iptvOrgPlaylistsFailed = iptvStats.playlistsFailed.takeIf { iptvOrg != null }
+                        ?: lastSync.iptvOrgPlaylistsFailed,
+                    iptvOrgPlaylistsTotal = iptvStats.playlistsTotal.takeIf { it > 0 || iptvOrg != null }
+                        ?: lastSync.iptvOrgPlaylistsTotal,
+                    iptvOrgPlaylistsFromCache = iptvStats.playlistsFromCache.takeIf { iptvOrg != null }
+                        ?: lastSync.iptvOrgPlaylistsFromCache,
+                    iptvOrgEntriesParsed = iptvStats.entriesParsed.takeIf { iptvOrg != null }
+                        ?: lastSync.iptvOrgEntriesParsed,
+                    ntvCxChannels = ntvCx?.size ?: lastSync.ntvCxChannels,
+                    ntvCxResolveProbeOk = if (ntvCx != null) ntvStats.resolveProbeOk else lastSync.ntvCxResolveProbeOk,
+                    adultSwimChannels = adultSwim?.size ?: lastSync.adultSwimChannels,
+                    adultSwimProbed = if (adultSwim != null) adultSwimStats.probed else lastSync.adultSwimProbed,
+                    adultSwimProbeOk = if (adultSwim != null) adultSwimStats.probeOk else lastSync.adultSwimProbeOk,
+                    freeTvChannels = freeTv?.size ?: lastSync.freeTvChannels,
+                    freeTvPlaylistsFetched = if (freeTv != null) {
+                        freeTvStats.playlistsFetched
+                    } else {
+                        lastSync.freeTvPlaylistsFetched
+                    },
+                    freeTvPlaylistsFailed = if (freeTv != null) {
+                        freeTvStats.playlistsFailed
+                    } else {
+                        lastSync.freeTvPlaylistsFailed
+                    },
+                    duloCxChannels = duloCx?.size ?: lastSync.duloCxChannels,
+                    duloCxCatalogFetchOk = if (duloCx != null) {
+                        duloCxStats.catalogFetchOk
+                    } else {
+                        lastSync.duloCxCatalogFetchOk
+                    },
+                    duloCxResolveProbeOk = if (duloCx != null) {
+                        duloCxStats.resolveProbeOk
+                    } else {
+                        lastSync.duloCxResolveProbeOk
+                    },
+                    duloCxAuthConfigured = if (duloCx != null) {
+                        duloCxStats.authConfigured
+                    } else {
+                        lastSync.duloCxAuthConfigured
+                    },
+                    tmdbVodMovies = tmdbVod?.size ?: lastSync.tmdbVodMovies,
+                    tmdbVodSeries = tmdbVodSeries?.size ?: lastSync.tmdbVodSeries,
+                    vodCatalogRelayActive = relay.active,
+                    vodCatalogRelayVersion = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.version,
+                    vodCatalogRelayMovies = relay.movies,
+                    vodCatalogRelayShows = relay.shows,
+                    vodCatalogRelayProbed = relay.probed,
+                    vodCatalogRelayProbeOk = relay.probeOk,
+                    vodCatalogRelayDeadPruned = relay.deadPruned,
                 )
-            }.onFailure { exc -> Log.w(TAG, "FAST EPG refresh failed", exc) }
-        }
+            }
 
-        val iptvOrgDeferred = async {
-            if (iptvOrgEnabled()) {
+            suspend fun publishProgress() {
+                publishLock.withLock {
+                    publishPartialSupplementCatalog(
+                        previousCached = previousCached,
+                        specialEvents = specialEventsReady,
+                        iptvOrg = iptvReady,
+                        freeTv = freeTvReady,
+                        duloCx = duloReady,
+                        ntvCx = ntvReady,
+                        adultSwim = adultSwimReady,
+                        tmdbVod = tmdbVodReady,
+                        tmdbVodSeries = tmdbSeriesReady,
+                        daddyFallbackMaps = listOf(
+                            iptvFallbacks,
+                            ntvFallbacks,
+                            adultSwimFallbacks,
+                            freeTvFallbacks,
+                            duloFallbacks,
+                        ),
+                        syncPatch = currentSyncSnapshot(
+                            specialEventsReady,
+                            iptvReady,
+                            freeTvReady,
+                            duloReady,
+                            ntvReady,
+                            adultSwimReady,
+                            tmdbVodReady,
+                            tmdbSeriesReady,
+                        ),
+                    )
+                }
+            }
+
+            // FAST EPG: disk index immediately; refresh in parallel (never gate providers).
+            val fastEpgDeferred = async {
+                if (environment.gatewayEpgEnabled && iptvOrgEnabled() && environment.iptvOrgEpgEnabled) {
+                    runCatching {
+                        fastEpgCatalog.loadIndexFromDisk()
+                        val staleOrEmpty =
+                            fastEpgCatalog.isStale() || fastEpgCatalog.cachedFeedFiles().isEmpty()
+                        fastEpgCatalog.refreshAsync(force = staleOrEmpty)
+                    }.onFailure { exc -> Log.w(TAG, "FAST EPG refresh failed", exc) }
+                }
+            }
+
+            val specialEventsDeferred = async {
+                if (!sportsEnabled()) {
+                    specialEventsReady = emptyList()
+                    return@async emptyList<SupplementChannel>()
+                }
+                val scheduleBase = dlhdScheduleBaseUrl?.trim()?.trimEnd('/').orEmpty()
+                    .ifEmpty { environment.effectiveDlhdBaseUrl().trimEnd('/') }
+                val (dlhdStats, bundle) = fetchSpecialEventsBundle(scheduleBase)
+                dlhdEventsScanned = dlhdStats.tvEvents + dlhdStats.tv2Events
+                applySpecialEventsBundle(bundle, dlhdEventsScanned)
+                specialEventGuides = bundle.channels.count { it.id.startsWith("dlhd-guide:") }
+                dlhdEventStreams = bundle.channels.count { it.id.startsWith("dlhd-event:") }
+                specialEventsReady = bundle.channels
+                publishProgress()
+                bundle.channels
+            }
+
+            val iptvOrgDeferred = async {
+                if (!iptvOrgEnabled()) {
+                    iptvReady = emptyList()
+                    return@async IptvOrgStreamsSource.FetchOutcome(
+                        emptyList(),
+                        IptvOrgStreamsSource.FetchStats(),
+                    )
+                }
                 runCatching {
                     iptvOrgSource.fetchChannels(
                         daddyChannels,
                         environment.supplementIptvOrgImportMode,
                         environment.iptvOrgEnabledPlaylists,
+                        onProgress = { outcome ->
+                            publishLock.withLock {
+                                iptvStats = outcome.stats
+                                iptvReady = outcome.channels
+                                iptvFallbacks = outcome.daddyFallbacks
+                                publishPartialSupplementCatalog(
+                                    previousCached = previousCached,
+                                    specialEvents = specialEventsReady,
+                                    iptvOrg = iptvReady,
+                                    freeTv = freeTvReady,
+                                    duloCx = duloReady,
+                                    ntvCx = ntvReady,
+                                    adultSwim = adultSwimReady,
+                                    tmdbVod = tmdbVodReady,
+                                    tmdbVodSeries = tmdbSeriesReady,
+                                    daddyFallbackMaps = listOf(
+                                        iptvFallbacks,
+                                        ntvFallbacks,
+                                        adultSwimFallbacks,
+                                        freeTvFallbacks,
+                                        duloFallbacks,
+                                    ),
+                                    syncPatch = currentSyncSnapshot(
+                                        specialEventsReady,
+                                        iptvReady,
+                                        freeTvReady,
+                                        duloReady,
+                                        ntvReady,
+                                        adultSwimReady,
+                                        tmdbVodReady,
+                                        tmdbSeriesReady,
+                                    ),
+                                )
+                            }
+                        },
+                    )
+                }.getOrElse { exc ->
+                    Log.w(TAG, "iptv-org fetch failed", exc)
+                    IptvOrgStreamsSource.FetchOutcome(emptyList(), IptvOrgStreamsSource.FetchStats())
+                }.also { outcome ->
+                    iptvStats = outcome.stats
+                    iptvFallbacks = outcome.daddyFallbacks
+                    iptvReady = outcome.channels
+                    publishProgress()
+                }
+            }
+
+            val ntvCxDeferred = async {
+                if (!ntvCxEnabled()) {
+                    ntvReady = emptyList()
+                    return@async NtvCxCdnLiveSource.FetchOutcome(
+                        emptyList(),
+                        NtvCxCdnLiveResolver.FetchStats(),
                     )
                 }
-                    .getOrElse { exc ->
-                        Log.w(TAG, "iptv-org fetch failed", exc)
-                        IptvOrgStreamsSource.FetchOutcome(emptyList(), IptvOrgStreamsSource.FetchStats())
-                    }
-            } else {
-                IptvOrgStreamsSource.FetchOutcome(emptyList(), IptvOrgStreamsSource.FetchStats())
-            }
-        }
-
-        val ntvCxDeferred = async {
-            if (ntvCxEnabled()) {
                 runCatching {
                     ntvCxSource.fetchChannels(
                         daddyChannels,
                         environment.supplementNtvCxImportMode,
                         nameIndex,
                     )
-                }
-                    .getOrElse { exc ->
-                        Log.w(TAG, "ntv.cx 24/7 fetch failed", exc)
-                        NtvCxCdnLiveSource.FetchOutcome(emptyList(), NtvCxCdnLiveResolver.FetchStats())
+                }.getOrElse { exc ->
+                    Log.w(TAG, "ntv.cx 24/7 fetch failed", exc)
+                    NtvCxCdnLiveSource.FetchOutcome(emptyList(), NtvCxCdnLiveResolver.FetchStats())
+                }.also { outcome ->
+                    var channels = outcome.channels
+                    if (channels.isEmpty()) {
+                        val cachedNtv = previousCached.filter { it.id.startsWith("ntv:") }
+                        if (cachedNtv.isNotEmpty()) {
+                            Log.w(TAG, "ntv.cx fetch empty — keeping ${cachedNtv.size} cached channels")
+                            channels = cachedNtv
+                        }
                     }
-            } else {
-                NtvCxCdnLiveSource.FetchOutcome(emptyList(), NtvCxCdnLiveResolver.FetchStats())
+                    ntvStats = outcome.stats
+                    ntvFallbacks = outcome.daddyFallbacks
+                    ntvReady = channels
+                    publishProgress()
+                }
             }
-        }
 
-        val adultSwimDeferred = async {
-            if (adultSwimEnabled()) {
+            val hasAdultSwimCache = previousCached.any { it.id.startsWith("adultswim:") }
+            val adultSwimDeferred = async {
+                if (!adultSwimEnabled()) {
+                    adultSwimReady = emptyList()
+                    return@async AdultSwimStreamsSource.FetchOutcome(
+                        emptyList(),
+                        AdultSwimStreamsSource.FetchStats(),
+                    )
+                }
                 runCatching {
                     adultSwimSource.fetchChannels(
                         daddyChannels,
                         environment.supplementAdultSwimImportMode,
+                        probeBudgetMs = if (hasAdultSwimCache) {
+                            AdultSwimStreamsConfig.PROBE_BUDGET_MS
+                        } else {
+                            null
+                        },
+                        preferCachedOnBudgetExceed = hasAdultSwimCache,
                     )
-                }
-                    .getOrElse { exc ->
-                        Log.w(TAG, "adult swim fetch failed", exc)
-                        AdultSwimStreamsSource.FetchOutcome(emptyList(), AdultSwimStreamsSource.FetchStats())
+                }.getOrElse { exc ->
+                    Log.w(TAG, "adult swim fetch failed", exc)
+                    AdultSwimStreamsSource.FetchOutcome(emptyList(), AdultSwimStreamsSource.FetchStats())
+                }.also { outcome ->
+                    var channels = outcome.channels
+                    if (channels.isEmpty()) {
+                        val cachedAdultSwim = previousCached.filter { it.id.startsWith("adultswim:") }
+                        if (cachedAdultSwim.isNotEmpty()) {
+                            Log.w(
+                                TAG,
+                                "adult swim probe empty — keeping ${cachedAdultSwim.size} cached channels",
+                            )
+                            channels = cachedAdultSwim
+                        }
                     }
-            } else {
-                AdultSwimStreamsSource.FetchOutcome(emptyList(), AdultSwimStreamsSource.FetchStats())
+                    adultSwimStats = outcome.stats
+                    adultSwimFallbacks = outcome.daddyFallbacks
+                    adultSwimReady = channels
+                    publishProgress()
+                }
             }
-        }
 
-        val freeTvDeferred = async {
-            if (freeTvEnabled()) {
+            val freeTvDeferred = async {
+                if (!freeTvEnabled()) {
+                    freeTvReady = emptyList()
+                    return@async FreeTvIptvSource.FetchOutcome(emptyList(), FreeTvIptvSource.FetchStats())
+                }
                 runCatching {
                     freeTvSource.fetchChannels(
                         daddyChannels,
                         environment.supplementFreeTvImportMode,
                     )
-                }
-                    .getOrElse { exc ->
-                        Log.w(TAG, "Free-TV fetch failed", exc)
-                        FreeTvIptvSource.FetchOutcome(emptyList(), FreeTvIptvSource.FetchStats())
+                }.getOrElse { exc ->
+                    Log.w(TAG, "Free-TV fetch failed", exc)
+                    FreeTvIptvSource.FetchOutcome(emptyList(), FreeTvIptvSource.FetchStats())
+                }.also { outcome ->
+                    var channels = outcome.channels
+                    if (channels.isEmpty()) {
+                        val cachedFreeTv =
+                            previousCached.filter { it.id.startsWith(FreeTvIptvConfig.ID_PREFIX) }
+                        if (cachedFreeTv.isNotEmpty()) {
+                            Log.w(TAG, "Free-TV fetch empty — keeping ${cachedFreeTv.size} cached channels")
+                            channels = cachedFreeTv
+                        }
                     }
-            } else {
-                FreeTvIptvSource.FetchOutcome(emptyList(), FreeTvIptvSource.FetchStats())
+                    freeTvStats = outcome.stats
+                    freeTvFallbacks = outcome.daddyFallbacks
+                    freeTvReady = channels
+                    publishProgress()
+                }
             }
-        }
 
-        val duloCxDeferred = async {
-            if (duloCxEnabled()) {
+            val duloCxDeferred = async {
+                if (!duloCxEnabled()) {
+                    duloReady = emptyList()
+                    return@async DuloCxLiveSource.FetchOutcome(
+                        emptyList(),
+                        DuloCxLiveResolver.FetchStats(),
+                    )
+                }
                 runCatching {
                     duloCxSource.fetchChannels(
                         daddyChannels = daddyChannels,
@@ -881,182 +1172,189 @@ class SupplementSource(
                         nameIndex = nameIndex,
                         authConfigured = environment.supplementDuloCxAccessToken.isNotBlank(),
                     )
-                }
-                    .getOrElse { exc ->
-                        Log.w(TAG, "dulo.cx live fetch failed", exc)
-                        DuloCxLiveSource.FetchOutcome(emptyList(), DuloCxLiveResolver.FetchStats())
+                }.getOrElse { exc ->
+                    Log.w(TAG, "dulo.cx live fetch failed", exc)
+                    DuloCxLiveSource.FetchOutcome(emptyList(), DuloCxLiveResolver.FetchStats())
+                }.also { outcome ->
+                    var channels = outcome.channels
+                    if (channels.isEmpty()) {
+                        val cachedDulo =
+                            previousCached.filter { it.id.startsWith(DuloCxLiveConfig.ID_PREFIX) }
+                        if (cachedDulo.isNotEmpty()) {
+                            Log.w(TAG, "dulo.cx fetch empty — keeping ${cachedDulo.size} cached channels")
+                            channels = cachedDulo
+                        }
                     }
-            } else {
-                DuloCxLiveSource.FetchOutcome(emptyList(), DuloCxLiveResolver.FetchStats())
+                    duloCxStats = outcome.stats
+                    duloFallbacks = outcome.daddyFallbacks
+                    duloReady = channels
+                    publishProgress()
+                }
             }
-        }
 
-        val tmdbVodDeferred = async {
-            if (tmdbMoviesEnabled()) {
+            val tmdbVodDeferred = async {
+                if (!tmdbMoviesEnabled()) {
+                    tmdbVodReady = emptyList()
+                    return@async emptyList<SupplementChannel>() to TmdbVodSource.FetchStats()
+                }
                 if (environment.vodCatalogRelayEnabled) {
                     runCatching {
                         val app = appContext as? com.thothassistant.stepdaddy.gateway.GatewayApp
-                        app?.vodCatalogRelayManager?.refresh(reason = "vod-sync", probeStreams = true)
+                        app?.vodCatalogRelayManager?.refresh(reason = "vod-sync", probeStreams = false)
+                    }
+                    scope.launch {
+                        runCatching {
+                            val app = appContext as? com.thothassistant.stepdaddy.gateway.GatewayApp
+                            app?.vodCatalogRelayManager?.refresh(
+                                reason = "vod-sync-probe",
+                                probeStreams = true,
+                            )
+                        }.onFailure { exc ->
+                            Log.w(TAG, "VOD stream probe (background) failed", exc)
+                        }
                     }
                 }
                 runCatching { tmdbVodSource.fetchChannels() }
                     .getOrElse { exc ->
                         Log.w(TAG, "TMDB VOD fetch failed", exc)
                         emptyList<SupplementChannel>() to TmdbVodSource.FetchStats()
+                    }.also { (channels, _) ->
+                        var published = channels
+                        if (published.isEmpty()) {
+                            val cachedVod =
+                                previousCached.filter { it.id.startsWith(TmdbVodConfig.ID_PREFIX) }
+                            if (cachedVod.isNotEmpty()) {
+                                Log.w(TAG, "TMDB VOD fetch empty — keeping ${cachedVod.size} cached movies")
+                                published = cachedVod
+                            }
+                        }
+                        tmdbVodReady = published
+                        publishProgress()
                     }
-            } else {
-                emptyList<SupplementChannel>() to TmdbVodSource.FetchStats()
             }
-        }
 
-        val tmdbVodSeriesDeferred = async {
-            if (tmdbMoviesEnabled()) {
+            val tmdbVodSeriesDeferred = async {
+                if (!tmdbMoviesEnabled()) {
+                    tmdbSeriesReady = emptyList()
+                    return@async emptyList<SupplementChannel>() to TmdbVodSeriesSource.FetchStats()
+                }
                 runCatching { tmdbVodSeriesSource.fetchChannels() }
                     .getOrElse { exc ->
                         Log.w(TAG, "series VOD fetch failed", exc)
                         emptyList<SupplementChannel>() to TmdbVodSeriesSource.FetchStats()
+                    }.also { (channels, _) ->
+                        var published = channels
+                        if (published.isEmpty()) {
+                            val cachedSeries =
+                                previousCached.filter { it.id.startsWith(TmdbVodConfig.SERIES_ID_PREFIX) }
+                            if (cachedSeries.isNotEmpty()) {
+                                Log.w(
+                                    TAG,
+                                    "series VOD fetch empty — keeping ${cachedSeries.size} cached episodes",
+                                )
+                                published = cachedSeries
+                            }
+                        }
+                        tmdbSeriesReady = published
+                        publishProgress()
                     }
-            } else {
-                emptyList<SupplementChannel>() to TmdbVodSeriesSource.FetchStats()
             }
-        }
 
-        val iptvOutcome = iptvOrgDeferred.await()
-        val iptvOrg = iptvOutcome.channels
-        val iptvStats = iptvOutcome.stats
-        lastSync = lastSync.copy(
-            iptvOrgChannels = iptvOrg.size,
-            iptvOrgPlaylistsFetched = iptvStats.playlistsFetched,
-            iptvOrgPlaylistsFailed = iptvStats.playlistsFailed,
-            iptvOrgEntriesParsed = iptvStats.entriesParsed,
-        )
-        var ntvOutcome = ntvCxDeferred.await()
-        var ntvCx = ntvOutcome.channels
-        var ntvStats = ntvOutcome.stats
-        var adultSwimOutcome = adultSwimDeferred.await()
-        var adultSwim = adultSwimOutcome.channels
-        var adultSwimStats = adultSwimOutcome.stats
-        var freeTvOutcome = freeTvDeferred.await()
-        var freeTv = freeTvOutcome.channels
-        var freeTvStats = freeTvOutcome.stats
-        var duloCxOutcome = duloCxDeferred.await()
-        var duloCx = duloCxOutcome.channels
-        var duloCxStats = duloCxOutcome.stats
-        val (tmdbVod, tmdbVodStats) = tmdbVodDeferred.await()
-        val (tmdbVodSeries, tmdbVodSeriesStats) = tmdbVodSeriesDeferred.await()
+            val specialEvents = specialEventsDeferred.await()
+            iptvOrgDeferred.await()
+            // Re-backfill tvg-ids if FAST refresh finished alongside iptv (progressive catalog).
+            if (fastEpgDeferred.isCompleted) {
+                backfillFastTvgIdsFromCatalog()
+            }
+            ntvCxDeferred.await()
+            adultSwimDeferred.await()
+            freeTvDeferred.await()
+            duloCxDeferred.await()
+            tmdbVodDeferred.await()
+            tmdbVodSeriesDeferred.await()
 
-        val mergedDaddyFallbacks = SupplementFallbackOverridesApplier.apply(
-            SupplementImportHelper.mergeDaddyFallbackMaps(
-                iptvOutcome.daddyFallbacks,
-                ntvOutcome.daddyFallbacks,
-                adultSwimOutcome.daddyFallbacks,
-                freeTvOutcome.daddyFallbacks,
-                duloCxOutcome.daddyFallbacks,
-            ),
-            consolidationOverrides.current(),
-        )
-        daddyChannelFallbacks = mergedDaddyFallbacks
-        store.writeDaddyFallbacks(mergedDaddyFallbacks)
-        if (mergedDaddyFallbacks.isNotEmpty()) {
-            Log.i(
-                TAG,
-                "Consolidated ${mergedDaddyFallbacks.values.sumOf { it.size }} supplement fallbacks " +
-                    "onto ${mergedDaddyFallbacks.size} DaddyLive channels",
+            // Finish FAST refresh so the final backfill below can use a fresh index.
+            runCatching { fastEpgDeferred.await() }
+
+            if (environment.gatewayEpgEnabled && iptvOrgEnabled() && environment.iptvOrgEpgEnabled) {
+                runCatching {
+                    iptvOrgEpgRepository.refresh(
+                        environment.iptvOrgEpgUrl.takeIf { it.isNotBlank() },
+                    )
+                }.onFailure { exc -> Log.w(TAG, "iptv-org EPG refresh failed", exc) }
+            }
+
+            val mergedDaddyFallbacks = SupplementFallbackOverridesApplier.apply(
+                SupplementImportHelper.mergeDaddyFallbackMaps(
+                    iptvFallbacks,
+                    ntvFallbacks,
+                    adultSwimFallbacks,
+                    freeTvFallbacks,
+                    duloFallbacks,
+                ),
+                consolidationOverrides.current(),
             )
-        }
-
-        if (ntvCx.isEmpty() && ntvCxEnabled()) {
-            val cachedNtv = cached.filter { it.id.startsWith("ntv:") }
-            if (cachedNtv.isNotEmpty()) {
-                Log.w(TAG, "ntv.cx fetch empty — keeping ${cachedNtv.size} cached channels")
-                ntvCx = cachedNtv
-            }
-        }
-
-        if (adultSwim.isEmpty() && adultSwimEnabled()) {
-            val cachedAdultSwim = cached.filter { it.id.startsWith("adultswim:") }
-            if (cachedAdultSwim.isNotEmpty()) {
-                Log.w(TAG, "adult swim probe empty — keeping ${cachedAdultSwim.size} cached channels")
-                adultSwim = cachedAdultSwim
-            }
-        }
-
-        if (freeTv.isEmpty() && freeTvEnabled()) {
-            val cachedFreeTv = cached.filter { it.id.startsWith(FreeTvIptvConfig.ID_PREFIX) }
-            if (cachedFreeTv.isNotEmpty()) {
-                Log.w(TAG, "Free-TV fetch empty — keeping ${cachedFreeTv.size} cached channels")
-                freeTv = cachedFreeTv
-            }
-        }
-
-        if (duloCx.isEmpty() && duloCxEnabled()) {
-            val cachedDulo = cached.filter { it.id.startsWith(DuloCxLiveConfig.ID_PREFIX) }
-            if (cachedDulo.isNotEmpty()) {
-                Log.w(TAG, "dulo.cx fetch empty — keeping ${cachedDulo.size} cached channels")
-                duloCx = cachedDulo
-            }
-        }
-
-        var publishedTmdbVod = tmdbVod
-        if (publishedTmdbVod.isEmpty() && tmdbMoviesEnabled()) {
-            val cachedVod = cached.filter { it.id.startsWith(TmdbVodConfig.ID_PREFIX) }
-            if (cachedVod.isNotEmpty()) {
-                Log.w(TAG, "TMDB VOD fetch empty — keeping ${cachedVod.size} cached movies")
-                publishedTmdbVod = cachedVod
-            }
-        }
-
-        var publishedTmdbVodSeries = tmdbVodSeries
-        if (publishedTmdbVodSeries.isEmpty() && tmdbMoviesEnabled()) {
-            val cachedSeries = cached.filter { it.id.startsWith(TmdbVodConfig.SERIES_ID_PREFIX) }
-            if (cachedSeries.isNotEmpty()) {
-                Log.w(TAG, "series VOD fetch empty — keeping ${cachedSeries.size} cached episodes")
-                publishedTmdbVodSeries = cachedSeries
-            }
-        }
-
-        if (environment.gatewayEpgEnabled && iptvOrgEnabled() && environment.iptvOrgEpgEnabled) {
-            runCatching {
-                iptvOrgEpgRepository.refresh(
-                    environment.iptvOrgEpgUrl.takeIf { it.isNotBlank() },
+            daddyChannelFallbacks = mergedDaddyFallbacks
+            store.writeDaddyFallbacks(mergedDaddyFallbacks)
+            if (mergedDaddyFallbacks.isNotEmpty()) {
+                Log.i(
+                    TAG,
+                    "Consolidated ${mergedDaddyFallbacks.values.sumOf { it.size }} supplement fallbacks " +
+                        "onto ${mergedDaddyFallbacks.size} DaddyLive channels",
                 )
-            }.onFailure { exc -> Log.w(TAG, "iptv-org EPG refresh failed", exc) }
+            }
+
+            val iptvOrg = iptvReady.orEmpty()
+            val freeTv = freeTvReady.orEmpty()
+            val duloCx = duloReady.orEmpty()
+            val ntvCx = ntvReady.orEmpty()
+            val adultSwim = adultSwimReady.orEmpty()
+            val publishedTmdbVod = tmdbVodReady.orEmpty()
+            val publishedTmdbVodSeries = tmdbSeriesReady.orEmpty()
+
+            lastSync = SupplementSyncSnapshot(
+                sportsChannels = specialEvents.size,
+                specialEventGuides = specialEventGuides,
+                dlhdEventStreams = dlhdEventStreams,
+                sportsEventsScanned = dlhdEventsScanned,
+                iptvOrgChannels = iptvOrg.size,
+                iptvOrgPlaylistsFetched = iptvStats.playlistsFetched,
+                iptvOrgPlaylistsFailed = iptvStats.playlistsFailed,
+                iptvOrgPlaylistsTotal = iptvStats.playlistsTotal,
+                iptvOrgPlaylistsFromCache = iptvStats.playlistsFromCache,
+                iptvOrgEntriesParsed = iptvStats.entriesParsed,
+                ntvCxChannels = ntvCx.size,
+                ntvCxResolveProbeOk = ntvStats.resolveProbeOk,
+                adultSwimChannels = adultSwim.size,
+                adultSwimProbed = adultSwimStats.probed,
+                adultSwimProbeOk = adultSwimStats.probeOk,
+                freeTvChannels = freeTv.size,
+                freeTvPlaylistsFetched = freeTvStats.playlistsFetched,
+                freeTvPlaylistsFailed = freeTvStats.playlistsFailed,
+                duloCxChannels = duloCx.size,
+                duloCxCatalogFetchOk = duloCxStats.catalogFetchOk,
+                duloCxResolveProbeOk = duloCxStats.resolveProbeOk,
+                duloCxAuthConfigured = duloCxStats.authConfigured,
+                tmdbVodMovies = publishedTmdbVod.size,
+                tmdbVodSeries = publishedTmdbVodSeries.size,
+                vodCatalogRelayActive = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status().active,
+                vodCatalogRelayVersion = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.version,
+                vodCatalogRelayMovies = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status().movies,
+                vodCatalogRelayShows = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status().shows,
+                vodCatalogRelayProbed = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status().probed,
+                vodCatalogRelayProbeOk = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status().probeOk,
+                vodCatalogRelayDeadPruned = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status().deadPruned,
+            )
+
+            val merged =
+                specialEvents + iptvOrg + freeTv + duloCx + ntvCx + adultSwim +
+                    publishedTmdbVod + publishedTmdbVodSeries
+            cached = merged
+            store.writeChannels(merged)
+            // Backfill after final catalog write so refresh() keeps corrected tvg-ids.
+            backfillFastTvgIdsFromCatalog()
+            cached
         }
-
-        lastSync = SupplementSyncSnapshot(
-            sportsChannels = specialEvents.size,
-            specialEventGuides = specialEventGuides,
-            dlhdEventStreams = dlhdEventStreams,
-            sportsEventsScanned = dlhdEventsScanned,
-            iptvOrgChannels = iptvOrg.size,
-            iptvOrgPlaylistsFetched = iptvStats.playlistsFetched,
-            iptvOrgPlaylistsFailed = iptvStats.playlistsFailed,
-            iptvOrgEntriesParsed = iptvStats.entriesParsed,
-            ntvCxChannels = ntvCx.size,
-            ntvCxResolveProbeOk = ntvStats.resolveProbeOk,
-            adultSwimChannels = adultSwim.size,
-            adultSwimProbed = adultSwimStats.probed,
-            adultSwimProbeOk = adultSwimStats.probeOk,
-            freeTvChannels = freeTv.size,
-            freeTvPlaylistsFetched = freeTvStats.playlistsFetched,
-            freeTvPlaylistsFailed = freeTvStats.playlistsFailed,
-            duloCxChannels = duloCx.size,
-            duloCxCatalogFetchOk = duloCxStats.catalogFetchOk,
-            duloCxResolveProbeOk = duloCxStats.resolveProbeOk,
-            duloCxAuthConfigured = duloCxStats.authConfigured,
-            tmdbVodMovies = publishedTmdbVod.size,
-            tmdbVodSeries = publishedTmdbVodSeries.size,
-            vodCatalogRelayActive = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status().active,
-            vodCatalogRelayVersion = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.version,
-            vodCatalogRelayMovies = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status().movies,
-            vodCatalogRelayShows = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status().shows,
-            vodCatalogRelayProbed = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status().probed,
-            vodCatalogRelayProbeOk = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status().probeOk,
-            vodCatalogRelayDeadPruned = com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayRuntime.status().deadPruned,
-        )
-
-        specialEvents + iptvOrg + freeTv + duloCx + ntvCx + adultSwim + publishedTmdbVod + publishedTmdbVodSeries
-    }
 
     private fun fetchSpecialEventsBundle(
         scheduleBase: String,

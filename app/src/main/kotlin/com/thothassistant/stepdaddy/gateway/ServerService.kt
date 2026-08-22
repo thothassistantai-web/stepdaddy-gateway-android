@@ -473,7 +473,7 @@ class ServerService : LifecycleService() {
                         else -> FIRE_BOOT_CHANNEL_REFRESH_DEFER_MS
                     }
                 } else {
-                    BOOT_CHANNEL_REFRESH_DEFER_MS
+                    if (hasChannels) WARM_BOOT_CHANNEL_REFRESH_DEFER_MS else BOOT_CHANNEL_REFRESH_DEFER_MS
                 }
             delay(deferMs)
             if (!isServiceActive || !::daddyLiveClient.isInitialized) return@launch
@@ -716,6 +716,8 @@ class ServerService : LifecycleService() {
         private const val TIVIMATE_WATCH_MS = 60_000L
         private const val BOOT_CHANNEL_LOAD_MAX_WAIT_MS = 4_000L
         private const val BOOT_CHANNEL_REFRESH_DEFER_MS = 45_000L
+        /** Warm phone boot with existing DaddyLive catalog — short settle only. */
+        private const val WARM_BOOT_CHANNEL_REFRESH_DEFER_MS = 3_000L
         /** Fire Stick: catalog-ready HUD only; no network refresh in the LMK window. */
         private const val FIRE_BOOT_CHANNEL_REFRESH_DEFER_MS = 30_000L
         private const val FIRE_EMPTY_CHANNEL_REFRESH_DEFER_MS = 20_000L

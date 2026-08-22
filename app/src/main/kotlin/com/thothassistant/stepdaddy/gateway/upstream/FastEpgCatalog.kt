@@ -6,12 +6,24 @@ import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.epg.XmltvParser
 import java.io.File
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
 /**
  * Downloads FAST provider XMLTV guides and maps display names → channel ids
  * for iptv-org supplements that ship with empty tvg-id in upstream M3U.
+ *
+ * Refresh is stale-while-revalidate friendly: [loadIndexFromDisk] / non-force [refresh]
+ * reuse cache; force refresh downloads feeds in parallel.
  */
 class FastEpgCatalog(
     context: Context,
@@ -41,23 +53,85 @@ class FastEpgCatalog(
         return System.currentTimeMillis() - syncedAt > CACHE_TTL_MS
     }
 
+    fun hasUsableIndex(): Boolean = nameToChannelId.isNotEmpty() || cachedFeedFiles().isNotEmpty()
+
+    /** Load name→id index from disk without network. */
+    fun loadIndexFromDisk(): Boolean {
+        val index = linkedMapOf<LookupKey, String>()
+        var loaded = 0
+        for (provider in FEED_URLS.keys) {
+            val cache = existingCacheFile(provider) ?: continue
+            indexChannels(cache, provider, index)
+            loaded++
+        }
+        if (loaded == 0) return false
+        nameToChannelId = index
+        Log.i(TAG, "FAST EPG: loaded ${index.size} name mappings from $loaded cached feeds")
+        return true
+    }
+
+    /**
+     * @param force when false and cache is fresh with an in-memory index, no-op.
+     *              when false and stale but disk exists, loads disk then caller may refresh in background.
+     */
     fun refresh(force: Boolean = false) {
         if (!force && !isStale() && nameToChannelId.isNotEmpty()) return
-        val index = linkedMapOf<LookupKey, String>()
-        var downloaded = 0
-        for ((provider, url) in FEED_URLS) {
-            val cache = cacheFileFor(provider, url)
-            if (!download(url, cache)) continue
-            downloaded++
-            indexChannels(cache, provider, index)
+        if (!force && !isStale() && nameToChannelId.isEmpty()) {
+            if (loadIndexFromDisk()) return
         }
-        if (downloaded == 0) {
+        if (!force && isStale() && nameToChannelId.isEmpty()) {
+            loadIndexFromDisk()
+        }
+        runBlocking {
+            refreshParallel(force = force || isStale() || cachedFeedFiles().isEmpty())
+        }
+    }
+
+    suspend fun refreshAsync(force: Boolean = false) = withContext(Dispatchers.IO) {
+        if (!force && !isStale() && nameToChannelId.isNotEmpty()) return@withContext
+        if (!force && nameToChannelId.isEmpty()) {
+            loadIndexFromDisk()
+        }
+        if (!force && !isStale() && nameToChannelId.isNotEmpty()) return@withContext
+        refreshParallel(force = true)
+    }
+
+    private suspend fun refreshParallel(force: Boolean) {
+        if (!force && !isStale() && nameToChannelId.isNotEmpty()) return
+        val index = linkedMapOf<LookupKey, String>()
+        val downloaded = AtomicInteger(0)
+        val semaphore = Semaphore(MAX_CONCURRENT_FEEDS)
+        coroutineScope {
+            FEED_URLS.map { (provider, url) ->
+                async(Dispatchers.IO) {
+                    semaphore.withPermit {
+                        val cache = cacheFileFor(provider, url)
+                        val ok = download(url, cache)
+                        if (ok) {
+                            downloaded.incrementAndGet()
+                            synchronized(index) {
+                                indexChannels(cache, provider, index)
+                            }
+                        } else {
+                            existingCacheFile(provider)?.let { existing ->
+                                synchronized(index) {
+                                    indexChannels(existing, provider, index)
+                                }
+                            }
+                        }
+                    }
+                }
+            }.awaitAll()
+        }
+        if (downloaded.get() == 0 && index.isEmpty()) {
             Log.w(TAG, "FAST EPG refresh: no feeds downloaded")
             return
         }
-        metaFile.writeText(System.currentTimeMillis().toString())
-        nameToChannelId = index
-        Log.i(TAG, "FAST EPG: ${index.size} name mappings from $downloaded feeds")
+        if (downloaded.get() > 0) {
+            metaFile.writeText(System.currentTimeMillis().toString())
+        }
+        nameToChannelId = index.toMap()
+        Log.i(TAG, "FAST EPG: ${index.size} name mappings from ${downloaded.get()} feeds (parallel)")
     }
 
     private fun indexChannels(
@@ -153,6 +227,7 @@ class FastEpgCatalog(
         /** Roku gzip ~3.4MB; Tubi plain XML ~3MB — headroom for future growth. */
         private const val MAX_BYTES = 48 * 1024 * 1024L
         private const val CACHE_TTL_MS = 12 * 3600_000L
+        private const val MAX_CONCURRENT_FEEDS = 4
         private const val USER_AGENT = "Mozilla/5.0 StepDaddy-Gateway/1.0"
 
         val FEED_URLS: Map<String, String> = mapOf(

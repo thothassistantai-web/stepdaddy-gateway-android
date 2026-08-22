@@ -418,6 +418,8 @@ class HealthRoutes(
             vodCatalogRelayDeadPruned = sync.vodCatalogRelayDeadPruned,
             iptvOrgPlaylistsFetched = sync.iptvOrgPlaylistsFetched,
             iptvOrgPlaylistsFailed = sync.iptvOrgPlaylistsFailed,
+            iptvOrgPlaylistsTotal = sync.iptvOrgPlaylistsTotal,
+            iptvOrgPlaylistsFromCache = sync.iptvOrgPlaylistsFromCache,
             blockedTokenProxy = sync.blockedTokenProxy,
             lastSpecialEventsSyncMs = lastSyncMs,
             specialEventsScrapeAgeSeconds = SpecialEventsHealthSummary.ageSeconds(lastSyncMs, nowMs),

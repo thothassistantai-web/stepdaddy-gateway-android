@@ -11,6 +11,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
@@ -26,6 +27,7 @@ class AdultSwimStreamsSource(
         val probeOk: Int = 0,
         val channelsAfterDedup: Int = 0,
         val daddyFallbacksAttached: Int = 0,
+        val probeBudgetExceeded: Boolean = false,
     )
 
     data class FetchOutcome(
@@ -34,23 +36,37 @@ class AdultSwimStreamsSource(
         val daddyFallbacks: Map<String, List<com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror>> = emptyMap(),
     )
 
+    /**
+     * @param probeBudgetMs when set, caps the whole probe phase; remaining probes are cancelled.
+     * @param preferCachedOnBudgetExceed when budget is exceeded, return empty channels so the
+     *   caller can retain its adultswim: disk/memory cache (existing empty-fetch retention).
+     */
     suspend fun fetchChannels(
         daddyChannels: List<Channel>,
         importMode: SupplementImportMode = SupplementImportMode.FULL_CATALOG,
+        probeBudgetMs: Long? = null,
+        preferCachedOnBudgetExceed: Boolean = false,
     ): FetchOutcome = withContext(Dispatchers.IO) {
         val skipDuplicates = importMode.skipsDuplicateRows()
         // Always index Daddy for Smart failover attachments, independent of catalog import mode.
         val daddyIndexes = SupplementImportMatcher.buildDaddyIndexes(daddyChannels)
         val daddyFallbacks = mutableMapOf<String, MutableList<com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror>>()
-        val semaphore = Semaphore(AdultSwimStreamsConfig.MAX_CONCURRENT_PROBES)
-        val probeResults = coroutineScope {
-            AdultSwimStreamsConfig.CATALOG.map { row ->
-                async {
-                    semaphore.withPermit {
-                        row to probeMasterPlaylist(row.slug)
-                    }
-                }
-            }.awaitAll()
+
+        val probeResults = runProbes(probeBudgetMs)
+        if (probeResults == null) {
+            Log.w(
+                TAG,
+                "adult swim probe budget exceeded" +
+                    (probeBudgetMs?.let { " after ${it}ms" } ?: "") +
+                    if (preferCachedOnBudgetExceed) " — prefer cache" else "",
+            )
+            return@withContext FetchOutcome(
+                channels = emptyList(),
+                stats = FetchStats(
+                    catalogRows = AdultSwimStreamsConfig.CATALOG.size,
+                    probeBudgetExceeded = true,
+                ),
+            )
         }
 
         var probed = 0
@@ -113,6 +129,27 @@ class AdultSwimStreamsSource(
             ),
             daddyFallbacks = daddyFallbacks,
         )
+    }
+
+    private suspend fun runProbes(
+        probeBudgetMs: Long?,
+    ): List<Pair<AdultSwimStreamsConfig.MarathonStream, Boolean>>? {
+        val semaphore = Semaphore(AdultSwimStreamsConfig.MAX_CONCURRENT_PROBES)
+        suspend fun probeAll(): List<Pair<AdultSwimStreamsConfig.MarathonStream, Boolean>> =
+            coroutineScope {
+                AdultSwimStreamsConfig.CATALOG.map { row ->
+                    async {
+                        semaphore.withPermit {
+                            row to probeMasterPlaylist(row.slug)
+                        }
+                    }
+                }.awaitAll()
+            }
+        return if (probeBudgetMs != null && probeBudgetMs > 0L) {
+            withTimeoutOrNull(probeBudgetMs) { probeAll() }
+        } else {
+            probeAll()
+        }
     }
 
     private fun probeMasterPlaylist(slug: String): Boolean {

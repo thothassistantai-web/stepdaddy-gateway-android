@@ -242,6 +242,8 @@ class DashboardStatDetailActivity : AppCompatActivity() {
                     appendLine("iptvOrgEnabled=${s.iptvOrgEnabled}")
                     appendLine("iptvOrgPlaylistsFetched=${s.iptvOrgPlaylistsFetched}")
                     appendLine("iptvOrgPlaylistsFailed=${s.iptvOrgPlaylistsFailed}")
+                    appendLine("iptvOrgPlaylistsTotal=${s.iptvOrgPlaylistsTotal}")
+                    appendLine("iptvOrgPlaylistsFromCache=${s.iptvOrgPlaylistsFromCache}")
                     appendLine("freeTvEnabled=${s.freeTvEnabled}")
                     appendLine("freeTvChannels=${s.freeTvChannels}")
                     appendLine("freeTvPlaylistsFetched=${s.freeTvPlaylistsFetched}")

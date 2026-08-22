@@ -7,6 +7,19 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.40] - 2026-08-21
+
+### Changed
+
+- **Faster source sync (10/10 pack)** — FAST EPG no longer blocks provider fetches (disk index + parallel feed refresh). Special Events runs in parallel with Free-TV/ntv/iptv/dulo. Warm phone boot defer cut from ~45s to ~3s when Daddy catalog is on disk.
+- **iptv-org** — per-playlist disk cache + ETag/304, concurrency 6 on phone (4 on Fire), smallest-first fetch, progressive wave publish before all 39 finish.
+- **Progressive catalog publish** — Sources UI updates as each provider completes; iptv progress uses playlistsFetched/total.
+- **Adult Swim** — 45s probe budget when preferring cache; VOD relay stream probing moved off the Sources critical path.
+
+### Notes
+
+- Warm re-syncs should be much faster once iptv-org playlists are cached. Cold first sync still downloads 39 playlists once.
+
 ## [3.0.39] - 2026-08-21
 
 ### Changed

@@ -56,6 +56,28 @@ object IptvOrgStreamsConfig {
 
     const val MAX_BYTES_PER_PLAYLIST = 2 * 1024 * 1024
 
+    /** Phone / non-Fire concurrency for GitHub raw fetches. */
+    const val MAX_CONCURRENT_FETCH = 6
+
+    /** Fire Stick / low-RAM concurrency. */
+    const val MAX_CONCURRENT_FETCH_FIRE = 4
+
+    /**
+     * Prefer these first when cache sizes are unknown so progressive publish
+     * surfaces small catalogs before huge Pluto/local lists.
+     */
+    val SMALL_FIRST_HINTS: List<String> = listOf(
+        "uk_bbc.m3u",
+        "uk_sportstribal.m3u",
+        "us_cbsn.m3u",
+        "us_abcnews.m3u",
+        "us_3abn.m3u",
+        "us_pbs.m3u",
+        "us_wfmz.m3u",
+        "uk_rakuten.m3u",
+        "uk_distro.m3u",
+    )
+
   /** Legacy sidebar label; iptv-org channels now use flat [GroupTitleResolver] groups in the playlist. */
     const val GROUP_PREFIX = "🌐 | iptv-org"
 

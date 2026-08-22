@@ -20,6 +20,9 @@ object AdultSwimStreamsConfig {
 
     const val PROBE_TIMEOUT_MS = 25_000L
 
+    /** Cap total probe wait when a previous adultswim: cache exists. */
+    const val PROBE_BUDGET_MS = 45_000L
+
     const val MAX_CONCURRENT_PROBES = 4
 
     data class MarathonStream(

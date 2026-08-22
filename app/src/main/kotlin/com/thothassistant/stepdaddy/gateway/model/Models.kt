@@ -75,6 +75,8 @@ data class SupplementStatus(
     val iptvOrgChannels: Int = 0,
     val iptvOrgPlaylistsFetched: Int = 0,
     val iptvOrgPlaylistsFailed: Int = 0,
+    val iptvOrgPlaylistsTotal: Int = 0,
+    val iptvOrgPlaylistsFromCache: Int = 0,
     val blockedTokenProxy: Int = 0,
     val ntvCxEnabled: Boolean = false,
     val ntvCxChannels: Int = 0,
