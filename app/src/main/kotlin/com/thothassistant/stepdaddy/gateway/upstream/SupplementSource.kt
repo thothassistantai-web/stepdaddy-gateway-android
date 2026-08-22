@@ -14,6 +14,7 @@ import com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -95,6 +96,9 @@ class SupplementSource(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val refreshMutex = Mutex()
     private val specialEventsMutex = Mutex()
+    /** True while merge coroutine is executing (prevents overlapping refreshes). */
+    @Volatile private var mergeRunning = false
+    /** Sources UI flag — cleared as soon as every supplement slot has published. */
     @Volatile private var refreshInFlight = false
     @Volatile private var specialEventsRefreshInFlight = false
     @Volatile private var lastSpecialEventsSyncMs = 0L
@@ -307,6 +311,13 @@ class SupplementSource(
 
     fun syncInFlight(): Boolean = refreshInFlight
 
+    private fun settleSourcesSyncFlag() {
+        if (!refreshInFlight) return
+        refreshInFlight = false
+        onRefreshComplete?.invoke()
+        Log.i(TAG, "Sources sync settled (catalog slots published)")
+    }
+
     fun specialEventsSyncInFlight(): Boolean = specialEventsRefreshInFlight
 
     fun specialEventsLastSyncMs(): Long = lastSpecialEventsSyncMs.takeIf { it > 0L } ?: 0L
@@ -498,7 +509,7 @@ class SupplementSource(
             }
             return
         }
-        if (refreshInFlight) return
+        if (mergeRunning) return
         if (!force && !store.isStale() && cached.isNotEmpty()) return
         scope.launch {
             refresh(daddyChannels, force = force)
@@ -531,7 +542,7 @@ class SupplementSource(
                         lastVerifyTriggeredSyncMs = lastVerifyTriggeredSyncMs,
                         nowMs = now,
                     )
-                    if (!refreshInFlight && specialEventsMutex.tryLock()) {
+                    if (!mergeRunning && specialEventsMutex.tryLock()) {
                         try {
                             applyLifecyclePrune(plan.pruned)
                         } finally {
@@ -564,7 +575,7 @@ class SupplementSource(
     }
 
     fun pruneExpiredSpecialEvents(): Boolean {
-        if (!sportsEnabled() || refreshInFlight) return false
+        if (!sportsEnabled() || mergeRunning) return false
         if (!specialEventsMutex.tryLock()) return false
         return try {
             applyLifecyclePrune(EventLifecycleManager.pruneExpired(catalogState()))
@@ -574,7 +585,7 @@ class SupplementSource(
     }
 
     fun scheduleSpecialEventsRefresh(dlhdScheduleBaseUrl: String) {
-        if (!sportsEnabled() || refreshInFlight) return
+        if (!sportsEnabled() || mergeRunning) return
         scope.launch {
             refreshSpecialEventsOnly(dlhdScheduleBaseUrl)
         }
@@ -584,9 +595,9 @@ class SupplementSource(
         dlhdScheduleBaseUrl: String?,
         mergeWithExisting: Boolean = false,
     ): Boolean {
-        if (!sportsEnabled() || refreshInFlight) return false
+        if (!sportsEnabled() || mergeRunning) return false
         return specialEventsMutex.withLock {
-            if (refreshInFlight) return false
+            if (mergeRunning) return false
             specialEventsRefreshInFlight = true
             try {
                 val scheduleBase = dlhdScheduleBaseUrl?.trim()?.trimEnd('/').orEmpty()
@@ -651,8 +662,9 @@ class SupplementSource(
     ) {
         if (!enabled()) return
         refreshMutex.withLock {
-            if (refreshInFlight) return
+            if (mergeRunning) return
             if (!force && !store.isStale() && cached.isNotEmpty()) return
+            mergeRunning = true
             refreshInFlight = true
         }
         try {
@@ -682,8 +694,7 @@ class SupplementSource(
                 )
                 // Settle Sources UI before slow logo enrich — catalog is already durable.
                 ensureSmartDaddyFallbacks(daddyChannels)
-                refreshInFlight = false
-                onRefreshComplete?.invoke()
+                settleSourcesSyncFlag()
                 val enriched = enrichSupplementLogos(merged)
                 if (enriched !== merged) {
                     cached = enriched
@@ -697,11 +708,11 @@ class SupplementSource(
         } finally {
             // Always (re)attach Smart merge-style backups from published rows so FULL_CATALOG
             // and timeout/cache-recovery paths still feed /tivimate-smart failover.
-            if (refreshInFlight) {
+            if (mergeRunning) {
                 ensureSmartDaddyFallbacks(daddyChannels)
-                refreshInFlight = false
-                onRefreshComplete?.invoke()
             }
+            settleSourcesSyncFlag()
+            mergeRunning = false
         }
     }
 
@@ -967,21 +978,37 @@ class SupplementSource(
                             tmdbSeriesReady,
                         ),
                     )
+                    // Clear Sources "in progress" as soon as every slot has a published result
+                    // (including empty/failed), without waiting for OkHttp teardown / EPG / logos.
+                    if (
+                        specialEventsReady != null &&
+                        iptvReady != null &&
+                        freeTvReady != null &&
+                        duloReady != null &&
+                        ntvReady != null &&
+                        adultSwimReady != null &&
+                        tmdbVodReady != null &&
+                        tmdbSeriesReady != null
+                    ) {
+                        settleSourcesSyncFlag()
+                    }
                 }
             }
 
-            // FAST EPG: load disk index immediately; stagger network refresh behind iptv-org
-            // playlist wave so GitHub raw + mjh feeds do not stampede DNS together.
-            val fastEpgDeferred = async {
-                if (environment.gatewayEpgEnabled && iptvOrgEnabled() && environment.iptvOrgEpgEnabled) {
+            // FAST EPG: load disk index immediately; network refresh runs on outer scope so
+            // merge coroutineScope is not held open by GitHub/mjh HTTPS stalls.
+            var fastEpgJob: Job? = null
+            if (environment.gatewayEpgEnabled && iptvOrgEnabled() && environment.iptvOrgEpgEnabled) {
+                runCatching { fastEpgCatalog.loadIndexFromDisk() }
+                fastEpgJob = scope.launch {
                     runCatching {
-                        fastEpgCatalog.loadIndexFromDisk()
                         val staleOrEmpty =
                             fastEpgCatalog.isStale() || fastEpgCatalog.cachedFeedFiles().isEmpty()
                         if (staleOrEmpty) {
                             delay(8_000L)
                         }
                         fastEpgCatalog.refreshAsync(force = staleOrEmpty)
+                        backfillFastTvgIdsFromCatalog()
                     }.onFailure { exc -> Log.w(TAG, "FAST EPG refresh failed", exc) }
                 }
             }
@@ -1289,33 +1316,68 @@ class SupplementSource(
                     }
             }
 
-            val specialEvents = specialEventsDeferred.await()
+            val specialEvents = withTimeoutOrNull(45_000L) {
+                specialEventsDeferred.await()
+            } ?: run {
+                Log.w(TAG, "Special Events await timed out — continuing with partial/empty")
+                specialEventsDeferred.cancel()
+                specialEventsReady = specialEventsReady ?: emptyList()
+                publishProgress()
+                emptyList()
+            }
             iptvOrgDeferred.await()
             // Re-backfill tvg-ids if FAST refresh finished alongside iptv (progressive catalog).
-            if (fastEpgDeferred.isCompleted) {
+            if (fastEpgJob?.isCompleted == true) {
                 backfillFastTvgIdsFromCatalog()
             }
-            ntvCxDeferred.await()
+            withTimeoutOrNull(45_000L) {
+                ntvCxDeferred.await()
+            } ?: run {
+                Log.w(TAG, "ntv.cx await timed out — keeping published/cached rows")
+                ntvCxDeferred.cancel()
+                if (ntvReady == null) {
+                    ntvReady = previousCached.filter { it.id.startsWith("ntv:") }
+                }
+                publishProgress()
+            }
             adultSwimDeferred.await()
             freeTvDeferred.await()
             duloCxDeferred.await()
-            tmdbVodDeferred.await()
-            tmdbVodSeriesDeferred.await()
+            withTimeoutOrNull(40_000L) {
+                tmdbVodDeferred.await()
+                tmdbVodSeriesDeferred.await()
+            } ?: run {
+                Log.w(TAG, "TMDB VOD await timed out — keeping published/cached rows")
+                tmdbVodDeferred.cancel()
+                tmdbVodSeriesDeferred.cancel()
+                if (tmdbVodReady == null) {
+                    tmdbVodReady = previousCached.filter { it.id.startsWith(TmdbVodConfig.ID_PREFIX) }
+                }
+                if (tmdbSeriesReady == null) {
+                    tmdbSeriesReady =
+                        previousCached.filter { it.id.startsWith(TmdbVodConfig.SERIES_ID_PREFIX) }
+                }
+                publishProgress()
+            }
 
-            // Finish FAST refresh with a hard ceiling — GitHub/mjh stalls must not hold
-            // supplementSyncInFlight forever (Sources UI / progress depends on it clearing).
-            withTimeoutOrNull(90_000L) {
-                runCatching { fastEpgDeferred.await() }
-            } ?: Log.w(TAG, "FAST EPG await timed out — continuing sync finalize")
+            // Brief grace only — do not block syncInFlight on FAST / iptv-org EPG network.
+            withTimeoutOrNull(3_000L) {
+                fastEpgJob?.join()
+            } ?: Log.w(TAG, "FAST EPG still running — continuing sync finalize")
+            if (fastEpgJob?.isCompleted == true) {
+                backfillFastTvgIdsFromCatalog()
+            }
 
             if (environment.gatewayEpgEnabled && iptvOrgEnabled() && environment.iptvOrgEpgEnabled) {
-                withTimeoutOrNull(60_000L) {
-                    runCatching {
-                        iptvOrgEpgRepository.refresh(
-                            environment.iptvOrgEpgUrl.takeIf { it.isNotBlank() },
-                        )
-                    }.onFailure { exc -> Log.w(TAG, "iptv-org EPG refresh failed", exc) }
-                } ?: Log.w(TAG, "iptv-org EPG refresh timed out — continuing")
+                scope.launch {
+                    withTimeoutOrNull(60_000L) {
+                        runCatching {
+                            iptvOrgEpgRepository.refresh(
+                                environment.iptvOrgEpgUrl.takeIf { it.isNotBlank() },
+                            )
+                        }.onFailure { exc -> Log.w(TAG, "iptv-org EPG refresh failed", exc) }
+                    } ?: Log.w(TAG, "iptv-org EPG refresh timed out — continuing")
+                }
             }
 
             val mergedDaddyFallbacks = SupplementFallbackOverridesApplier.apply(
