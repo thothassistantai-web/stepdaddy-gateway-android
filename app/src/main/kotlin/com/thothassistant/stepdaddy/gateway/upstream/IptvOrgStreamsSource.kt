@@ -150,6 +150,57 @@ class IptvOrgStreamsSource(
             )
         }
 
+    /**
+     * Rebuild iptv-org channels from on-disk playlist bodies only (no network).
+     * Used when the sync slot times out or GitHub/CDN is unreachable on LTE.
+     */
+    suspend fun fetchChannelsFromDiskCache(
+        daddyChannels: List<Channel>,
+        importMode: SupplementImportMode = SupplementImportMode.FULL_CATALOG,
+        enabledPlaylists: Set<String> = IptvOrgStreamsConfig.PLAYLIST_FILES.toSet(),
+    ): FetchOutcome =
+        withContext(Dispatchers.IO) {
+            val playlistFiles = IptvOrgStreamsConfig.PLAYLIST_FILES.filter { it in enabledPlaylists }
+            if (playlistFiles.isEmpty()) {
+                return@withContext FetchOutcome(emptyList(), FetchStats())
+            }
+            val allEntries = mutableListOf<M3uParser.Entry>()
+            var fromCache = 0
+            var failed = 0
+            for (filename in playlistFiles) {
+                val cached = playlistCache.loadDiskOnly(filename)
+                if (cached == null) {
+                    failed++
+                    continue
+                }
+                fromCache++
+                allEntries += M3uParser.parse(cached.body).map { entry ->
+                    entry.copy(sourcePlaylist = filename)
+                }
+            }
+            val filtered = SupplementDedup.filterNewChannels(
+                entries = allEntries,
+                daddyChannels = daddyChannels,
+                maxChannels = IptvOrgStreamsConfig.MAX_CHANNELS_AFTER_DEDUP,
+                importMode = importMode,
+            ) { entry, _ ->
+                toIptvOrgChannel(entry, entry.sourcePlaylist.orEmpty())
+            }
+            FetchOutcome(
+                channels = filtered.channels,
+                stats = FetchStats(
+                    playlistsFetched = fromCache,
+                    playlistsFailed = failed,
+                    playlistsFromCache = fromCache,
+                    entriesParsed = allEntries.size,
+                    channelsAfterDedup = filtered.channels.size,
+                    daddyFallbacksAttached = filtered.daddyFallbacks.values.sumOf { it.size },
+                    playlistsTotal = playlistFiles.size,
+                ),
+                daddyFallbacks = filtered.daddyFallbacks,
+            )
+        }
+
     private fun orderPlaylists(files: List<String>): List<String> {
         val smallFirst = IptvOrgStreamsConfig.SMALL_FIRST_HINTS
         return files.sortedWith(

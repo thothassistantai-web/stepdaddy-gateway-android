@@ -79,6 +79,9 @@ object EpgConfig {
   /** Max uncached gap-fill feeds to attempt over the network per build. */
   const val MAX_GAP_FILL_NETWORK_ATTEMPTS = 3
 
+  /** Manual/forced rebuild: attempt every regional gap-fill feed (still uses stale disk cache when present). */
+  val MAX_GAP_FILL_NETWORK_ATTEMPTS_FORCE_REFRESH: Int = GAP_FILL_FEED_URLS.size
+
   /**
    * Once primary/tvtv merge already produced this many programmes, gap-fill is cache-only
    * so we can publish a ready guide without waiting on regional CDN stalls.
@@ -87,6 +90,13 @@ object EpgConfig {
 
   /** Cap total feed cache on disk (primary + on-demand regional gap-fill; trim after each build). */
   const val MAX_FEED_CACHE_BYTES = 320 * 1024 * 1024L
+
+  /**
+   * epgshare01 sits behind Cloudflare; bare feed URLs often return cached HTTP 404 even while
+   * the directory listing shows fresh files. Append a cache-bust query param on every download.
+   */
+  fun feedDownloadUrl(url: String, cacheBustMs: Long = System.currentTimeMillis()): String =
+      if ('?' in url) "$url&cb=$cacheBustMs" else "$url?cb=$cacheBustMs"
 
   const val MAPPING_ASSET = "channel_epg_map.json"
   const val NAME_OVERRIDES_ASSET = "epg_name_overrides.json"

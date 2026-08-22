@@ -26,9 +26,11 @@ class LightEpgBuilder(
       fastEpgFiles: List<File> = emptyList(),
       fastEpgTvgIds: Set<String> = emptySet(),
       channelNamesByTvgId: Map<String, String> = emptyMap(),
+      whatsOnFreeTvEpgCatalog: WhatsOnFreeTvEpgCatalog? = null,
       placeholdersEnabled: Boolean = true,
       placeholderExcludeIds: Set<String> = emptySet(),
       tvtvGapFillEnabled: Boolean = true,
+      forceRefresh: Boolean = false,
   ): BuildResult {
     consecutiveFeedFailures = 0
     val output = File(store.servedXml.parentFile, "epg.build.part")
@@ -55,6 +57,8 @@ class LightEpgBuilder(
     var realProgrammeCount = 0
     var realChannelsWithProgrammes = 0
     var placeholderProgrammeCount = 0
+    var woftvProgrammesMerged = 0
+    var woftvChannelsFilled = 0
 
     output.bufferedWriter(Charsets.UTF_8).use { writer ->
       writer.write("""<?xml version="1.0" encoding="UTF-8"?>""")
@@ -108,20 +112,46 @@ class LightEpgBuilder(
         )
       }
 
+      val woftvEarly = mergeWoftvGapsIfReady(
+          whatsOnFreeTvEpgCatalog = whatsOnFreeTvEpgCatalog,
+          writer = writer,
+          allIds = allIds,
+          idsWithProgrammes = idsWithProgrammes,
+          fastEpgTvgIds = fastEpgTvgIds,
+          iptvOrgSupplementTvgIds = iptvOrgSupplementTvgIds,
+          idsWithProgrammesBeforeGapFill = null,
+          channelNamesByTvgId = channelNamesByTvgId,
+          windowStart = windowStart,
+          windowEnd = windowEnd,
+          writtenChannelIds = writtenChannelIds,
+          passLabel = "pre-gap-fill",
+      )
+      woftvProgrammesMerged += woftvEarly.programmesWritten
+      woftvChannelsFilled += woftvEarly.channelsFilled
+      programmeCount += woftvEarly.programmesWritten
+
+      val idsWithProgrammesBeforeGapFill = idsWithProgrammes.toSet()
       val epgshareGapIds = (
           tvgIds.filter { it !in idsWithProgrammes } +
               fastEpgTvgIds.filter { isHashStyleFastId(it) && it !in idsWithProgrammes }
           ).toSet()
       if (epgshareGapIds.isNotEmpty()) {
         val gapGrouped = groupTvgIdsByGapFillFeed(epgshareGapIds)
-        val cacheOnlyGap = programmeCount >= EpgConfig.MIN_PROGRAMMES_BEFORE_CACHE_ONLY_GAP
-        var networkBudget =
-            if (cacheOnlyGap) 0 else EpgConfig.MAX_GAP_FILL_NETWORK_ATTEMPTS
+        val cacheOnlyGap = shouldUseCacheOnlyGapFill(programmeCount, forceRefresh)
+        var networkBudget = gapFillNetworkAttempts(programmeCount, forceRefresh)
         if (cacheOnlyGap) {
           android.util.Log.i(
               "LightEpgBuilder",
               "EPG gap-fill cache-only ($programmeCount programmes already merged)",
           )
+        } else if (forceRefresh) {
+          android.util.Log.i(
+              "LightEpgBuilder",
+              "EPG gap-fill force refresh ($networkBudget network attempts, ${gapGrouped.size} feeds)",
+          )
+        }
+        if (forceRefresh) {
+          consecutiveFeedFailures = 0
         }
         gapGrouped.keys.forEach { url ->
           val cache = store.feedCacheFile(url)
@@ -138,7 +168,12 @@ class LightEpgBuilder(
             return@forEach
           }
           networkBudget--
-          ensureFeedCached(url, timeoutMs = EpgConfig.GAP_FILL_DOWNLOAD_TIMEOUT_MS)
+          if (forceRefresh) consecutiveFeedFailures = 0
+          ensureFeedCached(
+              url,
+              timeoutMs = EpgConfig.GAP_FILL_DOWNLOAD_TIMEOUT_MS,
+              ignoreFailureBudget = forceRefresh,
+          )
         }
         val gapExpansion = idBridge?.expandWantedIds(epgshareGapIds)
             ?: EpgTvgIdMatcher.expandWantedIds(epgshareGapIds)
@@ -288,6 +323,28 @@ class LightEpgBuilder(
 
       realProgrammeCount = programmeCount
       realChannelsWithProgrammes = idsWithProgrammes.size
+
+      val woftvLate = mergeWoftvGapsIfReady(
+          whatsOnFreeTvEpgCatalog = whatsOnFreeTvEpgCatalog,
+          writer = writer,
+          allIds = allIds,
+          idsWithProgrammes = idsWithProgrammes,
+          fastEpgTvgIds = fastEpgTvgIds,
+          iptvOrgSupplementTvgIds = iptvOrgSupplementTvgIds,
+          idsWithProgrammesBeforeGapFill = idsWithProgrammesBeforeGapFill,
+          channelNamesByTvgId = channelNamesByTvgId,
+          windowStart = windowStart,
+          windowEnd = windowEnd,
+          writtenChannelIds = writtenChannelIds,
+          passLabel = "post-supplement",
+      )
+      woftvProgrammesMerged += woftvLate.programmesWritten
+      woftvChannelsFilled += woftvLate.channelsFilled
+      channelCount = writtenChannelIds.size
+      programmeCount += woftvLate.programmesWritten
+      realProgrammeCount = programmeCount
+      realChannelsWithProgrammes = idsWithProgrammes.size
+
       if (placeholdersEnabled) {
         val gapIds = allIds.filter {
             it !in idsWithProgrammes && it !in placeholderExcludeIds
@@ -324,6 +381,8 @@ class LightEpgBuilder(
         } else {
             0
         },
+        woftvProgrammesMerged = woftvProgrammesMerged,
+        woftvChannelsFilled = woftvChannelsFilled,
     )
   }
 
@@ -376,6 +435,75 @@ class LightEpgBuilder(
     }
     channelCountRef(channelCount)
     programmeCountRef(programmeCount)
+  }
+
+  private data class WoftvMergePassResult(
+      val programmesWritten: Int = 0,
+      val channelsFilled: Int = 0,
+      val passLabel: String = "",
+  )
+
+  private fun mergeWoftvGapsIfReady(
+      whatsOnFreeTvEpgCatalog: WhatsOnFreeTvEpgCatalog?,
+      writer: java.io.BufferedWriter,
+      allIds: Set<String>,
+      idsWithProgrammes: MutableSet<String>,
+      fastEpgTvgIds: Set<String>,
+      iptvOrgSupplementTvgIds: Set<String>,
+      idsWithProgrammesBeforeGapFill: Set<String>?,
+      channelNamesByTvgId: Map<String, String>,
+      windowStart: java.time.Instant,
+      windowEnd: java.time.Instant,
+      writtenChannelIds: MutableSet<String>,
+      passLabel: String,
+  ): WoftvMergePassResult {
+    val catalog = whatsOnFreeTvEpgCatalog ?: return WoftvMergePassResult(passLabel = passLabel)
+    if (!catalog.hasUsableIndex()) return WoftvMergePassResult(passLabel = passLabel)
+    val gapIds = woftvCandidateIds(
+        allIds = allIds,
+        idsWithProgrammes = idsWithProgrammes,
+        fastEpgTvgIds = fastEpgTvgIds,
+        iptvOrgSupplementTvgIds = iptvOrgSupplementTvgIds,
+    )
+    val forceRetry = if (idsWithProgrammesBeforeGapFill != null) {
+      woftvGapFillRetryIds(
+          idsWithProgrammes = idsWithProgrammes,
+          idsWithProgrammesBeforeGapFill = idsWithProgrammesBeforeGapFill,
+          fastEpgTvgIds = fastEpgTvgIds,
+          iptvOrgSupplementTvgIds = iptvOrgSupplementTvgIds,
+      )
+    } else {
+      emptySet()
+    }
+    val attemptIds = gapIds + forceRetry
+    if (attemptIds.isEmpty()) return WoftvMergePassResult(passLabel = passLabel)
+    android.util.Log.i(
+        "LightEpgBuilder",
+        "WhatsOnFreeTV EPG ($passLabel): ${attemptIds.size} candidate ids " +
+            "(${gapIds.size} gaps, ${forceRetry.size} gap-fill retries)",
+    )
+    val result = catalog.mergeGaps(
+        writer = writer,
+        gapTvgIds = attemptIds,
+        channelNamesByTvgId = channelNamesByTvgId,
+        windowStart = windowStart,
+        windowEnd = windowEnd,
+        writtenChannelIds = writtenChannelIds,
+        idsWithProgrammes = idsWithProgrammes,
+        forceRetryIds = forceRetry,
+    )
+    if (result.programmesWritten > 0) {
+      android.util.Log.i(
+          "LightEpgBuilder",
+          "WhatsOnFreeTV EPG ($passLabel): +${result.programmesWritten} programmes " +
+              "(${result.channelsFilled} channels, ${idsWithProgrammes.size} ids with guide)",
+      )
+    }
+    return WoftvMergePassResult(
+        programmesWritten = result.programmesWritten,
+        channelsFilled = result.channelsFilled,
+        passLabel = passLabel,
+    )
   }
 
   private fun mergeSupplementEpgFile(
@@ -449,13 +577,14 @@ class LightEpgBuilder(
   private fun ensureFeedCached(
       url: String,
       timeoutMs: Long = EpgConfig.DOWNLOAD_TIMEOUT_MS,
+      ignoreFailureBudget: Boolean = false,
   ) {
     val cache = store.feedCacheFile(url)
     if (store.isFeedFresh(cache)) {
       consecutiveFeedFailures = 0
       return
     }
-    if (consecutiveFeedFailures >= MAX_CONSECUTIVE_FEED_FAILURES) {
+    if (!ignoreFailureBudget && consecutiveFeedFailures >= MAX_CONSECUTIVE_FEED_FAILURES) {
       if (cache.exists() && cache.length() > 0L) {
         android.util.Log.w(
             "LightEpgBuilder",
@@ -470,8 +599,9 @@ class LightEpgBuilder(
       return
     }
     val request = Request.Builder()
-        .url(url)
+        .url(EpgConfig.feedDownloadUrl(url))
         .header("User-Agent", EpgConfig.USER_AGENT)
+        .header("Cache-Control", "no-cache")
         .get()
         .build()
     val tmp = File(cache.parentFile, "${cache.name}.part")
@@ -506,6 +636,9 @@ class LightEpgBuilder(
         }
         sink.close()
       }
+      if (url.endsWith(".gz", ignoreCase = true) && !store.isValidGzipFile(tmp)) {
+        error("feed_not_gzip")
+      }
       if (!tmp.renameTo(cache)) {
         cache.writeBytes(tmp.readBytes())
         tmp.delete()
@@ -537,10 +670,49 @@ class LightEpgBuilder(
       val placeholderProgrammeCount: Int = 0,
       val channelsWithRealProgrammes: Int = 0,
       val channelsWithPlaceholders: Int = 0,
+      val woftvProgrammesMerged: Int = 0,
+      val woftvChannelsFilled: Int = 0,
   )
 
   companion object {
     private const val MAX_CONSECUTIVE_FEED_FAILURES = 3
+
+    fun shouldUseCacheOnlyGapFill(programmeCount: Int, forceRefresh: Boolean): Boolean =
+        !forceRefresh && programmeCount >= EpgConfig.MIN_PROGRAMMES_BEFORE_CACHE_ONLY_GAP
+
+    fun gapFillNetworkAttempts(programmeCount: Int, forceRefresh: Boolean): Int =
+        when {
+          shouldUseCacheOnlyGapFill(programmeCount, forceRefresh) -> 0
+          forceRefresh -> EpgConfig.MAX_GAP_FILL_NETWORK_ATTEMPTS_FORCE_REFRESH
+          else -> EpgConfig.MAX_GAP_FILL_NETWORK_ATTEMPTS
+        }
+
+    /** Playlist ids still missing real programmes after upstream merges. */
+    fun woftvCandidateIds(
+        allIds: Set<String>,
+        idsWithProgrammes: Set<String>,
+        fastEpgTvgIds: Set<String>,
+        iptvOrgSupplementTvgIds: Set<String>,
+    ): Set<String> =
+        (
+            allIds.filter { it !in idsWithProgrammes } +
+                fastEpgTvgIds.filter { it !in idsWithProgrammes } +
+                iptvOrgSupplementTvgIds.filter { it !in idsWithProgrammes }
+            ).toSet()
+
+    /**
+     * FAST / iptv-org ids that received only epgshare gap-fill (e.g. PLEX1) programmes
+     * before WOFTV ran — allow a second WOFTV pass to append real guide rows.
+     */
+    fun woftvGapFillRetryIds(
+        idsWithProgrammes: Set<String>,
+        idsWithProgrammesBeforeGapFill: Set<String>,
+        fastEpgTvgIds: Set<String>,
+        iptvOrgSupplementTvgIds: Set<String>,
+    ): Set<String> {
+      val gapFillOnly = idsWithProgrammes - idsWithProgrammesBeforeGapFill
+      return (fastEpgTvgIds + iptvOrgSupplementTvgIds).filter { it in gapFillOnly }.toSet()
+    }
 
     fun emptyXml(): ByteArray =
         """<?xml version="1.0" encoding="UTF-8"?><tv generator-info-name="StepDaddy Gateway"></tv>"""
@@ -611,10 +783,7 @@ class LightEpgBuilder(
       return grouped
     }
 
-    fun isHashStyleFastId(tvgId: String): Boolean {
-      if ('.' !in tvgId) return true
-      return tvgId.uppercase().startsWith("USBD")
-    }
+    fun isHashStyleFastId(tvgId: String): Boolean = FastChannelContext.isHashStyleFastId(tvgId)
 
     fun gapFillUrlForTvgId(tvgId: String): String? {
       val tl = tvgId.lowercase()

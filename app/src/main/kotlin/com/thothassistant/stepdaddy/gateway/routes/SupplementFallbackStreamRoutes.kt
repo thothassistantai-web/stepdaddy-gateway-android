@@ -7,6 +7,7 @@ import com.thothassistant.stepdaddy.gateway.upstream.DuloCxLiveConfig
 import com.thothassistant.stepdaddy.gateway.upstream.DuloCxLiveResolver
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
 import com.thothassistant.stepdaddy.gateway.upstream.HlsErrorManifest
+import com.thothassistant.stepdaddy.gateway.upstream.HlsSmartVariantFlattener
 import com.thothassistant.stepdaddy.gateway.upstream.M3u8Rewriter
 import com.thothassistant.stepdaddy.gateway.upstream.MirrorHlsManifest
 import com.thothassistant.stepdaddy.gateway.upstream.NtvCxCdnLiveConfig
@@ -87,9 +88,9 @@ class SupplementFallbackStreamRoutes(
                     }
                 }
             }
-            respondPlaylist(call, playlist)
+            respondPlaylist(call, flattenForSmartMirror(playlist))
         } catch (_: TimeoutCancellationException) {
-            respondError(
+            respondMirrorError(
                 call,
                 HttpStatusCode.GatewayTimeout,
                 "fallback upstream timeout — retry shortly",
@@ -105,7 +106,7 @@ class SupplementFallbackStreamRoutes(
                 msg.contains("timeout", ignoreCase = true) -> HttpStatusCode.GatewayTimeout
                 else -> HttpStatusCode.BadGateway
             }
-            respondError(call, status, msg, retryAfter = if (status == HttpStatusCode.GatewayTimeout) "3" else null)
+            respondMirrorError(call, status, msg, retryAfter = if (status == HttpStatusCode.GatewayTimeout) "3" else null)
         }
     }
 
@@ -158,9 +159,9 @@ class SupplementFallbackStreamRoutes(
                     }
                 }
             }
-            respondPlaylist(call, playlist)
+            respondPlaylist(call, flattenForSmartMirror(playlist))
         } catch (_: TimeoutCancellationException) {
-            respondError(
+            respondMirrorError(
                 call,
                 HttpStatusCode.GatewayTimeout,
                 "upstream timeout — retry shortly",
@@ -176,7 +177,7 @@ class SupplementFallbackStreamRoutes(
                 msg.contains("timeout", ignoreCase = true) -> HttpStatusCode.GatewayTimeout
                 else -> HttpStatusCode.BadGateway
             }
-            respondError(call, status, msg, retryAfter = if (status == HttpStatusCode.GatewayTimeout) "3" else null)
+            respondMirrorError(call, status, msg, retryAfter = if (status == HttpStatusCode.GatewayTimeout) "3" else null)
         }
     }
 
@@ -249,6 +250,17 @@ class SupplementFallbackStreamRoutes(
         return rewriteManifest(body, streamUrl, refererHeader)
     }
 
+    /** Smart backup sub-playlists must be media playlists, not nested masters. */
+    private fun flattenForSmartMirror(playlist: String): String {
+        val normalized = HlsSmartVariantFlattener.normalizeVersionTag(playlist)
+        if (!HlsSmartVariantFlattener.isMasterPlaylist(normalized)) return normalized
+        val flattened = HlsSmartVariantFlattener.flattenMasterToMedia(normalized, httpClient)
+        if (HlsSmartVariantFlattener.isMasterPlaylist(flattened)) {
+            error("smart_mirror_unflattened")
+        }
+        return flattened
+    }
+
     private fun rewriteManifest(m3u8Text: String, m3u8Url: String, refererHost: String): String {
         val text = m3u8Text.trim()
         if (text.isEmpty()) error("empty_manifest")
@@ -261,13 +273,15 @@ class SupplementFallbackStreamRoutes(
         // Proxy segments through /vod-content|/content so ExoPlayer never fetches CDN
         // URLs without the required Referer (403/Source error on many backups).
         val segmentReferer = refererHost.trim().takeIf { it.isNotEmpty() }
-        return M3u8Rewriter.rewrite(
-            m3u8Text = text,
-            m3u8Url = m3u8Url,
-            refererHost = refererHost,
-            useProxy = true,
-            apiUrl = environment.loopbackBase(),
-            segmentReferer = segmentReferer,
+        return HlsSmartVariantFlattener.normalizeVersionTag(
+            M3u8Rewriter.rewrite(
+                m3u8Text = text,
+                m3u8Url = m3u8Url,
+                refererHost = refererHost,
+                useProxy = true,
+                apiUrl = environment.loopbackBase(),
+                segmentReferer = segmentReferer,
+            ),
         )
     }
 
@@ -317,6 +331,24 @@ class SupplementFallbackStreamRoutes(
             ContentType("application", "vnd.apple.mpegurl"),
             status,
         )
+    }
+
+    /**
+     * Mirror sub-playlists inside a Smart multi-variant master: return HTTP errors without a
+     * comment-only m3u8 body so TiviMate can fail over to the next variant instead of ParserException.
+     */
+    private suspend fun respondMirrorError(
+        call: ApplicationCall,
+        status: HttpStatusCode,
+        message: String,
+        retryAfter: String? = null,
+    ) {
+        if (retryAfter != null) {
+            call.response.header(HttpHeaders.RetryAfter, retryAfter)
+        }
+        call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+        call.response.header(HttpHeaders.CacheControl, "no-cache")
+        call.respondText(message.take(120), ContentType.Text.Plain, status)
     }
 
     companion object {

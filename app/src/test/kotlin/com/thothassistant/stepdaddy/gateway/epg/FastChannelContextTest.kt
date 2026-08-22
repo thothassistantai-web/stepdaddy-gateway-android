@@ -52,6 +52,13 @@ class FastChannelContextTest {
     }
 
     @Test
+    fun isMongoHexId_detects24CharPlutoMongoIds() {
+        assertTrue(FastChannelContext.isMongoHexId("692ebafce72f03e07e7df985"))
+        assertTrue(FastChannelContext.isHashStyleFastId("692ebafce72f03e07e7df985"))
+        assertFalse(FastChannelContext.isMongoHexId("PlutoTVTrueCrime.us"))
+    }
+
+    @Test
     fun isIptvOrgDotId_matchesDotAndAtSuffix() {
         assertTrue(FastChannelContext.isIptvOrgDotId("ABCNewsLive.us@SD"))
         assertTrue(FastChannelContext.isIptvOrgDotId("STIRRCityAbilene.us"))

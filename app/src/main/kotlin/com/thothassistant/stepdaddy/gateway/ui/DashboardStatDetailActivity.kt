@@ -146,6 +146,20 @@ class DashboardStatDetailActivity : AppCompatActivity() {
                 health.epgCoverage?.let { cov ->
                     appendLine()
                     append(getString(R.string.stat_detail_epg_coverage, cov.withRealProgrammes, cov.withTvgId))
+                    if (cov.woftvIndexReady || cov.woftvProgrammesMerged > 0) {
+                        appendLine()
+                        append(
+                            getString(
+                                R.string.stat_detail_woftv_summary,
+                                cov.woftvProgrammesMerged,
+                                cov.woftvChannelsFilled,
+                                cov.woftvCatalogChannelKeys,
+                            ),
+                        )
+                    } else {
+                        appendLine()
+                        append(getString(R.string.stat_detail_woftv_unavailable))
+                    }
                 }
             }
         }
@@ -220,6 +234,11 @@ class DashboardStatDetailActivity : AppCompatActivity() {
                     appendLine("mappedPercent=${c.mappedPercent}")
                     appendLine("withRealProgrammes=${c.withRealProgrammes}")
                     appendLine("placeholderProgrammes=${c.placeholderProgrammes}")
+                    appendLine("woftvCatalogChannelKeys=${c.woftvCatalogChannelKeys}")
+                    appendLine("woftvIndexReady=${c.woftvIndexReady}")
+                    appendLine("woftvCacheStale=${c.woftvCacheStale}")
+                    appendLine("woftvProgrammesMerged=${c.woftvProgrammesMerged}")
+                    appendLine("woftvChannelsFilled=${c.woftvChannelsFilled}")
                 }
             }
             DashboardStatType.STATUS -> buildString {

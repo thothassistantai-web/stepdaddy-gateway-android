@@ -161,4 +161,70 @@ class LightEpgBuilderGapFillTest {
             LightEpgBuilder.gapFillUrlForTvgId("MysteryChannel.us"),
         )
     }
+
+    @Test
+    fun `shouldUseCacheOnlyGapFill skips network when programmes merged and not forced`() {
+        assertTrue(
+            LightEpgBuilder.shouldUseCacheOnlyGapFill(
+                programmeCount = EpgConfig.MIN_PROGRAMMES_BEFORE_CACHE_ONLY_GAP,
+                forceRefresh = false,
+            ),
+        )
+        assertFalse(
+            LightEpgBuilder.shouldUseCacheOnlyGapFill(
+                programmeCount = EpgConfig.MIN_PROGRAMMES_BEFORE_CACHE_ONLY_GAP,
+                forceRefresh = true,
+            ),
+        )
+    }
+
+    @Test
+    fun `gapFillNetworkAttempts uses full budget on force refresh`() {
+        assertEquals(
+            0,
+            LightEpgBuilder.gapFillNetworkAttempts(
+                programmeCount = 10_000,
+                forceRefresh = false,
+            ),
+        )
+        assertEquals(
+            EpgConfig.MAX_GAP_FILL_NETWORK_ATTEMPTS_FORCE_REFRESH,
+            LightEpgBuilder.gapFillNetworkAttempts(
+                programmeCount = 10_000,
+                forceRefresh = true,
+            ),
+        )
+        assertEquals(
+            EpgConfig.MAX_GAP_FILL_NETWORK_ATTEMPTS,
+            LightEpgBuilder.gapFillNetworkAttempts(
+                programmeCount = 0,
+                forceRefresh = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `woftvCandidateIds includes playlist gaps and fast ids`() {
+        val candidates = LightEpgBuilder.woftvCandidateIds(
+            allIds = setOf("ESPN.us", "USBD42000073E", "PlutoTVComedyMovies.us"),
+            idsWithProgrammes = setOf("ESPN.us"),
+            fastEpgTvgIds = setOf("USBD42000073E"),
+            iptvOrgSupplementTvgIds = setOf("PlutoTVComedyMovies.us"),
+        )
+        assertEquals(
+            setOf("USBD42000073E", "PlutoTVComedyMovies.us"),
+            candidates,
+        )
+    }
+
+    @Test
+    fun `woftvGapFillRetryIds targets fast ids filled only by gap fill`() {
+        val retry = LightEpgBuilder.woftvGapFillRetryIds(
+            idsWithProgrammes = setOf("ESPN.us", "USBD42000073E"),
+            idsWithProgrammesBeforeGapFill = setOf("ESPN.us"),
+            fastEpgTvgIds = setOf("USBD42000073E"),
+            iptvOrgSupplementTvgIds = setOf("PlutoTVComedyMovies.us"),
+        )
+        assertEquals(setOf("USBD42000073E"), retry)
+    }
 }

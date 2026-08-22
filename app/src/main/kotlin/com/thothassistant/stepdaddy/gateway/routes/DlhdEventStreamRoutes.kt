@@ -12,6 +12,7 @@ import com.thothassistant.stepdaddy.gateway.upstream.DlhdEventStreamResolver
 import com.thothassistant.stepdaddy.gateway.upstream.GuideScheduleHlsManifest
 import com.thothassistant.stepdaddy.gateway.upstream.GuideScheduleMediaCache
 import com.thothassistant.stepdaddy.gateway.upstream.HlsErrorManifest
+import com.thothassistant.stepdaddy.gateway.upstream.HlsSmartVariantFlattener
 import com.thothassistant.stepdaddy.gateway.upstream.M3u8Rewriter
 import com.thothassistant.stepdaddy.gateway.upstream.MirrorHlsManifest
 import com.thothassistant.stepdaddy.gateway.upstream.SpecialEventCategoryEmoji
@@ -35,6 +36,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import okhttp3.OkHttpClient
 
 class DlhdEventStreamRoutes(
     context: Context,
@@ -47,6 +49,7 @@ class DlhdEventStreamRoutes(
 ) {
     private val appContext = context.applicationContext
     private val guideMediaCache = GuideScheduleMediaCache(appContext)
+    private val httpClient = OkHttpClient()
 
     fun activeMirrorStore(): DlhdEventActiveMirrorStore = activeMirrorStore
 
@@ -82,7 +85,8 @@ class DlhdEventStreamRoutes(
                 token,
                 DlhdEventStreamHealth.ProbeResult.healthy(),
             )
-            respondPlaylist(call, body)
+            val toSend = if (variantCount <= 1) flattenForSmartMirror(body) else body
+            respondPlaylist(call, toSend)
         } catch (_: TimeoutCancellationException) {
             recordUnhealthy(token, "upstream_timeout")
             respondError(
@@ -121,7 +125,7 @@ class DlhdEventStreamRoutes(
                     resolveMirrorWithFailover(supplement, mirrors, mirrorIndex)
                 }
             }
-            respondPlaylist(call, playlist)
+            respondPlaylist(call, flattenForSmartMirror(playlist))
         } catch (_: TimeoutCancellationException) {
             recordUnhealthy(token, "upstream_timeout")
             respondError(
@@ -357,6 +361,16 @@ class DlhdEventStreamRoutes(
         call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
         call.response.header(HttpHeaders.CacheControl, "no-cache")
         call.respondBytes(bytes, ContentType("application", "vnd.apple.mpegurl"))
+    }
+
+    private fun flattenForSmartMirror(playlist: String): String {
+        val normalized = HlsSmartVariantFlattener.normalizeVersionTag(playlist)
+        if (!HlsSmartVariantFlattener.isMasterPlaylist(normalized)) return normalized
+        val flattened = HlsSmartVariantFlattener.flattenMasterToMedia(normalized, httpClient)
+        if (HlsSmartVariantFlattener.isMasterPlaylist(flattened)) {
+            error("smart_mirror_unflattened")
+        }
+        return flattened
     }
 
     private fun recordUnhealthy(token: String, reason: String) {

@@ -9,11 +9,13 @@ import com.thothassistant.stepdaddy.gateway.upstream.FastEpgCatalog
 class FastChannelTvgIdResolver(
     private val catalogLookup: (channelName: String, providerTag: String?) -> String?,
     private val epgChannelMapper: EpgChannelMapper?,
+    private val nameIndex: IptvOrgNameIndex? = null,
 ) {
     constructor(
         fastEpgCatalog: FastEpgCatalog,
         epgChannelMapper: EpgChannelMapper?,
-    ) : this(fastEpgCatalog::lookupChannelId, epgChannelMapper)
+        nameIndex: IptvOrgNameIndex? = null,
+    ) : this(fastEpgCatalog::lookupChannelId, epgChannelMapper, nameIndex)
 
     data class Match(
         val tvgId: String,
@@ -31,6 +33,13 @@ class FastChannelTvgIdResolver(
         val current = currentTvgId?.trim().orEmpty()
 
         if (current.isNotEmpty()) {
+            if (FastChannelContext.isMongoHexId(current)) {
+                lookupDotIdForEpg(displayName)?.let { dot ->
+                    if (dot != current) {
+                        return Match(dot, 0.86f, "hex_to_dot_epg")
+                    }
+                }
+            }
             if (provider == null || FastChannelContext.tvgIdMatchesProvider(current, provider)) {
                 return Match(current, 1.0f, "current_valid")
             }
@@ -53,6 +62,12 @@ class FastChannelTvgIdResolver(
             }
         }
 
+        lookupDotIdForEpg(displayName)?.let { dot ->
+            if (provider !in FastChannelContext.FAST_HASH_PROVIDERS) {
+                return Match(dot, 0.84f, "channels_db_backfill")
+            }
+        }
+
         provider?.let { lookupCandidate(displayName, it) }?.let { candidate ->
             return Match(candidate, 0.85f, "fast_catalog")
         }
@@ -67,16 +82,41 @@ class FastChannelTvgIdResolver(
         providerTag: String?,
     ): String? {
         val current = currentTvgId?.trim().orEmpty()
-        val provider = effectiveProvider(providerTag, displayName, groupTitle) ?: return null
+        val provider = effectiveProvider(providerTag, displayName, groupTitle)
 
-        if (current.isNotEmpty() && FastChannelContext.tvgIdMatchesProvider(current, provider)) {
-            return null
+        if (current.isEmpty()) {
+            val resolved = resolve(displayName, groupTitle, providerTag, currentTvgId)
+            val candidate = resolved?.tvgId?.trim().orEmpty()
+            return candidate.takeIf { it.isNotEmpty() }
+        }
+
+        if (FastChannelContext.isMongoHexId(current)) {
+            lookupDotIdForEpg(displayName)?.let { dot ->
+                if (dot != current) return dot
+            }
+        }
+
+        if (provider != null && FastChannelContext.tvgIdMatchesProvider(current, provider)) {
+            return canonicalQualitySuffixBase(current)
         }
 
         val resolved = resolve(displayName, groupTitle, providerTag, currentTvgId)
         val candidate = resolved?.tvgId?.trim().orEmpty()
-        if (candidate.isEmpty() || candidate == current) return null
-        return candidate
+        if (candidate.isNotEmpty() && candidate != current) return candidate
+        return canonicalQualitySuffixBase(current)
+    }
+
+    private fun lookupDotIdForEpg(displayName: String): String? {
+        val index = nameIndex ?: return null
+        if (!index.isLoaded()) return null
+        index.lookupExact(displayName)?.trim()?.takeIf { it.isNotEmpty() }?.let { exact ->
+            if (FastChannelContext.isIptvOrgDotId(exact)) return exact
+        }
+        index.lookupFuzzy(displayName, WOFTV_BACKFILL_MIN_SCORE)?.trim()?.takeIf { it.isNotEmpty() }
+            ?.let { fuzzy ->
+                if (FastChannelContext.isIptvOrgDotId(fuzzy)) return fuzzy
+            }
+        return null
     }
 
     private fun effectiveProvider(
@@ -90,4 +130,21 @@ class FastChannelTvgIdResolver(
 
     private fun lookupCandidate(displayName: String, provider: String): String? =
         catalogLookup(displayName, provider)?.trim()?.takeIf { it.isNotEmpty() }
+
+    /** Strip @SD/@HD when the base id is a valid iptv-org dot id (epgshare uses base form). */
+    private fun canonicalQualitySuffixBase(tvgId: String): String? {
+        val trimmed = tvgId.trim()
+        for (suffix in QUALITY_SUFFIXES) {
+            if (!trimmed.endsWith(suffix, ignoreCase = true)) continue
+            val base = trimmed.dropLast(suffix.length)
+            if (base.isNotEmpty() && FastChannelContext.isIptvOrgDotId(base)) return base
+        }
+        return null
+    }
+
+    companion object {
+        private val QUALITY_SUFFIXES = listOf("@SD", "@HD", "@UHD", "@4K", "@FHD")
+        /** channels_db fuzzy threshold for no-tvg-id / hex-id EPG backfill (audit score floor). */
+        const val WOFTV_BACKFILL_MIN_SCORE = 0.65
+    }
 }

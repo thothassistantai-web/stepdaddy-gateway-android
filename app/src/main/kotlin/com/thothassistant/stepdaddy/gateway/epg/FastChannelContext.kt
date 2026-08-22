@@ -101,9 +101,14 @@ object FastChannelContext {
         return null
     }
 
+    private val MONGO_HEX_ID = Regex("^[0-9a-fA-F]{24}$")
+
+    fun isMongoHexId(tvgId: String): Boolean = MONGO_HEX_ID.matches(tvgId.trim())
+
     fun isHashStyleFastId(tvgId: String): Boolean {
         val id = tvgId.trim()
         if (id.isEmpty()) return false
+        if (isMongoHexId(id)) return true
         if (!id.contains('.')) return true
         return HASH_PREFIX_PATTERN.containsMatchIn(id)
     }

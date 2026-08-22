@@ -27,4 +27,16 @@ class MirrorHlsManifestTest {
         )
         assertTrue(manifest.contains("/dlhd-event-mirror/solo/0.m3u8"))
     }
+
+    @Test
+    fun build_doesNotEmitIndependentSegments() {
+        val manifest = MirrorHlsManifest.build(
+            baseUrl = "http://127.0.0.1:3000",
+            eventToken = "test",
+            mirrorCount = 2,
+        )
+        assertTrue(manifest.contains("#EXTM3U"))
+        assertTrue(manifest.contains("#EXT-X-STREAM-INF"))
+        assertTrue(!manifest.contains("INDEPENDENT-SEGMENTS"))
+    }
 }

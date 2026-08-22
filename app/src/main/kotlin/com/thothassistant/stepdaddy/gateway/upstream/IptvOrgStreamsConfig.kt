@@ -74,6 +74,12 @@ object IptvOrgStreamsConfig {
     const val MAX_CONCURRENT_FETCH_FIRE = 1
 
     /**
+     * Network budget for one iptv-org sync slot; on expiry [IptvOrgStreamsSource.fetchChannelsFromDiskCache]
+     * rebuilds the catalog from files/supplement/iptv-org without GitHub/CDN.
+     */
+    const val FETCH_BUDGET_MS = 300_000L
+
+    /**
      * Prefer these first when cache sizes are unknown so progressive publish
      * surfaces small catalogs before huge Pluto/local lists.
      */

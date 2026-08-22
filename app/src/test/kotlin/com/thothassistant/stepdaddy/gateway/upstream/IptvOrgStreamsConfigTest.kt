@@ -35,4 +35,10 @@ class IptvOrgStreamsConfigTest {
             urls.last(),
         )
     }
+
+    @Test
+    fun `FETCH_BUDGET_MS leaves headroom before supplement sync ceiling`() {
+        assertTrue(IptvOrgStreamsConfig.FETCH_BUDGET_MS > 0L)
+        assertTrue(IptvOrgStreamsConfig.FETCH_BUDGET_MS <= 360_000L)
+    }
 }

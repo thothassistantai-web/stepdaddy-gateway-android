@@ -20,6 +20,10 @@ data class EpgMeta(
     val channelsWithProgrammes: Int = 0,
     val channelsWithRealProgrammes: Int = 0,
     val channelsWithPlaceholders: Int = 0,
+    /** Last build: programmes merged from WhatsOnFreeTV JSON (GitHub). */
+    val woftvProgrammesMerged: Int = 0,
+    /** Last build: playlist channels that received real WOFTV programmes. */
+    val woftvChannelsFilled: Int = 0,
 )
 
 class EpgStore private constructor(
@@ -71,6 +75,8 @@ class EpgStore private constructor(
       channelsWithProgrammes: Int = 0,
       channelsWithRealProgrammes: Int = 0,
       channelsWithPlaceholders: Int = 0,
+      woftvProgrammesMerged: Int = 0,
+      woftvChannelsFilled: Int = 0,
   ) {
     val tmp = File(root, "epg.xml.tmp")
     source.inputStream().use { input ->
@@ -87,6 +93,8 @@ class EpgStore private constructor(
         channelsWithProgrammes,
         channelsWithRealProgrammes,
         channelsWithPlaceholders,
+        woftvProgrammesMerged,
+        woftvChannelsFilled,
     )
     runCatching { source.delete() }
   }
@@ -102,6 +110,8 @@ class EpgStore private constructor(
       channelsWithProgrammes: Int = 0,
       channelsWithRealProgrammes: Int = 0,
       channelsWithPlaceholders: Int = 0,
+      woftvProgrammesMerged: Int = 0,
+      woftvChannelsFilled: Int = 0,
   ) {
     if (!tmp.renameTo(servedXml)) {
       tmp.copyTo(servedXml, overwrite = true)
@@ -121,6 +131,8 @@ class EpgStore private constructor(
         channelsWithProgrammes = channelsWithProgrammes,
         channelsWithRealProgrammes = channelsWithRealProgrammes,
         channelsWithPlaceholders = channelsWithPlaceholders,
+        woftvProgrammesMerged = woftvProgrammesMerged,
+        woftvChannelsFilled = woftvChannelsFilled,
     )
     saveMeta()
   }
@@ -181,14 +193,29 @@ class EpgStore private constructor(
   }
 
   fun trimFeedCache() {
-    val files = feedsDir.listFiles()?.filter { it.isFile }?.sortedByDescending { it.lastModified() }.orEmpty()
+    val files = feedsDir.listFiles()?.filter { it.isFile }.orEmpty()
     var total = files.sumOf { it.length() }
     if (total <= EpgConfig.MAX_FEED_CACHE_BYTES) return
-    files.drop(1).forEach { file ->
-      if (total <= EpgConfig.MAX_FEED_CACHE_BYTES) return
-      total -= file.length()
-      file.delete()
-    }
+    val primaryNames =
+        EpgConfig.PRIMARY_FEED_URLS.map { feedCacheFile(it).name }.toSet()
+    files
+        .filter { it.name !in primaryNames }
+        .sortedBy { it.lastModified() }
+        .forEach { file ->
+          if (total <= EpgConfig.MAX_FEED_CACHE_BYTES) return
+          total -= file.length()
+          file.delete()
+        }
+  }
+
+  /** Reject Cloudflare HTML error pages masquerading as gzip downloads. */
+  fun isValidGzipFile(file: File): Boolean {
+    if (!file.isFile || file.length() < 2L) return false
+    return runCatching {
+      file.inputStream().use { input ->
+        input.read() == 0x1f && input.read() == 0x8b
+      }
+    }.getOrDefault(false)
   }
 
   private fun loadMeta(): EpgMeta {

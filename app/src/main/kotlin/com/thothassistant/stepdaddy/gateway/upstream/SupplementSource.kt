@@ -7,11 +7,13 @@ import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.epg.FastChannelTvgIdResolver
 import com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex
+import com.thothassistant.stepdaddy.gateway.epg.WhatsOnFreeTvEpgCatalog
 import com.thothassistant.stepdaddy.gateway.model.Channel
 import com.thothassistant.stepdaddy.gateway.model.EventMetadata
 import com.thothassistant.stepdaddy.gateway.model.SupplementChannel
 import com.thothassistant.stepdaddy.gateway.model.SupplementFallbackMirror
 import java.io.File
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -21,6 +23,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
@@ -38,7 +41,8 @@ class SupplementSource(
 ) {
     private val appContext = context.applicationContext
     private val fastEpgCatalog = FastEpgCatalog(context)
-    private val fastChannelTvgIdResolver = FastChannelTvgIdResolver(fastEpgCatalog, epgChannelMapper)
+    private val whatsOnFreeTvEpgCatalog = WhatsOnFreeTvEpgCatalog(context)
+    private val fastChannelTvgIdResolver = FastChannelTvgIdResolver(fastEpgCatalog, epgChannelMapper, nameIndex)
     private val iptvOrgSource = IptvOrgStreamsSource(
         context,
         httpClient,
@@ -350,6 +354,31 @@ class SupplementSource(
         }
         return backfillFastTvgIdsFromCatalog()
     }
+
+    /** Load WhatsOnFreeTV JSON EPG from disk; refresh in background when stale. */
+    fun prepareWhatsOnFreeTvEpgForBuild(): Int {
+        if (!environment.gatewayEpgEnabled) return 0
+        runCatching {
+            whatsOnFreeTvEpgCatalog.loadIndexFromDisk()
+            if (whatsOnFreeTvEpgCatalog.isStale() || !whatsOnFreeTvEpgCatalog.hasUsableIndex()) {
+                scope.launch {
+                    runCatching {
+                        whatsOnFreeTvEpgCatalog.refreshAsync(
+                            force = whatsOnFreeTvEpgCatalog.isStale(),
+                        )
+                    }.onFailure { exc ->
+                        Log.w(TAG, "WhatsOnFreeTV EPG background refresh failed", exc)
+                    }
+                }
+            }
+        }.onFailure { exc ->
+            Log.w(TAG, "WhatsOnFreeTV EPG disk load failed", exc)
+            return 0
+        }
+        return if (whatsOnFreeTvEpgCatalog.hasUsableIndex()) 1 else 0
+    }
+
+    fun whatsOnFreeTvEpgCatalog(): WhatsOnFreeTvEpgCatalog = whatsOnFreeTvEpgCatalog
 
     /** Apply bundled/runtime EPG name overrides to cached supplement rows. */
     fun applyNameEpgOverrides(): Int {
@@ -789,6 +818,31 @@ class SupplementSource(
             daddyChannels = daddyChannels,
             environment = environment,
         )
+        val channels = recovered.channels.toMutableList()
+        if (iptvOrgEnabled()) {
+            val diskOutcome = runBlocking {
+                iptvOrgSource.fetchChannelsFromDiskCache(
+                    daddyChannels,
+                    environment.supplementIptvOrgImportMode,
+                    environment.iptvOrgEnabledPlaylists,
+                )
+            }
+            if (diskOutcome.channels.isNotEmpty()) {
+                channels += diskOutcome.channels
+                lastSync = lastSync.copy(
+                    iptvOrgChannels = diskOutcome.channels.size,
+                    iptvOrgPlaylistsFetched = diskOutcome.stats.playlistsFetched,
+                    iptvOrgPlaylistsFailed = diskOutcome.stats.playlistsFailed,
+                    iptvOrgPlaylistsTotal = diskOutcome.stats.playlistsTotal,
+                    iptvOrgPlaylistsFromCache = diskOutcome.stats.playlistsFromCache,
+                    iptvOrgEntriesParsed = diskOutcome.stats.entriesParsed,
+                )
+                Log.i(
+                    TAG,
+                    "Recovered ${diskOutcome.channels.size} iptv-org channels from playlist disk cache",
+                )
+            }
+        }
         if (recovered.daddyFallbacks.isNotEmpty()) {
             val applied = SupplementFallbackOverridesApplier.apply(
                 recovered.daddyFallbacks,
@@ -797,7 +851,7 @@ class SupplementSource(
             daddyChannelFallbacks = applied
             store.writeDaddyFallbacks(applied)
         }
-        return recovered.channels
+        return channels
     }
 
     /**
@@ -1038,56 +1092,78 @@ class SupplementSource(
                         IptvOrgStreamsSource.FetchStats(),
                     )
                 }
-                runCatching {
-                    iptvOrgSource.fetchChannels(
-                        daddyChannels,
-                        environment.supplementIptvOrgImportMode,
-                        environment.iptvOrgEnabledPlaylists,
-                        onProgress = { outcome ->
-                            publishLock.withLock {
-                                iptvStats = outcome.stats
-                                iptvReady = outcome.channels
-                                iptvFallbacks = outcome.daddyFallbacks
-                                publishPartialSupplementCatalog(
-                                    previousCached = previousCached,
-                                    specialEvents = specialEventsReady,
-                                    iptvOrg = iptvReady,
-                                    freeTv = freeTvReady,
-                                    duloCx = duloReady,
-                                    ntvCx = ntvReady,
-                                    adultSwim = adultSwimReady,
-                                    tmdbVod = tmdbVodReady,
-                                    tmdbVodSeries = tmdbSeriesReady,
-                                    daddyFallbackMaps = listOf(
-                                        iptvFallbacks,
-                                        ntvFallbacks,
-                                        adultSwimFallbacks,
-                                        freeTvFallbacks,
-                                        duloFallbacks,
-                                    ),
-                                    syncPatch = currentSyncSnapshot(
-                                        specialEventsReady,
-                                        iptvReady,
-                                        freeTvReady,
-                                        duloReady,
-                                        ntvReady,
-                                        adultSwimReady,
-                                        tmdbVodReady,
-                                        tmdbSeriesReady,
-                                    ),
-                                )
-                            }
-                        },
+                val outcome = withTimeoutOrNull(IptvOrgStreamsConfig.FETCH_BUDGET_MS) {
+                    runCatching {
+                        iptvOrgSource.fetchChannels(
+                            daddyChannels,
+                            environment.supplementIptvOrgImportMode,
+                            environment.iptvOrgEnabledPlaylists,
+                            onProgress = { progress ->
+                                publishLock.withLock {
+                                    iptvStats = progress.stats
+                                    iptvReady = progress.channels
+                                    iptvFallbacks = progress.daddyFallbacks
+                                    publishPartialSupplementCatalog(
+                                        previousCached = previousCached,
+                                        specialEvents = specialEventsReady,
+                                        iptvOrg = iptvReady,
+                                        freeTv = freeTvReady,
+                                        duloCx = duloReady,
+                                        ntvCx = ntvReady,
+                                        adultSwim = adultSwimReady,
+                                        tmdbVod = tmdbVodReady,
+                                        tmdbVodSeries = tmdbSeriesReady,
+                                        daddyFallbackMaps = listOf(
+                                            iptvFallbacks,
+                                            ntvFallbacks,
+                                            adultSwimFallbacks,
+                                            freeTvFallbacks,
+                                            duloFallbacks,
+                                        ),
+                                        syncPatch = currentSyncSnapshot(
+                                            specialEventsReady,
+                                            iptvReady,
+                                            freeTvReady,
+                                            duloReady,
+                                            ntvReady,
+                                            adultSwimReady,
+                                            tmdbVodReady,
+                                            tmdbSeriesReady,
+                                        ),
+                                    )
+                                }
+                            },
+                        )
+                    }.getOrElse { exc ->
+                        if (exc is CancellationException) throw exc
+                        Log.w(TAG, "iptv-org fetch failed", exc)
+                        IptvOrgStreamsSource.FetchOutcome(
+                            emptyList(),
+                            IptvOrgStreamsSource.FetchStats(
+                                playlistsTotal = environment.iptvOrgEnabledPlaylists.size,
+                            ),
+                        )
+                    }
+                } ?: run {
+                    Log.w(TAG, "iptv-org sync slot timed out — prefer disk cache / previous")
+                    IptvOrgStreamsSource.FetchOutcome(
+                        emptyList(),
+                        IptvOrgStreamsSource.FetchStats(
+                            playlistsFailed = environment.iptvOrgEnabledPlaylists.size,
+                            playlistsTotal = environment.iptvOrgEnabledPlaylists.size,
+                        ),
                     )
-                }.getOrElse { exc ->
-                    Log.w(TAG, "iptv-org fetch failed", exc)
-                    IptvOrgStreamsSource.FetchOutcome(emptyList(), IptvOrgStreamsSource.FetchStats())
-                }.also { outcome ->
-                    iptvStats = outcome.stats
-                    iptvFallbacks = outcome.daddyFallbacks
-                    iptvReady = outcome.channels
-                    publishProgress()
                 }
+                val resolved = resolveIptvOrgFallback(
+                    outcome = outcome,
+                    daddyChannels = daddyChannels,
+                    previousCached = previousCached,
+                )
+                iptvStats = resolved.stats
+                iptvFallbacks = resolved.daddyFallbacks
+                iptvReady = resolved.channels
+                publishProgress()
+                resolved
             }
 
             val ntvCxDeferred = async {
@@ -1539,6 +1615,48 @@ class SupplementSource(
             environment = environment,
             dlhdEventResolver = dlhdEventResolver,
         )
+
+    private suspend fun resolveIptvOrgFallback(
+        outcome: IptvOrgStreamsSource.FetchOutcome,
+        daddyChannels: List<Channel>,
+        previousCached: List<SupplementChannel>,
+    ): IptvOrgStreamsSource.FetchOutcome {
+        if (outcome.channels.isNotEmpty()) return outcome
+
+        val diskOutcome = iptvOrgSource.fetchChannelsFromDiskCache(
+            daddyChannels,
+            environment.supplementIptvOrgImportMode,
+            environment.iptvOrgEnabledPlaylists,
+        )
+        if (diskOutcome.channels.isNotEmpty()) {
+            Log.w(
+                TAG,
+                "iptv-org network empty — loaded ${diskOutcome.channels.size} channels from disk cache " +
+                    "(${diskOutcome.stats.playlistsFromCache}/${diskOutcome.stats.playlistsTotal} playlists)",
+            )
+            return diskOutcome
+        }
+
+        val cachedIptv = previousCached.filter { it.id.startsWith("iptv:") }
+        if (cachedIptv.isEmpty()) return outcome
+
+        Log.w(TAG, "iptv-org fetch empty — keeping ${cachedIptv.size} cached channels")
+        val playlistsTotal = outcome.stats.playlistsTotal.takeIf { it > 0 }
+            ?: lastSync.iptvOrgPlaylistsTotal.takeIf { it > 0 }
+            ?: environment.iptvOrgEnabledPlaylists.size
+        return outcome.copy(
+            channels = cachedIptv,
+            stats = outcome.stats.copy(
+                playlistsFetched = lastSync.iptvOrgPlaylistsFetched,
+                playlistsFailed = outcome.stats.playlistsFailed.takeIf { it > 0 }
+                    ?: lastSync.iptvOrgPlaylistsFailed,
+                playlistsFromCache = lastSync.iptvOrgPlaylistsFromCache,
+                entriesParsed = lastSync.iptvOrgEntriesParsed,
+                channelsAfterDedup = cachedIptv.size,
+                playlistsTotal = playlistsTotal,
+            ),
+        )
+    }
 
     companion object {
         private const val TAG = "SupplementSource"

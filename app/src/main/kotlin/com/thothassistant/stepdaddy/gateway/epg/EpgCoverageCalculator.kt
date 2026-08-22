@@ -10,6 +10,7 @@ object EpgCoverageCalculator {
         channels: List<Channel>,
         supplements: List<SupplementChannel>,
         meta: EpgMeta,
+        woftvCatalog: WhatsOnFreeTvEpgCatalog? = null,
     ): EpgCoverage {
         val playlistTotal = channels.size + supplements.size
         val daddyWithTvg = channels.count { !it.tvgId.isNullOrBlank() }
@@ -37,6 +38,11 @@ object EpgCoverageCalculator {
             mappedPercent = mappedPercent,
             programmePercent = programmePercent ?: 0f,
             placeholderProgrammes = meta.placeholderProgrammeCount,
+            woftvCatalogChannelKeys = woftvCatalog?.channelKeyCount() ?: 0,
+            woftvIndexReady = woftvCatalog?.indexReady() == true,
+            woftvCacheStale = woftvCatalog?.cacheStale() ?: true,
+            woftvProgrammesMerged = meta.woftvProgrammesMerged,
+            woftvChannelsFilled = meta.woftvChannelsFilled,
         )
     }
 
@@ -44,5 +50,10 @@ object EpgCoverageCalculator {
         channels: List<Channel>,
         supplementSource: SupplementSource?,
         meta: EpgMeta,
-    ): EpgCoverage = snapshot(channels, supplementSource?.channels().orEmpty(), meta)
+    ): EpgCoverage = snapshot(
+        channels,
+        supplementSource?.channels().orEmpty(),
+        meta,
+        supplementSource?.whatsOnFreeTvEpgCatalog(),
+    )
 }

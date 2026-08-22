@@ -173,6 +173,14 @@ data class EpgCoverage(
     val mappedPercent: Float = 0f,
     val programmePercent: Float = 0f,
     val placeholderProgrammes: Int = 0,
+    /** WOFTV JSON catalog channel keys loaded on disk / in memory. */
+    val woftvCatalogChannelKeys: Int = 0,
+    val woftvIndexReady: Boolean = false,
+    val woftvCacheStale: Boolean = true,
+    /** Last EPG build: programmes merged from WhatsOnFreeTV. */
+    val woftvProgrammesMerged: Int = 0,
+    /** Last EPG build: playlist channels that received WOFTV programmes. */
+    val woftvChannelsFilled: Int = 0,
 )
 
 @Serializable

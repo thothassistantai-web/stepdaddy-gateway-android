@@ -19,10 +19,19 @@ import okhttp3.Request
  * Phone LTE (esp. MVNOs) often ICMP-pings GitHub/jsDelivr but stalls on HTTPS reads.
  * Soft TTL + CDN circuit breaker prefer disk over burning minutes on mirror timeouts.
  */
-class IptvOrgPlaylistCache(
-    context: Context,
+class IptvOrgPlaylistCache private constructor(
+    private val dir: File,
     httpClient: OkHttpClient,
 ) {
+    constructor(context: Context, httpClient: OkHttpClient) : this(
+        File(context.applicationContext.filesDir, "supplement/iptv-org"),
+        httpClient,
+    )
+
+    /** Test-only: [filesRoot] is the app filesDir (cache lives under supplement/iptv-org). */
+    constructor(filesRoot: File, httpClient: OkHttpClient, @Suppress("UNUSED_PARAMETER") testOnly: Boolean) :
+        this(File(filesRoot, "supplement/iptv-org"), httpClient)
+
     /** Isolated client so GitHub/CDN fetches are not queued behind AdultSwim/TMDB stampede. */
     private val fetchClient: OkHttpClient = httpClient.newBuilder()
         .dispatcher(
@@ -39,7 +48,9 @@ class IptvOrgPlaylistCache(
         .retryOnConnectionFailure(true)
         .build()
 
-    private val dir = File(context.applicationContext.filesDir, "supplement/iptv-org").also { it.mkdirs() }
+    init {
+        dir.mkdirs()
+    }
 
     data class FetchResult(
         val filename: String,
@@ -50,6 +61,14 @@ class IptvOrgPlaylistCache(
 
     fun cachedSizeBytes(filename: String): Long =
         bodyFile(filename).takeIf { it.isFile }?.length() ?: 0L
+
+    fun hasCachedBody(filename: String): Boolean = cachedBodyOrNull(filename) != null
+
+    /** Skip network mirrors — used when sync slot times out on slow LTE. */
+    fun loadDiskOnly(filename: String): FetchResult? =
+        cachedBodyOrNull(filename)?.let { body ->
+            FetchResult(filename, body, fromCache = true, httpStatus = 0)
+        }
 
     fun fetch(filename: String): FetchResult? {
         val bodyFile = bodyFile(filename)

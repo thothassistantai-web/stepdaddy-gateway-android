@@ -109,6 +109,8 @@
     <string name="stat_detail_external_epg">External EPG mode (TiviMate loads feeds from playlist)</string>
     <string name="stat_detail_external_feeds">%1$d external feed URL(s) in playlist</string>
     <string name="stat_detail_epg_coverage">%1$,d channels with real programmes · %2$,d mapped tvg-ids</string>
+    <string name="stat_detail_woftv_summary">WhatsOnFreeTV: +%1$,d programmes on %2$,d channels (catalog %3$,d keys)</string>
+    <string name="stat_detail_woftv_unavailable">WhatsOnFreeTV gap-fill: catalog not loaded</string>
     <string name="stat_detail_gateway_version">Gateway %1$s</string>
     <string name="stat_detail_upstream">Upstream: %1$s</string>
     <string name="stat_detail_healing">Healing: %1$s · stream failures %2$d</string>

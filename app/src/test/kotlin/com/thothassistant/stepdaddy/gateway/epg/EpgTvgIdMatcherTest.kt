@@ -25,4 +25,15 @@ class EpgTvgIdMatcherTest {
             EpgTvgIdMatcher.canonicalPlaylistId(expansion, "48Hours.us@SD"),
         )
     }
+
+    @Test
+    fun `expands regional suffix variants for epgshare lookup`() {
+        val expansion = EpgTvgIdMatcher.expandWantedIds(setOf("PlutoTVHorror.us@Germany"))
+        assertTrue(expansion.lookupIds.contains("PlutoTVHorror.us"))
+        assertTrue(expansion.lookupIds.contains("PlutoTVHorror.us@Germany"))
+        assertEquals(
+            "PlutoTVHorror.us@Germany",
+            EpgTvgIdMatcher.canonicalPlaylistId(expansion, "PlutoTVHorror.us"),
+        )
+    }
 }

@@ -18,7 +18,8 @@ object MirrorHlsManifest {
         return buildString {
             appendLine("#EXTM3U")
             appendLine("#EXT-X-VERSION:3")
-            appendLine("#EXT-X-INDEPENDENT-SEGMENTS")
+            // Do not emit EXT-X-INDEPENDENT-SEGMENTS here — backup variants are often
+            // plain media playlists without that tag and TiviMate throws ParserException.
             repeat(count) { index ->
                 val label = labels.getOrNull(index)?.trim().orEmpty()
                 val nameAttr = if (label.isNotEmpty()) {

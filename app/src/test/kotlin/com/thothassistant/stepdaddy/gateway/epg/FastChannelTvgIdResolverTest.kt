@@ -1,7 +1,9 @@
 package com.thothassistant.stepdaddy.gateway.epg
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class FastChannelTvgIdResolverTest {
@@ -91,5 +93,38 @@ class FastChannelTvgIdResolverTest {
         )
         assertEquals("USBD42000073E", match?.tvgId)
         assertEquals("fast_catalog", match?.method)
+    }
+
+    @Test
+    fun validateAndFix_stripsQualitySuffixFromDotId() {
+        assertEquals(
+            "RuntimeEspanol.us",
+            resolver.validateAndFix(
+                currentTvgId = "RuntimeEspanol.us@SD",
+                displayName = "US: RUNTIME ESPAÑOL ᴿᴬᵂ",
+                groupTitle = "Movies",
+                providerTag = "Roku",
+            ),
+        )
+    }
+
+    @Test
+    fun validateAndFix_keepsRegionalSuffixOnDotId() {
+        assertNull(
+            resolver.validateAndFix(
+                currentTvgId = "Telemundo.us@EastHD",
+                displayName = "US: TELEMUNDO EAST HD ᴿᴬᵂ",
+                groupTitle = "Entertainment",
+                providerTag = null,
+            ),
+        )
+    }
+
+    @Test
+    fun isMongoHexId_detects24CharPlutoMongoIds() {
+        assertTrue(FastChannelContext.isMongoHexId("692ebafce72f03e07e7df985"))
+        assertTrue(FastChannelContext.isHashStyleFastId("692ebafce72f03e07e7df985"))
+        assertFalse(FastChannelContext.isMongoHexId("PlutoTVTrueCrime.us"))
+        assertFalse(FastChannelContext.isMongoHexId("USBD42000073E"))
     }
 }

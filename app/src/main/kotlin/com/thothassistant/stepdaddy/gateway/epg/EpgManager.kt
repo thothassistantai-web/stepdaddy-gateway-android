@@ -130,15 +130,26 @@ class EpgManager(
           supplementSource?.prepareFastEpgForBuild()
         }
         supplementSource?.applyNameEpgOverrides()
+        supplementSource?.prepareWhatsOnFreeTvEpgForBuild()
         val namesById = channels.associate { it.id to it.name }
-        val tvgIds = mapper.allTvgIds(channels.map { it.id }, namesById)
+        val tvgIds = buildSet {
+          addAll(mapper.allTvgIds(channels.map { it.id }, namesById))
+          channels.forEach { ch ->
+            ch.tvgId?.trim()?.takeIf { it.isNotEmpty() }?.let { add(it) }
+          }
+        }
         val supplementTvgIds = supplementSource?.tvgIdsForEpg().orEmpty()
         val fastTvgIds = supplementSource?.fastTvgIdsForEpg().orEmpty()
         val iptvOrgTvgIds = supplementSource?.iptvOrgTvgIdsForEpg().orEmpty()
         val sportsTvgIds = supplementSource?.sportsTvgIdsForEpg().orEmpty()
         val channelNamesByTvgId = buildMap<String, String> {
-          channels.forEach { ch -> ch.tvgId?.let { put(it, ch.name) } }
-          supplementSource?.channels()?.forEach { sup -> sup.tvgId?.let { put(it, sup.name) } }
+          channels.forEach { ch ->
+            mapper.tvgIdFor(ch.id, ch.name)?.let { put(it, ch.name) }
+            ch.tvgId?.trim()?.takeIf { it.isNotEmpty() }?.let { put(it, ch.name) }
+          }
+          supplementSource?.channels()?.forEach { sup ->
+            sup.tvgId?.trim()?.takeIf { it.isNotEmpty() }?.let { put(it, sup.name) }
+          }
         }
         val result = withContext(Dispatchers.IO) {
           epgBuilder.build(
@@ -152,9 +163,11 @@ class EpgManager(
               fastEpgFiles = supplementSource?.fastEpgFeedFiles().orEmpty(),
               fastEpgTvgIds = fastTvgIds,
               channelNamesByTvgId = channelNamesByTvgId,
+              whatsOnFreeTvEpgCatalog = supplementSource?.whatsOnFreeTvEpgCatalog(),
               placeholdersEnabled = true,
               placeholderExcludeIds = sportsTvgIds,
               tvtvGapFillEnabled = useTvtvGapFill,
+              forceRefresh = force,
           )
         }
         val elapsed = (System.currentTimeMillis() - started) / 1000.0
@@ -193,6 +206,8 @@ class EpgManager(
             channelsWithProgrammes = result.channelIdsWithProgrammes.size,
             channelsWithRealProgrammes = result.channelsWithRealProgrammes,
             channelsWithPlaceholders = result.channelsWithPlaceholders,
+            woftvProgrammesMerged = result.woftvProgrammesMerged,
+            woftvChannelsFilled = result.woftvChannelsFilled,
         )
         Log.i(
             TAG,

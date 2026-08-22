@@ -8,6 +8,7 @@ object EpgTvgIdMatcher {
     private val QUALITY_SUFFIXES = listOf("@SD", "@HD", "@UHD", "@4K", "@FHD")
     private val REGION_SUFFIXES = listOf(
         "@US", "@UK", "@East", "@West", "@Central", "@Mountain", "@Pacific",
+        "@Germany", "@France", "@Panregional", "@EastHD", "@HDEast", "@WestHD",
     )
 
     fun expandWantedIds(playlistTvgIds: Set<String>): IdExpansion {
