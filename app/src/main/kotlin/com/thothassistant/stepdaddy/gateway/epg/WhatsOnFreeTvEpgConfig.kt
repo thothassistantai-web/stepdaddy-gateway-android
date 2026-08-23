@@ -66,5 +66,9 @@ object WhatsOnFreeTvEpgConfig {
         "nbc 26 green bay wi" to "nbc 26 wgba green bay",
         "int nbc 4 new york" to "nbc 4 new york news",
         "real housewives" to "real housewives vault",
+        "intervention" to "intervention by a and e",
+        "pluto comedy movies" to "pluto comedy",
+        "real crime uncovered" to "real crime",
+
     )
 }

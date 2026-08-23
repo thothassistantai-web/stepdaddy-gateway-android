@@ -1,0 +1,492 @@
+{
+  "generated_at": "2026-08-23T03:57:17.406588+00:00",
+  "policy": "Exclude from eligible EPG coverage denominator. Never invent commercial guide bridges or placeholder programmes that count toward coverage. UI Community badge is optional follow-up.",
+  "count": 96,
+  "by_group": {
+    "Entertainment": 21,
+    "Local Channels": 74,
+    "Movies": 1
+  },
+  "channels": [
+    {
+      "tvg_id": "CKNDDT.ca",
+      "name": "INT: GLOBAL NEWS WINNIPEG ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "Access19.us@SD",
+      "name": "US: ACCESS 19 ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "Access4PAC.us@SD",
+      "name": "US: ACCESS 4 PAC ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "AccessNashua.us@SD",
+      "name": "US: ACCESS NASHUA ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "AccessVisionChannel16.us@SD",
+      "name": "US: ACCESSVISION CHANNEL 16 ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "BATVPublicChannel.us@SD",
+      "name": "US: BATV PUBLIC CHANNEL ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "BerksCommunityTV.us@SD",
+      "name": "US: BERKS COMMUNITY TV ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "BIGCommunityChannel.us@SD",
+      "name": "US: BIG COMMUNITY CHANNEL ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "BATV.us@SD",
+      "name": "US: BLOOMFIELD ACCESS TV CHANNEL 5 ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "CCTV.us@SD",
+      "name": "US: CHARLOTTE COUNTY CC-TV (CHARLOTTE COUNTY FA) ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "CityofMonroeGovernmentChannel.us@SD",
+      "name": "US: CITY OF MONROE GOVERNMENT CHANNEL ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "CMTV.us@SD",
+      "name": "US: COSTA MESA'S MUNICIPAL ACCESS CHANNEL CMTV 3 ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "66fedd65d7de140008dccd66",
+      "name": "US: EL REINO INFANTIL ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "GillettePublicAccessTelevisionChannel190.us@SD",
+      "name": "US: GILLETTE PUBLIC ACCESS TELEVISION CHANNEL 190 ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "HCTVPublicAccessChannel.us@SD",
+      "name": "US: HCTV PUBLIC ACCESS CHANNEL ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "MonroeCommunityMediaPublicAccessChannel.us@SD",
+      "name": "US: MONROE COMMUNITY MEDIA PUBLIC ACCESS CHANNEL ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "NatickPublicAccessChannel.us@SD",
+      "name": "US: NATICK PUBLIC ACCESS CHANNEL ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "Olelo55.us@SD",
+      "name": "US: OLELO COMMUNITY MEDIA CHANNEL 55 ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "OntarioPublicAccessChannel.us@SD",
+      "name": "US: ONTARIO PUBLIC ACCESS CHANNEL ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "PCTV28.us@SD",
+      "name": "US: PINOLE COMMUNITY TELEVISION (PCTV) CHANNEL 28 (PINOLE CA) ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "TVSAPublicChannel.us@SD",
+      "name": "US: TVSA PUBLIC CHANNEL ᴿᴬᵂ",
+      "group": "Entertainment"
+    },
+    {
+      "tvg_id": "AccessHumboldt.us@SD",
+      "name": "US: ACCESS HUMBOLDT ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "AMP1.us@SD",
+      "name": "US: ACCESS MEDIA PRODUCTIONS CHANNEL ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "AMP2.us@SD",
+      "name": "US: ACCESS MEDIA PRODUCTIONS COMMUNITY CHANNEL ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "TheCityofMarina.us@SD",
+      "name": "US: ACCESS MEDIA PRODUCTIONS MARINA TV ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "TheMontereyChannel.us@SD",
+      "name": "US: ACCESS MEDIA PRODUCTIONS MONTEREY CHANNEL ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "ThePeninsulaChannel.us@SD",
+      "name": "US: ACCESS MEDIA PRODUCTIONS PENINSULA CHANNEL ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "AccessSacramentoChannel17.us@SD",
+      "name": "US: ACCESS SACRAMENTO CHANNEL 17 ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "AccessTuolumne.us@SD",
+      "name": "US: ACCESS TUOLUMNE (TUOLUMNE COUNTY CA) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "CVCEducation.us@SD",
+      "name": "US: BOLTON COMMUNITY VOICE CHANNEL (CVC) EDUCATION (BOLTON CT) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "CVCGovernment.us@SD",
+      "name": "US: BOLTON COMMUNITY VOICE CHANNEL (CVC) GOVERNMENT (BOLTON CT) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "CVCPublic.us@SD",
+      "name": "US: BOLTON COMMUNITY VOICE CHANNEL (CVC) PUBLIC (BOLTON CT) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "BUTV10.us@SD",
+      "name": "US: BUTV10 (BOSTON UNIVERSITY) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "CGTV.us@SD",
+      "name": "US: CHAMPAIGN GOVERNMENT TELEVISION (CGTV) (CHAMPAIGN IL) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "",
+      "name": "US: COX MERIDEN PUBLIC ACCESS CHANNEL 15 (MERIDEN CT) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "CreaTVChannel27.us@SD",
+      "name": "US: CREATV BAY VOICE TV CHANNEL 27 (SAN JOSE CA) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "CreaTVChannel28.us@SD",
+      "name": "US: CREATV CLASSROOMS CHANNEL 28 (SAN JOSE CA) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "CreaTVChannel15.us@SD",
+      "name": "US: CREATV COMMUNITY CHANNEL 15 (SAN JOSE CA) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "CreaTVChannel30.us@SD",
+      "name": "US: CREATV THE OUTLET CHANNEL 30 (SAN JOSE CA) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "CypressChannel36.us@SD",
+      "name": "US: CYPRESS PUBLIC ACCESS CHANNEL 36 (CYPRESS CA) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "DCC.us@SD",
+      "name": "US: DC COUNCIL CHANNEL ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "DCCouncilHearingRoom120.us@SD",
+      "name": "US: DC.GOV COUNCIL HEARING ROOM 120 (WASHINGTON DC) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "DKN.us@SD",
+      "name": "US: DC.GOV DKN (WASHINGTON DC) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "EscambiaCountyTV.us@SD",
+      "name": "US: ESCAMBIA COUNTY TV ECTV (ESCAMBIA COUNTY FL) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "CityofFairfieldChannel26.us@SD",
+      "name": "US: FAIRFIELD GOVERNMENT ACCESS CHANNEL 26 (FAIRFIELD CA) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "FCPublicMedia.us@SD",
+      "name": "US: FC PUBLIC MEDIA (FORT COLLINS CO) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "FernandinaBeachChannel.us@SD",
+      "name": "US: FERNANDINA BEACH CITY MEETING (FERNANDINA BEACH FL) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "KFONTV.us@SD",
+      "name": "US: FONTANA COMMUNITY TELEVISION ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "CMAC1.us@SD",
+      "name": "US: FRESNO CMAC 1 PUBLIC CHANNEL ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "CMAC2.us@SD",
+      "name": "US: FRESNO CMAC 2 EDUCATION CHANNEL ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "CMAC3.us@SD",
+      "name": "US: FRESNO CMAC 3 GOVERNMENT CHANNEL ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "Community12TV.us@SD",
+      "name": "US: GAINESVILLE COMMUNITY 12TV (GAINESVILLE FL) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "GalvestonCountyTV.us@SD",
+      "name": "US: GALVESTON COUNTY TV ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "GCOtv.us@SD",
+      "name": "US: GOLDEN COMMUNITY TELEVISION (GCO.TV) (GOLDEN CO) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "HKTV.us@SD",
+      "name": "US: HADDAM KILLINGWORTH HIGH SCHOOL TV (HKTV) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "G10TV.us@SD",
+      "name": "US: JACKSONVILLE ONSLOW GOVERNMENT TELEVISION (G10TV) (JACKSONVILLE NC) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "KCAT.us@SD",
+      "name": "US: KCAT PUBLIC MEDIA TV ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "LeominsterTVEducational.us@SD",
+      "name": "US: LEOMINSTER TV EDUCATIONAL ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "LeominsterTVGovernment.us@SD",
+      "name": "US: LEOMINSTER TV GOVERNMENT ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "LeominsterTVPublic.us@SD",
+      "name": "US: LEOMINSTER TV PUBLIC ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "MSTV.us@SD",
+      "name": "US: MANATEE SCHOOLS TELEVISION MSTV (MANATEE COUNTY FL) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "MidpenMediaCenterChannel30.us@SD",
+      "name": "US: MIDPEN MEDIA CENTER ARTS ISSUES AND LIFESTYLES CHANNEL 30 ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "MidpenMediaCenterChannel75.us@SD",
+      "name": "US: MIDPEN MEDIA CENTER DIVERSITY AND CULTURE CHANNEL 75 ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "MidpenMediaCenterChannel26.us@SD",
+      "name": "US: MIDPEN MEDIA CENTER GOVERNMENT ETC CHANNEL 26 ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "MidpenMediaCenterChannel29.us@SD",
+      "name": "US: MIDPEN MEDIA CENTER GOVERNMENT ETC CHANNEL 29 ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "MidpenMediaCenterChannel28.us@SD",
+      "name": "US: MIDPEN MEDIA CENTER YOUTH EDUCATION AND SPORTS CHANNEL 28 ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "MCPSSTV.us@SD",
+      "name": "US: MOBILE COUNTY PUBLIC SCHOOLS TV NETWORK (MCPSS) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "MonroeCountyTV.us@SD",
+      "name": "US: MONROE COUNTY TELEVISION MCTV (MONROE COUNTY FL) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "NCMEducationalKidsChannel.us@SD",
+      "name": "US: NCM EDUCATIONAL & KIDS CHANNEL ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "NCMGovernmentPoliticsChannel.us@SD",
+      "name": "US: NCM GOVERNMENT & POLITICS ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "KOCTChannel18.us@SD",
+      "name": "US: OCEANSIDE COMMUNITY TELEVISION (KOCT) COMMUNITY CHANNEL 18 ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "KOCTChannel19.us@SD",
+      "name": "US: OCEANSIDE COMMUNITY TELEVISION (KOCT) EDUCATION AND GOVERNMENT CHANNEL 19 ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "OrangeGovernmentAccessTV.us@SD",
+      "name": "US: ORANGE GOVERNMENT ACCESS TV (ORANGE CT) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "PBCTVChannel20.us@SD",
+      "name": "US: PALM BEACH COUNTY TV CHANNEL 20 (PALM BEACH COUNTY FL) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "PascoTV.us@SD",
+      "name": "US: PASCO TV (PASCO COUNTY FL) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "PSDTV.us@SD",
+      "name": "US: POUDRE SCHOOL DISTRICT TV (PSD TV) (FORT COLLINS CO) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "RedApple21.us@SD",
+      "name": "US: RED APPLE 21 (FAIRFAX COUNTY PUBLIC SCHOOLS) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "RCTV.us@SD",
+      "name": "US: RIFLE COMMUNITY TV RCTV (RIFLE CO) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "RockyHillChannel16.us@SD",
+      "name": "US: ROCKY HILL GOVERNMENT ACCESS CHANNEL 16 ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "SMCTVChannel24.us@SD",
+      "name": "US: SANTA MARIA COMMUNITY TELEVISION EDUCATION CHANNEL ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "SMCTVChannel23.us@SD",
+      "name": "US: SANTA MARIA COMMUNITY TELEVISION GOVERNMENT CHANNEL ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "SMCTVChannel25.us@SD",
+      "name": "US: SANTA MARIA COMMUNITY TELEVISION PUBLIC ACCESS CHANNEL ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "SFCommons29.us@SD",
+      "name": "US: SF COMMONS CHANNEL 29 (SAN FRANCISCO CA) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "SFCommons76.us@SD",
+      "name": "US: SF COMMONS CHANNEL 76 (SAN FRANCISCO CA) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "SGTV.us@SD",
+      "name": "US: SGTV (SEMINOLE COUNTY FL) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "SLOCountyChannel21.us@SD",
+      "name": "US: SLO COUNTY CHANNEL 21 ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "SoundViewCommunityMedia.us@SD",
+      "name": "US: SOUND VIEW COMMUNITY MEDIA EDUCATION ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "",
+      "name": "US: SOUND VIEW COMMUNITY MEDIA GOVERNMENT ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "Thornton8.us@SD",
+      "name": "US: THORNTON GOVERNMENT ACCESS CHANNEL 17 (THORNTON CO) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "CommunityTVChannel189.us@SD",
+      "name": "US: TRAVERSE AREA COMMUNITY MEDIA COMMUNITYTV CHANNEL 189 (TRAVERSE CITY MI) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "UCTV.us@SD",
+      "name": "US: UCTV UNIVERSITY OF CALIFORNIA ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "VCAT.us@SD",
+      "name": "US: VALLEJO COMMUNITY ACCESS TELEVISION (V-CAT) (VALLEJO CA) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "VSCTV.us@SD",
+      "name": "US: VALLEY SHORE COMMUNITY TELEVISION (VSCTV) (CLINTON CT) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "WhitePlainsCommunityMedia.us@SD",
+      "name": "US: WHITE PLAINS COMMUNITY MEDIA ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "WCATDT15.us@SD",
+      "name": "US: WINTHROP COMMUNITY ACCESS TV (WCAT 15) ᴿᴬᵂ",
+      "group": "Local Channels"
+    },
+    {
+      "tvg_id": "WhitewaterEducationTelevision.us",
+      "name": "US: WETV HD",
+      "group": "Movies"
+    }
+  ]
+}

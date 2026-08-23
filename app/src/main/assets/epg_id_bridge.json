@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-21T06:24:47.134489+00:00",
-  "bridge_count": 580,
+  "generated_at": "2026-08-23T03:55:26.848204+00:00",
+  "bridge_count": 815,
   "bridge": {
     "13.tv.HD.pl": [
       "13.tv.HD.pl"
@@ -15,6 +15,18 @@
       "5USA.ch",
       "5.USA.uk"
     ],
+    "632b619c8d2a6c0007ff534e": [
+      "KIRO-DT.us_locals1"
+    ],
+    "654933e253fc970008390114": [
+      "Universal.Action.us2"
+    ],
+    "65a9b20f0c7ff50008d3a3b6": [
+      "Universal.Monsters.us2"
+    ],
+    "67817323dd7846fe546940dd": [
+      "QVC2.us2"
+    ],
     "6eren.dk": [
       "6'eren.Denmark.(DK,DA).no",
       "6'eren.dk"
@@ -22,76 +34,26 @@
     "6ter.fr": [
       "6ter.fr"
     ],
+    "99951245": [
+      "Universal.Crime.us2"
+    ],
+    "99991622": [
+      "Stories.by.AMC.us2"
+    ],
     "A.and.E.HD.East.us2": [
       "A.and.E.HD.East.us2"
     ],
     "ABC.us": [
       "ABC.TV.cz"
     ],
-    "ACCNetwork.us": [
-      "ACC.Network.us2"
-    ],
-    "AMCPlus.us": [
-      "AMC.HD.us2",
-      "AMC+.us2"
-    ],
-    "ASpor.tr": [
-      "A.SPOR.HD.tr",
-      "A.SPOR.tr",
-      "A.Spor.al"
-    ],
-    "ATTSportsNetPittsburgh.us": [
-      "SportsNet.Pittsburgh.HD.us2"
-    ],
-    "ATV.tr": [
-      "ATV.tr"
-    ],
-    "AXN.it": [
-      "Eurosport.1.HD.at",
-      "AXN.es",
-      "AXN.HD.pt",
-      "AXN.HD.pl",
-      "AXN.pl",
-      "AXN.cz",
-      "AXN.HD.cz",
-      "AXN.hu",
-      "AXN.HD.ro",
-      "AXN.ro",
-      "AXN.bg",
-      "AXN.hr",
-      "AXN.rs",
-      "AXN.co",
-      "AXN.(Axn).pe",
-      "AXN.HD.(AXNHD).pe",
-      "AXN.HD..uy",
-      "AXN.HD.uy",
-      "AXN..uy",
-      "AXN.HD.my",
-      "AXN.(HD).sg",
-      "AXN.HD.ph",
-      "AXN.ph",
-      "AXN.HD.vn",
-      "AXN.HD.id",
-      "AXN.id",
-      "AXN.kr",
-      "AXN.hk",
-      "AXN.br",
-      "AXN\u30df\u30b9\u30c6\u30ea\u30fc.HD.jp",
-      "Axn.ph",
-      "AXN.(HD).ro"
-    ],
-    "AXNMovies.pt": [
-      "AXN.Movies.HD.pt",
-      "AXN.Movies.es"
-    ],
-    "AXSTV.us": [
-      "AXS.TV.us2"
-    ],
     "AbuDhabiSports1.ae": [
       "Abu.Dhabi.Sports.1.ae"
     ],
     "AbuDhabiSports2.ae": [
       "Abu.Dhabi.Sports.2.ae"
+    ],
+    "ACCNetwork.us": [
+      "ACC.Network.us2"
     ],
     "AdultSwim.us": [
       "AdultSwim.com.Cartoon.Network.us2",
@@ -113,6 +75,10 @@
     ],
     "AltitudeSports.us": [
       "Altitude.Sports.us2"
+    ],
+    "AMCPlus.us": [
+      "AMC.HD.us2",
+      "AMC+.us2"
     ],
     "American.Heroes.Channel.HD.us2": [
       "American.Heroes.Channel.HD.us2"
@@ -225,8 +191,72 @@
       "Arena.Sport.9.HD.(RS).rs",
       "Arena.Sport.9.HD.hr"
     ],
+    "arte.de": [
+      "arte.de"
+    ],
+    "arte.fr": [
+      "arte.fr"
+    ],
+    "ASpor.tr": [
+      "A.SPOR.HD.tr",
+      "A.SPOR.tr",
+      "A.Spor.al"
+    ],
     "AstroCricket.my": [
       "Astro.Cricket.my"
+    ],
+    "ATTSportsNetPittsburgh.us": [
+      "SportsNet.Pittsburgh.HD.us2"
+    ],
+    "ATV.tr": [
+      "ATV.tr"
+    ],
+    "AWEPlus.us": [
+      "AWE.Plus.us2"
+    ],
+    "AWEPlus.us@SD": [
+      "AWE.Plus.us2"
+    ],
+    "AXN.it": [
+      "Eurosport.1.HD.at",
+      "AXN.es",
+      "AXN.HD.pt",
+      "AXN.HD.pl",
+      "AXN.pl",
+      "AXN.cz",
+      "AXN.HD.cz",
+      "AXN.hu",
+      "AXN.HD.ro",
+      "AXN.ro",
+      "AXN.bg",
+      "AXN.hr",
+      "AXN.rs",
+      "AXN.co",
+      "AXN.(Axn).pe",
+      "AXN.HD.(AXNHD).pe",
+      "AXN.HD..uy",
+      "AXN.HD.uy",
+      "AXN..uy",
+      "AXN.HD.my",
+      "AXN.(HD).sg",
+      "AXN.HD.ph",
+      "AXN.ph",
+      "AXN.HD.vn",
+      "AXN.HD.id",
+      "AXN.id",
+      "AXN.kr",
+      "AXN.hk",
+      "AXN.br",
+      "AXNミステリー.HD.jp",
+      "Axn.ph",
+      "AXN.(HD).ro"
+    ],
+    "AXNMovies.pt": [
+      "AXN.Movies.HD.pt",
+      "AXN.Movies.es"
+    ],
+    "AXSTV.us": [
+      "AXS.TV.us2"
     ],
     "BBCAmerica.us": [
       "BBC.America.HD.us2"
@@ -237,9 +267,6 @@
       "BBC.four.de",
       "BBC.Four.ch",
       "BBC.Four.cz"
-    ],
-    "BBCNL.nl": [
-      "Eurosport.1.nl"
     ],
     "BBCNews.uk": [
       "BBC.NEWS.HD.uk",
@@ -273,6 +300,9 @@
       "BBC.News.kr",
       "BBC.News.hk"
     ],
+    "BBCNL.nl": [
+      "Eurosport.1.nl"
+    ],
     "BBCOne.uk": [
       "BBC.One.CI.HD.uk",
       "BBC.One.NI.HD.uk",
@@ -298,6 +328,94 @@
       "BBC.Two.nl",
       "BBC.Two.cz"
     ],
+    "beIN.SPORTS.1.fr": [
+      "beIN.SPORTS.1.fr"
+    ],
+    "beIN.SPORTS.MAX.10.fr": [
+      "beIN.SPORTS.MAX.10.fr"
+    ],
+    "beIN.SPORTS.MAX.6.fr": [
+      "beIN.SPORTS.MAX.6.fr"
+    ],
+    "beIN.SPORTS.MAX.7.fr": [
+      "beIN.SPORTS.MAX.7.fr"
+    ],
+    "beIN.SPORTS.MAX.8.fr": [
+      "beIN.SPORTS.MAX.8.fr"
+    ],
+    "beIN.SPORTS.MAX.9.fr": [
+      "beIN.SPORTS.MAX.9.fr"
+    ],
+    "beINSports.qa": [
+      "Beinsports.tr",
+      "BeIN.Sports.es",
+      "beIN.Sports.HD.ae",
+      "beIN.Sports.HD.(Canada).ca2",
+      "beIN.SPORTS.(HD).sg"
+    ],
+    "beINSports1.qa": [
+      "beINSports1.au",
+      "beIN.SPORTS.1.fr",
+      "beIN.SPORTS.1.tr",
+      "beIN.SPORTS.1.my",
+      "BEIN.SPORTS.1.HD.ph",
+      "beIN.Sports.1.HD.id",
+      "beIN.Sports.1.id",
+      "beIN.SPORTS.1.hk"
+    ],
+    "beINSports2.qa": [
+      "beINSports2.au",
+      "beIN.SPORTS.2.fr",
+      "beIN.SPORTS.2.tr",
+      "Beinsports.2.tr",
+      "beIN.SPORTS.2.my",
+      "beIN.SPORTS.2.(HD).sg",
+      "BEIN.SPORTS.2.HD.ph",
+      "beIN.Sports.2.HD.id",
+      "beIN.Sports.2.id",
+      "beIN.SPORTS.2.hk"
+    ],
+    "beINSports3.qa": [
+      "beINSports3.au",
+      "beIN.SPORTS.3.fr",
+      "beIN.SPORTS.3.tr",
+      "Beinsports.3.tr",
+      "beIN.SPORTS.3.my",
+      "beIN.SPORTS.3.(HD).sg",
+      "BEIN.SPORTS.3.HD.ph",
+      "beIN.Sports.3.HD.id",
+      "beIN.Sports.3.id",
+      "beIN.SPORTS.3.hk"
+    ],
+    "beINSports4.qa": [
+      "beIN.SPORTS.4.tr",
+      "Beinsports.4.tr",
+      "beIN.SPORTS.4.(HD).sg",
+      "beIN.SPORTS.4.id",
+      "beIN.SPORTS.4.hk"
+    ],
+    "beINSports5.qa": [
+      "beIN.SPORTS.5.(HD).sg",
+      "beIN.SPORTS.5.id",
+      "beIN.SPORTS.5.hk"
+    ],
+    "beINSports6.qa": [
+      "beIN.SPORTS.6.hk"
+    ],
+    "beINSportsHaber.tr": [
+      "beIN.SPORTS.5.(HD).sg",
+      "beIN.SPORTS.HABER.HD.tr",
+      "Bein.Sports.Haber.tr"
+    ],
+    "beINSportsMax9.qa": [
+      "beIN.SPORTS.MAX.9.fr"
+    ],
+    "beINSportsUSA.us": [
+      "beIN.Sports.USA.HD.us2"
+    ],
+    "BenficaTV.pt": [
+      "Benfica.TV.fr"
+    ],
     "BET.us": [
       "BET.HD.(Pacific).us2",
       "BET.HD.us2",
@@ -308,11 +426,11 @@
     "BFMTV.fr": [
       "BFM.TV.fr"
     ],
-    "BenficaTV.pt": [
-      "Benfica.TV.fr"
-    ],
     "BigTenNetwork.us": [
       "Big.Ten.Network.HD.us2"
+    ],
+    "Binge.us@SD": [
+      "BINGE-TV.us2"
     ],
     "Boomerang.us": [
       "Boomerang.HD.uk",
@@ -330,6 +448,9 @@
       "BOOMERANG.ph",
       "Boomerang.(Thai).th"
     ],
+    "Bounce.us@SD": [
+      "Bounce.TV.us2"
+    ],
     "Bravo.us": [
       "Bravo.HD.us2",
       "Bravo.(Pacific).us2",
@@ -338,78 +459,15 @@
       "Bravo.nz",
       "Bravo.ng"
     ],
+    "bTV.bg": [
+      "bTV.bg"
+    ],
+    "bTVAction.bg": [
+      "bTV.Action.bg"
+    ],
     "C8.fr": [
-      "|\u0017\u0000c8}.]\u017ef\u0017.bm",
+      "|\u0017\u0000c8}.]žf\u0017.bm",
       ".c\u0017%8"
-    ],
-    "CBCNewsNetwork.ca": [
-      "CBC.ae",
-      "CBC.News.Network.ca2",
-      "CBC.News.Network.HD.ca2"
-    ],
-    "CBS.us": [
-      "CBS.West.us2"
-    ],
-    "CBSSportsNetworkUSA.us": [
-      "CBS.Sports.Network.HD.us2"
-    ],
-    "CMT.us": [
-      "CMT.HD.us2"
-    ],
-    "CMoreFirst.se": [
-      "C.More.First.dk"
-    ],
-    "CMoreHits.se": [
-      "C.More.Hits.dk"
-    ],
-    "CMoreSeries.se": [
-      "C.More.Series.dk"
-    ],
-    "CNBC.us": [
-      "CNBC.us"
-    ],
-    "CNN.us": [
-      "CNN.HD.us2",
-      "CNN.HD.uk",
-      "CNN.uk",
-      "CNN.HD.ie",
-      "CNN.ch",
-      "CNN.fr",
-      "CNN.pt",
-      "CNN.nl",
-      "CNN.pl",
-      "CNN.hu",
-      "CNN.HD.ro",
-      "CNN.ro",
-      "CNN.gr",
-      "CNN.(BIH).ba",
-      "CNN.hr",
-      "CNN.(RS).rs",
-      "CNN.dk",
-      "CNN.lt",
-      "CNN.HD.cy",
-      "CNN.HD.ca2",
-      "CNN.HD.uy",
-      "CNN.nz",
-      "CNN.in",
-      "CNN.HD.my",
-      "CNN.HD.ph",
-      "CNN.ph",
-      "CNN.HD.vn",
-      "CNN.U.S..jp",
-      "CNN\uff4a.jp",
-      "Cnn.Hd.ph"
-    ],
-    "CNNPortugal.pt": [
-      "CMTV.HD.pt",
-      "CNN.Portugal.HD.pt",
-      "CNN.Portugal.lu"
-    ],
-    "CNews.fr": [
-      "CNews.fr"
-    ],
-    "CSPAN.us": [
-      "CSPAN.us2"
     ],
     "Canal.plus.Sport.6.cz": [
       "Canal.plus.Sport.6.cz"
@@ -564,11 +622,25 @@
       "CARTOON.NETWORK.in",
       "Cartoon.Network.(HD).ro"
     ],
+    "CBCNewsNetwork.ca": [
+      "CBC.ae",
+      "CBC.News.Network.ca2",
+      "CBC.News.Network.HD.ca2"
+    ],
+    "CBS.us": [
+      "CBS.West.us2"
+    ],
+    "CBSSportsNetworkUSA.us": [
+      "CBS.Sports.Network.HD.us2"
+    ],
     "Channel.4.HD.uk": [
       "Channel.4.HD.uk"
     ],
     "Channel5.uk": [
       "Channel.5.HD.uk"
+    ],
+    "Cheddar.us": [
+      "Cheddar.us2"
     ],
     "Cinemax.us": [
       "Cinemax.HD.(Pacific).us2",
@@ -604,6 +676,12 @@
       "Cinemax.ph",
       "Cinemax.(HD).ro"
     ],
+    "CinemaxLatino.us": [
+      "Cinemax.Spanish.HD.us2"
+    ],
+    "CinemaxLatino.us@SD": [
+      "Cinemax.Spanish.HD.us2"
+    ],
     "CitytvSaskatchewan.ca": [
       "CityTv.ca2"
     ],
@@ -612,6 +690,67 @@
     ],
     "CleoTV.us": [
       "Cleo.TV.HD.us2"
+    ],
+    "CMoreFirst.se": [
+      "C.More.First.dk"
+    ],
+    "CMoreHits.se": [
+      "C.More.Hits.dk"
+    ],
+    "CMoreSeries.se": [
+      "C.More.Series.dk"
+    ],
+    "CMT.us": [
+      "CMT.HD.us2"
+    ],
+    "CNBC.us": [
+      "CNBC.HD.us2"
+    ],
+    "CNews.fr": [
+      "CNews.fr"
+    ],
+    "CNN.us": [
+      "CNN.HD.us2",
+      "CNN.HD.uk",
+      "CNN.uk",
+      "CNN.HD.ie",
+      "CNN.ch",
+      "CNN.fr",
+      "CNN.pt",
+      "CNN.nl",
+      "CNN.pl",
+      "CNN.hu",
+      "CNN.HD.ro",
+      "CNN.ro",
+      "CNN.gr",
+      "CNN.(BIH).ba",
+      "CNN.hr",
+      "CNN.(RS).rs",
+      "CNN.dk",
+      "CNN.lt",
+      "CNN.HD.cy",
+      "CNN.HD.ca2",
+      "CNN.HD.uy",
+      "CNN.nz",
+      "CNN.in",
+      "CNN.HD.my",
+      "CNN.HD.ph",
+      "CNN.ph",
+      "CNN.HD.vn",
+      "CNN.U.S..jp",
+      "CNNｊ.jp",
+      "Cnn.Hd.ph"
+    ],
+    "CNNInternational.us": [
+      "CNN.International.us2"
+    ],
+    "CNNInternational.us@MENA": [
+      "CNN.International.us2"
+    ],
+    "CNNPortugal.pt": [
+      "CMTV.HD.pt",
+      "CNN.Portugal.HD.pt",
+      "CNN.Portugal.lu"
     ],
     "Combate.br": [
       "Combate.br"
@@ -685,11 +824,26 @@
       "COSMOTE.Sport.9.HD.gr",
       "COSMOTESport9.HD.gr"
     ],
+    "CourtTV.us": [
+      "Court.TV.us2"
+    ],
+    "CourtTV.us@SD": [
+      "Court.TV.us2"
+    ],
     "CrimePlusInvestigation.us": [
       "Crime+Investigation.nl"
     ],
+    "CSPAN.us": [
+      "CSPAN.us2"
+    ],
     "Cuatro.es": [
       "Cuatro.es"
+    ],
+    "CW.us": [
+      "CW.us2"
+    ],
+    "CW.us@East": [
+      "CW.us2"
     ],
     "DAZN.1.de": [
       "DAZN.1.de"
@@ -710,11 +864,11 @@
     "DAZNLaLiga.uk": [
       "DAZN.LALIGA.es"
     ],
-    "DR1.dk": [
-      "DR1.dk"
+    "DePeliculaUS.us": [
+      "De.Pelicula.us2"
     ],
-    "DR2.dk": [
-      "DR2.dk"
+    "DePeliculaUS.us@SD": [
+      "De.Pelicula.us2"
     ],
     "Deportes2porMovistarPlus.es": [
       "Movistar.Deportes.2.es"
@@ -785,6 +939,15 @@
     "DisneyXD.us": [
       "Disney.Channel.HD.us2"
     ],
+    "DogTV.us@SD": [
+      "DOG.TV.us2"
+    ],
+    "DR1.dk": [
+      "DR1.dk"
+    ],
+    "DR2.dk": [
+      "DR2.dk"
+    ],
     "DubaiRacing2.ae": [
       "Dubai.Racing.2.ae"
     ],
@@ -801,7 +964,37 @@
       "E4.ie",
       "E4.ch",
       "E4.HD.UK.cz",
-      ".e4\u0006\u007f"
+      ".e4\u0006"
+    ],
+    "Eleven.Sports.1.HD.pl": [
+      "Eleven.Sports.1.HD.pl"
+    ],
+    "Eleven.Sports.2.HD.pl": [
+      "Eleven.Sports.2.HD.pl"
+    ],
+    "Eleven.Sports.3.HD.pl": [
+      "Eleven.Sports.3.HD.pl"
+    ],
+    "Eleven.Sports.4.HD.pl": [
+      "Eleven.Sports.4.HD.pl"
+    ],
+    "ElevenSports14K.pl": [
+      "Eleven.Sports.1.HD.pl"
+    ],
+    "ElevenSports2.pl": [
+      "Eleven.Sports.2.HD.pl",
+      "Eleven.Sports.2.pl",
+      "Eleven.Sports.2.cz"
+    ],
+    "ElevenSports3.pl": [
+      "Eleven.Sports.3.HD.pl",
+      "Eleven.Sports.3.pl",
+      "Eleven.Sports.3.cz"
+    ],
+    "ElevenSports4.pl": [
+      "Eleven.Sports.4.HD.pl",
+      "Eleven.Sports.4.pl",
+      "Eleven.Sports.4.cz"
     ],
     "ERTNews.gr": [
       "Novasports.News.HD.gr"
@@ -876,44 +1069,17 @@
     "ESPNDeportes.us": [
       "ESPN.Deportes.HD.us2"
     ],
+    "ESPNews.us": [
+      "ESPNEWS.HD.us2"
+    ],
     "ESPNPremium.ar": [
       "FOX.SPORTS.HD.tr"
     ],
     "ESPNU.us": [
       "ESPNU.HD.us2"
     ],
-    "ESPNews.us": [
-      "ESPNEWS.HD.us2"
-    ],
-    "Eleven.Sports.1.HD.pl": [
-      "Eleven.Sports.1.HD.pl"
-    ],
-    "Eleven.Sports.2.HD.pl": [
-      "Eleven.Sports.2.HD.pl"
-    ],
-    "Eleven.Sports.3.HD.pl": [
-      "Eleven.Sports.3.HD.pl"
-    ],
-    "Eleven.Sports.4.HD.pl": [
-      "Eleven.Sports.4.HD.pl"
-    ],
-    "ElevenSports14K.pl": [
-      "Eleven.Sports.1.HD.pl"
-    ],
-    "ElevenSports2.pl": [
-      "Eleven.Sports.2.HD.pl",
-      "Eleven.Sports.2.pl",
-      "Eleven.Sports.2.cz"
-    ],
-    "ElevenSports3.pl": [
-      "Eleven.Sports.3.HD.pl",
-      "Eleven.Sports.3.pl",
-      "Eleven.Sports.3.cz"
-    ],
-    "ElevenSports4.pl": [
-      "Eleven.Sports.4.HD.pl",
-      "Eleven.Sports.4.pl",
-      "Eleven.Sports.4.cz"
+    "EstrellaTV.us": [
+      "Estrella.TV.us2"
     ],
     "Eurosport.1.HD.at": [
       "Eurosport.1.HD.at"
@@ -954,16 +1120,6 @@
       "Eurosport.1.HD.cy",
       "Eurosport.1.be",
       "Eurosport.1.(HD).ro"
-    ],
-    "FOX.HD.pl": [
-      "FOX.HD.pl"
-    ],
-    "FXX.us": [
-      "FXX.HD.(Pacific).us2",
-      "FXX.HD.us2"
-    ],
-    "FYI.us": [
-      "FYI.Channel.HD.us2"
     ],
     "FanDuelSportsNetwork.us": [
       "FanDuel.Sports.Network.us",
@@ -1054,6 +1210,9 @@
       "Food.Network.ng",
       "Food.Network.(HD).ro"
     ],
+    "FOX.HD.pl": [
+      "FOX.HD.pl"
+    ],
     "Fox.us": [
       "FOX.HD.pl",
       "FOX.pl",
@@ -1064,8 +1223,8 @@
       "FOX.HD.mt",
       "Fox.eg",
       "FOX.HD.jp",
-      "FOX\u30af\u30e9\u30b7\u30c3\u30af.\u540d\u4f5c\u30c9\u30e9\u30de.jp",
-      "FOX\u30b9\u30dd\u30fc\u30c4\uff06\u30a8\u30f3\u30bf\u30fc\u30c6\u30a4\u30e1\u30f3\u30c8.jp"
+      "FOXクラシック.名作ドラマ.jp",
+      "FOXスポーツ＆エンターテイメント.jp"
     ],
     "FoxBusinessNetwork.us": [
       "Fox.Business.HD.us2"
@@ -1079,6 +1238,9 @@
     "FoxNewsChannel.us": [
       "Fox.News.Channel.HD.us2",
       "FOXNewsChannel.au"
+    ],
+    "FoxSoccerPlus.us": [
+      "Fox.Soccer.Plus.HD.us2"
     ],
     "FoxSports.mx": [
       "FS1.Fox.Sports.1.HD.us2",
@@ -1189,13 +1351,33 @@
     "Freeform.us": [
       "Freeform.HD.us2"
     ],
+    "Freeform.us@East": [
+      "Freeform.HD.us2"
+    ],
     "Fuse.us": [
       "Fuse.HD.us2"
+    ],
+    "FX.us": [
+      "FX.HD.us2",
+      "FX.HD.(Pacific).us2"
+    ],
+    "FXMovieChannel.us": [
+      "FX.Movie.Channel.HD.us2"
+    ],
+    "FXX.us": [
+      "FXX.HD.(Pacific).us2",
+      "FXX.HD.us2"
+    ],
+    "FYI.us": [
+      "FYI.Channel.HD.us2"
     ],
     "GameShowNetwork.us": [
       "Game.Show.Network.HD.us2",
       "Game.Show.Network.ca2",
       "Game.Show.Network.HD.ca2"
+    ],
+    "GemsTV.uk@SD": [
+      "GEMS.us2"
     ],
     "GlobalNews.ca": [
       "Global.BC.HD.ca2"
@@ -1216,6 +1398,24 @@
     ],
     "GreatAmericanFamily.us": [
       "Great.American.Family.HD.us2"
+    ],
+    "GreatEntertainmentTelevision.us": [
+      "Great.Entertainment.Television.us2"
+    ],
+    "GreatEntertainmentTelevision.us@SD": [
+      "Great.Entertainment.Television.us2"
+    ],
+    "GrjngoWesternMovies.de@SD": [
+      "Grjngo.-.Western.Movies.us2"
+    ],
+    "HallmarkChannel.us": [
+      "Hallmark.Channel.HD.us2"
+    ],
+    "HallmarkChannel.us@East": [
+      "Hallmark.Channel.HD.us2"
+    ],
+    "Happy.(RS).rs": [
+      "Happy.(RS).rs"
     ],
     "HBO.pl": [
       "HBO.pl"
@@ -1256,9 +1456,6 @@
       "HBO.Plus.br",
       "HBO.(HD).ro"
     ],
-    "HBO2.HD.(Pacific).us2": [
-      "HBO2.HD.(Pacific).us2"
-    ],
     "HBO2.ca": [
       "HBO2.HD.(Pacific).us2",
       "HBO2.HD.us2",
@@ -1279,6 +1476,13 @@
       "HBO.2.HD..uy",
       "HBO.2.HD.uy",
       "HBO.2.br"
+    ],
+    "HBO2.HD.(Pacific).us2": [
+      "HBO2.HD.(Pacific).us2"
+    ],
+    "HBO2.us": [
+      "HBO2.HD.us2",
+      "HBO2.HD.(Pacific).us2"
     ],
     "HBOComedy.us": [
       "HBO.Comedy.HD.us2",
@@ -1331,9 +1535,6 @@
       "Hgtv.Hd.ph",
       "HGTV.(HD).ro"
     ],
-    "Happy.(RS).rs": [
-      "Happy.(RS).rs"
-    ],
     "History.us": [
       "History.HD.us2",
       "The.HISTORY.Channel.de",
@@ -1377,7 +1578,7 @@
       "History.TV18.HD.in",
       "History.TV18.SD.in",
       "History.HD.my",
-      "HISTORY\u2122.(HD).sg",
+      "HISTORY™.(HD).sg",
       "HISTORY.HD.ph",
       "HISTORY.ph",
       "History.id",
@@ -1391,32 +1592,11 @@
       "History.ph",
       "History.(HD).ro"
     ],
+    "HLN.us": [
+      "HLN.HD.us2"
+    ],
     "IFC.us": [
       "IFC.HD.us2"
-    ],
-    "ITV1.uk": [
-      "ITV1.HD.uk",
-      "ITV1.ch"
-    ],
-    "ITV2.uk": [
-      "ITV2.HD.uk",
-      "ITV2.ch",
-      "ITV2.cz"
-    ],
-    "ITV3.uk": [
-      "ITV3.HD.uk",
-      "ITV3.ie",
-      "ITV3.ch",
-      "ITV3.cz"
-    ],
-    "ITV4.uk": [
-      "ITV4.HD.uk",
-      "ITV4.ie",
-      "ITV4.ch",
-      "ITV4.cz"
-    ],
-    "ITVQuiz.uk": [
-      "ITV.Quiz.uk"
     ],
     "InvestigationDiscovery.us": [
       "Investigation.Discovery.HD.(Pacific).us2",
@@ -1443,11 +1623,38 @@
       "Italia.1.cz",
       "Italia.1.HD.mt"
     ],
-    "KUNPLD471.us": [
-      "Space.City.Home.Network.HD.us2"
+    "ITV1.uk": [
+      "ITV1.HD.uk",
+      "ITV1.ch"
     ],
-    "KVQTLD2114.us": [
-      "Nick.Music.us2"
+    "ITV2.uk": [
+      "ITV2.HD.uk",
+      "ITV2.ch",
+      "ITV2.cz"
+    ],
+    "ITV3.uk": [
+      "ITV3.HD.uk",
+      "ITV3.ie",
+      "ITV3.ch",
+      "ITV3.cz"
+    ],
+    "ITV4.uk": [
+      "ITV4.HD.uk",
+      "ITV4.ie",
+      "ITV4.ch",
+      "ITV4.cz"
+    ],
+    "ITVQuiz.uk": [
+      "ITV.Quiz.uk"
+    ],
+    "kabeleins.de": [
+      "kabel.eins.de",
+      "Kabel.Eins.at",
+      "Kabel.Eins.HD.at",
+      "Kabel.eins.ch",
+      "KABEL.EINS.fr",
+      "Kabel.Eins.pl",
+      "Kabel.eins.lu"
     ],
     "Kanal4.dk": [
       "Kanal.4.Denmark.(DK,DA).no",
@@ -1462,11 +1669,242 @@
     "KanalZ.tr": [
       "KANAL.D.HD.tr"
     ],
+    "KATC31.us": [
+      "KATC-DT.us_locals1"
+    ],
+    "KATC31.us@HD": [
+      "KATC-DT.us_locals1"
+    ],
+    "KBSI231.us": [
+      "KBSI-DT.us_locals1"
+    ],
+    "KBSI231.us@HD": [
+      "KBSI-DT.us_locals1"
+    ],
+    "KBSV231.us@SD": [
+      "KBSV-DT.us_locals1"
+    ],
+    "KCCI81.us": [
+      "KCCI-DT.us_locals1"
+    ],
+    "KCCI81.us@HD": [
+      "KCCI-DT.us_locals1"
+    ],
+    "KCKSLD253.us": [
+      "KCKS-LD.us_locals1"
+    ],
+    "KCKSLD253.us@HD": [
+      "KCKS-LD.us_locals1"
+    ],
+    "KCPQ131.us": [
+      "KCPQ-DT.us_locals1"
+    ],
+    "KCPQ131.us@HD": [
+      "KCPQ-DT.us_locals1"
+    ],
+    "KCRATV581.us": [
+      "KCRA-DT.us_locals1"
+    ],
+    "KCRATV581.us@HD": [
+      "KCRA-DT.us_locals1"
+    ],
+    "KCWX351.us": [
+      "KCWX-DT.us_locals1"
+    ],
+    "KCWX351.us@HD": [
+      "KCWX-DT.us_locals1"
+    ],
+    "KDFW41.us": [
+      "KDFW-DT.us_locals1"
+    ],
+    "KDFW41.us@HD": [
+      "KDFW-DT.us_locals1"
+    ],
+    "KFTRDT461.us": [
+      "KFTR-DT.us_locals1"
+    ],
+    "KFTRDT461.us@HD": [
+      "KFTR-DT.us_locals1"
+    ],
+    "KGTV101.us": [
+      "KGTV-DT.us_locals1"
+    ],
+    "KGTV101.us@HD": [
+      "KGTV-DT.us_locals1"
+    ],
+    "KGUNTV91.us": [
+      "KGUN-DT.us_locals1"
+    ],
+    "KGUNTV91.us@HD": [
+      "KGUN-DT.us_locals1"
+    ],
+    "KIIOLD104.us@SD": [
+      "KIIO-LD.us_locals1"
+    ],
+    "KIROTV71.us": [
+      "KIRO-DT.us_locals1"
+    ],
+    "KIROTV71.us@HD": [
+      "KIRO-DT.us_locals1"
+    ],
+    "KITV41.us": [
+      "KITV-DT.us_locals1"
+    ],
+    "KITV41.us@HD": [
+      "KITV-DT.us_locals1"
+    ],
+    "KMCTTV391.us": [
+      "KMCT-DT.us_locals1"
+    ],
+    "KMCTTV391.us@HD": [
+      "KMCT-DT.us_locals1"
+    ],
+    "KMEXDT341.us": [
+      "KMEX-DT.us_locals1"
+    ],
+    "KMEXDT341.us@HD": [
+      "KMEX-DT.us_locals1"
+    ],
+    "KMSPDT1.us": [
+      "KMSP-DT.us_locals1"
+    ],
+    "KMSPDT1.us@SD": [
+      "KMSP-DT.us_locals1"
+    ],
+    "KNOVCD411.us@HD": [
+      "KNOV-CD.us_locals1"
+    ],
+    "KNTV111.us": [
+      "KNTV-DT.us_locals1"
+    ],
+    "KNTV111.us@HD": [
+      "KNTV-DT.us_locals1"
+    ],
+    "KOATTV71.us": [
+      "KOAT-DT.us_locals1"
+    ],
+    "KOATTV71.us@HD": [
+      "KOAT-DT.us_locals1"
+    ],
+    "KOKITV231.us": [
+      "KOKI-DT.us_locals1"
+    ],
+    "KOKITV231.us@HD": [
+      "KOKI-DT.us_locals1"
+    ],
+    "KPCBDT171.us@SD": [
+      "KPCB-DT.us_locals1"
+    ],
+    "KPVMLD251.us": [
+      "KPVM-LD.us_locals1"
+    ],
+    "KPVMLD251.us@HD": [
+      "KPVM-LD.us_locals1"
+    ],
+    "KPVMLD252.us": [
+      "KPVM-LD.us_locals1"
+    ],
+    "KPVMLD252.us@SD": [
+      "KPVM-LD.us_locals1"
+    ],
+    "KQSL81.us": [
+      "KQSL-DT.us_locals1"
+    ],
+    "KQSL81.us@HD": [
+      "KQSL-DT.us_locals1"
+    ],
+    "KRGVTV51.us@HD": [
+      "KRGV-DT.us_locals1"
+    ],
+    "KRIV261.us": [
+      "KRIV-DT.us_locals1"
+    ],
+    "KRIV261.us@HD": [
+      "KRIV-DT.us_locals1"
+    ],
+    "KSAZTV101.us": [
+      "KSAZ-DT.us_locals1"
+    ],
+    "KSAZTV101.us@HD": [
+      "KSAZ-DT.us_locals1"
+    ],
+    "KSBW81.us": [
+      "KSBW-DT.us_locals1"
+    ],
+    "KSBW81.us@HD": [
+      "KSBW-DT.us_locals1"
+    ],
+    "KSCE381.us@HD": [
+      "KSCE-DT.us_locals1"
+    ],
+    "KSCE382.us": [
+      "KSCE-DT.us_locals1"
+    ],
+    "KSCE382.us@HD": [
+      "KSCE-DT.us_locals1"
+    ],
+    "KSCE383.us@HD": [
+      "KSCE-DT.us_locals1"
+    ],
+    "KSCNTV221.us": [
+      "KSCN-DT.us_locals1"
+    ],
+    "KSCNTV221.us@HD": [
+      "KSCN-DT.us_locals1"
+    ],
+    "KTBC71.us": [
+      "KTBC-DT.us_locals1"
+    ],
+    "KTBC71.us@HD": [
+      "KTBC-DT.us_locals1"
+    ],
+    "KTOOTV33.us": [
+      "KTOO-DT.us_locals1"
+    ],
+    "KTOOTV33.us@HD": [
+      "KTOO-DT.us_locals1"
+    ],
+    "KTVU41.us": [
+      "KTVU-DT.us_locals1"
+    ],
+    "KTVU41.us@HD": [
+      "KTVU-DT.us_locals1"
+    ],
+    "KUNPLD471.us": [
+      "Space.City.Home.Network.HD.us2"
+    ],
+    "KUVNDT491.us": [
+      "KUVN-DT.us_locals1"
+    ],
+    "KUVNDT491.us@HD": [
+      "KUVN-DT.us_locals1"
+    ],
+    "KVQTLD2114.us": [
+      "Nick.Music.us2"
+    ],
+    "KVTNDT251.us@HD": [
+      "KVTN-DT.us_locals1"
+    ],
+    "KWTVDT91.us": [
+      "KWTV-DT.us_locals1"
+    ],
+    "KWTVDT91.us@HD": [
+      "KWTV-DT.us_locals1"
+    ],
+    "KXASTV51.us": [
+      "KXAS-DT.us_locals1"
+    ],
+    "KXASTV51.us@HD": [
+      "KXAS-DT.us_locals1"
+    ],
     "LA7d.it": [
       "LA7d.it"
     ],
-    "LCI.fr": [
-      "LCI.fr"
+    "Laff.us": [
+      "Laff.us2"
+    ],
+    "Laff.us@SD": [
+      "Laff.us2"
     ],
     "LaLigaHypermotion.es": [
       "LALIGA.TV.HYPERMOTION.es"
@@ -1474,84 +1912,20 @@
     "LaSexta.es": [
       "LaSexta.es"
     ],
+    "LCI.fr": [
+      "LCI.fr"
+    ],
+    "LifetimeNetwork.us": [
+      "Lifetime.HD.us2",
+      "Lifetime.HD.us",
+      "Lifetime.us",
+      "Lifetime.Network.HD.us2"
+    ],
     "Logo.us": [
       "Logo.us2"
     ],
     "M6.fr": [
       "M6.fr"
-    ],
-    "MLBNetwork.us": [
-      "MLB.Network.HD.Alternate.us2",
-      "MLB.Network.HD.us2"
-    ],
-    "MNet.za": [
-      "M-Net.HD.za",
-      "Mnet.kr",
-      "M-Net.West.ng"
-    ],
-    "MSG.us": [
-      "MSG.Plus.us2"
-    ],
-    "MSNBC.us": [
-      "MSNBC.HD.us2",
-      "MSNBC.au"
-    ],
-    "MTVDenmark.dk": [
-      "MTV.Denmark.(DK,DA).no"
-    ],
-    "MTVLive.uk": [
-      "MTV.HD.uk",
-      "MTVLIVE.us2",
-      "MTV.Live.HD.de",
-      "MTV.live.HD.at",
-      "MTV.Live.es",
-      "MTV.Live.HD.pl",
-      "MTV.Live.cz",
-      "MTV.Live.HD.sk",
-      "MTV.Live.HD.hu",
-      "MTV.Live.HD.ro",
-      "MTV.Live.gr",
-      "MTV.Live.HD\u00a0.gr",
-      "MTV.Live.HD.(BIH).ba",
-      "MTV.Live.HD.(RS).rs",
-      "MTV.Live.HD.(GB,EN).no",
-      "MTV.Live.HD.lv",
-      "MTV.Live.HD.mt",
-      "MTV.Live.co",
-      "MTV.Live.my",
-      "MTV.LIVE.HD.sg",
-      "MTV.LIVE.HD.ph",
-      "MTV.Live.id",
-      "MTV.LIVE.id"
-    ],
-    "MTVLive.us": [
-      "MTVLIVE.us2",
-      "MTV.Live.HD.de",
-      "MTV.live.HD.at",
-      "MTV.Live.es",
-      "MTV.Live.HD.pl",
-      "MTV.Live.cz",
-      "MTV.Live.HD.sk",
-      "MTV.Live.HD.hu",
-      "MTV.Live.HD.ro",
-      "MTV.Live.gr",
-      "MTV.Live.HD\u00a0.gr",
-      "MTV.Live.HD.(BIH).ba",
-      "MTV.Live.HD.(RS).rs",
-      "MTV.Live.HD.(GB,EN).no",
-      "MTV.Live.HD.lv",
-      "MTV.Live.HD.mt",
-      "MTV.Live.co",
-      "MTV.Live.my",
-      "MTV.LIVE.HD.sg",
-      "MTV.LIVE.HD.ph",
-      "MTV.Live.id",
-      "MTV.LIVE.id"
-    ],
-    "MUTV.uk": [
-      "MUTV.HD.uk",
-      "MUTV.ie",
-      "MUTV.hk"
     ],
     "MagnoliaNetwork.us": [
       "Magnolia.Network.HD.us2",
@@ -1578,44 +1952,90 @@
     "MeganoticiasMX.mx": [
       "Canal.5.(XHPNH).mx"
     ],
+    "MLBNetwork.us": [
+      "MLB.Network.HD.Alternate.us2",
+      "MLB.Network.HD.us2"
+    ],
+    "MNet.za": [
+      "M-Net.HD.za",
+      "Mnet.kr",
+      "M-Net.West.ng"
+    ],
+    "MoreMax.us": [
+      "MoreMax.HD.us2"
+    ],
+    "MoreMax.us@East": [
+      "MoreMax.HD.us2"
+    ],
     "Motowizja.pl": [
       "Motowizja.pl"
     ],
+    "MSG.us": [
+      "MSG.Plus.us2"
+    ],
+    "MSNBC.us": [
+      "MSNBC.HD.us2",
+      "MSNBC.au"
+    ],
+    "MTVDenmark.dk": [
+      "MTV.Denmark.(DK,DA).no"
+    ],
+    "MTVLive.uk": [
+      "MTV.HD.uk",
+      "MTVLIVE.us2",
+      "MTV.Live.HD.de",
+      "MTV.live.HD.at",
+      "MTV.Live.es",
+      "MTV.Live.HD.pl",
+      "MTV.Live.cz",
+      "MTV.Live.HD.sk",
+      "MTV.Live.HD.hu",
+      "MTV.Live.HD.ro",
+      "MTV.Live.gr",
+      "MTV.Live.HD .gr",
+      "MTV.Live.HD.(BIH).ba",
+      "MTV.Live.HD.(RS).rs",
+      "MTV.Live.HD.(GB,EN).no",
+      "MTV.Live.HD.lv",
+      "MTV.Live.HD.mt",
+      "MTV.Live.co",
+      "MTV.Live.my",
+      "MTV.LIVE.HD.sg",
+      "MTV.LIVE.HD.ph",
+      "MTV.Live.id",
+      "MTV.LIVE.id"
+    ],
+    "MTVLive.us": [
+      "MTVLIVE.us2",
+      "MTV.Live.HD.de",
+      "MTV.live.HD.at",
+      "MTV.Live.es",
+      "MTV.Live.HD.pl",
+      "MTV.Live.cz",
+      "MTV.Live.HD.sk",
+      "MTV.Live.HD.hu",
+      "MTV.Live.HD.ro",
+      "MTV.Live.gr",
+      "MTV.Live.HD .gr",
+      "MTV.Live.HD.(BIH).ba",
+      "MTV.Live.HD.(RS).rs",
+      "MTV.Live.HD.(GB,EN).no",
+      "MTV.Live.HD.lv",
+      "MTV.Live.HD.mt",
+      "MTV.Live.co",
+      "MTV.Live.my",
+      "MTV.LIVE.HD.sg",
+      "MTV.LIVE.HD.ph",
+      "MTV.Live.id",
+      "MTV.LIVE.id"
+    ],
+    "MUTV.uk": [
+      "MUTV.HD.uk",
+      "MUTV.ie",
+      "MUTV.hk"
+    ],
     "MzansiMagic.za": [
       "Mzansi.Magic.HD.za"
-    ],
-    "NBATV.us": [
-      "NBA.TV.HD.us2"
-    ],
-    "NBCSportsBayArea.us": [
-      "NBC.Sports.Bay.Area.HD.us2",
-      "NBC.Sports.Bay.Area.Plus.us2"
-    ],
-    "NBCSportsBoston.us": [
-      "NBC.Sports.Boston.HD.us2"
-    ],
-    "NBCSportsCalifornia.us": [
-      "NBC.Sports.California.Plus.us2"
-    ],
-    "NBCSportsPhiladelphia.us": [
-      "NBC.Sports.Philadelphia.HD.us2",
-      "NBC.Sports.Philadelphia.Plus.us2"
-    ],
-    "NFLNetwork.us": [
-      "NFL.Network.HD.us2"
-    ],
-    "NFLRedZone.us": [
-      "NFL.RedZone.HD.us2"
-    ],
-    "NHLNetwork.us": [
-      "NHL.Network.HD.us2"
-    ],
-    "NOVA.S.HD.(RS).rs": [
-      "NOVA.S.HD.(RS).rs"
-    ],
-    "NOWTV.tr": [
-      "NOW.tr",
-      "NOW\uc81c\uc8fcTV.kr"
     ],
     "NatGeoMundo.us": [
       "Nat.Geo.Mundo.us2"
@@ -1671,19 +2091,36 @@
       "National.Geographic.ph",
       "National.Geographic.(HD).ro"
     ],
+    "NBATV.us": [
+      "NBA.TV.HD.us2"
+    ],
+    "NBCSportsBayArea.us": [
+      "NBC.Sports.Bay.Area.HD.us2",
+      "NBC.Sports.Bay.Area.Plus.us2"
+    ],
+    "NBCSportsBoston.us": [
+      "NBC.Sports.Boston.HD.us2"
+    ],
+    "NBCSportsCalifornia.us": [
+      "NBC.Sports.California.Plus.us2"
+    ],
+    "NBCSportsPhiladelphia.us": [
+      "NBC.Sports.Philadelphia.HD.us2",
+      "NBC.Sports.Philadelphia.Plus.us2"
+    ],
     "NewsNation.us": [
       "NewsNation.us2",
       "News.Nation.in",
       "NEWS.NATION.in"
     ],
-    "NickJr.us": [
-      "NickJr.au",
-      "NickJr.za",
-      "NickJr.ng",
-      "Nickjr.ph"
+    "NFLNetwork.us": [
+      "NFL.Network.HD.us2"
     ],
-    "NickTeen.us": [
-      "Nick.Jr.HD.us2"
+    "NFLRedZone.us": [
+      "NFL.RedZone.HD.us2"
+    ],
+    "NHLNetwork.us": [
+      "NHL.Network.HD.us2"
     ],
     "Nickelodeon.de": [
       "SportDigital1+.de",
@@ -1738,6 +2175,16 @@
       "Nickelodeon.br",
       "Nickelodeon.ph"
     ],
+    "NickJr.us": [
+      "Nick.Jr.HD.us2",
+      "NickJr.au",
+      "NickJr.za",
+      "NickJr.ng",
+      "Nickjr.ph"
+    ],
+    "NickTeen.us": [
+      "Teen.Nick.us2"
+    ],
     "Nicktoons.us": [
       "Nicktoons.HD.pl",
       "Nicktoons.us2",
@@ -1769,8 +2216,17 @@
     "Noovo.ca": [
       "Noovo.ca2"
     ],
+    "Nosey.us": [
+      "Nosey.us2"
+    ],
+    "Nosey.us@US": [
+      "Nosey.us2"
+    ],
     "Nova.BH.HD.(BIH).ba": [
       "Nova.BH.HD.(BIH).ba"
+    ],
+    "NOVA.S.HD.(RS).rs": [
+      "NOVA.S.HD.(RS).rs"
     ],
     "NovaSport1.cz": [
       "Nova.Sport.1.cz",
@@ -1812,6 +2268,10 @@
       "Novasports.Premier.League.HD.gr",
       "Novasports.Premier.League..gr"
     ],
+    "NOWTV.tr": [
+      "NOW.tr",
+      "NOW제주TV.kr"
+    ],
     "O2TVSport2.cz": [
       "Oneplay.Sport.2.cz",
       "O2TV.Sport2.cz"
@@ -1827,9 +2287,6 @@
     "O2TVSport6.cz": [
       "Canal.plus.Sport.6.cz",
       "O2TV.Sport6.cz"
-    ],
-    "OWN.us": [
-      "Oprah.Winfrey.Network.HD.us2"
     ],
     "One2.il": [
       "ONE2.HD.il"
@@ -1848,8 +2305,8 @@
       "OutdoorChannel.au",
       "OUTDOORCHANNEL.ph"
     ],
-    "PTVSports.pk": [
-      "PTV.Sports.pk"
+    "OWN.us": [
+      "Oprah.Winfrey.Network.HD.us2"
     ],
     "ParamountNetwork.pl": [
       "CANAL+.Family.HD.pl",
@@ -1873,6 +2330,9 @@
       "Paramount.Network.hu",
       "PARAMOUNT.NETWORK.HD..uy",
       "PARAMOUNT.NETWORK..uy"
+    ],
+    "PixLTV.us@SD": [
+      "PixL.us2"
     ],
     "PolsatFilm.pl": [
       "Polsat.Film.HD.pl",
@@ -1914,6 +2374,12 @@
       "Porto.Canal.HD.pt",
       "Porto.Canal.fr",
       "Porto.Canal.lu"
+    ],
+    "PositivTV.us": [
+      "Positiv.TV.us2"
+    ],
+    "PositivTV.us@SD": [
+      "Positiv.TV.us2"
     ],
     "PremierSport2.sk": [
       "CANAL+.Sport.2.HD.pl",
@@ -1963,9 +2429,69 @@
     "ProSieben.de": [
       "ProSieben.de"
     ],
+    "PTVSports.pk": [
+      "PTV.Sports.pk"
+    ],
+    "PursuitChannel.us": [
+      "Pursuit.Channel.us2"
+    ],
+    "QVC.us": [
+      "QVC.HD.us2"
+    ],
+    "QVC.us@SD": [
+      "QVC.HD.us2"
+    ],
+    "RacingTV.uk": [
+      "Racing.TV.HD.uk"
+    ],
+    "Rai1.it": [
+      "Rai1.it"
+    ],
+    "Rai2.it": [
+      "Rai2.it"
+    ],
+    "Rai3.it": [
+      "Rai3.it"
+    ],
+    "Rai4.it": [
+      "Rai4.it"
+    ],
+    "RaiPremium.it": [
+      "RaiPremium.it"
+    ],
+    "RaiSport.it": [
+      "RaiSport.it"
+    ],
+    "RallyTV.us": [
+      "Rally.TV.de"
+    ],
     "RDS2.ca": [
       "RDS2.HD.ca2",
       "RDS2.ca2"
+    ],
+    "RealAmericasVoice.us": [
+      "Real.Americas.Voice.us2"
+    ],
+    "RealAmericasVoice.us@SD": [
+      "Real.Americas.Voice.us2"
+    ],
+    "RealMadridTV.es": [
+      "Real.Madrid.TV.es"
+    ],
+    "RemenyTV.hu": [
+      "M4.sport.HD.sk"
+    ],
+    "RetroTV.us@East": [
+      "RETRO.us2"
+    ],
+    "Revolt.us": [
+      "Revolt.HD.us2"
+    ],
+    "Revolt.us@SD": [
+      "Revolt.HD.us2"
+    ],
+    "RFDTV.us@SD": [
+      "RFD.TV.HD.us2"
     ],
     "RING.BG.bg": [
       "RING.BG.bg"
@@ -1981,6 +2507,13 @@
       "RMC.Story.fr",
       "RMC.Story.ch",
       "RMC.STORY.fr"
+    ],
+    "Roar.us@SD": [
+      "ROAR.TV.us2"
+    ],
+    "RootSportsNorthwest.us": [
+      "ROOT.Sports.Northwest.HD.us2",
+      "Root.Sports.Northwest.Plus.us2"
     ],
     "RTDE.de": [
       "MDR.de"
@@ -2009,40 +2542,6 @@
     "RTPNoticias.pt": [
       "RTP.3.ch"
     ],
-    "RacingTV.uk": [
-      "Racing.TV.HD.uk"
-    ],
-    "Rai1.it": [
-      "Rai1.it"
-    ],
-    "Rai2.it": [
-      "Rai2.it"
-    ],
-    "Rai3.it": [
-      "Rai3.it"
-    ],
-    "Rai4.it": [
-      "Rai4.it"
-    ],
-    "RaiPremium.it": [
-      "RaiPremium.it"
-    ],
-    "RaiSport.it": [
-      "RaiSport.it"
-    ],
-    "RallyTV.us": [
-      "Rally.TV.de"
-    ],
-    "RealMadridTV.es": [
-      "Real.Madrid.TV.es"
-    ],
-    "RemenyTV.hu": [
-      "M4.sport.HD.sk"
-    ],
-    "RootSportsNorthwest.us": [
-      "ROOT.Sports.Northwest.HD.us2",
-      "Root.Sports.Northwest.Plus.us2"
-    ],
     "S4C.uk": [
       "S4C.uk"
     ],
@@ -2063,56 +2562,21 @@
     "SBS6Classics.nl": [
       "SBS6.nl"
     ],
+    "Science.us": [
+      "Science.Channel.HD.us2"
+    ],
     "SECNetwork.us": [
       "SEC.Network.HD.us2"
     ],
     "SETTV.us": [
       "E!.Entertainment.Television.HD.us2"
     ],
-    "SICK.pt": [
-      "SIC.HD.pt",
-      "SIC.K.HD.pt"
+    "ShadesofBlack.pl": [
+      "Shades.of.Black.us2"
     ],
-    "SK.11.HD.HR.(Portals).ba": [
-      "SK.11.HD.HR.(Portals).ba"
-    ],
-    "SK.12.HD.HR.(Portals).ba": [
-      "SK.12.HD.HR.(Portals).ba"
-    ],
-    "SK.9.HD.(BIH).ba": [
-      "SK.9.HD.(BIH).ba"
-    ],
-    "SSCExtra1.sa": [
-      "SSC.Extra.1.HD.sa"
-    ],
-    "SSCExtra2.sa": [
-      "SSC.Extra.2.HD.sa"
-    ],
-    "SSCExtra3.sa": [
-      "SSC.Extra.3.HD.sa"
-    ],
-    "SWRFernsehenHD.de": [
-      "SWR.HD.at"
-    ],
-    "SYFY.us": [
-      "Syfy.HD.(Pacific).us2",
-      "Syfy.HD.us2",
-      "SyFy.de",
-      "Syfy.HD.at",
-      "Syfy.D.ch",
-      "Syfy.F.ch",
-      "Syfy.fr",
-      "Syfy.es",
-      "Syfy.HD.pt",
-      "Syfy.pl",
-      "SYFY.(SyFy).pe",
-      "Syfy.be"
-    ],
-    "Science.us": [
-      "Science.Channel.HD.us2"
-    ],
-    "ShowTV.tr": [
-      "SHOW.TV.HD.tr"
+    "Showtime.us": [
+      "Paramount+.with.Showtime.HD.us2",
+      "Paramount+.with.Showtime.HD.(Pacific).us2"
     ],
     "Showtime2.us": [
       "Showtime.2.HD.us2"
@@ -2131,6 +2595,25 @@
     ],
     "ShowtimeWomen.us": [
       "Showtime.Women.HD.us2"
+    ],
+    "ShowTV.tr": [
+      "SHOW.TV.HD.tr"
+    ],
+    "SICK.pt": [
+      "SIC.HD.pt",
+      "SIC.K.HD.pt"
+    ],
+    "sixx.de": [
+      "sixx.de"
+    ],
+    "SK.11.HD.HR.(Portals).ba": [
+      "SK.11.HD.HR.(Portals).ba"
+    ],
+    "SK.12.HD.HR.(Portals).ba": [
+      "SK.12.HD.HR.(Portals).ba"
+    ],
+    "SK.9.HD.(BIH).ba": [
+      "SK.9.HD.(BIH).ba"
     ],
     "SkyArts.uk": [
       "Sky.Arts.HD.uk",
@@ -2369,33 +2852,12 @@
       "Sky.Sport.Mix.it",
       "Sky.Sport.Mix.lu"
     ],
-    "SkySportSelect.nz": [
-      "Sky.Sport.Select.nz"
-    ],
-    "SkySportTennis.de": [
-      "Sky.Sports.Tennis.HD.ie",
-      "Sky.Sport.Tennis.de",
-      "Sky.Sport.Tennis.at",
-      "Sky.Sport.Tennis.it",
-      "Sky.Sport.Tennis.lu"
-    ],
-    "SkySportTennis.it": [
-      "Sky.Sports.Golf.HD.ie",
-      "Sky.Sport.Tennis.de",
-      "Sky.Sport.Tennis.at",
-      "Sky.Sport.Tennis.it",
-      "Sky.Sport.Tennis.lu"
-    ],
-    "SkySportTopEvent.de": [
-      "Sky.Sport.Top.Event.de",
-      "Sky.Sport.Top.Event.lu"
-    ],
-    "SkySportUno.it": [
-      "Sky.Sport.Uno.it"
-    ],
     "SkySportsCricket.uk": [
       "Sky.Sports.Cricket.HD.ie",
       "Sky.Sports.Cricket.ie"
+    ],
+    "SkySportSelect.nz": [
+      "Sky.Sport.Select.nz"
     ],
     "SkySportsF1.uk": [
       "Sky.Sports.F1.HD.ie",
@@ -2418,14 +2880,14 @@
       "Sky.Sports.Mix.HD.ie",
       "Sky.Sports.Mix.ie"
     ],
-    "SkySportsNFL.uk": [
-      "Sky.Sports.Action.HD.ie",
-      "Sky.Sports.NFL.uk"
-    ],
     "SkySportsNews.uk": [
       "Sky.Sports.News.HD.ie",
       "Sky.Sports.News.ie",
       "Sky.Sports.News.cz"
+    ],
+    "SkySportsNFL.uk": [
+      "Sky.Sports.Action.HD.ie",
+      "Sky.Sports.NFL.uk"
     ],
     "SkySportsPlus.uk": [
       "Sky.Sports+.Dummy.us"
@@ -2440,6 +2902,27 @@
     "SkySportsTennis.uk": [
       "Sky.Sports.Tennis.HD.ie",
       "Sky.Sports.Tennis.ie"
+    ],
+    "SkySportTennis.de": [
+      "Sky.Sports.Tennis.HD.ie",
+      "Sky.Sport.Tennis.de",
+      "Sky.Sport.Tennis.at",
+      "Sky.Sport.Tennis.it",
+      "Sky.Sport.Tennis.lu"
+    ],
+    "SkySportTennis.it": [
+      "Sky.Sports.Golf.HD.ie",
+      "Sky.Sport.Tennis.de",
+      "Sky.Sport.Tennis.at",
+      "Sky.Sport.Tennis.it",
+      "Sky.Sport.Tennis.lu"
+    ],
+    "SkySportTopEvent.de": [
+      "Sky.Sport.Top.Event.de",
+      "Sky.Sport.Top.Event.lu"
+    ],
+    "SkySportUno.it": [
+      "Sky.Sport.Uno.it"
     ],
     "SkyUno.it": [
       "Sky.Uno.it"
@@ -2466,9 +2949,6 @@
       "SONY.SPORTS.TEN.2.HD.in",
       "SONY.SPORTS.TEN.2.in"
     ],
-    "SporTV.br": [
-      "SporTV.br"
-    ],
     "Sport.sk": [
       "Nova.Sport.3.HD.sk",
       "MS.Sport.de",
@@ -2477,7 +2957,7 @@
       "SPORT.TV3.HD.pt",
       "SPORT.TV4.HD.pt",
       "SPORT.TV5.HD.pt",
-      "\u010cT.sport.cz",
+      "ČT.sport.cz",
       "S.SPORT.tr",
       "TV3.SPORT.dk",
       "S.Sport.tr"
@@ -2490,12 +2970,6 @@
       "Canal.plus.Sport.5.cz",
       "Sport.5.al"
     ],
-    "SportKlub4K.nl": [
-      "Sportklub.HD.pl"
-    ],
-    "SportLive.dk": [
-      "SPORT.LIVE.dk"
-    ],
     "SportdigitalFUSSBALL.de": [
       "SPORTDIGITAL.FUSSBALL.HD.at",
       "sportdigital.Fussball.de",
@@ -2507,6 +2981,12 @@
     ],
     "SportingTV.pt": [
       "Sporting.TV.HD.pt"
+    ],
+    "SportKlub4K.nl": [
+      "Sportklub.HD.pl"
+    ],
+    "SportLive.dk": [
+      "SPORT.LIVE.dk"
     ],
     "SportsChannelNetwork.us": [
       "Monumental.Sports.Network.HD.us2"
@@ -2531,6 +3011,18 @@
       "Sportsnet.World.HD.ca2",
       "Sportsnet.World.ca2"
     ],
+    "SporTV.br": [
+      "SporTV.br"
+    ],
+    "SSCExtra1.sa": [
+      "SSC.Extra.1.HD.sa"
+    ],
+    "SSCExtra2.sa": [
+      "SSC.Extra.2.HD.sa"
+    ],
+    "SSCExtra3.sa": [
+      "SSC.Extra.3.HD.sa"
+    ],
     "StarChannelSpain.es": [
       "DAZN.1.es"
     ],
@@ -2545,11 +3037,11 @@
       "STAR.SPORTS.2.HINDI.HD.in",
       "STAR.SPORTS.2.HINDI.in"
     ],
-    "StarTV.tr": [
-      "STAR.TV.HD.tr"
-    ],
     "StartTV.gr": [
       "Novasports.Start.HD.gr"
+    ],
+    "StarTV.tr": [
+      "STAR.TV.HD.tr"
     ],
     "Starz.us": [
       "Starz.HD.(Pacific).us2",
@@ -2581,6 +3073,12 @@
     "StarzEncoreFamily.us": [
       "Starz.Encore.Family.SD.us2"
     ],
+    "StarzEncoreSpanish.us": [
+      "Starz.Encore.Español.SD.us2"
+    ],
+    "StarzEncoreSpanish.us@East": [
+      "Starz.Encore.Español.SD.us2"
+    ],
     "StarzEncoreSuspense.us": [
       "Starz.Encore.Suspense.us2"
     ],
@@ -2588,17 +3086,49 @@
       "Starz.Encore.Westerns.(Pacific).us2",
       "Starz.Encore.Westerns.SD.us2"
     ],
+    "StarzInBlack.us": [
+      "Starz.in.Black.HD.us2"
+    ],
+    "StarzKidsFamily.us": [
+      "Starz.Kids.HD.us2"
+    ],
     "SundanceTV.us": [
       "Sundance.TV.HD.pl",
       "SundanceTV.HD.us2"
+    ],
+    "SWRFernsehenHD.de": [
+      "SWR.HD.at"
+    ],
+    "SYFY.us": [
+      "Syfy.HD.(Pacific).us2",
+      "Syfy.HD.us2",
+      "SyFy.de",
+      "Syfy.HD.at",
+      "Syfy.D.ch",
+      "Syfy.F.ch",
+      "Syfy.fr",
+      "Syfy.es",
+      "Syfy.HD.pt",
+      "Syfy.pl",
+      "SYFY.(SyFy).pe",
+      "Syfy.be"
+    ],
+    "TastemadeHome.us": [
+      "Tastemade.Home.us2"
+    ],
+    "TastemadeTravel.us": [
+      "Tastemade.Travel.us2"
+    ],
+    "TastemadeTravel.us@SD": [
+      "Tastemade.Travel.us2"
     ],
     "TBS.us": [
       "TBS.HD.(Pacific).us2",
       "TBS.HD.us2",
       "TBS.br",
-      "TBS\u30c1\u30e3\u30f3\u30cd\u30eb\uff11.jp",
-      "TBS\u30c1\u30e3\u30f3\u30cd\u30eb\uff12.jp",
-      "TBS\u30cb\u30e5\u30fc\u30b9\u30d0\u30fc\u30c9.jp"
+      "TBSチャンネル１.jp",
+      "TBSチャンネル２.jp",
+      "TBSニュースバード.jp"
     ],
     "TCM.us": [
       "TCM.es",
@@ -2608,8 +3138,43 @@
       "TCM..uy",
       "TCM.uy"
     ],
+    "TCT.us": [
+      "TCT.us2"
+    ],
+    "TCT.us@SD": [
+      "TCT.us2"
+    ],
+    "TeenNick.us": [
+      "TeenNick.pl",
+      "TeenNick.(pl).cz",
+      "TeenNick.hu",
+      "ערוץ.TeenNick.il",
+      "TeenNick.ro",
+      "Teen.Nick.us2",
+      "Teen.Nick.co"
+    ],
+    "Telecinco.es": [
+      "Telecinco.es"
+    ],
+    "Teledeporte.es": [
+      "Teledeporte.es"
+    ],
+    "Telemundo.us": [
+      "TELEMUNDO.HD..uy",
+      "Telemundo.co",
+      "TELEMUNDO.(Telemundo).pe",
+      "TELEMUNDO.HD.uy",
+      "TELEMUNDO..uy",
+      "TeleMundo.ng"
+    ],
+    "TennisChannel.us": [
+      "Tennis.Channel.HD.us2"
+    ],
     "TF1.fr": [
       "TF1.fr"
+    ],
+    "TheWeatherChannel.us": [
+      "The.Weather.Channel.HD.us2"
     ],
     "TLC.us": [
       "TLC.HD.(Pacific).us2",
@@ -2656,7 +3221,7 @@
       "TLC.th",
       "TLC.HD.vn",
       "TLC.id",
-      "TLC\uc5ec\ud589\ub808\uc800\ucc44\ub110.kr",
+      "TLC여행레저채널.kr",
       "TLC.hk",
       "TLC.HD.za",
       "TLC.br",
@@ -2699,11 +3264,28 @@
       "TNT.Sports.4.HD.ie",
       "TNT.Sports.4.ie"
     ],
+    "TravelChannel.us": [
+      "The.Travel.Channel.HD.(Pacific).us2",
+      "TravelChannel.au"
+    ],
     "TRTSpor.tr": [
       "TRT.SPOR.tr",
       "TRT.Spor.ch",
       "TRT.SPOR.HD.tr",
       "TRT.Spor.al"
+    ],
+    "TrueCrimeNow.us": [
+      "Oxygen.True.Crime.HD.us2",
+      "TrueCrimeNow.au",
+      "DK:.True.Crime.Now.be",
+      "FI:.True.Crime.Now.be",
+      "NL:.True.Crime.Now.be",
+      "NO:.True.Crime.Now.be",
+      "SE:.True.Crime.Now.be"
+    ],
+    "truTV.us": [
+      "truTV.HD.(Pacific).us2",
+      "truTV.HD.us2"
     ],
     "TSN1.ca": [
       "TSN1.mt",
@@ -2807,69 +3389,11 @@
       "TVP.Sport.pl",
       "TVP.Sport.cz"
     ],
-    "TeenNick.us": [
-      "TeenNick.pl",
-      "TeenNick.(pl).cz",
-      "TeenNick.hu",
-      "\u05e2\u05e8\u05d5\u05e5.TeenNick.il",
-      "TeenNick.ro",
-      "Teen.Nick.us2",
-      "Teen.Nick.co"
-    ],
-    "Telecinco.es": [
-      "Telecinco.es"
-    ],
-    "Teledeporte.es": [
-      "Teledeporte.es"
-    ],
-    "Telemundo.us": [
-      "TELEMUNDO.HD..uy",
-      "Telemundo.co",
-      "TELEMUNDO.(Telemundo).pe",
-      "TELEMUNDO.HD.uy",
-      "TELEMUNDO..uy",
-      "TeleMundo.ng"
-    ],
-    "TennisChannel.us": [
-      "Tennis.Channel.HD.us2"
-    ],
-    "TravelChannel.us": [
-      "The.Travel.Channel.HD.(Pacific).us2",
-      "TravelChannel.au"
-    ],
-    "TrueCrimeNow.us": [
-      "Oxygen.True.Crime.HD.us2",
-      "TrueCrimeNow.au",
-      "DK:.True.Crime.Now.be",
-      "FI:.True.Crime.Now.be",
-      "NL:.True.Crime.Now.be",
-      "NO:.True.Crime.Now.be",
-      "SE:.True.Crime.Now.be"
-    ],
     "TyCSportsUSA.ar": [
       "TYC.SPORTS.HD..uy"
     ],
     "UGold.uk": [
       "Gold.HD.al"
-    ],
-    "LifetimeNetwork.us": [
-      "Lifetime.HD.us2",
-      "Lifetime.HD.us",
-      "Lifetime.us",
-      "Lifetime.Network.HD.us2"
-    ],
-    "USANetwork.us": [
-      "USA.Network.HD.(Pacific).us2",
-      "USA.Network.HD.us2",
-      "USA.Network.ca2",
-      "USA.Network.HD.ca2",
-      "USA.NETWORK.HD..uy",
-      "USA.NETWORK.HD.uy",
-      "USA.NETWORK..uy"
-    ],
-    "UniMas.us": [
-      "UniMas.HD.(Pacific).us2",
-      "UniMas.us2"
     ],
     "UnifiSports1.my": [
       "BEIN.SPORTS.1.HD.ph"
@@ -2880,8 +3404,39 @@
     "UnifiSports3.my": [
       "beIN.SPORTS.3.(HD).sg"
     ],
+    "UniMas.us": [
+      "UniMas.HD.(Pacific).us2",
+      "UniMas.us2"
+    ],
     "Univision.us": [
       "UNIVISION.HD.uy"
+    ],
+    "US41000060J": [
+      "WAPA-DT.us_locals1"
+    ],
+    "US700021SM": [
+      "NASCAR.Channel.us2"
+    ],
+    "USANetwork.us": [
+      "USA.Network.HD.(Pacific).us2",
+      "USA.Network.HD.us2",
+      "USA.Network.ca2",
+      "USA.Network.HD.ca2",
+      "USA.NETWORK.HD..uy",
+      "USA.NETWORK.HD.uy",
+      "USA.NETWORK..uy"
+    ],
+    "USBC3200022W6": [
+      "Tastemade.Home.us2"
+    ],
+    "USBC44000226R": [
+      "Bon.Appétit.TV.us2"
+    ],
+    "USBD42000250Q": [
+      "American.Crimes.us2"
+    ],
+    "VeronicaDisneyJr.nl": [
+      "Veronica.cz"
     ],
     "VFilmFamily.se": [
       "V.film.family.dk",
@@ -2893,6 +3448,9 @@
     ],
     "VH1.pl": [
       "MTV.HD.uk"
+    ],
+    "VH1.us": [
+      "VH1.HD.us2"
     ],
     "VICETV.us": [
       "Vice.HD.us2"
@@ -2926,14 +3484,65 @@
     "VTV+.HD.uy": [
       "VTV+.HD.uy"
     ],
-    "VeronicaDisneyJr.nl": [
-      "Veronica.cz"
-    ],
     "W9.fr": [
       "W9.fr"
     ],
+    "WACX551.us": [
+      "WACX-DT.us_locals1"
+    ],
+    "WACX551.us@SD": [
+      "WACX-DT.us_locals1"
+    ],
+    "WATCDT571.us": [
+      "WATC-DT.us_locals1"
+    ],
+    "WATCDT571.us@HD": [
+      "WATC-DT.us_locals1"
+    ],
+    "WATCDT573.us": [
+      "WATC-DT.us_locals1"
+    ],
+    "WATCDT573.us@SD": [
+      "WATC-DT.us_locals1"
+    ],
+    "WBALTV111.us": [
+      "WBAL-DT.us_locals1"
+    ],
+    "WBALTV111.us@HD": [
+      "WBAL-DT.us_locals1"
+    ],
+    "WBBJTV71.us": [
+      "WBBJ-DT.us_locals1"
+    ],
+    "WBBJTV71.us@HD": [
+      "WBBJ-DT.us_locals1"
+    ],
+    "WBTSCD151.us": [
+      "WBTS-CD.us_locals1"
+    ],
+    "WBTSCD151.us@HD": [
+      "WBTS-CD.us_locals1"
+    ],
+    "WCAU621.us": [
+      "WCAU-DT.us_locals1"
+    ],
+    "WCAU621.us@HD": [
+      "WCAU-DT.us_locals1"
+    ],
+    "WCBITV41.us": [
+      "WCBI-DT.us_locals1"
+    ],
+    "WCBITV41.us@HD": [
+      "WCBI-DT.us_locals1"
+    ],
     "WCBS-DT.us_locals1": [
       "WCBS-DT.us_locals1"
+    ],
+    "WCVBTV501.us": [
+      "WCVB-DT.us_locals1"
+    ],
+    "WCVBTV501.us@SD": [
+      "WCVB-DT.us_locals1"
     ],
     "WDRFernsehen.de": [
       "WDR.de",
@@ -2941,10 +3550,132 @@
       "WDR.Fernsehen.cz",
       "WDR.Fernsehen.lu"
     ],
+    "WeTV.us@East": [
+      "WE.tv.HD.us2"
+    ],
+    "WFLD501.us": [
+      "WFLD-DT.us_locals1"
+    ],
+    "WFLD501.us@HD": [
+      "WFLD-DT.us_locals1"
+    ],
+    "WFTTTV621.us": [
+      "WFTT-DT.us_locals1"
+    ],
+    "WFTTTV621.us@HD": [
+      "WFTT-DT.us_locals1"
+    ],
+    "WFUTDT681.us": [
+      "WFUT-DT.us_locals1"
+    ],
+    "WFUTDT681.us@HD": [
+      "WFUT-DT.us_locals1"
+    ],
+    "WFXT251.us": [
+      "WFXT-DT.us_locals1"
+    ],
+    "WFXT251.us@HD": [
+      "WFXT-DT.us_locals1"
+    ],
+    "WGBODT661.us": [
+      "WGBO-DT.us_locals1"
+    ],
+    "WGBODT661.us@HD": [
+      "WGBO-DT.us_locals1"
+    ],
     "WGENTV82.us": [
       "Headline.News.in"
     ],
+    "WGGSTV161.us": [
+      "WGGS-DT.us_locals1"
+    ],
+    "WGGSTV161.us@HD": [
+      "WGGS-DT.us_locals1"
+    ],
+    "WHBQTV131.us": [
+      "WHBQ-DT.us_locals1"
+    ],
+    "WHBQTV131.us@HD": [
+      "WHBQ-DT.us_locals1"
+    ],
+    "WHIOTV71.us": [
+      "WHIO-DT.us_locals1"
+    ],
+    "WHIOTV71.us@HD": [
+      "WHIO-DT.us_locals1"
+    ],
+    "WHPSCD152.us": [
+      "WHPS-CD.us_locals1"
+    ],
+    "WHPSCD152.us@SD": [
+      "WHPS-CD.us_locals1"
+    ],
+    "Willow.Cricket.HD.us2": [
+      "Willow.Cricket.HD.us2"
+    ],
+    "Willow.us": [
+      "Willow.Cricket.HD.us2"
+    ],
+    "WinSports.co": [
+      "Win.Sports.co",
+      "Win.Sports.HD.(COL)(WINHD).co",
+      "Win.Sports.(WIN).co"
+    ],
+    "WISNTV121.us": [
+      "WISN-DT.us_locals1"
+    ],
+    "WISNTV121.us@HD": [
+      "WISN-DT.us_locals1"
+    ],
+    "WITI61.us": [
+      "WITI-DT.us_locals1"
+    ],
+    "WITI61.us@HD": [
+      "WITI-DT.us_locals1"
+    ],
+    "WITN22.us": [
+      "WITN-DT.us_locals1"
+    ],
+    "WITN22.us@SD": [
+      "WITN-DT.us_locals1"
+    ],
+    "WJAXTV471.us": [
+      "WJAX-DT.us_locals1"
+    ],
+    "WJAXTV471.us@HD": [
+      "WJAX-DT.us_locals1"
+    ],
+    "WLIO81.us": [
+      "WLIO-DT.us_locals1"
+    ],
+    "WLIO81.us@HD": [
+      "WLIO-DT.us_locals1"
+    ],
+    "WLMB.us": [
+      "WLMB-DT.us_locals1"
+    ],
+    "WLMB.us@SD": [
+      "WLMB-DT.us_locals1"
+    ],
+    "WLTVDT231.us": [
+      "WLTV-DT.us_locals1"
+    ],
+    "WLTVDT231.us@HD": [
+      "WLTV-DT.us_locals1"
+    ],
+    "WMBCTV631.us": [
+      "WMBC-DT.us_locals1"
+    ],
+    "WMBCTV631.us@HD": [
+      "WMBC-DT.us_locals1"
+    ],
     "WNBC-DT.us_locals1": [
+      "WNBC-DT.us_locals1"
+    ],
+    "WNBC471.us": [
+      "WNBC-DT.us_locals1"
+    ],
+    "WNBC471.us@HD": [
       "WNBC-DT.us_locals1"
     ],
     "WNYW-DT.us_locals1": [
@@ -2953,14 +3684,101 @@
     "WPCT466.us": [
       "Newsmax.TV.HD.us2"
     ],
+    "WPIXHD.us": [
+      "WPIX-DT.us_locals1"
+    ],
+    "WPIXHD.us@SD": [
+      "WPIX-DT.us_locals1"
+    ],
     "WPSG-DT.us_locals1": [
       "WPSG-DT.us_locals1"
+    ],
+    "WPSTV.us@SD": [
+      "WPSX-DT.us_locals1"
+    ],
+    "WPXI111.us": [
+      "WPXI-DT.us_locals1"
+    ],
+    "WPXI111.us@HD": [
+      "WPXI-DT.us_locals1"
+    ],
+    "WRDELD311.us": [
+      "WRDE-LD.us_locals1"
+    ],
+    "WRDELD311.us@HD": [
+      "WRDE-LD.us_locals1"
+    ],
+    "WSBSTV221.us": [
+      "WSBS-DT.us_locals1"
+    ],
+    "WSBSTV221.us@HD": [
+      "WSBS-DT.us_locals1"
+    ],
+    "WSOCTV91.us": [
+      "WSOC-DT.us_locals1"
+    ],
+    "WSOCTV91.us@HD": [
+      "WSOC-DT.us_locals1"
     ],
     "WTKR32.us": [
       "Court.TV.us2"
     ],
+    "WTMJTV41.us": [
+      "WTMJ-DT.us_locals1"
+    ],
+    "WTMJTV41.us@HD": [
+      "WTMJ-DT.us_locals1"
+    ],
+    "WTNH81.us": [
+      "WTNH-DT.us_locals1"
+    ],
+    "WTNH81.us@HD": [
+      "WTNH-DT.us_locals1"
+    ],
+    "WTTG51.us": [
+      "WTTG-DT.us_locals1"
+    ],
+    "WTTG51.us@HD": [
+      "WTTG-DT.us_locals1"
+    ],
+    "WTVJ61.us": [
+      "WTVJ-DT.us_locals1"
+    ],
+    "WTVJ61.us@HD": [
+      "WTVJ-DT.us_locals1"
+    ],
+    "WTVRTV61.us": [
+      "WTVR-DT.us_locals1"
+    ],
+    "WTVRTV61.us@HD": [
+      "WTVR-DT.us_locals1"
+    ],
+    "WTVT131.us": [
+      "WTVT-DT.us_locals1"
+    ],
+    "WTVT131.us@HD": [
+      "WTVT-DT.us_locals1"
+    ],
+    "WTXFTV291.us": [
+      "WTXF-DT.us_locals1"
+    ],
+    "WTXFTV291.us@HD": [
+      "WTXF-DT.us_locals1"
+    ],
     "WUCW-DT.us_locals1": [
       "WUCW-DT.us_locals1"
+    ],
+    "WVIT301.us": [
+      "WVIT-DT.us_locals1"
+    ],
+    "WVIT301.us@HD": [
+      "WVIT-DT.us_locals1"
+    ],
+    "WVVHCD181.us": [
+      "WVVH-CD.us_locals1"
+    ],
+    "WVVHCD181.us@HD": [
+      "WVVH-CD.us_locals1"
     ],
     "WWENetwork.us": [
       "WWE.Network.us2",
@@ -2971,6 +3789,18 @@
     ],
     "WWOR-DT.us_locals1": [
       "WWOR-DT.us_locals1"
+    ],
+    "WWORTV91.us": [
+      "WWOR-DT.us_locals1"
+    ],
+    "WWORTV91.us@HD": [
+      "WWOR-DT.us_locals1"
+    ],
+    "WXTVDT681.us": [
+      "WXTV-DT.us_locals1"
+    ],
+    "WXTVDT681.us@HD": [
+      "WXTV-DT.us_locals1"
     ],
     "WYOU224.us": [
       "COZI.TV.us2"
@@ -2984,26 +3814,15 @@
     "WZVNTV262.us": [
       "MeTV.Plus.us2"
     ],
-    "Willow.Cricket.HD.us2": [
-      "Willow.Cricket.HD.us2"
-    ],
-    "Willow.us": [
-      "Willow.Cricket.HD.us2"
-    ],
-    "WinSports.co": [
-      "Win.Sports.co",
-      "Win.Sports.HD.(COL)(WINHD).co",
-      "Win.Sports.(WIN).co"
-    ],
     "XHXTDT1.mx": [
       "LAS.ESTRELLAS.HD..uy"
+    ],
+    "YesNetwork.us": [
+      "Yes.Network.us2"
     ],
     "YTV.ca": [
       "YTV.HD.ca2",
       "YTV.ca2"
-    ],
-    "YesNetwork.us": [
-      "Yes.Network.us2"
     ],
     "ZDF.de": [
       "ZDF.de"
@@ -3029,121 +3848,8 @@
     "ZiggoSport6.nl": [
       "Ziggo.Sport.6.nl"
     ],
-    "arte.de": [
-      "arte.de"
-    ],
-    "arte.fr": [
-      "arte.fr"
-    ],
-    "bTV.bg": [
-      "bTV.bg"
-    ],
-    "bTVAction.bg": [
-      "bTV.Action.bg"
-    ],
-    "beIN.SPORTS.1.fr": [
-      "beIN.SPORTS.1.fr"
-    ],
-    "beIN.SPORTS.MAX.10.fr": [
-      "beIN.SPORTS.MAX.10.fr"
-    ],
-    "beIN.SPORTS.MAX.6.fr": [
-      "beIN.SPORTS.MAX.6.fr"
-    ],
-    "beIN.SPORTS.MAX.7.fr": [
-      "beIN.SPORTS.MAX.7.fr"
-    ],
-    "beIN.SPORTS.MAX.8.fr": [
-      "beIN.SPORTS.MAX.8.fr"
-    ],
-    "beIN.SPORTS.MAX.9.fr": [
-      "beIN.SPORTS.MAX.9.fr"
-    ],
-    "beINSports.qa": [
-      "Beinsports.tr",
-      "BeIN.Sports.es",
-      "beIN.Sports.HD.ae",
-      "beIN.Sports.HD.(Canada).ca2",
-      "beIN.SPORTS.(HD).sg"
-    ],
-    "beINSports1.qa": [
-      "beINSports1.au",
-      "beIN.SPORTS.1.fr",
-      "beIN.SPORTS.1.tr",
-      "beIN.SPORTS.1.my",
-      "BEIN.SPORTS.1.HD.ph",
-      "beIN.Sports.1.HD.id",
-      "beIN.Sports.1.id",
-      "beIN.SPORTS.1.hk"
-    ],
-    "beINSports2.qa": [
-      "beINSports2.au",
-      "beIN.SPORTS.2.fr",
-      "beIN.SPORTS.2.tr",
-      "Beinsports.2.tr",
-      "beIN.SPORTS.2.my",
-      "beIN.SPORTS.2.(HD).sg",
-      "BEIN.SPORTS.2.HD.ph",
-      "beIN.Sports.2.HD.id",
-      "beIN.Sports.2.id",
-      "beIN.SPORTS.2.hk"
-    ],
-    "beINSports3.qa": [
-      "beINSports3.au",
-      "beIN.SPORTS.3.fr",
-      "beIN.SPORTS.3.tr",
-      "Beinsports.3.tr",
-      "beIN.SPORTS.3.my",
-      "beIN.SPORTS.3.(HD).sg",
-      "BEIN.SPORTS.3.HD.ph",
-      "beIN.Sports.3.HD.id",
-      "beIN.Sports.3.id",
-      "beIN.SPORTS.3.hk"
-    ],
-    "beINSports4.qa": [
-      "beIN.SPORTS.4.tr",
-      "Beinsports.4.tr",
-      "beIN.SPORTS.4.(HD).sg",
-      "beIN.SPORTS.4.id",
-      "beIN.SPORTS.4.hk"
-    ],
-    "beINSports5.qa": [
-      "beIN.SPORTS.5.(HD).sg",
-      "beIN.SPORTS.5.id",
-      "beIN.SPORTS.5.hk"
-    ],
-    "beINSports6.qa": [
-      "beIN.SPORTS.6.hk"
-    ],
-    "beINSportsHaber.tr": [
-      "beIN.SPORTS.5.(HD).sg",
-      "beIN.SPORTS.HABER.HD.tr",
-      "Bein.Sports.Haber.tr"
-    ],
-    "beINSportsMax9.qa": [
-      "beIN.SPORTS.MAX.9.fr"
-    ],
-    "beINSportsUSA.us": [
-      "beIN.Sports.USA.HD.us2"
-    ],
-    "kabeleins.de": [
-      "kabel.eins.de",
-      "Kabel.Eins.at",
-      "Kabel.Eins.HD.at",
-      "Kabel.eins.ch",
-      "KABEL.EINS.fr",
-      "Kabel.Eins.pl",
-      "Kabel.eins.lu"
-    ],
-    "sixx.de": [
-      "sixx.de"
-    ],
-    "truTV.us": [
-      "truTV.HD.(Pacific).us2",
-      "truTV.HD.us2"
-    ],
-    "\u05e2\u05e8\u05d5\u05e5.14.HD.il": [
-      "\u05e2\u05e8\u05d5\u05e5.14.HD.il"
+    "ערוץ.14.HD.il": [
+      "ערוץ.14.HD.il"
     ]
   }
 }

@@ -1,11 +1,11 @@
 {
-  "versionCode": 30040,
-  "versionName": "3.0.40",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.40/stepdaddy-gateway-3.0.40-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.40/stepdaddy-gateway-3.0.40-debug.apk",
-  "apkSha256": "8a449f5943a2278694b7bea28d6a97d004ada91ebe99fb69a6502ed6ffb041ce",
-  "apkSha256Debug": "927817880faeee9f93039caa1db368a45453debaa8ac967acd15987878b2cee9",
-  "releaseNotes": "See CHANGELOG.md",
+  "versionCode": 30049,
+  "versionName": "3.0.49",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.49/stepdaddy-gateway-3.0.49-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.49/stepdaddy-gateway-3.0.49-debug.apk",
+  "apkSha256": "0adb16ce3f1c75332706cb540b2bf18b3cc3c55def86b012a5c696813cbbe19b",
+  "apkSha256Debug": "82dacc1a5c3f31bcce98a9e47ea0646559c4d77a58ef56f727c777fe1951b2d2",
+  "releaseNotes": "**WOFTV gap-fill** \u2014 What's On Free TV fills schedule holes when primary EPG sources miss programmes",
   "updateType": "optional",
   "mandatory": false
 }

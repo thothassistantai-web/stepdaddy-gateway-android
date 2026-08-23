@@ -7,6 +7,22 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.49] - 2026-08-23
+
+### Added
+
+- **EPG PEG channel map** — `epg_peg_channels.json` for residual / blocker guide coverage.
+- **EPG tooling scripts** — now-playing, residual-75, and blocker-resolution helpers under `scripts/`.
+
+### Changed
+
+- **EPGShare ID bridge + name overrides** — broader `tvg-id` / display-name mapping for guide alignment.
+- **WOFTV gap-fill** — Light EPG builder and WhatsOnFreeTv config fill schedule holes; unit tests cover residual cases.
+
+### Notes
+
+- Suite version **3.0.49** / **30049**. Ships proper OTA assets (`update-manifest.json` + versioned debug/release APKs); supersedes the incomplete v3.0.48 GitHub release for in-app updates.
+
 ## [3.0.40] - 2026-08-21
 
 ### Changed

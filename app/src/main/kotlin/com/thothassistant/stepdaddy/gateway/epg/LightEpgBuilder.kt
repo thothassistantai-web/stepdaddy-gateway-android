@@ -768,8 +768,13 @@ class LightEpgBuilder(
       tvgIds.forEach { tvgId ->
         val routed = scheduleUrlsForTvgId(tvgId)
             .filter { it in EpgConfig.PRIMARY_FEED_URLS }
-        val primary = routed.firstOrNull() ?: return@forEach
-        grouped.getOrPut(primary) { linkedSetOf() } += tvgId
+        if (routed.isEmpty()) return@forEach
+        // Assign to every primary feed the id routes to (US2 + sports + locals).
+        // US-only first-feed grouping previously skipped US_LOCALS1, so bridges to
+        // `*.us_locals1` never matched programmes during the primary merge.
+        routed.forEach { url ->
+          grouped.getOrPut(url) { linkedSetOf() } += tvgId
+        }
       }
       return grouped
     }
@@ -787,11 +792,25 @@ class LightEpgBuilder(
 
     fun gapFillUrlForTvgId(tvgId: String): String? {
       val tl = tvgId.lowercase()
+      // Quality/region suffixes (@HD, @East, …) must not force PLEX1 — strip before US checks.
+      val base = tvgId.substringBefore('@').lowercase()
       if (isHashStyleFastId(tvgId) || "plex" in tl) {
         return feedUrlContaining("PLEX1")
       }
       if ("distro" in tl) {
         return feedUrlContaining("DISTROTV1")
+      }
+      // Bare US playlist / epgshare ids must reuse primary US2 (usually already cached),
+      // not GAP_FILL's first entry (PLEX1) — Eastern-preferred gaps like HBO2.us depend on this.
+      if (
+          base.endsWith(".us2") ||
+          base.endsWith(".us") ||
+          "us_locals" in tl ||
+          "milb-" in tl ||
+          "fanduel" in tl ||
+          "draftkings" in tl
+      ) {
+        return EpgConfig.PRIMARY_FEED_URLS.firstOrNull()
       }
       val regional = listOf(
           listOf(".uk", ".gb", ".ie") to "UK1",

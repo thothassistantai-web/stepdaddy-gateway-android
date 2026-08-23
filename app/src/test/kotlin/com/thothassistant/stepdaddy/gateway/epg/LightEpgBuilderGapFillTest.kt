@@ -111,19 +111,28 @@ class LightEpgBuilderGapFillTest {
     @Test
     fun `groupTvgIdsByFeed routes locals to US_LOCALS1`() {
         val grouped = LightEpgBuilder.groupTvgIdsByFeed(setOf("WNYW-DT.us_locals1"))
-        assertEquals(
-            "https://epgshare01.online/epgshare01/epg_ripper_US_LOCALS1.xml.gz",
-            grouped.keys.single(),
-        )
-        assertEquals(setOf("WNYW-DT.us_locals1"), grouped.values.single())
+        val localsUrl = "https://epgshare01.online/epgshare01/epg_ripper_US_LOCALS1.xml.gz"
+        assertTrue(localsUrl in grouped.keys)
+        assertEquals(setOf("WNYW-DT.us_locals1"), grouped[localsUrl])
+        // Locals ids still prefer US_LOCALS1 first among primary routes.
+        assertEquals(localsUrl, grouped.keys.first())
     }
 
     @Test
     fun `groupTvgIdsByFeed routes US cable to US2`() {
         val grouped = LightEpgBuilder.groupTvgIdsByFeed(setOf("ESPN.us"))
-        assertEquals(
-            "https://epgshare01.online/epgshare01/epg_ripper_US2.xml.gz",
-            grouped.keys.single(),
+        val us2 = "https://epgshare01.online/epgshare01/epg_ripper_US2.xml.gz"
+        assertTrue(us2 in grouped.keys)
+        assertTrue(grouped[us2]!!.contains("ESPN.us"))
+        // US cable also merges against sports + locals primary feeds for bridge targets.
+        assertTrue(
+            grouped.keys.containsAll(
+                listOf(
+                    us2,
+                    "https://epgshare01.online/epgshare01/epg_ripper_US_SPORTS1.xml.gz",
+                    "https://epgshare01.online/epgshare01/epg_ripper_US_LOCALS1.xml.gz",
+                ),
+            ),
         )
     }
 
@@ -155,10 +164,57 @@ class LightEpgBuilderGapFillTest {
     }
 
     @Test
-    fun `gapFillUrlForTvgId defaults missing primary programmes to PLEX1`() {
+    fun `gapFillUrlForTvgId routes bare us ids to primary US2`() {
+        assertEquals(
+            "https://epgshare01.online/epgshare01/epg_ripper_US2.xml.gz",
+            LightEpgBuilder.gapFillUrlForTvgId("MysteryChannel.us"),
+        )
+        assertEquals(
+            "https://epgshare01.online/epgshare01/epg_ripper_US2.xml.gz",
+            LightEpgBuilder.gapFillUrlForTvgId("HBO2.us"),
+        )
+        assertEquals(
+            "https://epgshare01.online/epgshare01/epg_ripper_US2.xml.gz",
+            LightEpgBuilder.gapFillUrlForTvgId("HBO2.HD.us2"),
+        )
+        assertEquals(
+            "https://epgshare01.online/epgshare01/epg_ripper_US2.xml.gz",
+            LightEpgBuilder.gapFillUrlForTvgId("MoreMax.us@East"),
+        )
+        assertEquals(
+            "https://epgshare01.online/epgshare01/epg_ripper_US2.xml.gz",
+            LightEpgBuilder.gapFillUrlForTvgId("WATCDT571.us@HD"),
+        )
+    }
+
+    @Test
+    fun `groupTvgIdsByFeed assigns US ids to all primary feeds including locals`() {
+        val grouped = LightEpgBuilder.groupTvgIdsByFeed(setOf("WATCDT571.us@HD", "MoreMax.us@East"))
+        assertTrue(
+            grouped.keys.contains(
+                "https://epgshare01.online/epgshare01/epg_ripper_US2.xml.gz",
+            ),
+        )
+        assertTrue(
+            grouped.keys.contains(
+                "https://epgshare01.online/epgshare01/epg_ripper_US_LOCALS1.xml.gz",
+            ),
+        )
+        assertTrue(
+            grouped["https://epgshare01.online/epgshare01/epg_ripper_US_LOCALS1.xml.gz"]!!
+                .contains("WATCDT571.us@HD"),
+        )
+        assertTrue(
+            grouped["https://epgshare01.online/epgshare01/epg_ripper_US2.xml.gz"]!!
+                .contains("MoreMax.us@East"),
+        )
+    }
+
+    @Test
+    fun `gapFillUrlForTvgId still defaults unknown regions to PLEX1`() {
         assertEquals(
             "https://epgshare01.online/epgshare01/epg_ripper_PLEX1.xml.gz",
-            LightEpgBuilder.gapFillUrlForTvgId("MysteryChannel.us"),
+            LightEpgBuilder.gapFillUrlForTvgId("MysteryChannel.zz"),
         )
     }
 
