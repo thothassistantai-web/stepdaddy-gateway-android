@@ -7,6 +7,17 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.51] - 2026-08-23
+
+### Fixed
+
+- **Empty tvg-id pass** — 216+ DaddyLive `channel_epg_map.json` mappings including ACCNX→ACC Network and BTN+/SECN+/Racer TV network proxies.
+- **Supplement tvg-id pass** — FAST / NTV / WOFTV name overrides for ~87 high-confidence supplement channels; ambiguous international fuzzy matches excluded.
+
+### Notes
+
+- Suite version **3.0.51** / **30051**. OTA assets: `update-manifest.json` + versioned debug/release APKs. EPG refresh on device required for guide lift.
+
 ## [3.0.50] - 2026-08-23
 
 ### Fixed
