@@ -1,11 +1,11 @@
 {
-  "versionCode": 30050,
-  "versionName": "3.0.50",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.50/stepdaddy-gateway-3.0.50-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.50/stepdaddy-gateway-3.0.50-debug.apk",
-  "apkSha256": "9c74aa745edf9ebd7d77f42c9c4a60a342bf0524bdb7563498dbfd96d8d614b5",
-  "apkSha256Debug": "b9450d455dd81f36b6c58932db2767f81734259a65842329fc27c08a7271bfa8",
-  "releaseNotes": "**Pluto / hash FAST EPG** \u2014 DaddyLive Pluto and other hash-style FAST `tvg-id`s merge into mjh Fast XMLTV; WOFTV gap-fill retries those ids after thin PLEX1; residual scoring ignores name-only WOFTV hits",
+  "versionCode": 30051,
+  "versionName": "3.0.51",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.51/stepdaddy-gateway-3.0.51-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.51/stepdaddy-gateway-3.0.51-debug.apk",
+  "apkSha256": "760e4e3208ccc102228103ebcb21e44b438b04b3ad0dca09a1a4c0c581b55113",
+  "apkSha256Debug": "9890ab55762f1483f9b8d354d370913cc2c7b275dfad35ac5a45de4075323d23",
+  "releaseNotes": "**Empty tvg-id pass** \u2014 216+ DaddyLive `channel_epg_map.json` entries (ACCNX\u2192ACC Network, BTN+/SECN+/Racer TV proxies, international sports/locale ids)",
   "updateType": "optional",
   "mandatory": false
 }
