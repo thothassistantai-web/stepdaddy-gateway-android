@@ -139,17 +139,39 @@ class EpgManager(
           }
         }
         val supplementTvgIds = supplementSource?.tvgIdsForEpg().orEmpty()
-        val fastTvgIds = supplementSource?.fastTvgIdsForEpg().orEmpty()
         val iptvOrgTvgIds = supplementSource?.iptvOrgTvgIdsForEpg().orEmpty()
         val sportsTvgIds = supplementSource?.sportsTvgIdsForEpg().orEmpty()
+        // Supplements first; playlist titles win so WOFTV matches DaddyLive names
+        // for mongo-hex / provider-hash ids before gap-fill / force-retry passes.
         val channelNamesByTvgId = buildMap<String, String> {
+          supplementSource?.channels()?.forEach { sup ->
+            sup.tvgId?.trim()?.takeIf { it.isNotEmpty() }?.let { put(it, sup.name) }
+          }
           channels.forEach { ch ->
             mapper.tvgIdFor(ch.id, ch.name)?.let { put(it, ch.name) }
             ch.tvgId?.trim()?.takeIf { it.isNotEmpty() }?.let { put(it, ch.name) }
           }
-          supplementSource?.channels()?.forEach { sup ->
-            sup.tvgId?.trim()?.takeIf { it.isNotEmpty() }?.let { put(it, sup.name) }
+          // Every playlist tvg-id (incl. DaddyLive mongo-hex Pluto) needs a title
+          // for WOFTV name lookup before pre-/post-gap-fill passes.
+          for (id in tvgIds) {
+            if (containsKey(id)) continue
+            val name = channels.firstOrNull { ch ->
+              ch.tvgId?.trim() == id || mapper.tvgIdFor(ch.id, ch.name) == id
+            }?.name ?: namesById.entries.firstOrNull { (cid, displayName) ->
+              mapper.tvgIdFor(cid, displayName) == id
+            }?.value
+            if (!name.isNullOrBlank()) put(id, name)
           }
+        }
+        val fastTvgIds = buildSet {
+          addAll(supplementSource?.fastTvgIdsForEpg().orEmpty())
+          // mjh Pluto/Samsung/… feeds are keyed by hex; include DaddyLive playlist ids
+          addAll(
+              FastChannelContext.playlistIdsForHashFastEpgMerge(
+                  tvgIds = tvgIds,
+                  channelNamesByTvgId = channelNamesByTvgId,
+              ),
+          )
         }
         val result = withContext(Dispatchers.IO) {
           epgBuilder.build(

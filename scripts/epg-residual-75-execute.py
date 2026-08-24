@@ -279,9 +279,10 @@ def resolve_covered(
         return True
     if not count_woftv:
         return False
-    alias = woftv_aliases.get(norm, norm)
-    if alias in woftv_keys:
-        return True
+    # WOFTV catalog name hits are NOT coverage — programmes must exist under the
+    # playlist tvg-id (or bridge/override target above). Name-only counting hid
+    # empty Pluto hex guides while residual scorecards looked "solved".
+    del woftv_keys, woftv_aliases  # params kept for call-site compatibility
     return False
 
 
@@ -807,7 +808,7 @@ def main() -> int:
     lines.append("## Notes")
     lines.append("")
     lines.append(
-        "- Host scorecard treats WOFTV catalog name hits as covered (device `mergeGaps` path)."
+        "- Host scorecard requires programmes under playlist tvg-id (WOFTV name-only no longer counts)."
     )
     lines.append(
         "- Raw 75% for Entertainment/Locals remains a stretch; eligible % is the honest goal metric."

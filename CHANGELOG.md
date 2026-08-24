@@ -7,6 +7,16 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.50] - 2026-08-23
+
+### Fixed
+
+- **Pluto / hash FAST EPG** — DaddyLive Pluto (and Samsung/Plex/Xumo/Roku/Tubi/LocalNow) hash-style `tvg-id`s now enter the mjh Fast XMLTV merge set; WOFTV gap-fill retries those ids after thin PLEX1; playlist titles win display-name lookup; residual scorecard no longer treats WOFTV name-only hits as covered.
+
+### Notes
+
+- Suite version **3.0.50** / **30050**. OTA assets: `update-manifest.json` + versioned debug/release APKs. Guide lift needs an EPG rebuild on device after upgrade.
+
 ## [3.0.49] - 2026-08-23
 
 ### Added

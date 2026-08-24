@@ -283,4 +283,28 @@ class LightEpgBuilderGapFillTest {
         )
         assertEquals(setOf("USBD42000073E"), retry)
     }
+
+    @Test
+    fun `woftvGapFillRetryIds includes playlist mongo hex after thin PLEX1`() {
+        val plutoHex = "5ca670f6593a5d78f0e85aed"
+        val retry = LightEpgBuilder.woftvGapFillRetryIds(
+            idsWithProgrammes = setOf("ESPN.us", plutoHex),
+            idsWithProgrammesBeforeGapFill = setOf("ESPN.us"),
+            // Hex may arrive via playlist merge expansion rather than iptv-only fastTvgIdsForEpg
+            fastEpgTvgIds = emptySet(),
+            iptvOrgSupplementTvgIds = emptySet(),
+        )
+        assertEquals(setOf(plutoHex), retry)
+    }
+
+    @Test
+    fun `woftvGapFillRetryIds skips iptv-org dot ids not in fast sets`() {
+        val retry = LightEpgBuilder.woftvGapFillRetryIds(
+            idsWithProgrammes = setOf("ESPN.us", "PlutoTVComedyMovies.us"),
+            idsWithProgrammesBeforeGapFill = setOf("ESPN.us"),
+            fastEpgTvgIds = emptySet(),
+            iptvOrgSupplementTvgIds = emptySet(),
+        )
+        assertTrue(retry.isEmpty())
+    }
 }

@@ -701,8 +701,9 @@ class LightEpgBuilder(
             ).toSet()
 
     /**
-     * FAST / iptv-org ids that received only epgshare gap-fill (e.g. PLEX1) programmes
-     * before WOFTV ran — allow a second WOFTV pass to append real guide rows.
+     * FAST / iptv-org / DaddyLive hash ids that received only epgshare gap-fill
+     * (e.g. PLEX1) programmes before WOFTV ran — allow a second WOFTV pass to
+     * append real guide rows (thin PLEX1 must not block WOFTV for Pluto hex).
      */
     fun woftvGapFillRetryIds(
         idsWithProgrammes: Set<String>,
@@ -711,7 +712,11 @@ class LightEpgBuilder(
         iptvOrgSupplementTvgIds: Set<String>,
     ): Set<String> {
       val gapFillOnly = idsWithProgrammes - idsWithProgrammesBeforeGapFill
-      return (fastEpgTvgIds + iptvOrgSupplementTvgIds).filter { it in gapFillOnly }.toSet()
+      return gapFillOnly.filter { id ->
+        id in fastEpgTvgIds ||
+            id in iptvOrgSupplementTvgIds ||
+            FastChannelContext.isHashFastGapFillRetryId(id)
+      }.toSet()
     }
 
     fun emptyXml(): ByteArray =

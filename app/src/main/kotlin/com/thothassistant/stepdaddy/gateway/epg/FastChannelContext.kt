@@ -113,6 +113,34 @@ object FastChannelContext {
         return HASH_PREFIX_PATTERN.containsMatchIn(id)
     }
 
+    /**
+     * Playlist / DaddyLive ids that should be merged against mjh hash FAST XMLTV
+     * (Pluto, Samsung, Plex, Xumo, Roku, Tubi, LocalNow) — not only iptv-org
+     * supplement rows from SupplementSource.fastTvgIdsForEpg().
+     *
+     * DaddyLive Pluto rows keep 24-char mongo hex keys that match i.mjh.nz PlutoTV;
+     * other no-dot / USBD* hashes match the remaining mjh feeds. iptv-org dotted
+     * ids are excluded (those use the iptv-org / WOFTV paths).
+     *
+     * [channelNamesByTvgId] is unused for eligibility (kept for call-site stability).
+     */
+    @Suppress("UNUSED_PARAMETER")
+    fun playlistIdsForHashFastEpgMerge(
+        tvgIds: Set<String>,
+        channelNamesByTvgId: Map<String, String> = emptyMap(),
+    ): Set<String> =
+        tvgIds.map { it.trim() }.filter { id ->
+            id.isNotEmpty() && !isIptvOrgDotId(id) && isHashStyleFastId(id)
+        }.toSet()
+
+    /** True when [tvgId] is eligible for WOFTV retry after thin PLEX1/epgshare gap-fill. */
+    fun isHashFastGapFillRetryId(tvgId: String): Boolean {
+        val id = tvgId.trim()
+        if (id.isEmpty() || isIptvOrgDotId(id)) return false
+        // Same population that groupTvgIdsByGapFillFeed routes to PLEX1 (mongo hex + hash).
+        return isHashStyleFastId(id)
+    }
+
     fun isIptvOrgDotId(tvgId: String): Boolean {
         val id = tvgId.trim()
         if (id.isEmpty()) return false

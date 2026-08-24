@@ -488,10 +488,18 @@ class SupplementSource(
         syncedAtMs = store.lastSyncedAtMs(),
     )
 
+    /**
+     * iptv-org FAST rows whose tvg-ids are mjh/hash style (mongo hex, USBD*, no-dot).
+     * DaddyLive main-playlist hex ids are unioned in EpgManager via
+     * [com.thothassistant.stepdaddy.gateway.epg.FastChannelContext.playlistIdsForHashFastEpgMerge].
+     */
     fun fastTvgIdsForEpg(): Set<String> =
         cached.filter { it.id.startsWith("iptv:") }
             .mapNotNull { channel ->
-                channel.tvgId?.trim()?.takeIf { id -> id.isNotEmpty() && !id.contains('.') }
+                channel.tvgId?.trim()?.takeIf { id ->
+                    id.isNotEmpty() &&
+                        com.thothassistant.stepdaddy.gateway.epg.FastChannelContext.isHashStyleFastId(id)
+                }
             }
             .toSet()
 

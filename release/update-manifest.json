@@ -1,11 +1,11 @@
 {
-  "versionCode": 30049,
-  "versionName": "3.0.49",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.49/stepdaddy-gateway-3.0.49-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.49/stepdaddy-gateway-3.0.49-debug.apk",
-  "apkSha256": "0adb16ce3f1c75332706cb540b2bf18b3cc3c55def86b012a5c696813cbbe19b",
-  "apkSha256Debug": "82dacc1a5c3f31bcce98a9e47ea0646559c4d77a58ef56f727c777fe1951b2d2",
-  "releaseNotes": "**WOFTV gap-fill** \u2014 What's On Free TV fills schedule holes when primary EPG sources miss programmes",
+  "versionCode": 30050,
+  "versionName": "3.0.50",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.50/stepdaddy-gateway-3.0.50-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.50/stepdaddy-gateway-3.0.50-debug.apk",
+  "apkSha256": "9c74aa745edf9ebd7d77f42c9c4a60a342bf0524bdb7563498dbfd96d8d614b5",
+  "apkSha256Debug": "b9450d455dd81f36b6c58932db2767f81734259a65842329fc27c08a7271bfa8",
+  "releaseNotes": "**Pluto / hash FAST EPG** \u2014 DaddyLive Pluto and other hash-style FAST `tvg-id`s merge into mjh Fast XMLTV; WOFTV gap-fill retries those ids after thin PLEX1; residual scoring ignores name-only WOFTV hits",
   "updateType": "optional",
   "mandatory": false
 }

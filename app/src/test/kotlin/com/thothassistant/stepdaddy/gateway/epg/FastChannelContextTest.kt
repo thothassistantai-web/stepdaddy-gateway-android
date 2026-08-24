@@ -86,6 +86,32 @@ class FastChannelContextTest {
     }
 
     @Test
+    fun playlistIdsForHashFastEpgMerge_includesAllHashStylePlaylistIds() {
+        val hex = "62ba60f059624e000781c436"
+        val samsungHash = "USBD42000073E"
+        val samsungNoProv = "USBB320000397"
+        val cableDot = "ESPN.us"
+        val ids = FastChannelContext.playlistIdsForHashFastEpgMerge(
+            tvgIds = setOf(hex, samsungHash, samsungNoProv, cableDot, "PlutoTVComedyMovies.us"),
+            channelNamesByTvgId = mapOf(
+                hex to "US: 00S REPLAY",
+                samsungHash to "US: 60 DAYS IN BY A&E",
+                samsungNoProv to "US: 21 JUMP STREET",
+                cableDot to "ESPN",
+            ),
+        )
+        assertEquals(setOf(hex, samsungHash, samsungNoProv), ids)
+    }
+
+    @Test
+    fun isHashFastGapFillRetryId_allowsMongoHexNotDotIds() {
+        assertTrue(FastChannelContext.isHashFastGapFillRetryId("5ca670f6593a5d78f0e85aed"))
+        assertTrue(FastChannelContext.isHashFastGapFillRetryId("USBD42000073E"))
+        assertFalse(FastChannelContext.isHashFastGapFillRetryId("PlutoTVComedyMovies.us"))
+        assertFalse(FastChannelContext.isHashFastGapFillRetryId("ESPN.us"))
+    }
+
+    @Test
     fun normalizeProvider_mapsLocalAlias() {
         assertEquals("LocalNow", FastChannelContext.normalizeProvider("local"))
         assertNull(FastChannelContext.normalizeProvider(""))
