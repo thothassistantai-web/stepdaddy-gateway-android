@@ -7,6 +7,19 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.54] - 2026-09-15
+
+### Fixed
+
+- **DaddyLive cold resolve latency** — prefer `freetvspor` / `tiestep` / `assetrage` hubs before slow daddy-url stubs (`rippleplays`, `cricsfree`, `apexstreams`, `worldsportz`); fail-fast `hamis.romponalis` after HTTP 403.
+- **Hub / m3u8 budgets** — per-hub HTML timeout ≈2s; after `_econfig` reserve ≥3.5s for the real m3u8 fetch (NonCancellable) so outer mirror timeout no longer cancels a winning stream URL.
+- **Hedged mirrors** — drop DNS-dead `daddylive.eu` (NXDOMAIN) from defaults / domain-relay and always-block it so hedge races do not double-download hub HTML.
+- **Winning embed cache** — remember channelId → tiestep/assetrage embed URL for 6h; skip nontongo / other deprioritized hubs when remaining budget is low.
+
+### Notes
+
+- Suite version **3.0.54** / **30054**. OTA assets: `update-manifest.json` + versioned debug/release APKs. Gateway-only upgrade; factory TiviMate unchanged.
+
 ## [3.0.53] - 2026-09-15
 
 ### Fixed

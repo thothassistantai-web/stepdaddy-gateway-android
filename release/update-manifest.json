@@ -1,11 +1,11 @@
 {
-  "versionCode": 30053,
-  "versionName": "3.0.53",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.53/stepdaddy-gateway-3.0.53-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.53/stepdaddy-gateway-3.0.53-debug.apk",
-  "apkSha256": "07e6ad40d959f506e7170e554319bba096b0a1e14ee81be53a0e6e808e0c9bb0",
-  "apkSha256Debug": "40e9a91a8e8eb98d3b403c537da7a96e90e2e9393c1a1a76f8f0085c47f7fa9b",
-  "releaseNotes": "**DaddyLive assetrage chain** \u2014 embed depth 8; prioritize `assetrage` / known player hosts before nontongo so nontongo \u2192 dlive \u2192 assetrage `_econfig` resolves (fixes HTTP 504 stub / factory TiviMate no-video)",
+  "versionCode": 30054,
+  "versionName": "3.0.54",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.54/stepdaddy-gateway-3.0.54-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.54/stepdaddy-gateway-3.0.54-debug.apk",
+  "apkSha256": "bc66ee8536ac72b6121104fe435860a9814924d1f821f96a2097c50094dd2978",
+  "apkSha256Debug": "5010b8d44c8bcfc77f20d35c9d0542c0e3b1e7cdf3e2d372fb3c82b42f9a3ee6",
+  "releaseNotes": "**DaddyLive cold resolve** \u2014 prefer `freetvspor` / `tiestep` / `assetrage` ahead of slow stubs (`rippleplays`, `cricsfree`, `apexstreams`, `worldsportz`); fail-fast `hamis` 403s",
   "updateType": "optional",
   "mandatory": false
 }

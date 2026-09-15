@@ -350,8 +350,12 @@ class DaddyLiveClient(
         if (raceBudget <= 500L) return@coroutineScope null
 
         val eligible = mirrors.filter {
-            !isMirrorDead(it) && !isMirrorCoolingDown(it) && !channelMirrorCooldowns.isCoolingDown(channelId, it)
+            !isMirrorBlocked(it) &&
+                !isMirrorDead(it) &&
+                !isMirrorCoolingDown(it) &&
+                !channelMirrorCooldowns.isCoolingDown(channelId, it)
         }
+        // Need two live mirrors; never hedge against DNS-dead / blocked hosts.
         if (eligible.size < 2) return@coroutineScope null
 
         val winner = CompletableDeferred<UpstreamManifest>()

@@ -17,7 +17,6 @@ object GatewayConfig {
     )
     private val DEFAULT_DLHD_RELAY_HOSTS = listOf(
         "https://daddylive.li",
-        "https://daddylive.eu",
         "https://dlstreams.st",
         "https://dlhd.st",
         "https://dlhd.pk",
@@ -27,7 +26,6 @@ object GatewayConfig {
         get() = DomainRelayRuntime.relayHosts ?: DEFAULT_DLHD_RELAY_HOSTS
     private val DEFAULT_DLHD_EMBED_HOSTS = listOf(
         "https://daddylive.li",
-        "https://daddylive.eu",
         "https://daddylive.at",
         "https://dlstreams.st",
         "https://dlhd.st",
@@ -49,8 +47,20 @@ object GatewayConfig {
     const val STALE_STREAM_TTL_MS = 600_000L
     /** Total budget for one stream resolve (all mirrors). */
     const val STREAM_FETCH_TIMEOUT_MS = 28_000L
-    /** Per-mirror attempt — fail fast on dead mirrors, then rotate. */
-    const val MIRROR_ATTEMPT_TIMEOUT_MS = 8_000L
+    /**
+     * Per-mirror attempt wall clock. Hub pages use [HUB_PAGE_TIMEOUT_MS]; after `_econfig`
+     * the m3u8 fetch is reserved via [M3U8_FETCH_TIMEOUT_MS] (NonCancellable) so hub burn
+     * does not cancel the winning stream URL.
+     */
+    const val MIRROR_ATTEMPT_TIMEOUT_MS = 10_000L
+    /** Per-hub / nested embed HTML fetch — fail fast on slow/dead daddy-url stubs. */
+    const val HUB_PAGE_TIMEOUT_MS = 2_000L
+    /** Reserved budget to fetch the real m3u8 after `_econfig` / atob extraction. */
+    const val M3U8_FETCH_TIMEOUT_MS = 3_500L
+    /** Skip deprioritized hubs (nontongo / rippleplays / …) when remaining budget is below this. */
+    const val DEPRIORITIZED_HUB_MIN_REMAINING_MS = 3_000L
+    /** Multi-hour TTL for channelId → winning embed/tiestep URL cache. */
+    const val WINNING_EMBED_CACHE_TTL_MS = 6L * 60L * 60L * 1_000L
     /** Cap parallel stream resolves — keep modest so iptv CDN + TiviMate do not wedge LTE. */
     const val UPSTREAM_FETCH_MAX_CONCURRENT = 3
     /** Max wait for a fetch slot when TiviMate requests several channels at once. */
@@ -63,7 +73,7 @@ object GatewayConfig {
     const val OUTAGE_STALE_GRACE_TTL_MS = 1_800_000L
     const val STALE_DISK_MAX_ENTRIES = 64
     const val STALE_DISK_TTL_MS = 1_800_000L
-    const val OUTAGE_MIRROR_ATTEMPT_TIMEOUT_MS = 6_000L
+    const val OUTAGE_MIRROR_ATTEMPT_TIMEOUT_MS = 7_000L
     const val OUTAGE_STREAM_FETCH_TIMEOUT_MS = 12_000L
     const val OUTAGE_PROBE_TIMEOUT_MS = 8_000L
     const val INVALIDATE_COOLDOWN_MS = 180_000L
@@ -89,7 +99,6 @@ object GatewayConfig {
     private val DEFAULT_DADDYLIVE_HOSTS = setOf(
         "daddylive.org",
         "daddylive.li",
-        "daddylive.eu",
         "daddylive.at",
         "dlstreams.st",
         "dlhd.st",
@@ -108,12 +117,14 @@ object GatewayConfig {
             }
             return if (extra.isEmpty()) DEFAULT_DADDYLIVE_HOSTS else DEFAULT_DADDYLIVE_HOSTS + extra
         }
-    private val DEFAULT_DADDYLIVE_BLOCKED_HOSTS = setOf(
+    private val ALWAYS_BLOCKED_DADDYLIVE_HOSTS = setOf(
         "daddylive.org",
+        /** NXDOMAIN / DNS-dead — hedged race previously double-downloaded hub HTML against it. */
+        "daddylive.eu",
     )
     /** Mirrors excluded from automatic rotation (seized, deprecated, or structurally broken). */
     val DADDYLIVE_BLOCKED_HOSTS: Set<String>
-        get() = DomainRelayRuntime.blockedHosts ?: DEFAULT_DADDYLIVE_BLOCKED_HOSTS
+        get() = ALWAYS_BLOCKED_DADDYLIVE_HOSTS + (DomainRelayRuntime.blockedHosts ?: emptySet())
 
     private fun hostFromUrl(baseUrl: String): String? =
         runCatching {
@@ -134,7 +145,7 @@ object GatewayConfig {
     const val DLHD_HOST_COOLDOWN_BASE_MS = 12_000L
     const val DLHD_HOST_COOLDOWN_MAX_MS = 120_000L
     /** Hedged mirror race: max wait for the first successful mirror. */
-    const val HEDGED_MIRROR_RACE_TIMEOUT_MS = 8_000L
+    const val HEDGED_MIRROR_RACE_TIMEOUT_MS = 6_000L
     const val HEDGED_MIRROR_RACE_ENABLED = true
     val XAMELEON_HOSTS = setOf("xameleon")
 }

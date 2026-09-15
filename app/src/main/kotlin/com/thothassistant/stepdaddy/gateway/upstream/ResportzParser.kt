@@ -4,9 +4,13 @@ import android.util.Log
 import com.thothassistant.stepdaddy.gateway.model.UpstreamManifest
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.ConnectionPool
 import okhttp3.OkHttpClient
@@ -27,12 +31,16 @@ class ResportzParser(
     private val dlhdHostCooldownUntilMs = ConcurrentHashMap<String, Long>()
     private val resportzHostFailureCounts = ConcurrentHashMap<String, Int>()
     private val resportzHostCooldownUntilMs = ConcurrentHashMap<String, Long>()
+    private val winningEmbedByChannel = ConcurrentHashMap<String, CachedWinningEmbed>()
+
     suspend fun fetchManifest(
         channelId: String,
         refererBase: String,
         embedUrl: String? = null,
     ): UpstreamManifest {
         val referer = "${refererBase.trimEnd('/')}/"
+        tryCachedWinningEmbed(channelId)?.let { return it }
+
         val candidates = watchUrlCandidates(channelId, refererBase, embedUrl)
         val liveCandidates = candidates.filter { DlhdEmbedUrl.isLiveStreamPageUrl(it) }
         val embedCandidates = candidates.filter { DlhdEmbedUrl.isEmbedPageUrl(it) }
@@ -84,6 +92,30 @@ class ResportzParser(
             "resportz watch failed: ${lastError?.message ?: "no watch URLs"}",
             lastError,
         )
+    }
+
+    private suspend fun tryCachedWinningEmbed(channelId: String): UpstreamManifest? {
+        val cached = winningEmbedByChannel[channelId] ?: return null
+        val now = System.currentTimeMillis()
+        if (now - cached.savedAtMs > GatewayConfig.WINNING_EMBED_CACHE_TTL_MS) {
+            winningEmbedByChannel.remove(channelId, cached)
+            return null
+        }
+        return runCatching {
+            Log.d(TAG, "resportz winning-embed cache hit channel=$channelId url=${cached.embedUrl}")
+            resolveFromEmbedPage(
+                channelId = channelId,
+                embedUrl = cached.embedUrl,
+                referer = cached.referer.ifBlank { cached.embedUrl },
+                iframePattern = "winning_embed_cache",
+                depth = 0,
+                attemptDeadlineMs = now + GatewayConfig.MIRROR_ATTEMPT_TIMEOUT_MS,
+            )
+        }.onFailure { exc ->
+            if (exc is CancellationException) throw exc
+            winningEmbedByChannel.remove(channelId, cached)
+            Log.d(TAG, "winning-embed cache miss channel=$channelId: ${exc.message}")
+        }.getOrNull()
     }
 
     private suspend fun raceDlhdWatchUrls(
@@ -339,20 +371,25 @@ class ResportzParser(
         watchUrl: String,
         referer: String,
     ): UpstreamManifest {
+        val attemptDeadlineMs =
+            System.currentTimeMillis() + GatewayConfig.MIRROR_ATTEMPT_TIMEOUT_MS
         Log.d(TAG, "resportz watch $watchUrl")
-        val watchHtml = getText(watchUrl, referer)
+        val watchHtml = getHtmlText(watchUrl, referer)
         Log.d(TAG, "resportz watch ok (${watchHtml.length} bytes)")
 
         // Direct m3u8 / _econfig on the watch page itself (modern hubs).
         ResportzHtmlParser.extractM3u8Url(watchHtml)?.let { match ->
             Log.d(TAG, "resportz watch m3u8 pattern=${match.pattern} url=${match.value}")
             val resolvedM3u8 = resolveM3u8Url(match.value, watchUrl)
-            val (resolvedUrl, m3u8Text) = fetchM3u8Text(resolvedM3u8, watchUrl)
-            return UpstreamManifest(
-                playlistText = m3u8Text,
-                masterUrl = resolvedUrl,
-                refererHost = watchUrl,
-            )
+            val (resolvedUrl, m3u8Text) = fetchM3u8TextReserved(resolvedM3u8, watchUrl)
+            val manifest =
+                UpstreamManifest(
+                    playlistText = m3u8Text,
+                    masterUrl = resolvedUrl,
+                    refererHost = watchUrl,
+                )
+            rememberWinningEmbed(channelId, watchUrl, referer)
+            return manifest
         }
 
         val hubUrls = ResportzHtmlParser.extractPlayerHubUrls(watchHtml, channelId, watchUrl)
@@ -374,6 +411,20 @@ class ResportzParser(
         }
         var lastError: Exception? = null
         for (hubUrl in orderedHubs) {
+            val remaining = attemptDeadlineMs - System.currentTimeMillis()
+            if (remaining <= 400L) {
+                break
+            }
+            if (
+                ResportzHtmlParser.isDeprioritizedHub(hubUrl) &&
+                remaining < GatewayConfig.DEPRIORITIZED_HUB_MIN_REMAINING_MS
+            ) {
+                Log.d(
+                    TAG,
+                    "skip deprioritized hub remaining=${remaining}ms url=$hubUrl",
+                )
+                continue
+            }
             val pattern =
                 iframeCandidates.firstOrNull { it.value == hubUrl }?.pattern
                     ?: if (hubUrl.contains("nontongo", ignoreCase = true)) {
@@ -389,10 +440,17 @@ class ResportzParser(
                     referer = watchUrl,
                     iframePattern = pattern,
                     depth = 0,
+                    attemptDeadlineMs = attemptDeadlineMs,
                 )
             } catch (exc: Exception) {
+                if (exc is CancellationException && exc !is TimeoutCancellationException) {
+                    throw exc
+                }
                 lastError = exc
                 Log.d(TAG, "hub failed pattern=$pattern: ${exc.message}")
+                if (isFailFast403(exc, hubUrl)) {
+                    Log.d(TAG, "fail-fast 403 hub url=$hubUrl")
+                }
             }
         }
         throw lastError ?: error("Failed to resolve m3u8 for channel $channelId")
@@ -404,24 +462,28 @@ class ResportzParser(
         referer: String,
         iframePattern: String,
         depth: Int,
+        attemptDeadlineMs: Long,
     ): UpstreamManifest {
         if (ResportzHtmlParser.isEmbedStub(embedUrl)) {
             error("embed stub host for channel $channelId ($embedUrl)")
         }
-        val sourcePageHtml = getText(embedUrl, referer)
+        val sourcePageHtml = getHtmlText(embedUrl, referer)
         Log.d(TAG, "resportz embed ok pattern=$iframePattern (${sourcePageHtml.length} bytes)")
         val m3u8Match = ResportzHtmlParser.extractM3u8Url(sourcePageHtml)
         if (m3u8Match != null) {
             Log.d(TAG, "resportz m3u8 pattern=${m3u8Match.pattern} url=${m3u8Match.value}")
             val resolvedM3u8 = resolveM3u8Url(m3u8Match.value, embedUrl)
-            val (resolvedUrl, m3u8Text) = fetchM3u8Text(resolvedM3u8, embedUrl)
+            val (resolvedUrl, m3u8Text) = fetchM3u8TextReserved(resolvedM3u8, embedUrl)
             Log.d(TAG, "resportz m3u8 ok (${m3u8Text.length} bytes)")
-            return UpstreamManifest(
-                playlistText = m3u8Text,
-                masterUrl = resolvedUrl,
-                // Keep the full embed URL so referer-sensitive hosts (xameleon) pass validation.
-                refererHost = embedUrl,
-            )
+            val manifest =
+                UpstreamManifest(
+                    playlistText = m3u8Text,
+                    masterUrl = resolvedUrl,
+                    // Keep the full embed URL so referer-sensitive hosts (xameleon) pass validation.
+                    refererHost = embedUrl,
+                )
+            rememberWinningEmbed(channelId, embedUrl, referer)
+            return manifest
         }
         if (depth + 1 >= maxEmbedDepth) {
             error("Failed to find encoded m3u8 source for channel $channelId")
@@ -440,6 +502,17 @@ class ResportzParser(
         }
         var nestedError: Exception? = null
         for (childUrl in nestedHubs) {
+            val remaining = attemptDeadlineMs - System.currentTimeMillis()
+            if (remaining <= 400L) {
+                break
+            }
+            if (
+                ResportzHtmlParser.isDeprioritizedHub(childUrl) &&
+                remaining < GatewayConfig.DEPRIORITIZED_HUB_MIN_REMAINING_MS
+            ) {
+                Log.d(TAG, "skip nested deprioritized hub remaining=${remaining}ms url=$childUrl")
+                continue
+            }
             Log.d(TAG, "resportz nested hub depth=${depth + 1} url=$childUrl")
             try {
                 return resolveFromEmbedPage(
@@ -448,12 +521,37 @@ class ResportzParser(
                     referer = embedUrl,
                     iframePattern = "nested_hub",
                     depth = depth + 1,
+                    attemptDeadlineMs = attemptDeadlineMs,
                 )
             } catch (exc: Exception) {
+                if (exc is CancellationException && exc !is TimeoutCancellationException) {
+                    throw exc
+                }
                 nestedError = exc
+                if (isFailFast403(exc, childUrl)) {
+                    Log.d(TAG, "fail-fast 403 nested hub url=$childUrl")
+                }
             }
         }
         throw nestedError ?: error("Failed to find encoded m3u8 source for channel $channelId")
+    }
+
+    private fun rememberWinningEmbed(channelId: String, embedUrl: String, referer: String) {
+        val trimmed = channelId.trim()
+        if (trimmed.isEmpty() || embedUrl.isBlank()) return
+        winningEmbedByChannel[trimmed] =
+            CachedWinningEmbed(
+                embedUrl = embedUrl,
+                referer = referer,
+                savedAtMs = System.currentTimeMillis(),
+            )
+    }
+
+    private fun isFailFast403(exc: Exception, hubUrl: String): Boolean {
+        if (!ResportzHtmlParser.isFailFast403Hub(hubUrl)) return false
+        val status = exc as? HttpStatusException
+        if (status != null) return status.code == 403
+        return exc.message?.contains("HTTP 403") == true
     }
 
     private fun resolveM3u8Url(m3u8Url: String, baseUrl: String): String {
@@ -462,6 +560,15 @@ class ResportzParser(
             cleaned
         } else {
             ResportzHtmlParser.resolveUrl(baseUrl, cleaned)
+        }
+    }
+
+    private suspend fun fetchM3u8TextReserved(m3u8Url: String, referer: String): Pair<String, String> {
+        // Hub walk may have burned the outer mirror withTimeout; keep m3u8 fetch alive.
+        return withContext(NonCancellable) {
+            withTimeout(GatewayConfig.M3U8_FETCH_TIMEOUT_MS) {
+                fetchM3u8Text(m3u8Url, referer)
+            }
         }
     }
 
@@ -483,6 +590,11 @@ class ResportzParser(
         throw lastError ?: error("Failed to fetch m3u8")
     }
 
+    private suspend fun getHtmlText(url: String, referer: String): String =
+        withTimeout(GatewayConfig.HUB_PAGE_TIMEOUT_MS) {
+            getText(url, referer)
+        }
+
     private suspend fun getText(url: String, referer: String): String {
         val request = Request.Builder()
             .url(url)
@@ -492,6 +604,12 @@ class ResportzParser(
             .build()
         return client.getText(request)
     }
+
+    private data class CachedWinningEmbed(
+        val embedUrl: String,
+        val referer: String,
+        val savedAtMs: Long,
+    )
 
     companion object {
         private const val TAG = "ResportzParser"

@@ -123,6 +123,40 @@ class ResportzHtmlParserTest {
     }
 
     @Test
+    fun prioritizeHubUrls_freetvsporBeforeSlowDaddyUrlStubs() {
+        val ordered =
+            ResportzHtmlParser.prioritizeHubUrls(
+                listOf(
+                    "https://rippleplays.example/player/51",
+                    "https://hamis.romponalis.example/e/51",
+                    "https://cricsfree.example/live/51",
+                    "https://apexstreams.example/p/51",
+                    "https://worldsportz.example/e/51",
+                    "https://freetvspor.example/embed/51",
+                    "https://tiestep.example/player/51",
+                    "https://www.nontongo.win/livetv/view/51",
+                ),
+            )
+        assertEquals("https://tiestep.example/player/51", ordered[0])
+        assertEquals("https://freetvspor.example/embed/51", ordered[1])
+        assertTrue(ordered.indexOf("https://freetvspor.example/embed/51") < ordered.indexOf("https://rippleplays.example/player/51"))
+        assertTrue(ordered.indexOf("https://rippleplays.example/player/51") < ordered.indexOf("https://www.nontongo.win/livetv/view/51"))
+        assertTrue(ResportzHtmlParser.isFailFast403Hub("https://hamis.romponalis.example/e/51"))
+        assertTrue(ResportzHtmlParser.isDeprioritizedHub("https://cricsfree.example/live/51"))
+        assertTrue(ResportzHtmlParser.hubPriorityRank("https://freetvspor.example/x") < 100)
+        assertTrue(ResportzHtmlParser.hubPriorityRank("https://rippleplays.example/x") >= 1_000)
+    }
+
+    @Test
+    fun hubTimeoutBudgets_m3u8ReservedAfterHubPage() {
+        assertTrue(GatewayConfig.HUB_PAGE_TIMEOUT_MS in 1_500L..2_500L)
+        assertTrue(GatewayConfig.M3U8_FETCH_TIMEOUT_MS >= 3_000L)
+        assertTrue(GatewayConfig.MIRROR_ATTEMPT_TIMEOUT_MS >= GatewayConfig.HUB_PAGE_TIMEOUT_MS * 2)
+        assertTrue(GatewayConfig.DEPRIORITIZED_HUB_MIN_REMAINING_MS >= GatewayConfig.M3U8_FETCH_TIMEOUT_MS - 500L)
+        assertTrue(GatewayConfig.WINNING_EMBED_CACHE_TTL_MS >= 3_600_000L)
+    }
+
+    @Test
     fun extractPlayerHubUrls_dliveAssetrageBeforeNontongo() {
         val html =
             """

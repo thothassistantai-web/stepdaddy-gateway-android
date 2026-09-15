@@ -48,13 +48,16 @@ object ResportzHtmlParser {
     private val SKIP_IFRAME_PREFIXES = listOf("javascript:", "about:blank")
 
     /**
-     * Player hosts that typically carry `window._econfig` (or similar) and should be
-     * followed before generic / nontongo hubs so embed depth is not burned on dead ends.
+     * Player / hub hosts that typically reach `window._econfig` (tiestep/assetrage chain)
+     * and should be tried before slow or dead daddy-url stubs.
+     *
+     * Lower index = higher priority. Proven cold path: freetvspor → tiestep → _econfig.
      */
     private val PRIORITY_PLAYER_HOST_TOKENS =
         listOf(
             "assetrage",
             "tiestep",
+            "freetvspor",
             "dlive.sx",
             "cdn.dlive",
             "premiumtv",
@@ -63,10 +66,27 @@ object ResportzHtmlParser {
             "castaddylog",
         )
 
+    /**
+     * Hubs that burn cold-resolve budget (403 / empty / long HTML) before the winning
+     * freetvspor→tiestep path. Tried last, and skipped when mirror budget is low.
+     */
     private val DEPRIORITIZED_HUB_TOKENS =
         listOf(
+            "hamis",
+            "romponalis",
+            "rippleplays",
+            "cricsfree",
+            "apexstreams",
+            "worldsportz",
             "nontongo",
             "vuen.link",
+        )
+
+    /** Hosts that return hard 403 and should not consume nested embed retries. */
+    private val FAIL_FAST_403_HUB_TOKENS =
+        listOf(
+            "hamis",
+            "romponalis",
         )
 
     fun extractIframeCandidates(html: String, baseUrl: String): List<PatternMatch> {
@@ -206,10 +226,19 @@ object ResportzHtmlParser {
         if (preferredIndex >= 0) {
             return preferredIndex
         }
-        if (DEPRIORITIZED_HUB_TOKENS.any { lower.contains(it) }) {
-            return 1_000
+        val deprioritizedIndex = DEPRIORITIZED_HUB_TOKENS.indexOfFirst { lower.contains(it) }
+        if (deprioritizedIndex >= 0) {
+            // Preserve relative order among deprioritized hubs (hamis before nontongo, etc.).
+            return 1_000 + deprioritizedIndex
         }
         return 100
+    }
+
+    fun isDeprioritizedHub(url: String): Boolean = hubPriorityRank(url) >= 1_000
+
+    fun isFailFast403Hub(url: String): Boolean {
+        val lower = url.lowercase()
+        return FAIL_FAST_403_HUB_TOKENS.any { lower.contains(it) }
     }
 
     fun isEmbedStub(url: String): Boolean {
