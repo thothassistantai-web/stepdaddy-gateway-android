@@ -18,7 +18,7 @@ import kotlin.math.min
 
 class ResportzParser(
     private val client: OkHttpClient = defaultClient(),
-    private val maxEmbedDepth: Int = 4,
+    private val maxEmbedDepth: Int = DEFAULT_MAX_EMBED_DEPTH,
     private val mirrorLatencyTracker: MirrorLatencyTracker? = null,
 ) {
     private val dlhdPathFailureCounts = ConcurrentHashMap<String, Int>()
@@ -357,9 +357,13 @@ class ResportzParser(
 
         val hubUrls = ResportzHtmlParser.extractPlayerHubUrls(watchHtml, channelId, watchUrl)
         val iframeCandidates = ResportzHtmlParser.extractIframeCandidates(watchHtml, watchUrl)
-        val orderedHubs = linkedSetOf<String>()
-        hubUrls.forEach { orderedHubs += it }
-        iframeCandidates.forEach { orderedHubs += it.value }
+        val orderedHubs =
+            ResportzHtmlParser.prioritizeHubUrls(
+                linkedSetOf<String>().apply {
+                    hubUrls.forEach { add(it) }
+                    iframeCandidates.forEach { add(it.value) }
+                },
+            )
 
         if (orderedHubs.isEmpty()) {
             val rawIframe = ResportzHtmlParser.firstRawIframeSrc(watchHtml, watchUrl)
@@ -422,11 +426,15 @@ class ResportzParser(
         if (depth + 1 >= maxEmbedDepth) {
             error("Failed to find encoded m3u8 source for channel $channelId")
         }
-        val nestedHubs = linkedSetOf<String>()
-        ResportzHtmlParser.extractPlayerHubUrls(sourcePageHtml, channelId, embedUrl)
-            .forEach { nestedHubs += it }
-        ResportzHtmlParser.extractIframeCandidates(sourcePageHtml, embedUrl)
-            .forEach { nestedHubs += it.value }
+        val nestedHubs =
+            ResportzHtmlParser.prioritizeHubUrls(
+                linkedSetOf<String>().apply {
+                    ResportzHtmlParser.extractPlayerHubUrls(sourcePageHtml, channelId, embedUrl)
+                        .forEach { add(it) }
+                    ResportzHtmlParser.extractIframeCandidates(sourcePageHtml, embedUrl)
+                        .forEach { add(it.value) }
+                },
+            )
         if (nestedHubs.isEmpty()) {
             error("Failed to find encoded m3u8 source for channel $channelId")
         }
@@ -485,6 +493,9 @@ class ResportzParser(
 
     companion object {
         private const val TAG = "ResportzParser"
+
+        /** Enough depth for nontongo → dlive → assetrage `_econfig` (and similar chains). */
+        const val DEFAULT_MAX_EMBED_DEPTH: Int = 8
 
         fun defaultClient(): OkHttpClient =
             OkHttpClient.Builder()

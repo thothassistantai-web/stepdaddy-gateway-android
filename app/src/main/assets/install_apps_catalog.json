@@ -6,10 +6,10 @@
       "name": "TiviMate Daddy (StepDaddy)",
       "description": "TiViMate 4.6.1 premium mod with StepDaddy patch \u2014 bidirectional gateway control, HTTP API :4617, auto-setup from /tivimate-setup.",
       "iconUrl": "https://www.google.com/s2/favicons?domain=tivimate.com&sz=128",
-      "apkUrl": "https://github.com/thothassistantai-web/tivimate-daddy/releases/download/tivimate-daddy-v3.0.52/TiviMate-4.6.1-StepDaddy-3.0.52.apk",
+      "apkUrl": "https://github.com/thothassistantai-web/tivimate-daddy/releases/download/tivimate-daddy-v3.0.53/TiviMate-4.6.1-StepDaddy-3.0.53.apk",
       "source": "stepdaddy",
       "packageName": "com.thothassistant.daddylive",
-      "version": "3.0.52"
+      "version": "3.0.53"
     },
     {
       "id": "stepdaddy-TiviMate-2.1.5-ONN-daddyliveTV",

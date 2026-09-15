@@ -104,4 +104,51 @@ class ResportzHtmlParserTest {
         assertTrue(hubs.any { it.contains("nontongo.win") })
         assertTrue(hubs.any { it.contains("player.example") })
     }
+
+    @Test
+    fun prioritizeHubUrls_assetrageBeforeNontongoAndGeneric() {
+        val ordered =
+            ResportzHtmlParser.prioritizeHubUrls(
+                listOf(
+                    "https://www.nontongo.win/livetv/view/51",
+                    "https://generic.example/player/51",
+                    "https://assetrage.net/e/abc123",
+                    "https://dlive.sx/embed/51",
+                ),
+            )
+        assertEquals("https://assetrage.net/e/abc123", ordered[0])
+        assertEquals("https://dlive.sx/embed/51", ordered[1])
+        assertEquals("https://generic.example/player/51", ordered[2])
+        assertEquals("https://www.nontongo.win/livetv/view/51", ordered[3])
+    }
+
+    @Test
+    fun extractPlayerHubUrls_dliveAssetrageBeforeNontongo() {
+        val html =
+            """
+            <div data-tv-daddy-urls="[&quot;https://www.nontongo.win/livetv/view/51&quot;]"></div>
+            <iframe src="https://assetrage.net/e/xyz"></iframe>
+            <iframe src="https://other.example/hub/51"></iframe>
+            """.trimIndent()
+        val hubs = ResportzHtmlParser.extractPlayerHubUrls(html, "51", "https://dlive.sx/live/51")
+        assertEquals("https://assetrage.net/e/xyz", hubs.first())
+        assertTrue(hubs.last().contains("nontongo"))
+        assertTrue(ResportzHtmlParser.hubPriorityRank(hubs.first()) < ResportzHtmlParser.hubPriorityRank(hubs.last()))
+    }
+
+    @Test
+    fun extractIframeCandidates_assetragePreferredOverGeneric() {
+        val html =
+            """
+            <iframe src="https://generic.example/a"></iframe>
+            <iframe src="https://assetrage.net/e/1"></iframe>
+            """.trimIndent()
+        val matches = ResportzHtmlParser.extractIframeCandidates(html, "https://dlive.sx/")
+        assertEquals("https://assetrage.net/e/1", matches.first().value)
+    }
+
+    @Test
+    fun defaultMaxEmbedDepthAllowsAssetrageChain() {
+        assertTrue(ResportzParser.DEFAULT_MAX_EMBED_DEPTH >= 8)
+    }
 }

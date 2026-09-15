@@ -47,6 +47,27 @@ object ResportzHtmlParser {
     private val SKIP_IFRAME_HOSTS = setOf("vuen.link")
     private val SKIP_IFRAME_PREFIXES = listOf("javascript:", "about:blank")
 
+    /**
+     * Player hosts that typically carry `window._econfig` (or similar) and should be
+     * followed before generic / nontongo hubs so embed depth is not burned on dead ends.
+     */
+    private val PRIORITY_PLAYER_HOST_TOKENS =
+        listOf(
+            "assetrage",
+            "dlive.sx",
+            "cdn.dlive",
+            "premiumtv",
+            "jimpenopisonline",
+            "xameleon",
+            "castaddylog",
+        )
+
+    private val DEPRIORITIZED_HUB_TOKENS =
+        listOf(
+            "nontongo",
+            "vuen.link",
+        )
+
     fun extractIframeCandidates(html: String, baseUrl: String): List<PatternMatch> {
         val ordered = linkedMapOf<String, PatternMatch>()
         fun add(pattern: String, raw: String) {
@@ -61,7 +82,7 @@ object ResportzHtmlParser {
         forEachGroup(IFRAME_SRC_DOUBLE, html) { add("iframe_src_double", it) }
         forEachGroup(IFRAME_SRC_SINGLE, html) { add("iframe_src_single", it) }
         forEachGroup(META_REFRESH, html) { add("meta_refresh", it) }
-        return ordered.values.toList()
+        return prioritizePatternMatches(ordered.values.toList())
     }
 
     /** Includes stub hosts filtered from [extractIframeCandidates] — for error messages only. */
@@ -125,6 +146,10 @@ object ResportzHtmlParser {
                 hubs += resolved
             }
         }
+        // Prefer known player iframes (assetrage on dlive, etc.) before daddy-url / nontongo hubs.
+        for (iframe in extractIframeCandidates(html, pageUrl)) {
+            add(iframe.value)
+        }
         val daddyUrls =
             Pattern.compile("""data-tv-daddy-urls="([^"]+)"""", Pattern.CASE_INSENSITIVE)
         val matcher = daddyUrls.matcher(html)
@@ -150,14 +175,40 @@ object ResportzHtmlParser {
                 }
             }
         }
-        for (iframe in extractIframeCandidates(html, pageUrl)) {
-            add(iframe.value)
-        }
         if (html.contains("nontongo.win/livetv", ignoreCase = true) || html.contains("/livetv/$cid")) {
             add("https://www.nontongo.win/livetv/view/$cid")
             add("https://www.nontongo.win/livetv/$cid")
         }
-        return hubs.toList()
+        return prioritizeHubUrls(hubs.toList())
+    }
+
+    /**
+     * Order embed/hub candidates so known player hosts (assetrage, dlive, …) are tried
+     * before nontongo / generic hubs at each recursion depth.
+     */
+    fun prioritizeHubUrls(urls: Collection<String>): List<String> {
+        if (urls.isEmpty()) return emptyList()
+        val unique = linkedSetOf<String>().apply { addAll(urls) }
+        return unique.sortedWith(compareBy({ hubPriorityRank(it) }, { unique.indexOf(it) }))
+    }
+
+    fun prioritizePatternMatches(matches: List<PatternMatch>): List<PatternMatch> {
+        if (matches.size <= 1) return matches
+        return matches.sortedWith(
+            compareBy({ hubPriorityRank(it.value) }, { matches.indexOf(it) }),
+        )
+    }
+
+    fun hubPriorityRank(url: String): Int {
+        val lower = url.lowercase()
+        val preferredIndex = PRIORITY_PLAYER_HOST_TOKENS.indexOfFirst { lower.contains(it) }
+        if (preferredIndex >= 0) {
+            return preferredIndex
+        }
+        if (DEPRIORITIZED_HUB_TOKENS.any { lower.contains(it) }) {
+            return 1_000
+        }
+        return 100
     }
 
     fun isEmbedStub(url: String): Boolean {

@@ -7,6 +7,16 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.53] - 2026-09-15
+
+### Fixed
+
+- **DaddyLive assetrage chain** — raise embed recursion depth to 8 and prioritize `assetrage` / known player hubs before nontongo so `dlive.sx` → `assetrage.net/e/…` `_econfig` resolves instead of HTTP 504 stubs (factory TiviMate no-video on onn).
+
+### Notes
+
+- Suite version **3.0.53** / **30053**. OTA assets: `update-manifest.json` + versioned debug/release APKs. Gateway-only upgrade; factory TiviMate unchanged.
+
 ## [3.0.52] - 2026-09-15
 
 ### Fixed
