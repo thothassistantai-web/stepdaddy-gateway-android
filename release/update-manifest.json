@@ -3,9 +3,9 @@
   "versionName": "3.0.52",
   "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.52/stepdaddy-gateway-3.0.52-release.apk",
   "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.52/stepdaddy-gateway-3.0.52-debug.apk",
-  "apkSha256": "",
-  "apkSha256Debug": "",
-  "releaseNotes": "**DaddyLive streams** — follow `/live/stream={id}` pages, player hubs (`data-tv-daddy-urls`, nontongo), and decode `window._econfig` for m3u8 URLs",
+  "apkSha256": "d9aa72af9970a887d48fdea012223a0e1244956d95760a66a3ab387c943547a2",
+  "apkSha256Debug": "1d52d82670d39b834fa3412f35bce87eb07928abd86e724771295e95fa3c8473",
+  "releaseNotes": "**DaddyLive streams** \u2014 follow `/live/stream={id}` pages, player hubs (`data-tv-daddy-urls`, nontongo), and decode `window._econfig` for m3u8 URLs",
   "updateType": "optional",
   "mandatory": false
 }
