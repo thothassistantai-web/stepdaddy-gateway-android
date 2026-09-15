@@ -39,6 +39,23 @@ object DlhdEmbedUrl {
         return "$base$EMBED_PATH?id=$id"
     }
 
+    /** Modern DaddyLive watch page: `/live/stream={id}` (2026). */
+    fun liveStreamUrlForMirror(mirrorBase: String, channelId: String): String {
+        val base = mirrorBase.trimEnd('/')
+        val slug = streamSlugFromChannelId(channelId)
+        return "$base/live/stream=$slug"
+    }
+
+    /**
+     * Primary watch candidates for a mirror — modern live path first, then embed.php.
+     */
+    fun modernWatchUrlsForMirror(mirrorBase: String, channelId: String): List<String> {
+        val ordered = linkedSetOf<String>()
+        ordered += liveStreamUrlForMirror(mirrorBase, channelId)
+        ordered += embedUrlForMirror(mirrorBase, channelId)
+        return ordered.toList()
+    }
+
     fun mirrorEmbedUrl(embedUrl: String, mirrorBase: String): String {
         val id = idParam(embedUrl)?.trim().orEmpty()
         if (id.isEmpty()) {
@@ -52,6 +69,11 @@ object DlhdEmbedUrl {
         return path.endsWith(EMBED_PATH.lowercase()) || path.contains("/embed.php")
     }
 
+    fun isLiveStreamPageUrl(url: String): Boolean {
+        val path = runCatching { URL(url).path }.getOrNull() ?: return false
+        return path.contains("/live/stream=", ignoreCase = true)
+    }
+
     fun relayStreamPaths(): List<String> = GatewayConfig.DLHD_PK_STREAM_PATHS
 
     fun buildRelayWatchUrls(channelId: String, relayHosts: Collection<String>): List<String> {
@@ -61,6 +83,8 @@ object DlhdEmbedUrl {
         val ordered = linkedSetOf<String>()
         for (host in relayHosts) {
             val base = host.trimEnd('/')
+            // Modern live path on relay hosts when they mirror the primary site.
+            ordered += "$base/live/stream=$slug"
             for (path in orderedPaths) {
                 ordered += "$base/$path/stream-$slug.php"
             }
@@ -71,6 +95,13 @@ object DlhdEmbedUrl {
     private fun idParam(url: String): String? {
         val trimmed = url.trim()
         if (trimmed.isEmpty()) return null
+        // /live/stream={id}
+        val liveIdx = trimmed.indexOf("/live/stream=")
+        if (liveIdx >= 0) {
+            val rest = trimmed.substring(liveIdx + "/live/stream=".length)
+            return rest.substringBefore('&').substringBefore('#').substringBefore('?').trim()
+                .takeIf { it.isNotEmpty() }
+        }
         return runCatching {
             val parsed = URL(trimmed)
             parsed.query?.split('&')?.firstOrNull { it.startsWith("id=", ignoreCase = true) }

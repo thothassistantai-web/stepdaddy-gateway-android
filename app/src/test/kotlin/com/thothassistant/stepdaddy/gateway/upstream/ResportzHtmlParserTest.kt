@@ -78,4 +78,30 @@ class ResportzHtmlParserTest {
     fun extractM3u8_missingReturnsNull() {
         assertNull(ResportzHtmlParser.extractM3u8Url("<html><body>agenda</body></html>"))
     }
+
+    @Test
+    fun extractM3u8_econfigPreferred() {
+        val blob =
+            "WkVoWEtiRmxYTVdaa1dFcHpXREkxZG1ORVNuZEphbTlwWVVoU01HTklUVFpNZVRscVdrYz1aWGxYS2VtUk" +
+                "lTbXhaVnpGbVpGaEtjMGxxYjJsaFNGSXdZMGhOTmt4NU9XcGFSelIxV2xnPU5IVlhhV0dob1lsaENjMXB" +
+                "UT1hOaFdGcHNUSHBWZUV3eU1YWmliVGgxWWxST01VOURTams9YUdoWGlXRUp6V2xNNWMyRllXbXhNZWxW" +
+                "NFRESnNkVnBIVmpSTWJUQjZaRlJuYVV4RFNubz0="
+        val html = """<script>window._econfig="$blob";</script>"""
+        val match = ResportzHtmlParser.extractM3u8Url(html)
+        assertNotNull(match)
+        assertEquals("econfig_stream_url", match?.pattern)
+        assertEquals("https://cdn.example/live/51/mono.m3u8", match?.value)
+    }
+
+    @Test
+    fun extractPlayerHubUrls_fromDaddyUrlsAndNontongo() {
+        val html =
+            """
+            <div data-tv-daddy-urls="[&quot;https://www.nontongo.win/livetv/view/51&quot;]"></div>
+            <iframe src="https://player.example/embed/51"></iframe>
+            """.trimIndent()
+        val hubs = ResportzHtmlParser.extractPlayerHubUrls(html, "51", "https://daddylive.li/live/stream=51")
+        assertTrue(hubs.any { it.contains("nontongo.win") })
+        assertTrue(hubs.any { it.contains("player.example") })
+    }
 }

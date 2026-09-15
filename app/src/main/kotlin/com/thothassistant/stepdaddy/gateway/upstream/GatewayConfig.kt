@@ -16,22 +16,24 @@ object GatewayConfig {
         "https://resportz.live",
     )
     private val DEFAULT_DLHD_RELAY_HOSTS = listOf(
+        "https://daddylive.li",
+        "https://daddylive.eu",
         "https://dlstreams.st",
         "https://dlhd.st",
         "https://dlhd.pk",
     )
-    /** Active dlhd relay hosts (dlhd.pk/st redirect to dlstreams.st as of 2026-08). */
+    /** Active dlhd relay hosts (prefer daddylive.li; legacy dlstreams paths as fallback). */
     val DLHD_RELAY_HOSTS: List<String>
         get() = DomainRelayRuntime.relayHosts ?: DEFAULT_DLHD_RELAY_HOSTS
     private val DEFAULT_DLHD_EMBED_HOSTS = listOf(
+        "https://daddylive.li",
+        "https://daddylive.eu",
+        "https://daddylive.at",
         "https://dlstreams.st",
         "https://dlhd.st",
         "https://dlhd.pk",
         "https://dlhd.li",
         "https://dlhd.org",
-        "https://daddylive.li",
-        "https://daddylive.eu",
-        "https://daddylive.at",
     )
     /** dlhd embed hosts used for direct m3u8 fetches with embed referer. */
     val DLHD_EMBED_HOSTS: List<String>

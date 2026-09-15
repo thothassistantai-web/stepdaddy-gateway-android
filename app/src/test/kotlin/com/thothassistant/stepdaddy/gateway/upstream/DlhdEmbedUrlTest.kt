@@ -29,10 +29,31 @@ class DlhdEmbedUrlTest {
     }
 
     @Test
-    fun buildRelayWatchUrls_usesPlayerAndCastingFirst() {
+    fun buildRelayWatchUrls_prefersLiveStreamPath() {
         val urls = DlhdEmbedUrl.buildRelayWatchUrls("51", listOf("https://dlstreams.st"))
-        assertTrue(urls.first().contains("/player/stream-51.php"))
+        assertEquals("https://dlstreams.st/live/stream=51", urls.first())
+        assertTrue(urls.any { it.contains("/player/stream-51.php") })
         assertTrue(urls.any { it.contains("/casting/stream-51.php") })
+    }
+
+    @Test
+    fun liveStreamUrl_andChannelIdFromLivePath() {
+        assertEquals(
+            "https://daddylive.li/live/stream=51",
+            DlhdEmbedUrl.liveStreamUrlForMirror("https://daddylive.li", "51"),
+        )
+        assertEquals(
+            "51",
+            DlhdEmbedUrl.channelIdFromEmbedUrl("https://daddylive.li/live/stream=51"),
+        )
+        assertTrue(DlhdEmbedUrl.isLiveStreamPageUrl("https://daddylive.li/live/stream=51"))
+    }
+
+    @Test
+    fun modernWatchUrls_liveThenEmbed() {
+        val urls = DlhdEmbedUrl.modernWatchUrlsForMirror("https://daddylive.li", "51")
+        assertEquals("https://daddylive.li/live/stream=51", urls[0])
+        assertEquals("https://daddylive.li/player/embed.php?id=51", urls[1])
     }
 
     @Test

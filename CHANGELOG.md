@@ -7,6 +7,17 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.52] - 2026-09-15
+
+### Fixed
+
+- **DaddyLive streams** — resolve modern `/live/stream={id}` watch pages, hub iframes (`data-tv-daddy-urls` / nontongo), and `window._econfig` m3u8 blobs (legacy `stream-*.php` / shallow embed-only path no longer required).
+- **Domain relay** — primary mirror set to `daddylive.li` with updated relay/embed host order.
+
+### Notes
+
+- Suite version **3.0.52** / **30052**. OTA assets: `update-manifest.json` + versioned debug/release APKs. Pull latest `domain-relay.json` with the release.
+
 ## [3.0.51] - 2026-08-23
 
 ### Fixed

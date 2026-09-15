@@ -1,33 +1,37 @@
 {
-  "version": 1,
+  "version": 2,
   "minAppVersion": "3.0.0",
   "forceUpdateAfter": null,
-  "message": "Temporary backup source — update soon or streams may stop.",
+  "message": "DaddyLive primary moved to daddylive.li — update for working streams.",
   "sources": {
     "daddylive": {
-      "primary": "https://daddylive.eu",
+      "primary": "https://daddylive.li",
       "mirrors": [
-        "https://dlstreams.st",
         "https://daddylive.li",
+        "https://daddylive.eu",
+        "https://daddylive.at",
+        "https://dlstreams.st",
         "https://dlhd.st"
       ],
       "blocked": [
         "daddylive.org"
       ],
       "relayHosts": [
+        "https://daddylive.li",
+        "https://daddylive.eu",
         "https://dlstreams.st",
         "https://dlhd.st",
         "https://dlhd.pk"
       ],
       "embedHosts": [
+        "https://daddylive.li",
+        "https://daddylive.eu",
+        "https://daddylive.at",
         "https://dlstreams.st",
         "https://dlhd.st",
         "https://dlhd.pk",
         "https://dlhd.li",
-        "https://dlhd.org",
-        "https://daddylive.li",
-        "https://daddylive.eu",
-        "https://daddylive.at"
+        "https://dlhd.org"
       ]
     }
   }

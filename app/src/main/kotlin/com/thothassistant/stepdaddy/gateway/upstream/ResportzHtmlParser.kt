@@ -80,6 +80,9 @@ object ResportzHtmlParser {
     }
 
     fun extractM3u8Url(html: String): PatternMatch? {
+        EconfigDecoder.extractStreamUrl(html)?.let {
+            return PatternMatch("econfig_stream_url", it)
+        }
         forEachGroup(SOURCE_WINDOW_ATOB_SINGLE, html) { encoded ->
             decodeM3u8Candidate(encoded)?.let { return PatternMatch("source_window_atob_single", it) }
         }
@@ -101,6 +104,60 @@ object ResportzHtmlParser {
             decodeM3u8Candidate(encoded)?.let { return PatternMatch("quoted_b64_m3u8", it) }
         }
         return null
+    }
+
+    /**
+     * Hub URLs from modern DaddyLive watch pages (`data-tv-daddy-urls`, nontongo view, etc.).
+     */
+    fun extractPlayerHubUrls(html: String, channelId: String, pageUrl: String): List<String> {
+        val hubs = linkedSetOf<String>()
+        val cid = channelId.trim()
+        fun add(raw: String) {
+            val trimmed = raw.trim()
+            if (trimmed.isEmpty()) return
+            val resolved =
+                when {
+                    trimmed.startsWith("//") -> "https:$trimmed"
+                    trimmed.startsWith("http://") || trimmed.startsWith("https://") -> trimmed
+                    else -> resolveUrl(pageUrl.ifBlank { "https://daddylive.li/" }, trimmed)
+                }
+            if (resolved.startsWith("http")) {
+                hubs += resolved
+            }
+        }
+        val daddyUrls =
+            Pattern.compile("""data-tv-daddy-urls="([^"]+)"""", Pattern.CASE_INSENSITIVE)
+        val matcher = daddyUrls.matcher(html)
+        while (matcher.find()) {
+            val raw = matcher.group(1) ?: continue
+            val decoded =
+                raw.replace("&quot;", "\"")
+                    .replace("&#34;", "\"")
+                    .replace("\\/", "/")
+            try {
+                val arr = org.json.JSONArray(decoded)
+                for (i in 0 until arr.length()) {
+                    add(arr.optString(i))
+                }
+            } catch (_: Exception) {
+                // JVM unit tests stub org.json — fall back to quoted URL scrape.
+                val quoted =
+                    Pattern.compile("\"(https?:\\\\?/\\\\?/[^\\\\\"]+|//[^\\\\\"]+|/[^\"]+)\"")
+                val qm = quoted.matcher(decoded)
+                while (qm.find()) {
+                    val rawUrl = qm.group(1)?.replace("\\/", "/") ?: continue
+                    add(rawUrl)
+                }
+            }
+        }
+        for (iframe in extractIframeCandidates(html, pageUrl)) {
+            add(iframe.value)
+        }
+        if (html.contains("nontongo.win/livetv", ignoreCase = true) || html.contains("/livetv/$cid")) {
+            add("https://www.nontongo.win/livetv/view/$cid")
+            add("https://www.nontongo.win/livetv/$cid")
+        }
+        return hubs.toList()
     }
 
     fun isEmbedStub(url: String): Boolean {

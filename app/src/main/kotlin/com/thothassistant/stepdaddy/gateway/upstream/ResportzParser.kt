@@ -18,7 +18,7 @@ import kotlin.math.min
 
 class ResportzParser(
     private val client: OkHttpClient = defaultClient(),
-    private val maxEmbedDepth: Int = 2,
+    private val maxEmbedDepth: Int = 4,
     private val mirrorLatencyTracker: MirrorLatencyTracker? = null,
 ) {
     private val dlhdPathFailureCounts = ConcurrentHashMap<String, Int>()
@@ -34,12 +34,17 @@ class ResportzParser(
     ): UpstreamManifest {
         val referer = "${refererBase.trimEnd('/')}/"
         val candidates = watchUrlCandidates(channelId, refererBase, embedUrl)
+        val liveCandidates = candidates.filter { DlhdEmbedUrl.isLiveStreamPageUrl(it) }
         val embedCandidates = candidates.filter { DlhdEmbedUrl.isEmbedPageUrl(it) }
-        val dlhdCandidates = candidates.filter { isDlhdRelayUrl(it) }
-        val otherCandidates = candidates.filterNot { it in embedCandidates || it in dlhdCandidates }
+        val dlhdCandidates = candidates.filter { isDlhdRelayUrl(it) && !DlhdEmbedUrl.isLiveStreamPageUrl(it) }
+        val otherCandidates =
+            candidates.filterNot {
+                it in liveCandidates || it in embedCandidates || it in dlhdCandidates
+            }
 
         var lastError: Exception? = null
-        for (watchUrl in embedCandidates) {
+        // Modern /live/stream={id} pages first (2026 DaddyLive hubs + _econfig).
+        for (watchUrl in liveCandidates + embedCandidates) {
             try {
                 val manifest = fetchManifestFromWatchPage(
                     channelId,
@@ -52,7 +57,7 @@ class ResportzParser(
                 if (exc is CancellationException) throw exc
                 lastError = exc
                 markWatchHostFailure(watchUrl)
-                Log.d(TAG, "embed watch failed $watchUrl: ${exc.message}")
+                Log.d(TAG, "watch failed $watchUrl: ${exc.message}")
             }
         }
 
@@ -164,8 +169,9 @@ class ResportzParser(
         embedUrl: String?,
     ): List<String> {
         val ordered = linkedSetOf<String>()
+        // Prefer modern /live/stream={id} on the active mirror, then catalog embed URL.
+        ordered += DlhdEmbedUrl.modernWatchUrlsForMirror(refererBase, channelId)
         embedUrl?.trim()?.takeIf { it.isNotEmpty() }?.let { ordered += it }
-        ordered += DlhdEmbedUrl.embedUrlForMirror(refererBase, channelId)
         ordered += DlhdEmbedUrl.buildRelayWatchUrls(channelId, orderedDlhdRelayHosts())
         for (host in orderedResportzHosts()) {
             val base = host.trimEnd('/')
@@ -175,14 +181,14 @@ class ResportzParser(
     }
 
     private fun refererForWatchUrl(watchUrl: String, defaultReferer: String): String {
-        if (DlhdEmbedUrl.isEmbedPageUrl(watchUrl)) {
+        if (DlhdEmbedUrl.isEmbedPageUrl(watchUrl) || DlhdEmbedUrl.isLiveStreamPageUrl(watchUrl)) {
             return watchUrl
         }
         return defaultReferer
     }
 
     private fun isDlhdRelayUrl(url: String): Boolean {
-        if (DlhdEmbedUrl.isEmbedPageUrl(url)) return false
+        if (DlhdEmbedUrl.isEmbedPageUrl(url) || DlhdEmbedUrl.isLiveStreamPageUrl(url)) return false
         val host = runCatching { URL(url).host.lowercase() }.getOrNull() ?: return false
         return dlhdRelayHosts().any { hostMatches(host, it) }
     }
@@ -336,28 +342,53 @@ class ResportzParser(
         Log.d(TAG, "resportz watch $watchUrl")
         val watchHtml = getText(watchUrl, referer)
         Log.d(TAG, "resportz watch ok (${watchHtml.length} bytes)")
+
+        // Direct m3u8 / _econfig on the watch page itself (modern hubs).
+        ResportzHtmlParser.extractM3u8Url(watchHtml)?.let { match ->
+            Log.d(TAG, "resportz watch m3u8 pattern=${match.pattern} url=${match.value}")
+            val resolvedM3u8 = resolveM3u8Url(match.value, watchUrl)
+            val (resolvedUrl, m3u8Text) = fetchM3u8Text(resolvedM3u8, watchUrl)
+            return UpstreamManifest(
+                playlistText = m3u8Text,
+                masterUrl = resolvedUrl,
+                refererHost = watchUrl,
+            )
+        }
+
+        val hubUrls = ResportzHtmlParser.extractPlayerHubUrls(watchHtml, channelId, watchUrl)
         val iframeCandidates = ResportzHtmlParser.extractIframeCandidates(watchHtml, watchUrl)
-        if (iframeCandidates.isEmpty()) {
+        val orderedHubs = linkedSetOf<String>()
+        hubUrls.forEach { orderedHubs += it }
+        iframeCandidates.forEach { orderedHubs += it.value }
+
+        if (orderedHubs.isEmpty()) {
             val rawIframe = ResportzHtmlParser.firstRawIframeSrc(watchHtml, watchUrl)
             if (rawIframe != null && ResportzHtmlParser.isEmbedStub(rawIframe)) {
                 error("embed stub host for channel $channelId ($rawIframe)")
             }
-            error("Failed to find iframe source for channel $channelId")
+            error("Failed to find player hub/iframe for channel $channelId")
         }
         var lastError: Exception? = null
-        for (candidate in iframeCandidates) {
-            Log.d(TAG, "resportz iframe pattern=${candidate.pattern} url=${candidate.value}")
+        for (hubUrl in orderedHubs) {
+            val pattern =
+                iframeCandidates.firstOrNull { it.value == hubUrl }?.pattern
+                    ?: if (hubUrl.contains("nontongo", ignoreCase = true)) {
+                        "nontongo_hub"
+                    } else {
+                        "player_hub"
+                    }
+            Log.d(TAG, "resportz hub pattern=$pattern url=$hubUrl")
             try {
                 return resolveFromEmbedPage(
                     channelId = channelId,
-                    embedUrl = candidate.value,
+                    embedUrl = hubUrl,
                     referer = watchUrl,
-                    iframePattern = candidate.pattern,
+                    iframePattern = pattern,
                     depth = 0,
                 )
             } catch (exc: Exception) {
                 lastError = exc
-                Log.d(TAG, "embed failed pattern=${candidate.pattern}: ${exc.message}")
+                Log.d(TAG, "hub failed pattern=$pattern: ${exc.message}")
             }
         }
         throw lastError ?: error("Failed to resolve m3u8 for channel $channelId")
@@ -391,19 +422,23 @@ class ResportzParser(
         if (depth + 1 >= maxEmbedDepth) {
             error("Failed to find encoded m3u8 source for channel $channelId")
         }
-        val nested = ResportzHtmlParser.extractIframeCandidates(sourcePageHtml, embedUrl)
-        if (nested.isEmpty()) {
+        val nestedHubs = linkedSetOf<String>()
+        ResportzHtmlParser.extractPlayerHubUrls(sourcePageHtml, channelId, embedUrl)
+            .forEach { nestedHubs += it }
+        ResportzHtmlParser.extractIframeCandidates(sourcePageHtml, embedUrl)
+            .forEach { nestedHubs += it.value }
+        if (nestedHubs.isEmpty()) {
             error("Failed to find encoded m3u8 source for channel $channelId")
         }
         var nestedError: Exception? = null
-        for (child in nested) {
-            Log.d(TAG, "resportz nested iframe depth=${depth + 1} pattern=${child.pattern} url=${child.value}")
+        for (childUrl in nestedHubs) {
+            Log.d(TAG, "resportz nested hub depth=${depth + 1} url=$childUrl")
             try {
                 return resolveFromEmbedPage(
                     channelId = channelId,
-                    embedUrl = child.value,
+                    embedUrl = childUrl,
                     referer = embedUrl,
-                    iframePattern = child.pattern,
+                    iframePattern = "nested_hub",
                     depth = depth + 1,
                 )
             } catch (exc: Exception) {
