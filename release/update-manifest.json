@@ -3,9 +3,9 @@
   "versionName": "3.0.53",
   "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.53/stepdaddy-gateway-3.0.53-release.apk",
   "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.53/stepdaddy-gateway-3.0.53-debug.apk",
-  "apkSha256": "PENDING_BUILD",
-  "apkSha256Debug": "PENDING_BUILD",
-  "releaseNotes": "**DaddyLive assetrage chain** — embed depth 8; prioritize assetrage / known player hubs before nontongo so dlive → `_econfig` resolves (fixes 504 stub / no-video)",
+  "apkSha256": "9b66a1c6879672ddb9994e9db423b0994ac1871d0cdd8ec000c7da06eebfed70",
+  "apkSha256Debug": "36897c405e5ef136c3c18d1aea70c526aa6df20e2f597d5595395e3397aae064",
+  "releaseNotes": "**DaddyLive assetrage chain** \u2014 embed depth 8; prioritize `assetrage` / known player hosts before nontongo so nontongo \u2192 dlive \u2192 assetrage `_econfig` resolves (fixes HTTP 504 stub / factory TiviMate no-video)",
   "updateType": "optional",
   "mandatory": false
 }
