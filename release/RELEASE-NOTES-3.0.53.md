@@ -5,6 +5,7 @@ versionCode: 30053
 ## Fixed
 
 - **DaddyLive assetrage chain** — embed depth 8; prioritize `assetrage` / known player hosts before nontongo so nontongo → dlive → assetrage `_econfig` resolves (fixes HTTP 504 stub / factory TiviMate no-video)
+- **`_econfig` URL unescape** — strip JSON `\/` escapes so real HLS manifests fetch (not HTML error pages); ignore JS `'+domain+'` iframe templates
 
 ## Notes
 

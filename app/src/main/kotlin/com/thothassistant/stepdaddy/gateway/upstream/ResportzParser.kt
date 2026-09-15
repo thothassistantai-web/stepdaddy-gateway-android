@@ -456,12 +456,14 @@ class ResportzParser(
         throw nestedError ?: error("Failed to find encoded m3u8 source for channel $channelId")
     }
 
-    private fun resolveM3u8Url(m3u8Url: String, baseUrl: String): String =
-        if (m3u8Url.startsWith("http://") || m3u8Url.startsWith("https://")) {
-            m3u8Url
+    private fun resolveM3u8Url(m3u8Url: String, baseUrl: String): String {
+        val cleaned = EconfigDecoder.normalizeStreamUrl(m3u8Url)
+        return if (cleaned.startsWith("http://") || cleaned.startsWith("https://")) {
+            cleaned
         } else {
-            ResportzHtmlParser.resolveUrl(baseUrl, m3u8Url)
+            ResportzHtmlParser.resolveUrl(baseUrl, cleaned)
         }
+    }
 
     private suspend fun fetchM3u8Text(m3u8Url: String, referer: String): Pair<String, String> {
         val candidates = linkedSetOf(m3u8Url)

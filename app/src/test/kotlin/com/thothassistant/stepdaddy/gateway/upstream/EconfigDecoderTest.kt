@@ -35,4 +35,12 @@ class EconfigDecoderTest {
     fun extractStreamUrl_missingReturnsNull() {
         assertNull(EconfigDecoder.extractStreamUrl("<html></html>"))
     }
+
+    @Test
+    fun normalizeStreamUrl_unescapesJsonSlashes() {
+        assertEquals(
+            "https://cdn.example/hls/live.m3u8?s=1",
+            EconfigDecoder.normalizeStreamUrl("""https:\/\/cdn.example\/hls\/live.m3u8?s=1"""),
+        )
+    }
 }

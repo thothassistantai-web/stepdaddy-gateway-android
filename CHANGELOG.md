@@ -12,6 +12,7 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 ### Fixed
 
 - **DaddyLive assetrage chain** — raise embed recursion depth to 8 and prioritize `assetrage` / known player hubs before nontongo so `dlive.sx` → `assetrage.net/e/…` `_econfig` resolves instead of HTTP 504 stubs (factory TiviMate no-video on onn).
+- **`_econfig` m3u8 URLs** — unescape JSON `\/` in decoded stream URLs; skip JS string-concat iframe templates scraped from watch-page scripts.
 
 ### Notes
 

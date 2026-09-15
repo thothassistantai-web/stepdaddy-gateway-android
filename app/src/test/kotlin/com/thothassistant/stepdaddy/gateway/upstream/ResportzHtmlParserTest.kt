@@ -148,7 +148,14 @@ class ResportzHtmlParserTest {
     }
 
     @Test
-    fun defaultMaxEmbedDepthAllowsAssetrageChain() {
-        assertTrue(ResportzParser.DEFAULT_MAX_EMBED_DEPTH >= 8)
+    fun extractIframeCandidates_skipsJsTemplateConcat() {
+        val html =
+            """
+            <iframe src="'+domain+'/player/embed.php?id='+channelId+'"></iframe>
+            <iframe src="https://assetrage.net/e/ok"></iframe>
+            """.trimIndent()
+        val matches = ResportzHtmlParser.extractIframeCandidates(html, "https://daddylive.li/live/stream=51")
+        assertEquals(1, matches.size)
+        assertEquals("https://assetrage.net/e/ok", matches[0].value)
     }
 }

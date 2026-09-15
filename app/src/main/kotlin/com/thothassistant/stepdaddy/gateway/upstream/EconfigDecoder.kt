@@ -35,11 +35,18 @@ object EconfigDecoder {
                 ?: firstGroup(STREAM_URL, json)
                     ?.trim()
                     .orEmpty()
-        if (!url.startsWith("http") || !url.contains(".m3u8", ignoreCase = true)) {
+        val normalized = normalizeStreamUrl(url)
+        if (!normalized.startsWith("http") || !normalized.contains(".m3u8", ignoreCase = true)) {
             return null
         }
-        return StreamConfig(streamUrl = url, rawJson = json)
+        return StreamConfig(streamUrl = normalized, rawJson = json)
     }
+
+    /** JSON string values often escape slashes as `\/` — strip those so OkHttp can fetch. */
+    fun normalizeStreamUrl(url: String): String =
+        url.trim()
+            .replace("\\/", "/")
+            .replace("\\\\", "\\")
 
     /** Returns UTF-8 JSON text, or null if the blob is invalid. */
     fun decodeBlob(raw: String): String? {

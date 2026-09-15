@@ -54,6 +54,7 @@ object ResportzHtmlParser {
     private val PRIORITY_PLAYER_HOST_TOKENS =
         listOf(
             "assetrage",
+            "tiestep",
             "dlive.sx",
             "cdn.dlive",
             "premiumtv",
@@ -227,6 +228,10 @@ object ResportzHtmlParser {
         val lower = url.lowercase()
         if (SKIP_IFRAME_PREFIXES.any { lower.startsWith(it) }) return false
         if (isEmbedStub(url)) return false
+        // Skip JS string-concat templates scraped from inline scripts (e.g. '+domain+'/player/…).
+        if ("'+" in url || "\"+" in url || "+domain+" in lower || "+channelid+" in lower) {
+            return false
+        }
         return true
     }
 
