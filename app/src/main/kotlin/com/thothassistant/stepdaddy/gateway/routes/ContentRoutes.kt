@@ -48,13 +48,7 @@ class ContentRoutes(
             }
         } catch (exc: Exception) {
             client.recordHealingAction("content_fail ${exc.message?.take(60)}")
-            if (isRetriableContentError(exc)) {
-                client.invalidateFreshStreamCaches()
-            }
-            call.respond(
-                HttpStatusCode.BadGateway,
-                mapOf("error" to (exc.message ?: "content_proxy_error")),
-            )
+            respondContentProxyError(call, exc, fallback = "content_proxy_error")
         }
     }
 
@@ -76,11 +70,30 @@ class ContentRoutes(
                 serveBinary(call, upstreamUrl, referer = embedReferer)
             }
         } catch (exc: Exception) {
-            call.respond(
-                HttpStatusCode.BadGateway,
-                mapOf("error" to (exc.message ?: "vod_content_proxy_error")),
-            )
+            client.recordHealingAction("vod_content_fail ${exc.message?.take(60)}")
+            respondContentProxyError(call, exc, fallback = "vod_content_proxy_error")
         }
+    }
+
+    private suspend fun respondContentProxyError(
+        call: ApplicationCall,
+        exc: Exception,
+        fallback: String,
+    ) {
+        val retriable = isRetriableContentError(exc)
+        if (retriable) {
+            // Segment 404/403 usually means the cached live media playlist slid off the CDN
+            // window — purge so the player's next manifest refresh re-resolves fresh URLs.
+            client.invalidateFreshStreamCaches()
+            call.response.header(HttpHeaders.RetryAfter, "1")
+        }
+        call.respond(
+            if (retriable) HttpStatusCode.ServiceUnavailable else HttpStatusCode.BadGateway,
+            mapOf(
+                "error" to (exc.message ?: fallback),
+                "transient" to retriable,
+            ),
+        )
     }
 
     suspend fun key(call: ApplicationCall, encryptedUrl: String, encryptedHost: String) {
@@ -329,15 +342,24 @@ class ContentRoutes(
             if (status.code == 403 && DaddyLiveErrorClassifier.isXameleonUrl(status.url)) {
                 return true
             }
-            return status.code == 403 || status.code == 502 || status.code == 504 || status.code == 500
+            // 404: live HLS segment rolled off the CDN window while gateway still held a
+            // cached media playlist — treat as soft-refresh, not permanent failure.
+            return status.code == 403 ||
+                status.code == 404 ||
+                status.code == 502 ||
+                status.code == 504 ||
+                status.code == 500
         }
         val message = exc.message.orEmpty()
         if (message.contains("HTTP 403") && message.contains("xameleon", ignoreCase = true)) {
             return true
         }
         return message.contains("HTTP 403") ||
+            message.contains("HTTP 404") ||
             message.contains("HTTP 502") ||
             message.contains("HTTP 504") ||
-            message.contains("HTTP 500")
+            message.contains("HTTP 500") ||
+            message.contains("timeout", ignoreCase = true) ||
+            message.contains("timed out", ignoreCase = true)
     }
 }

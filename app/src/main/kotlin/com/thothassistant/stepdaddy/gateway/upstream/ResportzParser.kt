@@ -547,6 +547,16 @@ class ResportzParser(
             )
     }
 
+    fun clearWinningEmbed(channelId: String) {
+        val trimmed = channelId.trim()
+        if (trimmed.isEmpty()) return
+        winningEmbedByChannel.remove(trimmed)
+    }
+
+    fun clearAllWinningEmbeds() {
+        winningEmbedByChannel.clear()
+    }
+
     private fun isFailFast403(exc: Exception, hubUrl: String): Boolean {
         if (!ResportzHtmlParser.isFailFast403Hub(hubUrl)) return false
         val status = exc as? HttpStatusException

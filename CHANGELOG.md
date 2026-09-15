@@ -7,6 +7,18 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.55] - 2026-09-15
+
+### Fixed
+
+- **Sticky mid-play 502s** — live media playlists were cached for 60s (upstream body 120s), so `/tivimate-stream` kept returning 200 `#EXTM3U` with a frozen `MEDIA-SEQUENCE` while CDN `.ts` URLs rolled off → `/vod-content` HTTP 404 → client 502. Fresh stream/upstream TTLs are now ≈2.5s; non-outage stale-good ≤15s.
+- **Content-proxy healing** — `invalidateFreshStreamCaches()` actually clears fresh stream + upstream playlist bodies (was a no-op that only dropped already-expired entries). `/vod-content` now invalidates on retriable errors (incl. 404/403) and returns **503** + `Retry-After` so players soft-refresh instead of sticky 502.
+- **Winning embed** — channel-specific cache purge also clears the tiestep/assetrage winning-embed entry so a bad embed cannot pin re-resolves.
+
+### Notes
+
+- Suite version **3.0.55** / **30055**. OTA assets: `update-manifest.json` + versioned debug/release APKs. Gateway-only upgrade; factory TiviMate unchanged.
+
 ## [3.0.54] - 2026-09-15
 
 ### Fixed

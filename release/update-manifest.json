@@ -1,11 +1,11 @@
 {
-  "versionCode": 30054,
-  "versionName": "3.0.54",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.54/stepdaddy-gateway-3.0.54-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.54/stepdaddy-gateway-3.0.54-debug.apk",
-  "apkSha256": "bc66ee8536ac72b6121104fe435860a9814924d1f821f96a2097c50094dd2978",
-  "apkSha256Debug": "5010b8d44c8bcfc77f20d35c9d0542c0e3b1e7cdf3e2d372fb3c82b42f9a3ee6",
-  "releaseNotes": "**DaddyLive cold resolve** \u2014 prefer `freetvspor` / `tiestep` / `assetrage` ahead of slow stubs (`rippleplays`, `cricsfree`, `apexstreams`, `worldsportz`); fail-fast `hamis` 403s",
+  "versionCode": 30055,
+  "versionName": "3.0.55",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.55/stepdaddy-gateway-3.0.55-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.55/stepdaddy-gateway-3.0.55-debug.apk",
+  "apkSha256": "69db51e768d22b41164dc800f632861bb9a841acfe25e27d27cb6edf1911322d",
+  "apkSha256Debug": "0ce674f0e1cdab6e3d193737121324833b37cbfc51331d653e945f239bfa0e4c",
+  "releaseNotes": "**Sticky mid-play 502s** \u2014 live playlist cache was 60s/120s; gateway kept serving frozen `MEDIA-SEQUENCE` while CDN segments 404'd through `/vod-content`. Fresh TTLs \u22482.5s; healthy stale-good \u226415s.",
   "updateType": "optional",
   "mandatory": false
 }

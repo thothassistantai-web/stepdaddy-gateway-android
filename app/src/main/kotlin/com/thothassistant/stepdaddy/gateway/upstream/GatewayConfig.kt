@@ -41,10 +41,21 @@ object GatewayConfig {
     /** Wizard/setup M3U cap — full catalog (~5k ch) blocks FUSA for minutes; bootstrap must be fast. */
     const val SETUP_BOOTSTRAP_MAX_CHANNELS = 50
     const val CHANNEL_REFRESH_INTERVAL_MS = 600_000L
-    const val STREAM_CACHE_TTL_MS = 60_000L
-    const val UPSTREAM_CACHE_TTL_MS = 120_000L
-    const val UPSTREAM_STALE_TTL_MS = 600_000L
-    const val STALE_STREAM_TTL_MS = 600_000L
+    /**
+     * Fresh rewritten live media playlist TTL. Must stay well under the CDN segment
+     * sliding window (~targetduration × 2–3). A 60s cache previously kept serving
+     * rolled-off `.ts` URLs → `/vod-content` HTTP 404 → sticky client 502s while the
+     * manifest route still returned 200 `#EXTM3U`.
+     */
+    const val STREAM_CACHE_TTL_MS = 2_500L
+    /**
+     * Fresh upstream manifest (playlist body) TTL. Winning-embed URL cache covers the
+     * expensive hub walk; this only coalesces burst re-resolves of the same m3u8 body.
+     */
+    const val UPSTREAM_CACHE_TTL_MS = 2_500L
+    /** Soft stale-good window while mirrors are healthy (live segments expire quickly). */
+    const val UPSTREAM_STALE_TTL_MS = 15_000L
+    const val STALE_STREAM_TTL_MS = 15_000L
     /** Total budget for one stream resolve (all mirrors). */
     const val STREAM_FETCH_TIMEOUT_MS = 28_000L
     /**

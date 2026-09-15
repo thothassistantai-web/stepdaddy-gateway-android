@@ -799,6 +799,7 @@ class DaddyLiveClient(
         if (DaddyLiveErrorClassifier.shouldPurgeUpstreamCache(reason)) {
             staleStreamCache.keys.filter { it.startsWith("$channelId:") }.forEach { staleStreamCache.remove(it) }
             upstreamCache.remove(channelId)
+            resportzParser.clearWinningEmbed(channelId)
         } else {
             Log.d(TAG, "Keeping stale upstream cache for $channelId (${reason?.message})")
         }
@@ -829,11 +830,16 @@ class DaddyLiveClient(
         recordHealingAction("purge_stale_caches")
     }
 
-    /** Content-proxy healing: refresh rewritten playlists without evicting upstream manifests. */
+    /**
+     * Content-proxy healing: drop fresh rewritten + upstream playlist bodies so the next
+     * `/tivimate-stream` hit re-fetches m3u8 (winning-embed cache still avoids a full hub walk).
+     * Previous implementation only removed already-expired entries — a no-op during the
+     * sticky-502 window.
+     */
     suspend fun invalidateFreshStreamCaches() {
         cacheMutex.withLock {
-            val now = System.currentTimeMillis()
-            streamCache.entries.removeIf { now - it.value.savedAtMs > GatewayConfig.STREAM_CACHE_TTL_MS }
+            streamCache.clear()
+            upstreamCache.clear()
         }
         recordHealingAction("purge_fresh_stream_caches")
     }
