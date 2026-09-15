@@ -113,9 +113,45 @@ class ResportzParser(
             )
         }.onFailure { exc ->
             if (exc is CancellationException) throw exc
-            winningEmbedByChannel.remove(channelId, cached)
-            Log.d(TAG, "winning-embed cache miss channel=$channelId: ${exc.message}")
+            // 429 rate-limit: keep the binding — clearing it causes hub-walk stampedes mid-play.
+            if (isHttpStatus(exc, 429)) {
+                Log.d(TAG, "winning-embed 429 channel=$channelId — keeping cache url=${cached.embedUrl}")
+            } else {
+                winningEmbedByChannel.remove(channelId, cached)
+                Log.d(TAG, "winning-embed cache miss channel=$channelId: ${exc.message}")
+            }
         }.getOrNull()
+    }
+
+    /**
+     * Cheap mid-play refresh: re-GET the already-resolved CDN m3u8 URL with the same referer.
+     * Avoids tiestep/hub HTML and is what keeps MEDIA-SEQUENCE advancing under load.
+     */
+    suspend fun refreshFromMasterUrl(manifest: UpstreamManifest): UpstreamManifest {
+        val referer = refererForMaster(manifest.refererHost, manifest.masterUrl)
+        val (resolvedUrl, m3u8Text) = fetchM3u8TextReserved(manifest.masterUrl, referer)
+        Log.d(TAG, "master-refresh ok (${m3u8Text.length} bytes) url=$resolvedUrl")
+        return UpstreamManifest(
+            playlistText = m3u8Text,
+            masterUrl = resolvedUrl,
+            refererHost = manifest.refererHost,
+        )
+    }
+
+    private fun refererForMaster(refererHost: String, masterUrl: String): String {
+        val host = refererHost.trim()
+        return when {
+            host.startsWith("http://") || host.startsWith("https://") ->
+                if (host.endsWith("/")) host else "$host/"
+            host.isNotEmpty() -> "https://${host.trimEnd('/')}/"
+            else -> masterUrl
+        }
+    }
+
+    private fun isHttpStatus(exc: Throwable, code: Int): Boolean {
+        val status = exc as? HttpStatusException
+        if (status != null) return status.code == code
+        return exc.message?.contains("HTTP $code") == true
     }
 
     private suspend fun raceDlhdWatchUrls(

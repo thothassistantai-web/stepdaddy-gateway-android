@@ -19,6 +19,19 @@ class LivePlaylistCacheTtlTest {
     }
 
     @Test
+    fun masterBindTtlAllowsMidPlayRefreshWithoutHubWalk() {
+        // Binding must outlive many playlist polls so we re-GET CDN m3u8, not tiestep.
+        assertTrue(GatewayConfig.UPSTREAM_MASTER_BIND_TTL_MS >= 60_000L)
+        assertTrue(GatewayConfig.UPSTREAM_MASTER_BIND_TTL_MS > GatewayConfig.UPSTREAM_CACHE_TTL_MS)
+    }
+
+    @Test
+    fun softServeCoversPlaylistPollWithoutBlocking() {
+        assertTrue(GatewayConfig.LIVE_SOFT_SERVE_MS >= GatewayConfig.STREAM_CACHE_TTL_MS)
+        assertTrue(GatewayConfig.LIVE_SOFT_SERVE_MS <= 15_000L)
+    }
+
+    @Test
     fun outageGraceStillAllowsLongerStaleServe() {
         assertTrue(GatewayConfig.OUTAGE_STALE_GRACE_TTL_MS >= 60_000L)
     }

@@ -49,10 +49,21 @@ object GatewayConfig {
      */
     const val STREAM_CACHE_TTL_MS = 2_500L
     /**
-     * Fresh upstream manifest (playlist body) TTL. Winning-embed URL cache covers the
-     * expensive hub walk; this only coalesces burst re-resolves of the same m3u8 body.
+     * Fresh upstream playlist *body* TTL. After this, re-GET [UpstreamManifest.masterUrl]
+     * instead of re-walking hubs (see [UPSTREAM_MASTER_BIND_TTL_MS]).
      */
     const val UPSTREAM_CACHE_TTL_MS = 2_500L
+    /**
+     * How long a resolved CDN m3u8 URL binding stays valid for cheap mid-play refreshes.
+     * Avoids hammering tiestep/assetrage (HTTP 429) every playlist poll.
+     */
+    const val UPSTREAM_MASTER_BIND_TTL_MS = 1_800_000L
+    /**
+     * Stale-while-revalidate window for rewritten playlists. On body-TTL miss, serve the
+     * last-good playlist immediately and refresh CDN m3u8 in the background so TiviMate
+     * never blocks on a hub walk (3.0.55 hitch: 3–8s playlist latency).
+     */
+    const val LIVE_SOFT_SERVE_MS = 8_000L
     /** Soft stale-good window while mirrors are healthy (live segments expire quickly). */
     const val UPSTREAM_STALE_TTL_MS = 15_000L
     const val STALE_STREAM_TTL_MS = 15_000L

@@ -32,6 +32,7 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.net.URL
 import kotlin.math.min
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 class DaddyLiveClient(
@@ -63,6 +64,8 @@ class DaddyLiveClient(
     private val streamCache = mutableMapOf<String, CachedManifest>()
     private val staleStreamCache = mutableMapOf<String, CachedManifest>()
     private val upstreamCache = mutableMapOf<String, CachedUpstream>()
+    /** Singleflight keys for background playlist soft-refresh. */
+    private val streamRefreshInFlight = ConcurrentHashMap<String, Boolean>()
     private val channelEmbedUrls = mutableMapOf<String, String>()
     private val deadMirrors = mutableMapOf<String, Long>()
     private val mirrorFailureCounts = mutableMapOf<String, Int>()
@@ -256,30 +259,26 @@ class DaddyLiveClient(
             }
         }
         streamCacheMisses++
+        // Stale-while-revalidate: never block the player on hub walks / tiestep 429.
+        val soft = cacheMutex.withLock {
+            val candidate = streamCache[cacheKey] ?: staleStreamCache[cacheKey]
+            if (candidate != null && now - candidate.savedAtMs < GatewayConfig.LIVE_SOFT_SERVE_MS) {
+                candidate.rewrittenPlaylist
+            } else {
+                null
+            }
+        }
+        if (soft != null) {
+            scheduleBackgroundStreamRefresh(channelId, useProxy, apiUrl, cacheKey)
+            lastServedFromStaleCache = true
+            return soft
+        }
         // Prefer stale-good early when mirrors are already known-dead / cooling (fewer TiviMate spinners).
         if (isGlobalOutageActive() || likelyUpstreamDegraded()) {
             serveStaleStreamFromCaches(cacheKey, channelId, now)?.let { return it }
         }
         try {
-            val manifest = fetchManifestWithMirrors(channelId)
-            val rewritten = M3u8Rewriter.rewrite(
-                manifest.playlistText,
-                manifest.masterUrl,
-                refererHost = manifest.refererHost,
-                useProxy = useProxy,
-                apiUrl = apiUrl,
-                segmentReferer = embedReferer(manifest.refererHost),
-            )
-            val savedAt = System.currentTimeMillis()
-            cacheMutex.withLock {
-                val entry = CachedManifest(savedAt, rewritten)
-                streamCache[cacheKey] = entry
-                staleStreamCache[cacheKey] = entry
-            }
-            staleGoodCacheStore.saveStream(cacheKey, channelId, rewritten)
-            lastUpstreamSuccessMs = savedAt
-            lastServedFromStaleCache = false
-            return rewritten
+            return resolveStreamSync(channelId, useProxy, apiUrl, cacheKey)
         } catch (exc: Exception) {
             if (exc is CancellationException) {
                 throw exc
@@ -289,13 +288,97 @@ class DaddyLiveClient(
         }
     }
 
+    private suspend fun resolveStreamSync(
+        channelId: String,
+        useProxy: Boolean,
+        apiUrl: String,
+        cacheKey: String,
+    ): String {
+        val manifest = fetchManifestWithMirrors(channelId)
+        val rewritten = M3u8Rewriter.rewrite(
+            manifest.playlistText,
+            manifest.masterUrl,
+            refererHost = manifest.refererHost,
+            useProxy = useProxy,
+            apiUrl = apiUrl,
+            segmentReferer = embedReferer(manifest.refererHost),
+        )
+        val savedAt = System.currentTimeMillis()
+        cacheMutex.withLock {
+            val entry = CachedManifest(savedAt, rewritten)
+            streamCache[cacheKey] = entry
+            staleStreamCache[cacheKey] = entry
+        }
+        staleGoodCacheStore.saveStream(cacheKey, channelId, rewritten)
+        lastUpstreamSuccessMs = savedAt
+        lastServedFromStaleCache = false
+        return rewritten
+    }
+
+    private fun scheduleBackgroundStreamRefresh(
+        channelId: String,
+        useProxy: Boolean,
+        apiUrl: String,
+        cacheKey: String,
+    ) {
+        if (streamRefreshInFlight.putIfAbsent(cacheKey, true) != null) return
+        refreshScope.launch {
+            try {
+                resolveStreamSync(channelId, useProxy, apiUrl, cacheKey)
+                recordHealingAction("soft_refresh_ok $channelId")
+            } catch (exc: Exception) {
+                if (exc !is CancellationException) {
+                    Log.d(TAG, "soft_refresh failed channel=$channelId: ${exc.message}")
+                }
+            } finally {
+                streamRefreshInFlight.remove(cacheKey)
+            }
+        }
+    }
+
     private suspend fun fetchManifestWithMirrors(channelId: String): UpstreamManifest {
         val now = System.currentTimeMillis()
+        var masterBound: CachedUpstream? = null
         cacheMutex.withLock {
             val cached = upstreamCache[channelId]
             if (cached != null && now - cached.savedAtMs < GatewayConfig.UPSTREAM_CACHE_TTL_MS) {
                 return cached.manifest
             }
+            if (
+                cached != null &&
+                cached.manifest.masterUrl.isNotBlank() &&
+                now - cached.boundAtMs < GatewayConfig.UPSTREAM_MASTER_BIND_TTL_MS
+            ) {
+                masterBound = cached
+            }
+        }
+        // Cheap path: re-GET the CDN m3u8 so MEDIA-SEQUENCE advances without tiestep/hub HTML.
+        masterBound?.let { bound ->
+            val refreshed = runCatching {
+                resportzParser.refreshFromMasterUrl(bound.manifest)
+            }.onFailure { exc ->
+                if (exc is CancellationException) throw exc
+                Log.d(TAG, "master-refresh failed channel=$channelId: ${exc.message}")
+            }.getOrNull()
+            if (refreshed != null) {
+                val savedAt = System.currentTimeMillis()
+                cacheMutex.withLock {
+                    upstreamCache[channelId] = CachedUpstream(
+                        savedAtMs = savedAt,
+                        manifest = refreshed,
+                        boundAtMs = bound.boundAtMs,
+                    )
+                }
+                lastUpstreamSuccessMs = savedAt
+                lastServedFromStaleCache = false
+                return refreshed
+            }
+            // Master URL died (403/404/token) — drop body+bind so full resolve can replace it.
+            cacheMutex.withLock {
+                upstreamCache.remove(channelId)
+            }
+            resportzParser.clearWinningEmbed(channelId)
+            recordHealingAction("master_refresh_miss $channelId")
         }
         if (isGlobalOutageActive()) {
             serveStaleUpstreamFromCaches(channelId, now)?.let { return it }
@@ -831,15 +914,17 @@ class DaddyLiveClient(
     }
 
     /**
-     * Content-proxy healing: drop fresh rewritten + upstream playlist bodies so the next
-     * `/tivimate-stream` hit re-fetches m3u8 (winning-embed cache still avoids a full hub walk).
-     * Previous implementation only removed already-expired entries — a no-op during the
-     * sticky-502 window.
+     * Content-proxy healing: drop rewritten playlists so the next `/tivimate-stream` hit
+     * re-fetches m3u8. Keep upstream masterUrl bindings so refresh is a cheap CDN GET
+     * (not a tiestep hub walk — that caused mid-play HTTP 429 stampedes in 3.0.55).
      */
     suspend fun invalidateFreshStreamCaches() {
         cacheMutex.withLock {
             streamCache.clear()
-            upstreamCache.clear()
+            // Force body re-fetch on next resolve while preserving boundAtMs / masterUrl.
+            upstreamCache.replaceAll { _, entry ->
+                entry.copy(savedAtMs = 0L)
+            }
         }
         recordHealingAction("purge_fresh_stream_caches")
     }

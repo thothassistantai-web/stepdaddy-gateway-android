@@ -8,8 +8,14 @@ internal data class CachedManifest(
 )
 
 internal data class CachedUpstream(
+    /** When the playlist body was last fetched (MEDIA-SEQUENCE freshness). */
     val savedAtMs: Long,
     val manifest: UpstreamManifest,
+    /**
+     * When the CDN master/media m3u8 URL binding was established via a full hub/embed resolve.
+     * Survives short body TTLs so mid-play refreshes re-GET the m3u8 without re-hitting tiestep.
+     */
+    val boundAtMs: Long = savedAtMs,
 )
 
 data class HealingSnapshot(

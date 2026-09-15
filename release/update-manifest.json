@@ -1,11 +1,11 @@
 {
-  "versionCode": 30055,
-  "versionName": "3.0.55",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.55/stepdaddy-gateway-3.0.55-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.55/stepdaddy-gateway-3.0.55-debug.apk",
-  "apkSha256": "69db51e768d22b41164dc800f632861bb9a841acfe25e27d27cb6edf1911322d",
-  "apkSha256Debug": "0ce674f0e1cdab6e3d193737121324833b37cbfc51331d653e945f239bfa0e4c",
-  "releaseNotes": "**Sticky mid-play 502s** \u2014 live playlist cache was 60s/120s; gateway kept serving frozen `MEDIA-SEQUENCE` while CDN segments 404'd through `/vod-content`. Fresh TTLs \u22482.5s; healthy stale-good \u226415s.",
+  "versionCode": 30056,
+  "versionName": "3.0.56",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.56/stepdaddy-gateway-3.0.56-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.56/stepdaddy-gateway-3.0.56-debug.apk",
+  "apkSha256": "697a53d62729ca3db8d258d2beaaabe85d897a68cbe439f53cdd03e75a88e59e",
+  "apkSha256Debug": "f8ccb5ad648bf054bc49f8f66aac3ca29a878a92fa9300811b080de64bd40f3e",
+  "releaseNotes": "**~60s mid-play hitch** \u2014 after 3.0.55\u2019s short playlist TTL, misses re-walked hubs (tiestep 429 \u2192 3\u20138s stalls). Cheap CDN masterUrl refresh + soft-serve stale-while-revalidate; keep winning-embed on 429.",
   "updateType": "optional",
   "mandatory": false
 }

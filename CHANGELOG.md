@@ -7,6 +7,17 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.56] - 2026-09-15
+
+### Fixed
+
+- **~60s mid-play hitch** — 3.0.55 shortened live playlist TTL to ~2.5s (fixed sticky 502s) but each miss re-walked hubs; tiestep HTTP 429 → 3–8s playlist latency and buffer underruns. Now: cheap CDN `masterUrl` re-GET via 30m bind TTL, keep winning-embed on 429, and stale-while-revalidate soft-serve so players never block on hub HTML.
+- **Content-proxy healing** — purge rewritten playlists without dropping masterUrl bindings (avoids refresh stampedes).
+
+### Notes
+
+- Suite version **3.0.56** / **30056**. Gateway-only; factory TiviMate unchanged.
+
 ## [3.0.55] - 2026-09-15
 
 ### Fixed
