@@ -8,6 +8,7 @@ import androidx.lifecycle.lifecycleScope
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
 import com.thothassistant.stepdaddy.gateway.R
 import com.thothassistant.stepdaddy.gateway.install.ApkInstallManager
+import com.thothassistant.stepdaddy.gateway.diagnostics.RuntimeTuneManager
 import com.thothassistant.stepdaddy.gateway.relay.DomainRelayManager
 import com.thothassistant.stepdaddy.gateway.relay.VodCatalogRelayManager
 import java.io.File
@@ -33,6 +34,7 @@ class AppUpdateCoordinator(
     private val environment: GatewayEnvironment,
     private val domainRelayManager: DomainRelayManager? = null,
     private val vodCatalogRelayManager: VodCatalogRelayManager? = null,
+    private val runtimeTuneManager: RuntimeTuneManager? = null,
 ) {
     private val appContext = context.applicationContext
     private val manager = AppUpdateManager(appContext, environment, ApkInstallManager(appContext))
@@ -325,9 +327,17 @@ class AppUpdateCoordinator(
                             }
                         }
                     }
+                    val tuneDeferred = runtimeTuneManager?.let { mgr ->
+                        async {
+                            runCatching {
+                                mgr.refresh(reason = if (manual) "update-check-manual" else "startup")
+                            }
+                        }
+                    }
                     val update = manager.checkForUpdate()
                     relayDeferred?.await()
                     vodRelayDeferred?.await()
+                    tuneDeferred?.await()
                     update
                 }
             }

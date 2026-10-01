@@ -23,6 +23,8 @@ object DaddyLiveErrorClassifier {
     fun isConnectivityFailure(exc: Exception): Boolean {
         val message = exc.message.orEmpty()
         if (message.contains("resportz watch", ignoreCase = true)) return false
+        if (message.contains("embed CDN", ignoreCase = true)) return false
+        if (message.contains("embed stub", ignoreCase = true)) return false
         if (message.contains("failed to connect", ignoreCase = true)) return true
         if (message.contains("unable to resolve host", ignoreCase = true)) return true
         if (message.contains("connection reset", ignoreCase = true)) return true
@@ -52,6 +54,8 @@ object DaddyLiveErrorClassifier {
         if (message.contains("encoded m3u8", ignoreCase = true)) return true
         if (message.contains("iframe source", ignoreCase = true)) return true
         if (message.contains("embed stub host", ignoreCase = true)) return true
+        if (message.contains("embed CDN unreachable", ignoreCase = true)) return true
+        if (message.contains("embed blocked", ignoreCase = true)) return true
         if (message.contains("empty iframe", ignoreCase = true)) return true
         if (message.contains("empty encoded source", ignoreCase = true)) return true
         return false

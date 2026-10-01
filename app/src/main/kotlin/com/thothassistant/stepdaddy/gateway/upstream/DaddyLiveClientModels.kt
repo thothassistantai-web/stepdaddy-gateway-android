@@ -5,7 +5,10 @@ import com.thothassistant.stepdaddy.gateway.model.UpstreamManifest
 internal data class CachedManifest(
     val savedAtMs: Long,
     val rewrittenPlaylist: String,
-)
+) {
+    val isLiveSlidingWindow: Boolean
+        get() = HlsPlaylistKind.isLiveSlidingWindow(rewrittenPlaylist)
+}
 
 internal data class CachedUpstream(
     /** When the playlist body was last fetched (MEDIA-SEQUENCE freshness). */
@@ -16,7 +19,27 @@ internal data class CachedUpstream(
      * Survives short body TTLs so mid-play refreshes re-GET the m3u8 without re-hitting tiestep.
      */
     val boundAtMs: Long = savedAtMs,
-)
+) {
+    val isLiveSlidingWindow: Boolean
+        get() = HlsPlaylistKind.isLiveSlidingWindow(manifest.playlistText)
+}
+
+/** Live vs VOD playlist classification for cache TTL. */
+internal object HlsPlaylistKind {
+    fun isLiveSlidingWindow(playlistText: String): Boolean {
+        val text = playlistText
+        if (!text.contains("#EXT-X-MEDIA-SEQUENCE", ignoreCase = true)) return false
+        if (text.contains("#EXT-X-ENDLIST", ignoreCase = true)) return false
+        return true
+    }
+
+    fun cacheTtlMs(playlistText: String, nonLiveTtlMs: Long): Long =
+        if (isLiveSlidingWindow(playlistText)) {
+            GatewayConfig.LIVE_PLAYLIST_CACHE_TTL_MS
+        } else {
+            nonLiveTtlMs
+        }
+}
 
 data class HealingSnapshot(
     val lastAction: String,

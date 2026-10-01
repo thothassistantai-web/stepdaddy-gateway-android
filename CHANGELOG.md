@@ -7,6 +7,23 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.68] - 2026-10-01
+
+### Fixed
+
+- **HLS image-segment unwrap** — DaddyLive CDN PNG/WebP-wrapped TS segments are unwrapped in the content proxy so ExoPlayer/TiviMate receive MPEG-TS instead of image payloads (reduces visual looping / HttpDataSource stalls).
+- **Stream resolve healing** — Resportz/DaddyLive mirror cooling, dead-channel vs dead-relay classification, player fallback URLs, and race/timeout hardening under multi-stream load.
+
+### Added
+
+- **Runtime tune pack** — allowlisted concurrency/timeout knobs via `release/runtime-tune.json` (raw `main` + Releases asset) without APK rebuilds for every tune.
+- **Live diagnostics** — `/debug/diagnostics`, `/debug/config`, `/debug/probe`, and `scripts/fusa-live-diagnostics.sh` for ONN/FUSA playback labs.
+- **Stremio Live TV addon** — embedded `/stremio/` manifest/catalog/stream routes for local Stremio installs.
+
+### Notes
+
+- Suite version **3.0.68** / **30068**. OTA assets: `update-manifest.json` + versioned debug/release APKs + `runtime-tune.json`. Retune after upgrade if prior playback was looping.
+
 ## [3.0.56] - 2026-09-15
 
 ### Fixed

@@ -75,7 +75,7 @@ Run **top to bottom**. Escalate severity when a step fails critically.
 | # | Check | Command | Delegate |
 |---|-------|---------|----------|
 | 16 | TiviMate top activity | `adb -s $DEV shell dumpsys activity activities \| rg topResumed` | `fusa-tivimate-debugger` |
-| 17 | TiviMate errors | `adb -s $DEV logcat -d -t 15m \| rg -i 'ar\.tvplayer\|ExoPlayer\|PlaybackException'` | `fusa-tivimate-debugger` |
+| 17 | TiviMate errors | `adb -s $DEV logcat -d -t 15m \| rg -i 'ar\.tvplayer\|ExoPlayer\|PlaybackException\|HttpDataSource'` | `fusa-tivimate-debugger` or `fusa-playback-consistency-debugger` if looping/buffering |
 | 18 | Connect to loopback | `adb -s $DEV logcat -d -t 15m \| rg '127\.0\.0\.1:3000'` | `gateway-http-debugger` or `gateway-boot-lifecycle-debugger` |
 
 ### Phase 7 — Performance & memory

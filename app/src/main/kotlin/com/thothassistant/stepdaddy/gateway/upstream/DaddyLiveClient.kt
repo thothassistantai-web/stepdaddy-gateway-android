@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.thothassistant.stepdaddy.gateway.FireMemoryGuard
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
+import com.thothassistant.stepdaddy.gateway.diagnostics.RuntimeTuneRuntime
 import com.thothassistant.stepdaddy.gateway.epg.EpgChannelMapper
 import com.thothassistant.stepdaddy.gateway.epg.IptvOrgNameIndex
 import com.thothassistant.stepdaddy.gateway.epg.TvgIdResolver
@@ -20,7 +21,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -58,7 +58,7 @@ class DaddyLiveClient(
     private val loadMutex = Mutex()
     private val cacheMutex = Mutex()
     private val healingLock = Any()
-    private val upstreamFetchSem = Semaphore(GatewayConfig.UPSTREAM_FETCH_MAX_CONCURRENT)
+    private val upstreamFetchSem = RuntimeTuneRuntime.upstreamFetchLimiter
     @Volatile
     private var refreshInFlight = false
     private val streamCache = mutableMapOf<String, CachedManifest>()
@@ -253,9 +253,15 @@ class DaddyLiveClient(
         val cacheKey = "$channelId:${if (useProxy) 1 else 0}:$apiUrl"
         cacheMutex.withLock {
             val cached = streamCache[cacheKey]
-            if (cached != null && now - cached.savedAtMs < GatewayConfig.STREAM_CACHE_TTL_MS) {
-                streamCacheHits++
-                return cached.rewrittenPlaylist
+            if (cached != null) {
+                val ttl = HlsPlaylistKind.cacheTtlMs(
+                    cached.rewrittenPlaylist,
+                    GatewayConfig.STREAM_CACHE_TTL_MS,
+                )
+                if (now - cached.savedAtMs < ttl) {
+                    streamCacheHits++
+                    return cached.rewrittenPlaylist
+                }
             }
         }
         streamCacheMisses++
@@ -341,8 +347,14 @@ class DaddyLiveClient(
         var masterBound: CachedUpstream? = null
         cacheMutex.withLock {
             val cached = upstreamCache[channelId]
-            if (cached != null && now - cached.savedAtMs < GatewayConfig.UPSTREAM_CACHE_TTL_MS) {
-                return cached.manifest
+            if (cached != null) {
+                val ttl = HlsPlaylistKind.cacheTtlMs(
+                    cached.manifest.playlistText,
+                    GatewayConfig.UPSTREAM_CACHE_TTL_MS,
+                )
+                if (now - cached.savedAtMs < ttl) {
+                    return cached.manifest
+                }
             }
             if (
                 cached != null &&
@@ -383,19 +395,15 @@ class DaddyLiveClient(
         if (isGlobalOutageActive()) {
             serveStaleUpstreamFromCaches(channelId, now)?.let { return it }
         }
-        val acquiredSlot = withTimeoutOrNull(GatewayConfig.UPSTREAM_FETCH_WAIT_MS) {
-            upstreamFetchSem.acquire()
-            true
-        } ?: false
-        if (!acquiredSlot) {
-            serveStaleUpstreamFromCaches(channelId, now)?.let { return it }
-            throw IllegalStateException("upstream_busy")
+        val result = upstreamFetchSem.withSlot(
+            limit = { GatewayConfig.UPSTREAM_FETCH_MAX_CONCURRENT },
+            waitMs = GatewayConfig.UPSTREAM_FETCH_WAIT_MS,
+        ) {
+            fetchManifestWithMirrorsInner(channelId, now)
         }
-        try {
-            return fetchManifestWithMirrorsInner(channelId, now)
-        } finally {
-            upstreamFetchSem.release()
-        }
+        if (result != null) return result
+        serveStaleUpstreamFromCaches(channelId, now)?.let { return it }
+        throw IllegalStateException("upstream_busy")
     }
 
     private suspend fun fetchManifestWithMirrorsInner(
@@ -927,6 +935,15 @@ class DaddyLiveClient(
             }
         }
         recordHealingAction("purge_fresh_stream_caches")
+    }
+
+    /** Drop all in-memory stream/upstream playlist caches (debug / live-heal). */
+    suspend fun purgePlaylistCaches(reason: String = "debug_purge") {
+        cacheMutex.withLock {
+            streamCache.clear()
+            upstreamCache.clear()
+        }
+        recordHealingAction("purge_playlist_caches $reason")
     }
 
     suspend fun probeMirrors(): Boolean {

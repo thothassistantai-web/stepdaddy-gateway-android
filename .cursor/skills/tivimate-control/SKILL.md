@@ -239,6 +239,15 @@ adb shell input keyevent 12 8 66   # channel 51 + ENTER
 - `am start` on `SettingsActivity`, `PlaylistActivity` (not exported)
 - Loopback HTTP :4617
 
+## Never use AFTV Downloader for playback
+
+AFTV Downloader (`com.esaba.downloader`) is **APK install only** (numeric codes). It cannot play HLS.
+
+- Do **not** `am start -a android.intent.action.VIEW -d 'http://…m3u8'` without an explicit player package — on Fire/ONN that often opens Downloader.
+- IPTV tests: TiviMate only (`ar.tvplayer.tv` / `com.thothassistant.daddylive`) via MainActivity + keyevents / patch tune APIs.
+- Non-IPTV URL checks: explicit `-p` to a real player or lightweight browser — never Downloader.
+- If Downloader steals focus: `adb shell am force-stop com.esaba.downloader`
+
 ## Debugging playback
 
 ```bash

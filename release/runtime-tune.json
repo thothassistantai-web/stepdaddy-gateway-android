@@ -1,0 +1,19 @@
+{
+  "version": 8,
+  "minAppVersion": "3.0.68",
+  "message": "FUSA: short live playlist TTL (3.0.56), proxy=4, hedged race off under GC pressure",
+  "tune": {
+    "contentProxyMaxConcurrent": 4,
+    "contentProxyWaitMs": 15000,
+    "upstreamFetchMaxConcurrent": 2,
+    "upstreamFetchWaitMs": 20000,
+    "streamFetchTimeoutMs": 28000,
+    "mirrorAttemptTimeoutMs": 10000,
+    "dlhdRaceTimeoutMs": 18000,
+    "streamCacheTtlMs": 2500,
+    "livePlaylistCacheTtlMs": 2500,
+    "upstreamCacheTtlMs": 2500,
+    "dlhdPkParallelProbeCount": 2,
+    "hedgedMirrorRaceEnabled": false
+  }
+}

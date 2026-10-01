@@ -47,6 +47,7 @@ Use android-debug-orchestrator to run a full debug sweep on FUSA2541006925.
 | Agent | When to invoke |
 |-------|----------------|
 | [`fusa-tivimate-debugger`](fusa-tivimate-debugger.md) | TiviMate spinner, black screen, ExoPlayer errors |
+| [`fusa-playback-consistency-debugger`](fusa-playback-consistency-debugger.md) | Visual looping / buffering every few seconds, HttpDataSource mid-play — Movies test battery |
 | [`fusa-log-auditor`](fusa-log-auditor.md) | Time-windowed logcat incident timelines |
 | [`fusa-boot-verifier`](fusa-boot-verifier.md) | Cold boot → gateway auto-start verification |
 | [`fusa-boot-ux-tester`](fusa-boot-ux-tester.md) | Boot UX, notifications, ready banner |
@@ -74,6 +75,7 @@ Use android-debug-orchestrator to run a full debug sweep on FUSA2541006925.
 | Anything unclear | `android-debug-orchestrator` |
 | Playlist update / timeout | `gateway-playlist-debugger` → `gateway-performance-profiler` |
 | Won't play / spinner | `fusa-tivimate-debugger` → `gateway-stream-debugger` |
+| Loops / buffers every few seconds / HttpDataSource | `fusa-playback-consistency-debugger` → `gateway-stream-healer` |
 | Gateway won't start | `gateway-boot-lifecycle-debugger` → `fusa-boot-verifier` |
 | Missing iptv-org channels | `gateway-iptv-org-debugger` → `gateway-supplement-debugger` |
 | Missing Special Events guides (PPV/Tennis Schedule) | `special-events-guide-debugger` → `gateway-supplement-debugger` |
@@ -96,6 +98,8 @@ Use gateway-playlist-debugger — TiviMate update all playlists still failing.
 Use special-events-guide-debugger — PPV/Tennis/Golf Schedule rows missing from Special Events.
 
 Use fusa-tivimate-debugger and gateway-stream-debugger for channel 51 spinner.
+
+Use fusa-playback-consistency-debugger — Movies streams loop every few seconds / HttpDataSource.
 
 Use gateway-build-deploy-debugger, then gateway-performance-profiler on FUSA.
 ```

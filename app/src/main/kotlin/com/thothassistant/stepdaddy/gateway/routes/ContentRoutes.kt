@@ -1,10 +1,13 @@
 package com.thothassistant.stepdaddy.gateway.routes
 
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
+import com.thothassistant.stepdaddy.gateway.diagnostics.RuntimeTuneRuntime
+import com.thothassistant.stepdaddy.gateway.diagnostics.StreamDiagnostics
 import com.thothassistant.stepdaddy.gateway.upstream.ContentCrypto
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveErrorClassifier
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
 import com.thothassistant.stepdaddy.gateway.upstream.GatewayConfig
+import com.thothassistant.stepdaddy.gateway.upstream.HlsImageSegmentUnwrapper
 import com.thothassistant.stepdaddy.gateway.upstream.HttpStatusException
 import com.thothassistant.stepdaddy.gateway.upstream.M3u8Rewriter
 import com.thothassistant.stepdaddy.gateway.upstream.executeAsync
@@ -33,6 +36,7 @@ class ContentRoutes(
     private val dlhdHostFailureCounts = mutableMapOf<String, Int>()
     private val dlhdHostCooldownUntilMs = mutableMapOf<String, Long>()
     private val dlhdHostLock = Any()
+    private val binaryProxySlots = RuntimeTuneRuntime.contentProxyLimiter
 
     suspend fun content(call: ApplicationCall, encryptedPath: String) {
         val upstreamUrl = runCatching { ContentCrypto.decrypt(encryptedPath) }
@@ -205,7 +209,9 @@ class ContentRoutes(
             refererHost = embedReferer,
             useProxy = true,
             apiUrl = environment.loopbackBase(),
-            preferLighterVariant = false,
+            // Prefer lighter variants on sticks — large TS segments download slower than #EXTINF
+            // and cause ExoPlayer underruns that look like looping every few seconds.
+            preferLighterVariant = true,
             segmentReferer = embedReferer,
         )
         call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
@@ -214,27 +220,59 @@ class ContentRoutes(
     }
 
     private suspend fun serveBinary(call: ApplicationCall, upstreamUrl: String, referer: String) {
-        val request = Request.Builder()
-            .url(upstreamUrl)
-            .header("User-Agent", GatewayConfig.USER_AGENT)
-            .header("Referer", referer)
-            .header("Accept-Encoding", "identity")
-            .get()
-            .build()
-        val bytes = withContext(Dispatchers.IO) {
-            httpClient.executeAsync(request).use { response ->
-                if (!response.isSuccessful) {
-                    throw HttpStatusException(
-                        code = response.code,
-                        url = response.request.url,
-                        responseMessage = response.message,
-                    )
+        val t0 = System.currentTimeMillis()
+        val outcome = binaryProxySlots.withSlot(
+            limit = { GatewayConfig.CONTENT_PROXY_MAX_CONCURRENT },
+            waitMs = GatewayConfig.CONTENT_PROXY_WAIT_MS,
+        ) {
+            val request = Request.Builder()
+                .url(upstreamUrl)
+                .header("User-Agent", GatewayConfig.USER_AGENT)
+                .header("Referer", referer)
+                .header("Accept-Encoding", "identity")
+                .get()
+                .build()
+            val bytes = withContext(Dispatchers.IO) {
+                httpClient.executeAsync(request).use { response ->
+                    if (!response.isSuccessful) {
+                        throw HttpStatusException(
+                            code = response.code,
+                            url = response.request.url,
+                            responseMessage = response.message,
+                        )
+                    }
+                    val raw = response.body?.bytes() ?: byteArrayOf()
+                    // DaddyLive CDN serves PNG/WebP-wrapped TS; unwrap for ExoPlayer/TiviMate.
+                    HlsImageSegmentUnwrapper.maybeUnwrap(raw)
                 }
-                response.body?.bytes() ?: byteArrayOf()
             }
+            call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+            call.response.header(HttpHeaders.CacheControl, "no-cache")
+            // Help Media3/ExoPlayer (Stremio) treat unwrapped segments as MPEG-TS, not image/*.
+            val contentType =
+                if (bytes.isNotEmpty() && bytes[0] == 0x47.toByte()) {
+                    ContentType("video", "mp2t")
+                } else if (HlsImageSegmentUnwrapper.looksWrapped(bytes)) {
+                    // Unwrap failed — still avoid advertising image/webp to ExoPlayer.
+                    ContentType.Application.OctetStream
+                } else {
+                    ContentType.Application.OctetStream
+                }
+            call.response.header(HttpHeaders.ContentType, contentType.toString())
+            call.respondBytes(bytes, contentType)
+            StreamDiagnostics.recordSegment(
+                httpStatus = 200,
+                latencyMs = System.currentTimeMillis() - t0,
+                ok = bytes.isNotEmpty() && bytes[0] == 0x47.toByte(),
+                unwrapped = true,
+                contentType = contentType.toString(),
+            )
+            true
         }
-        call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
-        call.respondBytes(bytes, ContentType.Application.OctetStream)
+        if (outcome == null) {
+            StreamDiagnostics.recordProxyBusy()
+            call.respond(HttpStatusCode.ServiceUnavailable, mapOf("error" to "content_proxy_busy"))
+        }
     }
 
     private fun isM3u8Url(url: String): Boolean {

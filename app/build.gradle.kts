@@ -114,6 +114,16 @@ android {
         )
         buildConfigField(
             "String",
+            "DEFAULT_RUNTIME_TUNE_URL",
+            "\"https://raw.githubusercontent.com/thothassistantai-web/stepdaddy-gateway-android/main/release/runtime-tune.json\"",
+        )
+        buildConfigField(
+            "String",
+            "DEFAULT_RUNTIME_TUNE_RELEASE_URL",
+            "\"https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/latest/download/runtime-tune.json\"",
+        )
+        buildConfigField(
+            "String",
             "DEFAULT_VOD_CATALOG_RELAY_URL",
             "\"https://raw.githubusercontent.com/thothassistantai-web/stepdaddy-gateway-android/main/release/vod-catalog-relay.json\"",
         )

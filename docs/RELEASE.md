@@ -107,6 +107,7 @@ Manual equivalent:
    - `stepdaddy-gateway-<version>-debug.apk` (dev package `com.thothassistant.stepdaddy.gateway.debug`)
    - `stepdaddy-gateway-release.apk` / `stepdaddy-gateway-debug.apk` (**versionless** — required for permanent AFTV Downloader codes via `/releases/latest/download/…`)
    - `update-manifest.json` (for in-app updater; `apkUrl` → release APK, `apkUrlDebug` → debug APK)
+   - `runtime-tune.json` (allowlisted live-stream concurrency/timeout pack)
    - `AFTV-CODES.md` / `aftv-codes.json` (Downloader numeric codes)
    - Optional: `app-release.aab` for Play Console
 

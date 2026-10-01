@@ -1,8 +1,8 @@
 package com.thothassistant.stepdaddy.gateway.routes
 
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
+import com.thothassistant.stepdaddy.gateway.diagnostics.StreamDiagnostics
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
-import com.thothassistant.stepdaddy.gateway.upstream.GatewayConfig
 import com.thothassistant.stepdaddy.gateway.upstream.HlsErrorManifest
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -67,6 +67,7 @@ class StreamRoutes(
             )
             return
         }
+        val t0 = System.currentTimeMillis()
         try {
             val playlist = withContext(Dispatchers.IO) {
                 withTimeout(client.streamFetchTimeoutMs()) {
@@ -91,12 +92,26 @@ class StreamRoutes(
             if (servedStale) {
                 call.response.header("X-StepDaddy-Cache", "stale-good")
             }
+            StreamDiagnostics.recordResolve(
+                channelId = id,
+                httpStatus = 200,
+                latencyMs = System.currentTimeMillis() - t0,
+                ok = true,
+                detail = if (servedStale) "stale" else "live",
+            )
             call.respondBytes(
                 bytes = bytes,
                 contentType = ContentType("application", "vnd.apple.mpegurl"),
             )
         } catch (_: TimeoutCancellationException) {
             client.noteStreamFailure(id, IllegalStateException("upstream_timeout"))
+            StreamDiagnostics.recordResolve(
+                channelId = id,
+                httpStatus = 504,
+                latencyMs = System.currentTimeMillis() - t0,
+                ok = false,
+                detail = "upstream_timeout",
+            )
             respondStreamError(
                 call,
                 hlsErrors = hlsErrors,
@@ -108,6 +123,13 @@ class StreamRoutes(
             throw exc
         } catch (_: IndexOutOfBoundsException) {
             client.noteStreamFailure(id, IllegalStateException("stream_not_found"))
+            StreamDiagnostics.recordResolve(
+                channelId = id,
+                httpStatus = 404,
+                latencyMs = System.currentTimeMillis() - t0,
+                ok = false,
+                detail = "not_found",
+            )
             respondStreamError(
                 call,
                 hlsErrors = hlsErrors,
@@ -123,6 +145,13 @@ class StreamRoutes(
                 transient -> HttpStatusCode.GatewayTimeout
                 else -> HttpStatusCode.BadGateway
             }
+            StreamDiagnostics.recordResolve(
+                channelId = id,
+                httpStatus = status.value,
+                latencyMs = System.currentTimeMillis() - t0,
+                ok = false,
+                detail = exc.message?.take(80).orEmpty(),
+            )
             respondStreamError(
                 call,
                 hlsErrors = hlsErrors,

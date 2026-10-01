@@ -5,6 +5,7 @@ import com.thothassistant.stepdaddy.gateway.admin.GatewayAdminActions
 import com.thothassistant.stepdaddy.gateway.epg.EpgManager
 import com.thothassistant.stepdaddy.gateway.routes.AdminRoutes
 import com.thothassistant.stepdaddy.gateway.routes.ContentRoutes
+import com.thothassistant.stepdaddy.gateway.routes.DebugRoutes
 import com.thothassistant.stepdaddy.gateway.network.createGatewayNetworkPlugin
 import com.thothassistant.stepdaddy.gateway.network.GatewayNetworkGuard
 import com.thothassistant.stepdaddy.gateway.routes.DlhdEventStreamRoutes
@@ -27,12 +28,13 @@ import com.thothassistant.stepdaddy.gateway.routes.PlaylistPaths
 import com.thothassistant.stepdaddy.gateway.routes.PlaylistRoutes
 import com.thothassistant.stepdaddy.gateway.routes.SupplementFallbackStreamRoutes
 import com.thothassistant.stepdaddy.gateway.routes.StreamRoutes
+import com.thothassistant.stepdaddy.gateway.routes.StremioRoutes
 import com.thothassistant.stepdaddy.gateway.routes.TiviMateRoutes
 import com.thothassistant.stepdaddy.gateway.routes.UiRoutes
 import com.thothassistant.stepdaddy.gateway.upstream.DaddyLiveClient
+import com.thothassistant.stepdaddy.gateway.upstream.GatewayConfig
 import com.thothassistant.stepdaddy.gateway.upstream.NtvCxCdnLiveResolver
 import com.thothassistant.stepdaddy.gateway.upstream.PlaylistCache
-import com.thothassistant.stepdaddy.gateway.upstream.ResportzParser
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.call
 import io.ktor.server.application.install
@@ -45,6 +47,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.head
 import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.ktor.http.HttpStatusCode
@@ -147,12 +150,15 @@ class GatewayServer(
         val moviesRoutes = MoviesRoutes(environment, supplementSource)
         val seriesRoutes = SeriesRoutes(environment, supplementSource)
         val xtreamApiRoutes = XtreamApiRoutes(environment, client, supplementSource)
-        val contentHttp = if (fireLite) {
-            FireMemoryGuard.compactHttpClient()
-        } else {
-            ResportzParser.defaultClient()
-        }
+        val contentHttp = FireMemoryGuard.compactHttpClient(
+            connectSec = GatewayConfig.UPSTREAM_CONNECT_TIMEOUT_SEC,
+            readSec = GatewayConfig.UPSTREAM_READ_TIMEOUT_SEC,
+            writeSec = GatewayConfig.UPSTREAM_WRITE_TIMEOUT_SEC,
+            callSec = GatewayConfig.UPSTREAM_CALL_TIMEOUT_SEC,
+        )
         val contentRoutes = ContentRoutes(environment, client, contentHttp)
+        val debugRoutes = DebugRoutes(environment, client, contentHttp)
+        val stremioRoutes = StremioRoutes(environment, client, supplementSource)
         val epgRoutes = EpgRoutes(client, epgManager, supplementSource)
         val adminRoutes = adminActions?.let { AdminRoutes(it) }
 
@@ -177,6 +183,16 @@ class GatewayServer(
             routing {
                 get("/health") {
                     healthRoutes.health(call)
+                }
+                route("/debug") {
+                    get("/diagnostics") { debugRoutes.diagnostics(call) }
+                    get("/config") { debugRoutes.getConfig(call) }
+                    put("/config") { debugRoutes.putConfig(call) }
+                    post("/config") { debugRoutes.putConfig(call) }
+                    post("/config/reset") { debugRoutes.resetConfig(call) }
+                    post("/counters/reset") { debugRoutes.resetCounters(call) }
+                    post("/cache/purge") { debugRoutes.purgeCaches(call) }
+                    get("/probe") { debugRoutes.probe(call) }
                 }
                 get("/tivimate-setup") {
                     healthRoutes.tivimateSetup(call)
@@ -527,6 +543,13 @@ class GatewayServer(
                         call.parameters["host"].orEmpty(),
                     )
                 }
+                // Embedded Stremio Live TV addon (install: {base}/stremio/manifest.json)
+                get("/stremio/manifest.json") { stremioRoutes.manifest(call) }
+                get("/stremio/catalog/tv/{id}.json") { stremioRoutes.catalog(call) }
+                get("/stremio/catalog/tv/{id}/{extra}") { stremioRoutes.catalog(call) }
+                get("/stremio/meta/tv/{id}") { stremioRoutes.meta(call) }
+                get("/stremio/stream/tv/{id}") { stremioRoutes.stream(call) }
+                get("/stremio/health") { stremioRoutes.health(call) }
                 route("/epg.xml") {
                     get { epgRoutes.epgXml(call) }
                     head { epgRoutes.epgXml(call) }
