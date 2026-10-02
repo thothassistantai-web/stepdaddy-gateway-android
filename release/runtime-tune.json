@@ -1,7 +1,7 @@
 {
-  "version": 9,
+  "version": 10,
   "minAppVersion": "3.0.68",
-  "message": "FUSA: proxy=8 for 1080p unwrap; wait 20s; mirror 14s — avoid content_proxy_busy underruns",
+  "message": "FUSA: TTL 4–4.5s (playlist/stream/upstream) from 30-min monitor; keep proxy=8 wait 20s upstream=3",
   "tune": {
     "contentProxyMaxConcurrent": 8,
     "contentProxyWaitMs": 20000,
@@ -10,9 +10,9 @@
     "streamFetchTimeoutMs": 28000,
     "mirrorAttemptTimeoutMs": 14000,
     "dlhdRaceTimeoutMs": 22000,
-    "streamCacheTtlMs": 2500,
-    "livePlaylistCacheTtlMs": 2500,
-    "upstreamCacheTtlMs": 2500,
+    "streamCacheTtlMs": 4000,
+    "livePlaylistCacheTtlMs": 4500,
+    "upstreamCacheTtlMs": 4000,
     "dlhdPkParallelProbeCount": 2,
     "hedgedMirrorRaceEnabled": false
   }
