@@ -3,6 +3,7 @@ package com.thothassistant.stepdaddy.gateway.routes
 import android.content.Context
 import com.thothassistant.stepdaddy.gateway.BuildConfig
 import com.thothassistant.stepdaddy.gateway.GatewayEnvironment
+import com.thothassistant.stepdaddy.gateway.LowRamTvDevice
 import com.thothassistant.stepdaddy.gateway.TiviMateEventStore
 import com.thothassistant.stepdaddy.gateway.StreamVaultController
 import com.thothassistant.stepdaddy.gateway.TiviMateController
@@ -51,7 +52,14 @@ class HealthRoutes(
     private val json = Json { prettyPrint = true; encodeDefaults = true }
 
     suspend fun health(call: ApplicationCall) {
-        if (call.request.queryParameters["lite"] == "1") {
+        val wantLite = call.request.queryParameters["lite"] == "1"
+        val wantFull = call.request.queryParameters["full"] == "1"
+        // Full health scans every channel for categories/adult/healing — on ONN/Fire that
+        // allocates hard during GC thrash and can hang CIO until LMK ("device not responding").
+        // Default to lite on memory-lite sticks; callers can opt in with ?full=1.
+        val useLite =
+            wantLite || (LowRamTvDevice.needsMemoryLite(appContext) && !wantFull)
+        if (useLite) {
             val payload = withContext(Dispatchers.Default) { buildLiteHealthPayload() }
             call.respondText(json.encodeToString(payload), ContentType.Application.Json)
             return

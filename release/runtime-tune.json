@@ -1,9 +1,9 @@
 {
-  "version": 12,
+  "version": 13,
   "minAppVersion": "3.0.68",
-  "message": "FUSA stuck-frame: proxy wait 4s (fail-fast vs 20s), TTL 3.5s, upstream=2; pair with APK segment timeout 10s so hung CDN cannot pin all proxy slots",
+  "message": "ONN/FUSA LMK: proxy concurrency 3 (was 8) — 1–2MB segment buffers + unwrap must not oversubscribe 1.4GiB sticks; keep wait 4s / TTL 3.5s / upstream=2",
   "tune": {
-    "contentProxyMaxConcurrent": 8,
+    "contentProxyMaxConcurrent": 3,
     "contentProxyWaitMs": 4000,
     "upstreamFetchMaxConcurrent": 2,
     "upstreamFetchWaitMs": 8000,

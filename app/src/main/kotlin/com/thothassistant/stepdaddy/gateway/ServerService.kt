@@ -58,9 +58,11 @@ class ServerService : LifecycleService() {
             // Low-RAM sticks: LMK kills FGS during catalog load. Keep boot alarms armed until
             // /health reports channels — do not cancel merely because FGS started.
             fireHeavyWorkScheduled.set(false)
+            GatewayConfig.memoryLiteActive = true
             GatewayStartHelper.scheduleFireBootFallbacks(this)
             FireMemoryGuard.install(this) { releaseFireCaches() }
         } else {
+            GatewayConfig.memoryLiteActive = false
             GatewayStartHelper.cancelBootFallbacks(this)
             GatewayStartHelper.resetFallbacksScheduled()
         }
@@ -478,8 +480,10 @@ class ServerService : LifecycleService() {
             delay(deferMs)
             if (!isServiceActive || !::daddyLiveClient.isInitialized) return@launch
             val app = application as GatewayApp
-            // Fire Stick only: disk DaddyLive catalog is enough; skip supplement network refresh in LMK window.
-            if (FireTvDevice.isFireTv(this@ServerService) && hasChannels) {
+            // Low-RAM sticks (Fire + Onn): disk DaddyLive catalog is enough in the LMK window.
+            // Boot-time channel refresh + supplement network sync previously ballooned Onn RSS
+            // past ~500 MB (CatalogLogoEnricher / iptv-org) and got FGS killed before listen.
+            if (memoryLite && hasChannels) {
                 if (!skipReadySurface) {
                     mainHandler.post {
                         GatewayHud.onCatalogReady(

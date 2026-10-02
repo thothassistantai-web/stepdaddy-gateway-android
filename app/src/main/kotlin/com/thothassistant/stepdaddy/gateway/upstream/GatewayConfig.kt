@@ -120,8 +120,25 @@ object GatewayConfig {
      * and stalls the CIO loop → segment time ≫ #EXTINF → visual loop / HttpDataSource.
      */
     const val DEFAULT_CONTENT_PROXY_MAX_CONCURRENT = 3
+    /**
+     * Hard ceiling on low-RAM TV sticks even when runtime-tune asks for more (pack v9–12 used 8).
+     * Eight in-flight 1–2 MB segments + unwrap copies GC-stall the stick until LMK kills FGS.
+     */
+    const val MEMORY_LITE_CONTENT_PROXY_MAX_CONCURRENT = 3
+
+    /** Set from [ServerService] when [LowRamTvDevice.needsMemoryLite] so tune packs cannot oversubscribe. */
+    @Volatile
+    var memoryLiteActive: Boolean = false
+
     val CONTENT_PROXY_MAX_CONCURRENT: Int
-        get() = RuntimeTuneRuntime.effective().contentProxyMaxConcurrent
+        get() {
+            val tuned = RuntimeTuneRuntime.effective().contentProxyMaxConcurrent
+            return if (memoryLiteActive) {
+                minOf(tuned, MEMORY_LITE_CONTENT_PROXY_MAX_CONCURRENT)
+            } else {
+                tuned
+            }
+        }
     /**
      * Max wait for a content-proxy slot before 503 (fail fast so ExoPlayer retries).
      * Keep well under typical #EXTINF (~6s) so a saturated proxy does not freeze the picture

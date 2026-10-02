@@ -7,6 +7,16 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.70] - 2026-10-02
+
+### Fixed
+
+- **ONN cold-boot LMK / TiviMate spinner** — Onn sticks now use the same memory-lite catalog path as Fire Stick (skip multi-MB logo/iptv-org CSV indexes + defer logo enrich). Runtime-tune proxy concurrency of 8 was oversubscribing 1–2 MB segment buffers on 1.4 GiB devices; APK now caps proxy slots at 3 on memory-lite and runtime-tune **v13** matches. `/health` defaults to lite on memory-lite sticks so full category scans cannot hang CIO under GC thrash. Boot-time DaddyLive refresh + supplement network sync are skipped when disk channels exist (same LMK window policy as Fire Stick).
+
+### Notes
+
+- Suite version **3.0.70** / **30070**. Pair with runtime-tune **v13**.
+
 ## [3.0.69] - 2026-10-02
 
 ### Fixed

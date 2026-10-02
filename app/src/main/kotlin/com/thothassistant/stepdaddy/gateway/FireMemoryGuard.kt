@@ -81,21 +81,19 @@ object FireMemoryGuard : ComponentCallbacks2 {
 
     fun connectionPoolMaxIdle(): Int = 2
 
-    /** Skip multi-MB logo / iptv-org CSV indexes — placeholders + disk mapper only. */
+    /**
+     * Skip multi-MB logo / iptv-org CSV indexes — placeholders + disk mapper only.
+     *
+     * Onn Full HD (~1.4 GiB) previously opted out of this path (vs Fire Stick ~0.9 GiB), but
+     * cold-boot + TiviMate playback still ballooned RSS past ~450 MB and tripped LMK
+     * ("device is not responding"). Treat all [LowRamTvDevice.needsMemoryLite] sticks the same.
+     */
     fun skipHeavyCatalogIndexes(context: Context): Boolean =
-        if (FireTvDevice.isFireTv(context)) {
-            true
-        } else {
-            LowRamTvDevice.needsMemoryLite(context) && !LowRamTvDevice.isOnnStick(context)
-        }
+        LowRamTvDevice.needsMemoryLite(context)
 
     /** Defer playlist prewarm / EPG rebuild / logo enrich until steady-state. */
     fun deferHeavyBootWork(context: Context): Boolean =
-        if (FireTvDevice.isFireTv(context)) {
-            true
-        } else {
-            LowRamTvDevice.needsMemoryLite(context) && !LowRamTvDevice.isOnnStick(context)
-        }
+        LowRamTvDevice.needsMemoryLite(context)
 
     fun releaseCaches() {
         trimListener?.invoke()

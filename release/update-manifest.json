@@ -1,11 +1,11 @@
 {
-  "versionCode": 30069,
-  "versionName": "3.0.69",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.69/stepdaddy-gateway-3.0.69-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.69/stepdaddy-gateway-3.0.69-debug.apk",
-  "apkSha256": "1d600f057b1fa1bcb7bd0e115910382ee4130d5dc50c4645c3e51be6349b7ca3",
-  "apkSha256Debug": "53d8cbdbd1adaa5553f95283c9aaf7033153ab76976d2d1a313dd31000d2aaee",
-  "releaseNotes": "**Content-proxy segment timeout** \u2014 hung `/content/` segment fetches release proxy slots after 10s instead of holding the concurrency cap until OkHttp (~25s), preventing `content_proxy_busy` / TiviMate 503 stuck-frame storms",
+  "versionCode": 30070,
+  "versionName": "3.0.70",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.70/stepdaddy-gateway-3.0.70-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.70/stepdaddy-gateway-3.0.70-debug.apk",
+  "apkSha256": "9a2cd8f0aae0f9417c8d4390c6fb4d1e63ac2db6b9469563339c9a99973ca081",
+  "apkSha256Debug": "b4694266de30c1c673c6da0389e5b1ce4ffe92cb0ba4d50bb9a6baae91fb0b6c",
+  "releaseNotes": "ONN cold-boot LMK / TiviMate spinner \u2014 memory-lite catalog + proxy cap 3 + skip boot network refresh when disk channels exist.",
   "updateType": "optional",
   "mandatory": false
 }
