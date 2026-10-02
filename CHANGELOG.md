@@ -7,6 +7,17 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.69] - 2026-10-02
+
+### Fixed
+
+- **Content-proxy segment timeout** — hung `/content/` segment fetches release proxy slots after 10s instead of holding the concurrency cap until OkHttp (~25s), preventing `content_proxy_busy` / TiviMate 503 stuck-frame storms.
+- **Default proxy wait** — `contentProxyWaitMs` default lowered to 4s (aligned with runtime-tune pack v12) so fail-fast under load does not wait 20s for a free slot.
+
+### Notes
+
+- Suite version **3.0.69** / **30069**. OTA assets: `update-manifest.json` + versioned debug/release APKs. Pair with runtime-tune **v12** already on `main`/Releases.
+
 ## [3.0.68] - 2026-10-01
 
 ### Fixed

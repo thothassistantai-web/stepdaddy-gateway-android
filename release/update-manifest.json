@@ -1,11 +1,11 @@
 {
-  "versionCode": 30068,
-  "versionName": "3.0.68",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.68/stepdaddy-gateway-3.0.68-release.apk",
-  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.68/stepdaddy-gateway-3.0.68-debug.apk",
-  "apkSha256": "b4227f55c45878529b9e2bc8b7153cad63f02f559954f3431cf34a5a59a77f04",
-  "apkSha256Debug": "d68947ae74394cb4fbed04cd6fe23ec828dc2227d1d85611986c6688650177dc",
-  "releaseNotes": "**HLS image-segment unwrap** \u2014 DaddyLive CDN PNG/WebP-wrapped TS segments are unwrapped in `/content/` so ExoPlayer/TiviMate stop treating media as images (reduces looping / HttpDataSource stalls)",
+  "versionCode": 30069,
+  "versionName": "3.0.69",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.69/stepdaddy-gateway-3.0.69-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.69/stepdaddy-gateway-3.0.69-debug.apk",
+  "apkSha256": "1d600f057b1fa1bcb7bd0e115910382ee4130d5dc50c4645c3e51be6349b7ca3",
+  "apkSha256Debug": "53d8cbdbd1adaa5553f95283c9aaf7033153ab76976d2d1a313dd31000d2aaee",
+  "releaseNotes": "**Content-proxy segment timeout** \u2014 hung `/content/` segment fetches release proxy slots after 10s instead of holding the concurrency cap until OkHttp (~25s), preventing `content_proxy_busy` / TiviMate 503 stuck-frame storms",
   "updateType": "optional",
   "mandatory": false
 }
