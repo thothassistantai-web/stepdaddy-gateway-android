@@ -122,10 +122,20 @@ object GatewayConfig {
     const val DEFAULT_CONTENT_PROXY_MAX_CONCURRENT = 3
     val CONTENT_PROXY_MAX_CONCURRENT: Int
         get() = RuntimeTuneRuntime.effective().contentProxyMaxConcurrent
-    /** Max wait for a content-proxy slot before 503 (fail fast so ExoPlayer retries). */
-    const val DEFAULT_CONTENT_PROXY_WAIT_MS = 12_000L
+    /**
+     * Max wait for a content-proxy slot before 503 (fail fast so ExoPlayer retries).
+     * Keep well under typical #EXTINF (~6s) so a saturated proxy does not freeze the picture
+     * for 12–20s before the player can soft-retry.
+     */
+    const val DEFAULT_CONTENT_PROXY_WAIT_MS = 4_000L
     val CONTENT_PROXY_WAIT_MS: Long
         get() = RuntimeTuneRuntime.effective().contentProxyWaitMs
+    /**
+     * Hard ceiling for one `/content`|`/vod-content` upstream segment fetch while holding a
+     * proxy slot. Must be ≪ OkHttp read/call timeouts (25–35s) or hung CDNs pin all slots
+     * (`proxyInFlight` stuck at cap → 503 storms → frozen TiviMate frame).
+     */
+    const val CONTENT_PROXY_SEGMENT_TIMEOUT_MS = 10_000L
     /** Max wait for a fetch slot when TiviMate requests several channels at once. */
     const val DEFAULT_UPSTREAM_FETCH_WAIT_MS = 18_000L
     val UPSTREAM_FETCH_WAIT_MS: Long

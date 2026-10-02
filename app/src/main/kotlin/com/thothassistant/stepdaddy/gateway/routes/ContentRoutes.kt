@@ -21,7 +21,9 @@ import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondText
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.net.URL
@@ -225,49 +227,71 @@ class ContentRoutes(
             limit = { GatewayConfig.CONTENT_PROXY_MAX_CONCURRENT },
             waitMs = GatewayConfig.CONTENT_PROXY_WAIT_MS,
         ) {
-            val request = Request.Builder()
-                .url(upstreamUrl)
-                .header("User-Agent", GatewayConfig.USER_AGENT)
-                .header("Referer", referer)
-                .header("Accept-Encoding", "identity")
-                .get()
-                .build()
-            val bytes = withContext(Dispatchers.IO) {
-                httpClient.executeAsync(request).use { response ->
-                    if (!response.isSuccessful) {
-                        throw HttpStatusException(
-                            code = response.code,
-                            url = response.request.url,
-                            responseMessage = response.message,
-                        )
+            try {
+                withTimeout(GatewayConfig.CONTENT_PROXY_SEGMENT_TIMEOUT_MS) {
+                    val request = Request.Builder()
+                        .url(upstreamUrl)
+                        .header("User-Agent", GatewayConfig.USER_AGENT)
+                        .header("Referer", referer)
+                        .header("Accept-Encoding", "identity")
+                        .get()
+                        .build()
+                    val bytes = withContext(Dispatchers.IO) {
+                        httpClient.executeAsync(request).use { response ->
+                            if (!response.isSuccessful) {
+                                throw HttpStatusException(
+                                    code = response.code,
+                                    url = response.request.url,
+                                    responseMessage = response.message,
+                                )
+                            }
+                            val raw = response.body?.bytes() ?: byteArrayOf()
+                            // DaddyLive CDN serves PNG/WebP-wrapped TS; unwrap for ExoPlayer/TiviMate.
+                            HlsImageSegmentUnwrapper.maybeUnwrap(raw)
+                        }
                     }
-                    val raw = response.body?.bytes() ?: byteArrayOf()
-                    // DaddyLive CDN serves PNG/WebP-wrapped TS; unwrap for ExoPlayer/TiviMate.
-                    HlsImageSegmentUnwrapper.maybeUnwrap(raw)
+                    call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+                    call.response.header(HttpHeaders.CacheControl, "no-cache")
+                    // Help Media3/ExoPlayer (Stremio) treat unwrapped segments as MPEG-TS, not image/*.
+                    val contentType =
+                        if (bytes.isNotEmpty() && bytes[0] == 0x47.toByte()) {
+                            ContentType("video", "mp2t")
+                        } else if (HlsImageSegmentUnwrapper.looksWrapped(bytes)) {
+                            // Unwrap failed — still avoid advertising image/webp to ExoPlayer.
+                            ContentType.Application.OctetStream
+                        } else {
+                            ContentType.Application.OctetStream
+                        }
+                    call.response.header(HttpHeaders.ContentType, contentType.toString())
+                    call.respondBytes(bytes, contentType)
+                    StreamDiagnostics.recordSegment(
+                        httpStatus = 200,
+                        latencyMs = System.currentTimeMillis() - t0,
+                        ok = bytes.isNotEmpty() && bytes[0] == 0x47.toByte(),
+                        unwrapped = true,
+                        contentType = contentType.toString(),
+                    )
+                    true
                 }
+            } catch (exc: TimeoutCancellationException) {
+                client.invalidateFreshStreamCaches()
+                StreamDiagnostics.recordSegment(
+                    httpStatus = 504,
+                    latencyMs = System.currentTimeMillis() - t0,
+                    ok = false,
+                    unwrapped = false,
+                    contentType = "",
+                )
+                call.response.header(HttpHeaders.RetryAfter, "1")
+                call.respond(
+                    HttpStatusCode.GatewayTimeout,
+                    mapOf(
+                        "error" to "content_proxy_segment_timeout",
+                        "transient" to true,
+                    ),
+                )
+                false
             }
-            call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
-            call.response.header(HttpHeaders.CacheControl, "no-cache")
-            // Help Media3/ExoPlayer (Stremio) treat unwrapped segments as MPEG-TS, not image/*.
-            val contentType =
-                if (bytes.isNotEmpty() && bytes[0] == 0x47.toByte()) {
-                    ContentType("video", "mp2t")
-                } else if (HlsImageSegmentUnwrapper.looksWrapped(bytes)) {
-                    // Unwrap failed — still avoid advertising image/webp to ExoPlayer.
-                    ContentType.Application.OctetStream
-                } else {
-                    ContentType.Application.OctetStream
-                }
-            call.response.header(HttpHeaders.ContentType, contentType.toString())
-            call.respondBytes(bytes, contentType)
-            StreamDiagnostics.recordSegment(
-                httpStatus = 200,
-                latencyMs = System.currentTimeMillis() - t0,
-                ok = bytes.isNotEmpty() && bytes[0] == 0x47.toByte(),
-                unwrapped = true,
-                contentType = contentType.toString(),
-            )
-            true
         }
         if (outcome == null) {
             StreamDiagnostics.recordProxyBusy()

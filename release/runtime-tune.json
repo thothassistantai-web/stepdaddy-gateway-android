@@ -1,18 +1,18 @@
 {
-  "version": 10,
+  "version": 12,
   "minAppVersion": "3.0.68",
-  "message": "FUSA: TTL 4–4.5s (playlist/stream/upstream) from 30-min monitor; keep proxy=8 wait 20s upstream=3",
+  "message": "FUSA stuck-frame: proxy wait 4s (fail-fast vs 20s), TTL 3.5s, upstream=2; pair with APK segment timeout 10s so hung CDN cannot pin all proxy slots",
   "tune": {
     "contentProxyMaxConcurrent": 8,
-    "contentProxyWaitMs": 20000,
-    "upstreamFetchMaxConcurrent": 3,
-    "upstreamFetchWaitMs": 20000,
-    "streamFetchTimeoutMs": 28000,
-    "mirrorAttemptTimeoutMs": 14000,
+    "contentProxyWaitMs": 4000,
+    "upstreamFetchMaxConcurrent": 2,
+    "upstreamFetchWaitMs": 8000,
+    "streamFetchTimeoutMs": 18000,
+    "mirrorAttemptTimeoutMs": 10000,
     "dlhdRaceTimeoutMs": 22000,
-    "streamCacheTtlMs": 4000,
-    "livePlaylistCacheTtlMs": 4500,
-    "upstreamCacheTtlMs": 4000,
+    "streamCacheTtlMs": 3500,
+    "livePlaylistCacheTtlMs": 3500,
+    "upstreamCacheTtlMs": 3500,
     "dlhdPkParallelProbeCount": 2,
     "hedgedMirrorRaceEnabled": false
   }
