@@ -198,6 +198,7 @@ object GatewayConfig {
     const val HEALING_LOG_MAX = 20
 
     private val DEFAULT_DADDYLIVE_HOSTS = setOf(
+        "dlive.sx",
         "daddylive.org",
         "daddylive.li",
         "daddylive.at",

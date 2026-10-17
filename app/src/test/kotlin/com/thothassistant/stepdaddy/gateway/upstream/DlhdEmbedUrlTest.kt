@@ -7,6 +7,25 @@ import org.junit.Test
 
 class DlhdEmbedUrlTest {
     @Test
+    fun redirectedMirrorsPreferCurrentStreamPath() {
+        for (host in listOf("dlive.sx", "dlstreams.st", "dlhd.st")) {
+            val first = DlhdEmbedUrl.modernWatchUrlsForMirror("https://$host", "stream-796").first()
+            assertEquals("https://$host/stream/stream-796.php", first)
+            assertTrue(DlhdEmbedUrl.isLiveStreamPageUrl(first))
+        }
+        assertTrue("dlive.sx" in GatewayConfig.DADDYLIVE_HOSTS)
+    }
+
+    @Test
+    fun currentWatchPageFindsPremiumEmbedAndManifest() {
+        val watch = """<iframe src="https://dembed.st/premiumtv/daddy.php?id=796" id="thatframe"></iframe>"""
+        assertEquals("https://dembed.st/premiumtv/daddy.php?id=796",
+            ResportzHtmlParser.extractIframeCandidates(watch, "https://dlive.sx/stream/stream-796.php").first().value)
+        val embed = """var source = 'https://edge.example/premium796/index.m3u8';"""
+        assertEquals("https://edge.example/premium796/index.m3u8", ResportzHtmlParser.extractM3u8Url(embed)?.value)
+    }
+
+    @Test
     fun channelIdFromEmbedUrl_numericId() {
         assertEquals(
             "51",
