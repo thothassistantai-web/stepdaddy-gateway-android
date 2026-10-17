@@ -2,6 +2,9 @@ package com.thothassistant.stepdaddy.gateway.upstream
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -14,7 +17,13 @@ import org.junit.Test
 class TimeoutCancellationStaleFallbackTest {
     @Test
     fun timeoutCancellationIsCancellationException() {
-        val exc: Throwable = TimeoutCancellationException("budget")
+        val exc: Throwable = runBlocking {
+            try {
+                withTimeout(1L) { awaitCancellation() }
+            } catch (timeout: TimeoutCancellationException) {
+                timeout
+            }
+        }
         assertTrue(exc is CancellationException)
         assertTrue(exc is TimeoutCancellationException)
     }
