@@ -285,13 +285,30 @@ class DaddyLiveClient(
         }
         try {
             return resolveStreamSync(channelId, useProxy, apiUrl, cacheKey)
+        } catch (exc: TimeoutCancellationException) {
+            // withTimeout throws TimeoutCancellationException (a CancellationException).
+            // Prefer last-good playlist over a TiviMate 504 spinner/stuck-frame storm.
+            serveStaleStreamFromCaches(cacheKey, channelId, now)?.let { return it }
+            throw exc
+        } catch (exc: CancellationException) {
+            throw exc
         } catch (exc: Exception) {
-            if (exc is CancellationException) {
-                throw exc
-            }
             serveStaleStreamFromCaches(cacheKey, channelId, now)?.let { return it }
             throw exc
         }
+    }
+
+    /**
+     * Last-good rewritten playlist for [channelId] when a live resolve timed out at the
+     * route layer. Returns null when no in-window memory/disk stale entry exists.
+     */
+    suspend fun tryStaleStreamPlaylist(
+        channelId: String,
+        useProxy: Boolean = false,
+        apiUrl: String = "",
+    ): String? {
+        val cacheKey = "$channelId:${if (useProxy) 1 else 0}:$apiUrl"
+        return serveStaleStreamFromCaches(cacheKey, channelId, System.currentTimeMillis())
     }
 
     private suspend fun resolveStreamSync(
@@ -482,6 +499,10 @@ class DaddyLiveClient(
                         winner.complete(manifest)
                     }
                     manifest
+                } catch (exc: TimeoutCancellationException) {
+                    mirrorLatencyTracker.recordMirrorFailure(baseUrl)
+                    Log.d(TAG, "Hedged mirror timeout for $channelId on $mirrorKey")
+                    null
                 } catch (exc: CancellationException) {
                     throw exc
                 } catch (exc: Exception) {
@@ -558,9 +579,9 @@ class DaddyLiveClient(
                 staleGoodCacheStore.saveUpstream(channelId, manifest)
                 lastUpstreamSuccessMs = savedAt
                 return manifest
-            } catch (exc: CancellationException) {
-                throw exc
             } catch (exc: TimeoutCancellationException) {
+                // Must precede CancellationException — TimeoutCancellationException IS one,
+                // and rethrowing aborted the mirror walk before stale-good (FUSA 504 storms).
                 lastError = exc
                 mirrorLatencyTracker.recordMirrorFailure(baseUrl)
                 if (isDaddyLiveMirror(baseUrl)) {
@@ -569,6 +590,8 @@ class DaddyLiveClient(
                 connectivityFailures++
                 markMirrorFailure(baseUrl)
                 Log.d(TAG, "Mirror timeout for $channelId on $baseUrl (${attemptBudget}ms)")
+            } catch (exc: CancellationException) {
+                throw exc
             } catch (exc: Exception) {
                 lastError = exc
                 if (DaddyLiveErrorClassifier.isChannelSpecificError(exc)) {

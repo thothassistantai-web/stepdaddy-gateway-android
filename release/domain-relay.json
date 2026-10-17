@@ -1,33 +1,34 @@
 {
-  "version": 2,
+  "version": 3,
   "minAppVersion": "3.0.0",
   "forceUpdateAfter": null,
-  "message": "DaddyLive primary is daddylive.li — daddylive.eu is DNS-dead (NXDOMAIN); do not hedge against it.",
+  "message": "DaddyLive primary is dlstreams.st — daddylive.li/.at timing out from ONN/US; keep li/at as fallbacks only.",
   "sources": {
     "daddylive": {
-      "primary": "https://daddylive.li",
+      "primary": "https://dlstreams.st",
       "mirrors": [
-        "https://daddylive.li",
-        "https://daddylive.at",
         "https://dlstreams.st",
-        "https://dlhd.st"
+        "https://dlhd.st",
+        "https://dlhd.pk",
+        "https://daddylive.li",
+        "https://daddylive.at"
       ],
       "blocked": [
         "daddylive.org",
         "daddylive.eu"
       ],
       "relayHosts": [
-        "https://daddylive.li",
-        "https://dlstreams.st",
-        "https://dlhd.st",
-        "https://dlhd.pk"
-      ],
-      "embedHosts": [
-        "https://daddylive.li",
-        "https://daddylive.at",
         "https://dlstreams.st",
         "https://dlhd.st",
         "https://dlhd.pk",
+        "https://daddylive.li"
+      ],
+      "embedHosts": [
+        "https://dlstreams.st",
+        "https://dlhd.st",
+        "https://dlhd.pk",
+        "https://daddylive.li",
+        "https://daddylive.at",
         "https://dlhd.li",
         "https://dlhd.org"
       ]

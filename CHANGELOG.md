@@ -7,6 +7,19 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.71] - 2026-10-16
+
+### Fixed
+
+- **FUSA/ONN upstream_timeout 504 storms** — `TimeoutCancellationException` extends `CancellationException`, so mirror/`resolveStream` catch arms that rethrew `CancellationException` first aborted the walk and skipped stale-good. TiviMate then saw clusters of ~3.5s / ~10s `upstream_timeout` 504s (spinner + stuck frames) while segments stalled. Timeout paths now fall back to last-good playlists; `/tivimate-stream` also serves stale-good on outer timeout before 504.
+- **Hub page timeout** — `HUB_PAGE_TIMEOUT_MS` 3.5s (was 2s) so healthy dlstreams/dlhd stream HTML under ONN jitter is not cut off as `Timed out waiting for 2000 ms`.
+- **Mid-play soft/stale windows** — `LIVE_SOFT_SERVE_MS` 14s (covers one mirror attempt); healthy stale TTL 45s so brief CDN blips keep a fallback body.
+- **Domain relay v3** — primary `dlstreams.st` (daddylive.li/.at timing out from ONN/US); li/at kept as fallbacks.
+
+### Notes
+
+- Suite version **3.0.71** / **30071**. Pair with runtime-tune **v15** + domain-relay **v3**.
+
 ## [3.0.70] - 2026-10-02
 
 ### Fixed

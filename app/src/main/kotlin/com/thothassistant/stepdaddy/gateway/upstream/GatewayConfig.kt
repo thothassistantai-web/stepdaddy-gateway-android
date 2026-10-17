@@ -80,10 +80,15 @@ object GatewayConfig {
      * last-good playlist immediately and refresh CDN m3u8 in the background so TiviMate
      * never blocks on a hub walk (3.0.55 hitch: 3–8s playlist latency).
      */
-    const val LIVE_SOFT_SERVE_MS = 8_000L
+    /**
+     * Soft-serve window must cover at least one mirror attempt (~10s) so TiviMate polls
+     * during a slow CDN refresh keep getting last-good MEDIA-SEQUENCE instead of blocking
+     * on a hub walk that can 504 (ONN/FUSA spinner + stuck-frame storms).
+     */
+    const val LIVE_SOFT_SERVE_MS = 14_000L
     /** Soft stale-good window while mirrors are healthy (live segments expire quickly). */
-    const val UPSTREAM_STALE_TTL_MS = 15_000L
-    const val STALE_STREAM_TTL_MS = 15_000L
+    const val UPSTREAM_STALE_TTL_MS = 45_000L
+    const val STALE_STREAM_TTL_MS = 45_000L
     /** Total budget for one stream resolve (all mirrors). */
     const val DEFAULT_STREAM_FETCH_TIMEOUT_MS = 28_000L
     val STREAM_FETCH_TIMEOUT_MS: Long
@@ -96,8 +101,12 @@ object GatewayConfig {
     const val DEFAULT_MIRROR_ATTEMPT_TIMEOUT_MS = 10_000L
     val MIRROR_ATTEMPT_TIMEOUT_MS: Long
         get() = RuntimeTuneRuntime.effective().mirrorAttemptTimeoutMs
-    /** Per-hub / nested embed HTML fetch — fail fast on slow/dead daddy-url stubs. */
-    const val HUB_PAGE_TIMEOUT_MS = 2_000L
+    /**
+     * Per-hub / nested embed HTML fetch — fail fast on slow/dead daddy-url stubs.
+     * 3.5s covers live dlstreams/dlhd stream pages under ONN LTE jitter; 2s was cutting
+     * healthy hubs and aborting the mirror walk before dlstreams.st (FUSA 504 storms).
+     */
+    const val HUB_PAGE_TIMEOUT_MS = 3_500L
     /** Reserved budget to fetch the real m3u8 after `_econfig` / atob extraction. */
     const val M3U8_FETCH_TIMEOUT_MS = 3_500L
     /** Skip deprioritized hubs (nontongo / rippleplays / …) when remaining budget is low. */

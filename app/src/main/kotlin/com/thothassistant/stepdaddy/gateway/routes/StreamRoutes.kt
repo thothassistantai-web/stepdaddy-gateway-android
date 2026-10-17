@@ -104,6 +104,34 @@ class StreamRoutes(
                 contentType = ContentType("application", "vnd.apple.mpegurl"),
             )
         } catch (_: TimeoutCancellationException) {
+            val stale = client.tryStaleStreamPlaylist(
+                id,
+                useProxy = useProxy,
+                apiUrl = environment.loopbackBase(),
+            )
+            if (stale != null) {
+                if (attachment) {
+                    call.response.header(
+                        HttpHeaders.ContentDisposition,
+                        "attachment; filename=$attachmentName",
+                    )
+                }
+                call.response.header(HttpHeaders.AccessControlAllowOrigin, "*")
+                call.response.header(HttpHeaders.CacheControl, "no-cache")
+                call.response.header("X-StepDaddy-Cache", "stale-good")
+                StreamDiagnostics.recordResolve(
+                    channelId = id,
+                    httpStatus = 200,
+                    latencyMs = System.currentTimeMillis() - t0,
+                    ok = true,
+                    detail = "stale",
+                )
+                call.respondBytes(
+                    bytes = stale.toByteArray(StandardCharsets.UTF_8),
+                    contentType = ContentType("application", "vnd.apple.mpegurl"),
+                )
+                return
+            }
             client.noteStreamFailure(id, IllegalStateException("upstream_timeout"))
             StreamDiagnostics.recordResolve(
                 channelId = id,
