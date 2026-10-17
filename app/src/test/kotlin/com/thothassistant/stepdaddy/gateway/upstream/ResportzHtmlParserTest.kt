@@ -149,7 +149,8 @@ class ResportzHtmlParserTest {
 
     @Test
     fun hubTimeoutBudgets_m3u8ReservedAfterHubPage() {
-        assertTrue(GatewayConfig.HUB_PAGE_TIMEOUT_MS in 1_500L..2_500L)
+        // Allow the 3.5s hub budget introduced for slow live stream pages.
+        assertTrue(GatewayConfig.HUB_PAGE_TIMEOUT_MS in 3_000L..4_000L)
         assertTrue(GatewayConfig.M3U8_FETCH_TIMEOUT_MS >= 3_000L)
         assertTrue(GatewayConfig.MIRROR_ATTEMPT_TIMEOUT_MS >= GatewayConfig.HUB_PAGE_TIMEOUT_MS * 2)
         assertTrue(GatewayConfig.DEPRIORITIZED_HUB_MIN_REMAINING_MS >= GatewayConfig.M3U8_FETCH_TIMEOUT_MS - 500L)
