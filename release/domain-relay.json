@@ -1,36 +1,33 @@
 {
-  "version": 3,
-  "minAppVersion": "3.0.0",
+  "version": 4,
+  "minAppVersion": "3.0.74",
   "forceUpdateAfter": null,
-  "message": "DaddyLive primary is dlstreams.st — daddylive.li/.at timing out from ONN/US; keep li/at as fallbacks only.",
+  "message": "Use dlive.sx current stream pages; aliases redirect to the same service.",
   "sources": {
     "daddylive": {
-      "primary": "https://dlstreams.st",
+      "primary": "https://dlive.sx",
       "mirrors": [
+        "https://dlive.sx",
         "https://dlstreams.st",
         "https://dlhd.st",
-        "https://dlhd.pk",
-        "https://daddylive.li",
-        "https://daddylive.at"
+        "https://dlhd.pk"
       ],
       "blocked": [
         "daddylive.org",
         "daddylive.eu"
       ],
       "relayHosts": [
+        "https://dlive.sx",
         "https://dlstreams.st",
         "https://dlhd.st",
-        "https://dlhd.pk",
-        "https://daddylive.li"
+        "https://dlhd.pk"
       ],
       "embedHosts": [
+        "https://dlive.sx",
+        "https://dembed.st",
         "https://dlstreams.st",
         "https://dlhd.st",
-        "https://dlhd.pk",
-        "https://daddylive.li",
-        "https://daddylive.at",
-        "https://dlhd.li",
-        "https://dlhd.org"
+        "https://dlhd.pk"
       ]
     }
   }

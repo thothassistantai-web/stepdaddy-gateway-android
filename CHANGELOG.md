@@ -7,6 +7,20 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.74] - 2026-10-18
+
+### Fixed
+
+- Restore live HLS playback with short-lived playlist token requests, renewal, and one retry on refusal.
+- Validate a known CDN binding before player discovery so an embed host outage does not prevent playback.
+- Fall back to the public HTML channel directory when the legacy JSON endpoint is removed.
+- Include current dlive.sx watch paths and timeout/stale-good recovery from 3.0.71–3.0.73.
+
+### Release
+
+- Publish verified signed release APK and versionless stable asset; update the OTA manifest to 30074.
+- Domain relay v4 selects dlive.sx for 3.0.74 and newer.
+
 ## [3.0.71] - 2026-10-16
 
 ### Fixed
