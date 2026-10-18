@@ -7,6 +7,33 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.74] - 2026-10-18
+
+### Fixed
+
+- Restore live HLS playback with short-lived playlist token requests, renewal, and one retry on refusal.
+- Validate a known CDN binding before player discovery so an embed host outage does not prevent playback.
+- Fall back to the public HTML channel directory when the legacy JSON endpoint is removed.
+- Include current dlive.sx watch paths and timeout/stale-good recovery from 3.0.71–3.0.73.
+
+### Release
+
+- Publish verified signed release APK and versionless stable asset; update the OTA manifest to 30074.
+- Domain relay v4 selects dlive.sx for 3.0.74 and newer.
+
+## [3.0.71] - 2026-10-16
+
+### Fixed
+
+- **FUSA/ONN upstream_timeout 504 storms** — `TimeoutCancellationException` extends `CancellationException`, so mirror/`resolveStream` catch arms that rethrew `CancellationException` first aborted the walk and skipped stale-good. TiviMate then saw clusters of ~3.5s / ~10s `upstream_timeout` 504s (spinner + stuck frames) while segments stalled. Timeout paths now fall back to last-good playlists; `/tivimate-stream` also serves stale-good on outer timeout before 504.
+- **Hub page timeout** — `HUB_PAGE_TIMEOUT_MS` 3.5s (was 2s) so healthy dlstreams/dlhd stream HTML under ONN jitter is not cut off as `Timed out waiting for 2000 ms`.
+- **Mid-play soft/stale windows** — `LIVE_SOFT_SERVE_MS` 14s (covers one mirror attempt); healthy stale TTL 45s so brief CDN blips keep a fallback body.
+- **Domain relay v3** — primary `dlstreams.st` (daddylive.li/.at timing out from ONN/US); li/at kept as fallbacks.
+
+### Notes
+
+- Suite version **3.0.71** / **30071**. Pair with runtime-tune **v15** + domain-relay **v3**.
+
 ## [3.0.70] - 2026-10-02
 
 ### Fixed

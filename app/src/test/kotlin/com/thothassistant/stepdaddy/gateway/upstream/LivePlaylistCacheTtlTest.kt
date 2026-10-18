@@ -14,8 +14,10 @@ class LivePlaylistCacheTtlTest {
         // Typical DaddyLive targetduration ≈ 4s; keep coalesce window << 3× that.
         assertTrue(GatewayConfig.STREAM_CACHE_TTL_MS <= 5_000L)
         assertTrue(GatewayConfig.UPSTREAM_CACHE_TTL_MS <= 5_000L)
-        assertTrue(GatewayConfig.STALE_STREAM_TTL_MS <= 30_000L)
-        assertTrue(GatewayConfig.UPSTREAM_STALE_TTL_MS <= 30_000L)
+        // Mid-play timeout fallback needs ~45s so one slow mirror walk does not 504.
+        assertTrue(GatewayConfig.STALE_STREAM_TTL_MS <= 60_000L)
+        assertTrue(GatewayConfig.UPSTREAM_STALE_TTL_MS <= 60_000L)
+        assertTrue(GatewayConfig.STALE_STREAM_TTL_MS >= 30_000L)
     }
 
     @Test
@@ -28,7 +30,9 @@ class LivePlaylistCacheTtlTest {
     @Test
     fun softServeCoversPlaylistPollWithoutBlocking() {
         assertTrue(GatewayConfig.LIVE_SOFT_SERVE_MS >= GatewayConfig.STREAM_CACHE_TTL_MS)
-        assertTrue(GatewayConfig.LIVE_SOFT_SERVE_MS <= 15_000L)
+        // Cover ≥ one mirror attempt timeout so polls soft-serve during slow CDN refresh.
+        assertTrue(GatewayConfig.LIVE_SOFT_SERVE_MS >= 10_000L)
+        assertTrue(GatewayConfig.LIVE_SOFT_SERVE_MS <= 20_000L)
     }
 
     @Test

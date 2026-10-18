@@ -15,6 +15,10 @@ import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.ConnectionPool
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.HttpUrl.Companion.toHttpUrl
+import org.json.JSONObject
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
@@ -25,6 +29,9 @@ class ResportzParser(
     private val maxEmbedDepth: Int = DEFAULT_MAX_EMBED_DEPTH,
     private val mirrorLatencyTracker: MirrorLatencyTracker? = null,
 ) {
+    private data class PlaylistToken(val value: String, val renewAtMs: Long)
+    private val playlistTokens = ConcurrentHashMap<String, PlaylistToken>()
+    private val playlistTokenLocks = ConcurrentHashMap<String, Mutex>()
     private val dlhdPathFailureCounts = ConcurrentHashMap<String, Int>()
     private val dlhdPathCooldownUntilMs = ConcurrentHashMap<String, Long>()
     private val dlhdHostFailureCounts = ConcurrentHashMap<String, Int>()
@@ -40,6 +47,23 @@ class ResportzParser(
     ): UpstreamManifest {
         val referer = "${refererBase.trimEnd('/')}/"
         tryCachedWinningEmbed(channelId)?.let { return it }
+        // The embed host can be offline while its last verified CDN still serves live HLS.
+        // Treat this as a discovery seed, never as an unconditional or permanent route.
+        if (runCatching { URL(refererBase).host }.getOrNull() == "dlive.sx") {
+            CdnPlaylistAccess.bootstrap(channelId)?.let { (url, embedReferer) ->
+                try {
+                    val direct = withTimeout(4_500L) {
+                        refreshFromMasterUrl(UpstreamManifest("", url, embedReferer))
+                    }
+                    check(direct.playlistText.startsWith("#EXTM3U")) { "CDN bootstrap returned non-HLS" }
+                    Log.i(TAG, "Validated direct CDN binding channel=$channelId")
+                    return direct
+                } catch (exc: Exception) {
+                    if (exc is CancellationException && exc !is TimeoutCancellationException) throw exc
+                    Log.d(TAG, "CDN bootstrap unavailable channel=$channelId; using player discovery")
+                }
+            }
+        }
 
         val candidates = watchUrlCandidates(channelId, refererBase, embedUrl)
         val liveCandidates = candidates.filter { DlhdEmbedUrl.isLiveStreamPageUrl(it) }
@@ -642,13 +666,43 @@ class ResportzParser(
         }
 
     private suspend fun getText(url: String, referer: String): String {
-        val request = Request.Builder()
-            .url(url)
-            .header("User-Agent", GatewayConfig.USER_AGENT)
-            .header("Referer", referer)
-            .get()
-            .build()
-        return client.getText(request)
+        fun request(target: String): Request {
+            val builder = Request.Builder().url(target)
+                .header("User-Agent", GatewayConfig.USER_AGENT).header("Referer", referer)
+            CdnPlaylistAccess.origin(referer)?.let { builder.header("Origin", it) }
+            return builder.get().build()
+        }
+        val endpoint = CdnPlaylistAccess.tokenEndpoint(url)
+        if (endpoint == null) return client.getText(request(url))
+        val cacheKey = "$endpoint|${CdnPlaylistAccess.origin(referer)}"
+        suspend fun token(force: Boolean): String = playlistTokenLocks.getOrPut(cacheKey) { Mutex() }.withLock {
+            val cached = playlistTokens[cacheKey]
+            if (!force && cached != null && System.currentTimeMillis() < cached.renewAtMs) {
+                cached.value
+            } else {
+                val response = JSONObject(client.getText(request(endpoint.toString())))
+                val value = response.getString("token")
+                check(value.isNotBlank()) { "Playlist token was empty" }
+                val ttlSeconds = response.optLong("ttl", 120L).coerceIn(20L, 3600L)
+                playlistTokens[cacheKey] = PlaylistToken(value, System.currentTimeMillis() + ttlSeconds * 500L)
+                value
+            }
+        }
+        fun authorized(value: String): String = url.toHttpUrl().newBuilder()
+            .removeAllQueryParameters("t").removeAllQueryParameters("_")
+            .addQueryParameter("t", value).addQueryParameter("_", System.currentTimeMillis().toString()).build().toString()
+        suspend fun readAuthorized(value: String): String = try {
+            client.getText(request(authorized(value)))
+        } catch (exc: HttpStatusException) {
+            // Keep short-lived credentials out of resolver failure logs.
+            throw HttpStatusException(exc.code, url.toHttpUrl(), exc.responseMessage)
+        }
+        return try {
+            readAuthorized(token(false))
+        } catch (exc: HttpStatusException) {
+            if (exc.code != 403) throw exc
+            readAuthorized(token(true))
+        }
     }
 
     private data class CachedWinningEmbed(

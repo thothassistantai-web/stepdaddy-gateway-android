@@ -1,0 +1,76 @@
+name: Verify and sign 3.0.74
+on:
+  push:
+    branches: [build/sign-3.0.74]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Install Android build components
+        run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
+      - name: Restore signing key and verify certificate
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          python3 - <<'PY'
+          import base64, os
+          from pathlib import Path
+          for name in ('KEYSTORE_BASE64', 'STORE_PASSWORD', 'KEY_PASSWORD', 'KEY_ALIAS'):
+              if not os.environ.get(name):
+                  raise SystemExit('Missing signing secret: ' + name)
+          Path('keystore').mkdir(exist_ok=True)
+          Path('keystore/stepdaddy-release.jks').write_bytes(base64.b64decode(os.environ['KEYSTORE_BASE64'], validate=False))
+          def escape(value):
+              return value.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t').replace(' ', '\\ ')
+          props = {'storeFile': 'keystore/stepdaddy-release.jks', 'storePassword': os.environ['STORE_PASSWORD'], 'keyAlias': os.environ['KEY_ALIAS'], 'keyPassword': os.environ['KEY_PASSWORD']}
+          Path('keystore.properties').write_text(''.join(k + '=' + escape(v) + '\n' for k, v in props.items()))
+          PY
+          keytool -exportcert -keystore keystore/stepdaddy-release.jks -alias "$KEY_ALIAS" -storepass:env STORE_PASSWORD -file "$RUNNER_TEMP/release-cert.der"
+          actual=$(sha256sum "$RUNNER_TEMP/release-cert.der" | cut -d' ' -f1)
+          test "$actual" = '9491418c31b1a9a36084d8bd97f2e080e41e926c460aded55ef22fe46ec33975'
+          echo 'Signing certificate matches the documented release identity.'
+      - name: Build signed APK
+        run: bash ./gradlew --no-daemon :app:testReleaseUnitTest :app:assembleRelease
+      - name: Verify signed artifact and version
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p signed-artifact
+          apk=app/build/outputs/apk/release/app-release.apk
+          "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --verbose --print-certs "$apk" | tee signed-artifact/signature.txt
+          grep -q 'Signer #1 certificate SHA-256 digest: 9491418c31b1a9a36084d8bd97f2e080e41e926c460aded55ef22fe46ec33975' signed-artifact/signature.txt
+          "$ANDROID_HOME/build-tools/34.0.0/aapt" dump badging "$apk" > signed-artifact/badging.txt
+          grep -q "package: name='com.thothassistant.stepdaddy.gateway' versionCode='30074' versionName='3.0.74'" signed-artifact/badging.txt
+          cp "$apk" signed-artifact/stepdaddy-gateway-3.0.74-release.apk
+          cd signed-artifact
+          sha256sum stepdaddy-gateway-3.0.74-release.apk > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stepdaddy-gateway-3.0.74-signed
+          path: signed-artifact/
+          retention-days: 14
+          if-no-files-found: error
+      - name: Remove temporary signing files
+        if: always()
+        run: rm -f keystore/stepdaddy-release.jks keystore.properties "$RUNNER_TEMP/release-cert.der"

@@ -51,6 +51,9 @@ object DlhdEmbedUrl {
      */
     fun modernWatchUrlsForMirror(mirrorBase: String, channelId: String): List<String> {
         val ordered = linkedSetOf<String>()
+        if (runCatching { URL(mirrorBase).host.lowercase() }.getOrNull() in setOf("dlive.sx", "dlstreams.st", "dlhd.st")) {
+            ordered += "${mirrorBase.trimEnd('/')}/stream/stream-${streamSlugFromChannelId(channelId)}.php"
+        }
         ordered += liveStreamUrlForMirror(mirrorBase, channelId)
         ordered += embedUrlForMirror(mirrorBase, channelId)
         return ordered.toList()
@@ -71,7 +74,8 @@ object DlhdEmbedUrl {
 
     fun isLiveStreamPageUrl(url: String): Boolean {
         val path = runCatching { URL(url).path }.getOrNull() ?: return false
-        return path.contains("/live/stream=", ignoreCase = true)
+        return path.contains("/live/stream=", ignoreCase = true) ||
+            Regex("^/stream/stream-[^/]+\\.php$", RegexOption.IGNORE_CASE).matches(path)
     }
 
     fun relayStreamPaths(): List<String> = GatewayConfig.DLHD_PK_STREAM_PATHS
