@@ -738,8 +738,16 @@ class DaddyLiveClient(
                 .header("Referer", "${baseUrl.trimEnd('/')}/")
                 .get()
                 .build()
-            val body = client.getText(request)
-            json.decodeFromString<List<UpstreamChannelRow>>(body)
+            try {
+                val body = client.getText(request)
+                json.decodeFromString<List<UpstreamChannelRow>>(body)
+            } catch (exc: HttpStatusException) {
+                if (exc.code != 404 && exc.code != 410) throw exc
+                val directory = request.newBuilder().url("${baseUrl.trimEnd('/')}/24-7-channels.php").build()
+                DaddyLiveCatalogParser.parse(client.getText(directory), baseUrl).also {
+                    check(it.isNotEmpty()) { "Public channel directory contained no channel rows" }
+                }
+            }
         }
 
     private fun orderedMirrorUrls(): List<String> =
