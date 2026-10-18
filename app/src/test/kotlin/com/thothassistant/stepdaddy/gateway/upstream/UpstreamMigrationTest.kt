@@ -4,6 +4,13 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class UpstreamMigrationTest {
+    @Test fun verifiedBindingSeedPreservesChannelAndRejectsInvalidIds() {
+        val seed = CdnPlaylistAccess.bootstrap("stream-797")!!
+        assertTrue(seed.first.endsWith("/premium797/index.m3u8"))
+        assertTrue(seed.second.endsWith("?id=797"))
+        assertNotNull(CdnPlaylistAccess.tokenEndpoint(seed.first))
+        assertNull(CdnPlaylistAccess.bootstrap("../other"))
+    }
     @Test fun publicDirectoryIgnoresNavigationAndDeduplicatesChannels() {
         val html = """<a href="/">Home</a><a class="card" href="/watch.php?id=51"><div class="card__title">ABC &amp; News</div><div>ID: 51</div></a><a href='/watch.php?id=51'><div class='card__title'>Duplicate</div></a>"""
         val rows = DaddyLiveCatalogParser.parse(html, "https://dlive.sx/")

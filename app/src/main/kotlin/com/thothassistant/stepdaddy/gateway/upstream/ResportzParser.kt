@@ -47,6 +47,23 @@ class ResportzParser(
     ): UpstreamManifest {
         val referer = "${refererBase.trimEnd('/')}/"
         tryCachedWinningEmbed(channelId)?.let { return it }
+        // The embed host can be offline while its last verified CDN still serves live HLS.
+        // Treat this as a discovery seed, never as an unconditional or permanent route.
+        if (runCatching { URL(refererBase).host }.getOrNull() == "dlive.sx") {
+            CdnPlaylistAccess.bootstrap(channelId)?.let { (url, embedReferer) ->
+                try {
+                    val direct = withTimeout(4_500L) {
+                        refreshFromMasterUrl(UpstreamManifest("", url, embedReferer))
+                    }
+                    check(direct.playlistText.startsWith("#EXTM3U")) { "CDN bootstrap returned non-HLS" }
+                    Log.i(TAG, "Validated direct CDN binding channel=$channelId")
+                    return direct
+                } catch (exc: Exception) {
+                    if (exc is CancellationException && exc !is TimeoutCancellationException) throw exc
+                    Log.d(TAG, "CDN bootstrap unavailable channel=$channelId; using player discovery")
+                }
+            }
+        }
 
         val candidates = watchUrlCandidates(channelId, refererBase, embedUrl)
         val liveCandidates = candidates.filter { DlhdEmbedUrl.isLiveStreamPageUrl(it) }
