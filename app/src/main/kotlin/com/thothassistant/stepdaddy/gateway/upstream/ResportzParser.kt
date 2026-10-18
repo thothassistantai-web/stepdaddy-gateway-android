@@ -674,11 +674,17 @@ class ResportzParser(
         fun authorized(value: String): String = url.toHttpUrl().newBuilder()
             .removeAllQueryParameters("t").removeAllQueryParameters("_")
             .addQueryParameter("t", value).addQueryParameter("_", System.currentTimeMillis().toString()).build().toString()
+        suspend fun readAuthorized(value: String): String = try {
+            client.getText(request(authorized(value)))
+        } catch (exc: HttpStatusException) {
+            // Keep short-lived credentials out of resolver failure logs.
+            throw HttpStatusException(exc.code, url.toHttpUrl(), exc.responseMessage)
+        }
         return try {
-            client.getText(request(authorized(token(false))))
+            readAuthorized(token(false))
         } catch (exc: HttpStatusException) {
             if (exc.code != 403) throw exc
-            client.getText(request(authorized(token(true))))
+            readAuthorized(token(true))
         }
     }
 

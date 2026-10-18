@@ -14,7 +14,6 @@ class UpstreamMigrationTest {
         assertTrue(DaddyLiveCatalogParser.parse("<html>Maintenance</html>", "https://dlive.sx").isEmpty())
     }
     @Test fun playlistTokenEndpointUsesSameOriginAndCorrectChannelSlug() {
-        assertEquals("https://edge.example/premium797/index.m3u8", "https://edge.example/premium797/index.m3u8")
         assertEquals("https://edge.example/api/playlist-token?slug=premium797", CdnPlaylistAccess.tokenEndpoint("https://edge.example/premium797/index.m3u8?t=expired")?.toString())
         assertEquals("https://dembed.st", CdnPlaylistAccess.origin("https://dembed.st/premiumtv/daddy.php?id=797"))
         assertNull(CdnPlaylistAccess.tokenEndpoint("https://unrelated.example/index.m3u8"))
