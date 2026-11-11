@@ -1,18 +1,4 @@
 {
-<<<<<<< HEAD
-  "version": 4,
-  "minAppVersion": "3.0.74",
-  "forceUpdateAfter": null,
-  "message": "Use dlive.sx current stream pages; aliases redirect to the same service.",
-  "sources": {
-    "daddylive": {
-      "primary": "https://dlive.sx",
-      "mirrors": [
-        "https://dlive.sx",
-        "https://dlstreams.st",
-        "https://dlhd.st",
-        "https://dlhd.pk"
-=======
   "version": 5,
   "minAppVersion": "3.0.74",
   "forceUpdateAfter": null,
@@ -26,7 +12,6 @@
         "https://thedaddy.pk",
         "https://thedaddy.li",
         "https://daddylive.li"
->>>>>>> 2847c23 (fix domain-relay: prefer dlhd.st/pk and thedaddy hosts.)
       ],
       "blocked": [
         "daddylive.org",
@@ -34,19 +19,6 @@
         "dlive.sx"
       ],
       "relayHosts": [
-<<<<<<< HEAD
-        "https://dlive.sx",
-        "https://dlstreams.st",
-        "https://dlhd.st",
-        "https://dlhd.pk"
-      ],
-      "embedHosts": [
-        "https://dlive.sx",
-        "https://dembed.st",
-        "https://dlstreams.st",
-        "https://dlhd.st",
-        "https://dlhd.pk"
-=======
         "https://dlhd.st",
         "https://dlhd.pk",
         "https://thedaddy.pk",
@@ -62,7 +34,6 @@
         "https://daddylive.li",
         "https://dlhd.li",
         "https://dlhd.org"
->>>>>>> 2847c23 (fix domain-relay: prefer dlhd.st/pk and thedaddy hosts.)
       ]
     }
   }
