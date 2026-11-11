@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "version": 4,
   "minAppVersion": "3.0.74",
   "forceUpdateAfter": null,
@@ -11,12 +12,29 @@
         "https://dlstreams.st",
         "https://dlhd.st",
         "https://dlhd.pk"
+=======
+  "version": 5,
+  "minAppVersion": "3.0.74",
+  "forceUpdateAfter": null,
+  "message": "dlive.sx is DNS-dead on many networks; prefer dlhd.st / dlhd.pk / thedaddy.pk (aliases to thedaddy.li).",
+  "sources": {
+    "daddylive": {
+      "primary": "https://dlhd.st",
+      "mirrors": [
+        "https://dlhd.st",
+        "https://dlhd.pk",
+        "https://thedaddy.pk",
+        "https://thedaddy.li",
+        "https://daddylive.li"
+>>>>>>> 2847c23 (fix domain-relay: prefer dlhd.st/pk and thedaddy hosts.)
       ],
       "blocked": [
         "daddylive.org",
-        "daddylive.eu"
+        "daddylive.eu",
+        "dlive.sx"
       ],
       "relayHosts": [
+<<<<<<< HEAD
         "https://dlive.sx",
         "https://dlstreams.st",
         "https://dlhd.st",
@@ -28,6 +46,23 @@
         "https://dlstreams.st",
         "https://dlhd.st",
         "https://dlhd.pk"
+=======
+        "https://dlhd.st",
+        "https://dlhd.pk",
+        "https://thedaddy.pk",
+        "https://thedaddy.li",
+        "https://daddylive.li"
+      ],
+      "embedHosts": [
+        "https://dlhd.st",
+        "https://dlhd.pk",
+        "https://thedaddy.pk",
+        "https://thedaddy.li",
+        "https://dembed.st",
+        "https://daddylive.li",
+        "https://dlhd.li",
+        "https://dlhd.org"
+>>>>>>> 2847c23 (fix domain-relay: prefer dlhd.st/pk and thedaddy hosts.)
       ]
     }
   }
