@@ -7,6 +7,22 @@ Versioning follows [Semantic Versioning](https://semver.org/) for `versionName` 
 
 ## [Unreleased]
 
+## [3.0.75] - 2026-11-11
+
+### Fixed
+
+- Align compiled DaddyLive mirror/relay/embed defaults with domain-relay **v5** (`dlhd.st` / `dlhd.pk` / `thedaddy.*`; block `dlive.sx`).
+- Prefer `https://dlhd.st` as the built-in primary base URL so cold installs match the published relay.
+
+### Added
+
+- Dead-stream finder (`scripts/find-dead-streams.sh`) that probes Oracle/gateway offline APIs and writes repair inbox reports under `stream-repair/`.
+
+### Release
+
+- Publish signed release APK + versionless stable asset; OTA manifest **30075**.
+- Republish domain-relay **v5** with the release.
+
 ## [3.0.74] - 2026-10-18
 
 ### Fixed

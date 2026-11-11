@@ -34,8 +34,8 @@ fun readStepdaddyVersionProp(name: String, default: String): String {
         ?.trim()
         ?: default
 }
-val stepdaddyVersionName = readStepdaddyVersionProp("STEPDADDY_VERSION", "3.0.56")
-val stepdaddyVersionCode = readStepdaddyVersionProp("VERSION_CODE", "30056").toInt()
+val stepdaddyVersionName = readStepdaddyVersionProp("STEPDADDY_VERSION", "3.0.75")
+val stepdaddyVersionCode = readStepdaddyVersionProp("VERSION_CODE", "30075").toInt()
 
 val localProps = Properties()
 val localPropsFile = rootProject.file("local.properties")
@@ -72,7 +72,7 @@ android {
         buildConfigField(
             "String",
             "DEFAULT_DLHD_BASE_URL",
-            "\"https://daddylive.li\"",
+            "\"https://dlhd.st\"",
         )
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_SPORTS_ENABLED", "true")
         buildConfigField("boolean", "DEFAULT_SUPPLEMENT_IPTV_ORG_ENABLED", "true")

@@ -18,20 +18,22 @@ object GatewayConfig {
     const val RESPORTZ_STREAM_TEMPLATE = "https://resportz.cfd/live/stream-%s.php"
     const val RESPORTZ_STREAM_PATH = "/live/stream-%s.php"
     private val DEFAULT_DLHD_RELAY_HOSTS = listOf(
-        "https://daddylive.li",
-        "https://dlstreams.st",
         "https://dlhd.st",
         "https://dlhd.pk",
+        "https://thedaddy.pk",
+        "https://thedaddy.li",
+        "https://daddylive.li",
     )
-    /** Active dlhd relay hosts (prefer daddylive.li; legacy dlstreams paths as fallback). */
+    /** Active dlhd relay hosts (prefer dlhd.st/pk; thedaddy aliases; avoid DNS-dead dlive.sx). */
     val DLHD_RELAY_HOSTS: List<String>
         get() = DomainRelayRuntime.relayHosts ?: DEFAULT_DLHD_RELAY_HOSTS
     private val DEFAULT_DLHD_EMBED_HOSTS = listOf(
-        "https://daddylive.li",
-        "https://daddylive.at",
-        "https://dlstreams.st",
         "https://dlhd.st",
         "https://dlhd.pk",
+        "https://thedaddy.pk",
+        "https://thedaddy.li",
+        "https://dembed.st",
+        "https://daddylive.li",
         "https://dlhd.li",
         "https://dlhd.org",
     )
@@ -198,6 +200,7 @@ object GatewayConfig {
     const val HEALING_LOG_MAX = 20
 
     private val DEFAULT_DADDYLIVE_HOSTS = setOf(
+        // Recognized hostnames (rotation still respects DADDYLIVE_BLOCKED_HOSTS).
         "dlive.sx",
         "daddylive.org",
         "daddylive.li",
@@ -207,6 +210,9 @@ object GatewayConfig {
         "dlhd.pk",
         "dlhd.li",
         "dlhd.org",
+        "thedaddy.pk",
+        "thedaddy.li",
+        "dembed.st",
     )
     val DADDYLIVE_HOSTS: Set<String>
         get() {
@@ -223,6 +229,8 @@ object GatewayConfig {
         "daddylive.org",
         /** NXDOMAIN / DNS-dead — hedged race previously double-downloaded hub HTML against it. */
         "daddylive.eu",
+        /** DNS-dead on many networks; domain-relay v5 blocks this host. */
+        "dlive.sx",
     )
     /** Mirrors excluded from automatic rotation (seized, deprecated, or structurally broken). */
     val DADDYLIVE_BLOCKED_HOSTS: Set<String>

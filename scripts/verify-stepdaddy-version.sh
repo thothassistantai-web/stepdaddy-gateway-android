@@ -62,8 +62,15 @@ check_contains "${ROOT}/release/update-manifest.json" "\"versionName\": \"${EXPE
 check_contains "${ROOT}/release/update-manifest.json" "\"versionCode\": ${EXPECTED_CODE}" "update-manifest versionCode"
 check_contains "${ROOT}/release/update-manifest.json" "/v${EXPECTED_VERSION}/" "update-manifest apkUrl tag"
 check_contains "${ROOT}/release/update-manifest.json" "stepdaddy-gateway-${EXPECTED_VERSION}-release.apk" "update-manifest stable apkUrl"
-check_contains "${ROOT}/app/src/main/assets/install_apps_catalog.json" "\"version\": \"${EXPECTED_VERSION}\"" "install_apps_catalog TiviMate version"
-check_contains "${ROOT}/app/src/main/assets/install_apps_catalog.json" "tivimate-daddy-v${EXPECTED_VERSION}" "install_apps_catalog apkUrl tag"
+# TiviMate Daddy patch APKs version independently of the Gateway suite; warn only.
+if [[ -f "${ROOT}/app/src/main/assets/install_apps_catalog.json" ]]; then
+  if grep -q "\"version\": \"${EXPECTED_VERSION}\"" "${ROOT}/app/src/main/assets/install_apps_catalog.json" &&
+     grep -q "tivimate-daddy-v${EXPECTED_VERSION}" "${ROOT}/app/src/main/assets/install_apps_catalog.json"; then
+    echo "OK    install_apps_catalog TiviMate suite tag"
+  else
+    echo "WARN  install_apps_catalog TiviMate tag not at ${EXPECTED_VERSION} (suite-independent; OK if patch APK unchanged)"
+  fi
+fi
 
 if [[ -f "${ROOT}/../STEPDADDY_VERSION" && "${CANONICAL}" != "${ROOT}/../STEPDADDY_VERSION" ]]; then
   check_contains "${ROOT}/../STEPDADDY_VERSION" "STEPDADDY_VERSION=${EXPECTED_VERSION}" "monorepo parent STEPDADDY_VERSION"

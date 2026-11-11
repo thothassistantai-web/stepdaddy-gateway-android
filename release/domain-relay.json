@@ -2,7 +2,7 @@
   "version": 5,
   "minAppVersion": "3.0.74",
   "forceUpdateAfter": null,
-  "message": "dlive.sx is DNS-dead on many networks; prefer dlhd.st / dlhd.pk / thedaddy.pk (aliases to thedaddy.li).",
+  "message": "dlive.sx is DNS-dead on many networks; prefer dlhd.st / dlhd.pk / thedaddy.pk (aliases to thedaddy.li). Gateway 3.0.75 ships matching compiled defaults.",
   "sources": {
     "daddylive": {
       "primary": "https://dlhd.st",

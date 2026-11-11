@@ -1,9 +1,11 @@
 {
-  "versionCode": 30074,
-  "versionName": "3.0.74",
-  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.74/stepdaddy-gateway-3.0.74-release.apk",
-  "apkSha256": "5ce8654c11fd7869bf4f71239e87439c02fe465149aa7d0118927f1c6404db55",
-  "releaseNotes": "Restore upstream token renewal and playback during embed host outages; fix catalog health fallback.",
+  "versionCode": 30075,
+  "versionName": "3.0.75",
+  "apkUrl": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.75/stepdaddy-gateway-3.0.75-release.apk",
+  "apkUrlDebug": "https://github.com/thothassistantai-web/stepdaddy-gateway-android/releases/download/v3.0.75/stepdaddy-gateway-3.0.75-debug.apk",
+  "apkSha256": "3cc6e6726b1dc017ea73f0a20f50fe316022b376beafe49ac4af3113804f0cba",
+  "apkSha256Debug": "cfc301948f99a7c33176dc1f079a4593218da9e94d261b49f981f05a3d9c4d07",
+  "releaseNotes": "See CHANGELOG.md",
   "updateType": "optional",
   "mandatory": false
 }

@@ -721,6 +721,6 @@ class GatewayEnvironment(context: Context) {
         private const val KEY_XTREAM_PASSWORD = "xtream_password"
         private const val CRASH_RECOVERY_BANNER_SKIP_MS = 10 * 60 * 1000L
         private const val DEFAULT_MIRRORS_CSV =
-            "https://dlstreams.st,https://daddylive.li,https://dlhd.st"
+            "https://dlhd.st,https://dlhd.pk,https://thedaddy.pk,https://thedaddy.li,https://daddylive.li"
     }
 }

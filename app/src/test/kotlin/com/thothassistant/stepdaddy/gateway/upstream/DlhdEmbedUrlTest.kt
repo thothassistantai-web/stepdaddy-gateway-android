@@ -14,6 +14,7 @@ class DlhdEmbedUrlTest {
             assertTrue(DlhdEmbedUrl.isLiveStreamPageUrl(first))
         }
         assertTrue("dlive.sx" in GatewayConfig.DADDYLIVE_HOSTS)
+        assertTrue("dlive.sx" in GatewayConfig.DADDYLIVE_BLOCKED_HOSTS)
     }
 
     @Test

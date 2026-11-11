@@ -99,24 +99,27 @@ object DomainRelayRuntime {
         if (source == null) return false
         val defaultPrimary = BuildConfig.DEFAULT_DLHD_BASE_URL.trimEnd('/')
         val defaultMirrors = listOf(
-            "https://daddylive.li",
-            "https://daddylive.at",
-            "https://dlstreams.st",
-            "https://dlhd.st",
-        )
-        val defaultBlocked = setOf("daddylive.org", "daddylive.eu")
-        val defaultRelay = listOf(
-            "https://daddylive.li",
-            "https://dlstreams.st",
             "https://dlhd.st",
             "https://dlhd.pk",
+            "https://thedaddy.pk",
+            "https://thedaddy.li",
+            "https://daddylive.li",
+        )
+        val defaultBlocked = setOf("daddylive.org", "daddylive.eu", "dlive.sx")
+        val defaultRelay = listOf(
+            "https://dlhd.st",
+            "https://dlhd.pk",
+            "https://thedaddy.pk",
+            "https://thedaddy.li",
+            "https://daddylive.li",
         )
         val defaultEmbed = listOf(
-            "https://daddylive.li",
-            "https://daddylive.at",
-            "https://dlstreams.st",
             "https://dlhd.st",
             "https://dlhd.pk",
+            "https://thedaddy.pk",
+            "https://thedaddy.li",
+            "https://dembed.st",
+            "https://daddylive.li",
             "https://dlhd.li",
             "https://dlhd.org",
         )

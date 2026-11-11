@@ -28,3 +28,8 @@ local.properties
 docs/store-assets/*.png
 reports/
 scripts/.cache/
+# Dead-stream repair inbox (generated reports only; keep README + .gitkeep)
+stream-repair/inbox/*
+!stream-repair/inbox/.gitkeep
+stream-repair/inbox/.*
+!stream-repair/inbox/.gitkeep
